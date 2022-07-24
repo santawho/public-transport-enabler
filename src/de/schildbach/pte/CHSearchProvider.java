@@ -3,11 +3,13 @@ package de.schildbach.pte;
 import de.schildbach.pte.dto.*;
 import de.schildbach.pte.exception.ParserException;
 import okhttp3.HttpUrl;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import javax.annotation.Nullable;
+
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -53,6 +55,7 @@ public class CHSearchProvider extends AbstractNetworkProvider {
     private static final String TRIP_ENDPOINT = "route.json";
     private static final String STATIONBOARD_ENDPOINT = "stationboard.json";
     protected static final String SERVER_PRODUCT = "timetables.search.ch";
+    private final ResultHeader resultHeader = new ResultHeader(network, SERVER_PRODUCT);
     private static final DateFormat DATE_FORMATTER = new SimpleDateFormat("MM/dd/yyyy");
     private static final DateFormat TIME_FORMATTER = new SimpleDateFormat("HH:mm");
     protected static final SimpleDateFormat DATE_TIME_FORMATTER = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -86,14 +89,12 @@ public class CHSearchProvider extends AbstractNetworkProvider {
      */
     @Override
     public NearbyLocationsResult queryNearbyLocations(Set<LocationType> types, Location location, int maxDistance, int maxLocations) throws IOException {
-        ResultHeader header = new ResultHeader(network, SERVER_PRODUCT);
-
         // Since the endpoint only supports lat/long we have to get the coordinates first (if not already supplied in the Location attribute)
         Location fixedLocation = location;
         if (location.coord == null && location.id != null) {
             SuggestLocationsResult suggestionResult = this.suggestLocations(location.id, null, 2);
             if (suggestionResult.suggestedLocations == null || suggestionResult.suggestedLocations.size() != 1) {
-                return new NearbyLocationsResult(header, NearbyLocationsResult.Status.INVALID_ID);
+                return new NearbyLocationsResult(resultHeader, NearbyLocationsResult.Status.INVALID_ID);
             } else {
                 fixedLocation = suggestionResult.suggestedLocations.get(0).location;
             }
@@ -111,7 +112,7 @@ public class CHSearchProvider extends AbstractNetworkProvider {
             try {
                 String jsonResult = res.toString();
                 if (jsonResult.equals("")) {
-                    return new NearbyLocationsResult(header, NearbyLocationsResult.Status.INVALID_ID);
+                    return new NearbyLocationsResult(resultHeader, NearbyLocationsResult.Status.INVALID_ID);
                 }
                 JSONArray rawResult = new JSONArray(jsonResult);
                 List<Location> suggestions = new ArrayList<>();
@@ -119,12 +120,12 @@ public class CHSearchProvider extends AbstractNetworkProvider {
                     JSONObject entry = rawResult.getJSONObject(i);
                     suggestions.add(extractLocation(entry));
                 }
-                return new NearbyLocationsResult(header, suggestions);
+                return new NearbyLocationsResult(resultHeader, suggestions);
             } catch (final JSONException x) {
                 throw new ParserException("queryNearbyLocations: cannot parse json:" + x);
             }
         } else {
-            return new NearbyLocationsResult(header, NearbyLocationsResult.Status.INVALID_ID);
+            return new NearbyLocationsResult(resultHeader, NearbyLocationsResult.Status.INVALID_ID);
         }
     }
 
@@ -139,7 +140,6 @@ public class CHSearchProvider extends AbstractNetworkProvider {
      */
     @Override
     public QueryDeparturesResult queryDepartures(String stationId, @Nullable Date time, int maxDepartures, boolean equivs) throws IOException {
-        ResultHeader header = new ResultHeader(network, SERVER_PRODUCT);
         // Set time to now if not set
         time = time == null ? new Date() : time;
 
@@ -158,21 +158,22 @@ public class CHSearchProvider extends AbstractNetworkProvider {
             JSONObject rawResult = new JSONObject(res.toString());
             if (rawResult.has("messages")) {
                 // This could be bit more refined "messages" is also set when there are simply no departures
-                return new QueryDeparturesResult(header, QueryDeparturesResult.Status.INVALID_STATION);
+                return new QueryDeparturesResult(resultHeader, QueryDeparturesResult.Status.INVALID_STATION);
             }
             StationBoardResult sb = new StationBoardResult(rawResult);
             Location boardLocation = new Location(LocationType.STATION, sb.stationID, Point.fromDouble(sb.lat, sb.lon), null, sb.name);
             List<Departure> departures = new ArrayList<>();
-            sb.entries.forEach(sbEntry -> {
+            for (StationBoardResult.StationBoardEntry sbEntry : sb.entries) {
+
                 Date predictedTime = addMinutesToDate(sbEntry.time, sbEntry.dep_delay);
                 Line line = new Line(sbEntry.Z, sbEntry.operator, type2Product(sbEntry.G), sbEntry.line, new Style(Style.Shape.RECT, sbEntry.bgColor, sbEntry.fgColor));
 
                 Location destinationLocation = new Location(LocationType.STATION, sbEntry.terminal.stationID, Point.fromDouble(sbEntry.terminal.lat, sbEntry.terminal.lon), null, sbEntry.terminal.name);
                 Position departurePos = sbEntry.track != null ? new Position(sbEntry.track) : null;
                 departures.add(new Departure(sbEntry.time, predictedTime, line, departurePos, destinationLocation, null, null));
-            });
+            }
             StationDepartures sd = new StationDepartures(boardLocation, departures, null);
-            QueryDeparturesResult QDres = new QueryDeparturesResult(header);
+            QueryDeparturesResult QDres = new QueryDeparturesResult(resultHeader);
             QDres.stationDepartures.add(sd);
             return QDres;
         } catch (final JSONException | ParseException x) {
@@ -213,8 +214,6 @@ public class CHSearchProvider extends AbstractNetworkProvider {
 
     @Override
     public QueryTripsResult queryTrips(Location from, @Nullable Location via, Location to, Date date, boolean dep, @Nullable TripOptions options) throws IOException {
-        ResultHeader header = new ResultHeader(network, SERVER_PRODUCT);
-
         // We define all request parameters here since we can't submit "null"
         HashMap<String, String> rawParameters = new HashMap<>();
         rawParameters.put("from", from.id == null ? from.name : from.id);
@@ -229,29 +228,32 @@ public class CHSearchProvider extends AbstractNetworkProvider {
         HttpUrl.Builder builder = API_BASE.newBuilder();
         builder.addPathSegment(TRIP_ENDPOINT);
         // And then build the request-url with all non-null keys
-        rawParameters.forEach((key, value) -> {
-            if (value != null) {
-                builder.addQueryParameter(key, value);
+        for (Map.Entry<String, String> item :
+                rawParameters.entrySet()) {
+            if (null != item.getValue()){
+                builder.addQueryParameter(item.getKey(), item.getValue());
             }
-        });
+        }
         HttpUrl requestURL = builder.build();
         CharSequence res = httpClient.get(requestURL);
         try {
             RouteResult routeResult = new RouteResult(new JSONObject(res.toString()));
             if (routeResult.connections.size() == 0) {
                 // More granularity would be very tedious to implement since reasons are free-text and possibly in 4 different languages...
-                return new QueryTripsResult(header, QueryTripsResult.Status.NO_TRIPS);
+                return new QueryTripsResult(resultHeader, QueryTripsResult.Status.NO_TRIPS);
             }
             List<Trip> tripsList = new ArrayList<>(N_TRIPS);
-            routeResult.connections.forEach(connection -> {
+            for (RouteResult.Connection connection : routeResult.connections) {
                 AtomicInteger numChanges = new AtomicInteger(-1);
                 List<Trip.Leg> legsList = new ArrayList<>(10);
-                connection.legs.forEach(leg -> {
+                for (RouteResult.Connection.Leg leg : connection.legs) {
                     List<Stop> intermediateStops = new ArrayList<>(20);
 
                     // Collect disruptions
                     StringBuilder disruptions = new StringBuilder();
-                    leg.disruptions.forEach(disruptions::append);
+                    for (RouteResult.Connection.Disruption disruption : leg.disruptions) {
+                        disruptions.append(disruptions);
+                    }
 
 
                     if (leg.exit != null) {
@@ -286,7 +288,7 @@ public class CHSearchProvider extends AbstractNetworkProvider {
                             legsList.add(new Trip.Public(line, terminalLocation, departureStop, arrivalStop, intermediateStops, null, infoText + disruptions));
                         }
 
-                        leg.stops.forEach(stop -> {
+                        for (RouteResult.Connection.Leg.Stop stop : leg.stops) {
                             if (!stop.isSpecial) {
                                 Location stopLocation = new Location(LocationType.STATION, stop.stopID, Point.fromDouble(stop.lat, stop.lon), null, stop.name);
                                 Date plannedArrivalTime = stop.arrival;
@@ -303,23 +305,23 @@ public class CHSearchProvider extends AbstractNetworkProvider {
                                         null,
                                         null));
                             }
-                        });
+                        }
 
                     } else {
                         // We reached the final leg which is our destination (and identical with the last "Exit")
-                        return;
+                        break;
                     }
-                });
+                }
                 //if the connection is just walking
                 if (numChanges.get() == -1) numChanges.set(0);
                 tripsList.add(new Trip("generated_" + UUID.randomUUID(), from, to, legsList, null, null, numChanges.get()));
-            });
+            }
             // We must consider that the first/last leg may be not a "Public" one and therefore, we can not use getLastPublicLeg()
             Date lastDeparture = tripsList.get(tripsList.size() - 1).legs.get(0).getDepartureTime();
             Trip firstConnection = tripsList.get(0);
             Date firstArrival = firstConnection.legs.get(firstConnection.legs.size() - 1).getArrivalTime();
             CHSearchContext context = new CHSearchContext(from, to, via, firstArrival, lastDeparture, options);
-            return new QueryTripsResult(header, requestURL.toString(), from, via, to, context, tripsList);
+            return new QueryTripsResult(resultHeader, requestURL.toString(), from, via, to, context, tripsList);
 
         } catch (final JSONException x) {
             throw new ParserException("JSON Error:" + x);
@@ -331,15 +333,18 @@ public class CHSearchProvider extends AbstractNetworkProvider {
 
     @Override
     public QueryTripsResult queryMoreTrips(QueryTripsContext context, boolean later) throws IOException {
-        CHSearchContext chCont = (CHSearchContext) context;
-        if (later) {
-            // later
-            return queryTrips(chCont.from, chCont.via, chCont.to, addMinutesToDate(chCont.lastDeparture, 1), true, chCont.options);
-        } else {
-            // before
-            return queryTrips(chCont.from, chCont.via, chCont.to, addMinutesToDate(chCont.firstArrival, -1), false, chCont.options);
+        // We have no context if the previous result returned no results
+        if (context != null) {
+            CHSearchContext chCont = (CHSearchContext) context;
+            if (later && context.canQueryLater()) {
+                // later
+                return queryTrips(chCont.from, chCont.via, chCont.to, addMinutesToDate(chCont.lastDeparture, 1), true, chCont.options);
+            } else if (context.canQueryEarlier()) {
+                // before
+                return queryTrips(chCont.from, chCont.via, chCont.to, addMinutesToDate(chCont.firstArrival, -1), false, chCont.options);
+            }
         }
-
+        return new QueryTripsResult(resultHeader, QueryTripsResult.Status.NO_TRIPS);
     }
 
     private static Product type2Product(String chSearchType) {
