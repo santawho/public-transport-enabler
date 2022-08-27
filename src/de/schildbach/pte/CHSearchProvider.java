@@ -230,7 +230,7 @@ public class CHSearchProvider extends AbstractNetworkProvider {
         // And then build the request-url with all non-null keys
         for (Map.Entry<String, String> item :
                 rawParameters.entrySet()) {
-            if (null != item.getValue()){
+            if (null != item.getValue()) {
                 builder.addQueryParameter(item.getKey(), item.getValue());
             }
         }
@@ -314,7 +314,8 @@ public class CHSearchProvider extends AbstractNetworkProvider {
                 }
                 //if the connection is just walking
                 if (numChanges.get() == -1) numChanges.set(0);
-                tripsList.add(new Trip("generated_" + UUID.randomUUID(), from, to, legsList, null, null, numChanges.get()));
+                String tripID = generateTripID(from, to, legsList, numChanges.get());
+                tripsList.add(new Trip(tripID, from, to, legsList, null, null, numChanges.get()));
             }
             // We must consider that the first/last leg may be not a "Public" one and therefore, we can not use getLastPublicLeg()
             Date lastDeparture = tripsList.get(tripsList.size() - 1).legs.get(0).getDepartureTime();
@@ -329,6 +330,16 @@ public class CHSearchProvider extends AbstractNetworkProvider {
             e.printStackTrace();
         }
         return null;
+    }
+
+    private static String generateTripID(Location from, Location to, List<Trip.Leg> legs, int numChanges) {
+        try {
+            Trip.Leg firstLeg = legs.get(0);
+            Trip.Leg lastLeg = legs.get(legs.size() - 1);
+            return String.format("%s_%ts_%s_%ts_%d", from.name, firstLeg.getDepartureTime(), to.name, lastLeg.getArrivalTime(), numChanges);
+        } catch (NullPointerException e) {
+            return "fallback_generated_" + UUID.randomUUID();
+        }
     }
 
     @Override
@@ -351,12 +362,19 @@ public class CHSearchProvider extends AbstractNetworkProvider {
         HashMap<String, Product> mapping = new HashMap<>();
         mapping.put("IC", Product.HIGH_SPEED_TRAIN);
         mapping.put("ICE", Product.HIGH_SPEED_TRAIN);
+        mapping.put("ICN", Product.HIGH_SPEED_TRAIN); // Intercity tilting train
         mapping.put("IRE", Product.REGIONAL_TRAIN);
         mapping.put("TGV", Product.HIGH_SPEED_TRAIN);
         mapping.put("RJX", Product.HIGH_SPEED_TRAIN); // RailJetExpress
+        mapping.put("NJ", Product.HIGH_SPEED_TRAIN); // ÖBB NightJet
         mapping.put("IR", Product.HIGH_SPEED_TRAIN);
         mapping.put("EC", Product.HIGH_SPEED_TRAIN);
         mapping.put("RE", Product.REGIONAL_TRAIN);
+        mapping.put("PE", Product.REGIONAL_TRAIN); // Panorama Express
+        mapping.put("BEX", Product.REGIONAL_TRAIN); // Bernina Express
+        mapping.put("GEX", Product.REGIONAL_TRAIN); // Galcier Express
+        mapping.put("CEX", Product.REGIONAL_TRAIN); // Centovalli Express (operated by SSIF italy)
+        mapping.put("CER", Product.REGIONAL_TRAIN); // Centovalli Regional (operated by SSIF italy)
         mapping.put("R", Product.REGIONAL_TRAIN);
         mapping.put("M", Product.SUBWAY);
         mapping.put("FUN", Product.TRAM); // Funicular railways
@@ -773,9 +791,8 @@ public class CHSearchProvider extends AbstractNetworkProvider {
                 String[] colors = rawEntry.getString("color").split("~", 3);
                 this.dep_delay = rawEntry.has("dep_delay") ? delayParser(rawEntry.getString("dep_delay")) : 0;
                 this.arr_delay = rawEntry.has("arr_delay") ? delayParser(rawEntry.getString("arr_delay")) : 0;
-                // sometimes there is no color information
-                this.fgColor = "".equals(colors[0]) ? Style.BLACK : parseColor(expandHex(colors[0]));
-                this.bgColor = "".equals(colors[1]) ? Style.WHITE : parseColor(expandHex(colors[1]));
+                this.bgColor = "".equals(colors[0]) ? Style.WHITE : parseColor(expandHex(colors[0]));
+                this.fgColor = "".equals(colors[1]) ? Style.BLACK : parseColor(expandHex(colors[1]));
                 this.terminal = new Terminal(rawEntry.getJSONObject("terminal"));
             }
 
