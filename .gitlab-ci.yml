@@ -34,6 +34,7 @@ git-merge-upstream:
     - cd ${CI_PROJECT_NAME}
     - git remote add upstream https://github.com/schildbach/public-transport-enabler.git
     - git fetch upstream
+    - git config merge.ours.driver true
     - git merge upstream/master
     - ./gradlew clean build
     - git push --force origin master
