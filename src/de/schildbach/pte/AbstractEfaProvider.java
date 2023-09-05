@@ -1022,7 +1022,9 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
             if (trainType == null && trainNum != null && P_LINE_IRE.matcher(trainNum).matches())
                 return new Line(id, network, Product.REGIONAL_TRAIN, trainNum);
             if ("RE".equals(trainType) || "Regional-Express".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "RE" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "RE" + Strings.nullToEmpty(trainNum));
+            if ("RE".equals(trainNum) && trainName == null)
+                return new Line(id, network, Product.REGIONAL_TRAIN, "RE");
             if (trainType == null && trainNum != null && P_LINE_RE.matcher(trainNum).matches())
                 return new Line(id, network, Product.REGIONAL_TRAIN, trainNum);
             if ("RE3 / RB30".equals(trainNum) && trainType == null && trainName == null)
@@ -1051,6 +1053,8 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                 return new Line(id, network, Product.REGIONAL_TRAIN, "REX" + trainNum);
             if (("RB".equals(trainType) || "Regionalbahn".equals(trainName)) && trainNum != null)
                 return new Line(id, network, Product.REGIONAL_TRAIN, "RB" + trainNum);
+            if ("RB".equals(trainNum) && trainName == null)
+                return new Line(id, network, Product.REGIONAL_TRAIN, "RB");
             if (trainType == null && trainNum != null && P_LINE_RB.matcher(trainNum).matches())
                 return new Line(id, network, Product.REGIONAL_TRAIN, trainNum);
             if ("Abellio-Zug".equals(trainName))
@@ -1340,6 +1344,8 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                 return new Line(id, network, Product.SUBURBAN_TRAIN, "BSB" + Strings.nullToEmpty(trainNum));
             if ("RSB".equals(trainType)) // Regionalschnellbahn, Wien
                 return new Line(id, network, Product.SUBURBAN_TRAIN, "RSB" + trainNum);
+            if ("RS18".equals(trainNum) && trainType == null) // Nahverkehrszug Maastricht - Valkenburg - Heerlen
+                return new Line(id, network, Product.SUBURBAN_TRAIN, "RS18");
             if ("RER".equals(trainName) && symbol != null && symbol.length() == 1) // Réseau Express Régional
                 return new Line(id, network, Product.SUBURBAN_TRAIN, symbol);
             if ("S".equals(trainType))
