@@ -893,7 +893,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
     private static final Pattern P_LINE_RB = Pattern.compile("RB ?\\d+[abc]?");
     private static final Pattern P_LINE_R = Pattern.compile("R ?\\d+");
     private static final Pattern P_LINE_IRE = Pattern.compile("IRE\\d+[ab]?");
-    private static final Pattern P_LINE_MEX = Pattern.compile("MEX ?\\d+[abc]?");
+    private static final Pattern P_LINE_MEX = Pattern.compile("ME?X ?\\d+[abc]?");
     private static final Pattern P_LINE_S = Pattern.compile("S ?\\d+");
     private static final Pattern P_LINE_S_DB = Pattern.compile("(S\\d+) \\((?:DB Regio AG)\\)");
     private static final Pattern P_LINE_NUMBER = Pattern.compile("\\d+");
@@ -939,6 +939,8 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
             if (("EC".equals(trainType) || "EuroCity".equals(trainName) || "Eurocity".equals(trainName))
                     && trainNum != null)
                 return new Line(id, network, Product.HIGH_SPEED_TRAIN, "EC" + trainNum);
+            if (("ECE".equals(trainType) || "Eurocity-Express".equals(trainName)) && trainNum != null)
+                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "ECE" + trainNum);
             if (("EN".equals(trainType) || "EuroNight".equals(trainName)) && trainNum != null)
                 return new Line(id, network, Product.HIGH_SPEED_TRAIN, "EN" + trainNum);
             if (("IC".equals(trainType) || "IC".equals(trainName) || "InterCity".equals(trainName)) && trainNum != null)
@@ -1352,6 +1354,8 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                 return new Line(id, network, Product.SUBURBAN_TRAIN, "S" + trainNum);
             if ("S-Bahn".equals(trainName))
                 return new Line(id, network, Product.SUBURBAN_TRAIN, "S" + trainNumStr);
+            if ("RS".equals(trainType) && trainNum != null) // Regio S-Bahn
+                return new Line(id, network, Product.SUBURBAN_TRAIN, "RS" + trainNum);
 
             if ("RT".equals(trainType) || "RegioTram".equals(trainName))
                 return new Line(id, network, Product.TRAM, "RT" + trainNum);
