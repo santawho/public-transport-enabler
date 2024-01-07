@@ -1,8 +1,11 @@
-image: java:8-jdk
+image: debian:bookworm-slim
 
 stages:
   - git-robot
   - build
+
+before_script:
+  - apt-get update && apt-get -y install git openjdk-17-jdk-headless
 
 gradle-build:
   stage: build
