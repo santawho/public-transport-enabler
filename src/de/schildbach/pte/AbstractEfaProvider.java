@@ -523,29 +523,31 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
 
                         // FIXME this is always only one coordinate
                         final List<Point> path = processItdPathCoordinates(pp);
-                        final Point coord1 = path != null ? path.get(0) : null;
+                        if (path != null) {
+                            final Point coord1 = path.get(0);
 
-                        EnumSet<Product> products = null;
-                        if (XmlPullUtil.optEnter(pp, "genAttrList")) {
-                            while (XmlPullUtil.optEnter(pp, "genAttrElem")) {
-                                final String attrName = XmlPullUtil.valueTag(pp, "name");
-                                final String attrValue = XmlPullUtil.valueTag(pp, "value");
-                                XmlPullUtil.skipExit(pp, "genAttrElem");
+                            EnumSet<Product> products = null;
+                            if (XmlPullUtil.optEnter(pp, "genAttrList")) {
+                                while (XmlPullUtil.optEnter(pp, "genAttrElem")) {
+                                    final String attrName = XmlPullUtil.valueTag(pp, "name");
+                                    final String attrValue = XmlPullUtil.valueTag(pp, "value");
+                                    XmlPullUtil.skipExit(pp, "genAttrElem");
 
-                                if ("STOP_MAJOR_MEANS".equals(attrName)) {
-                                    products = EnumSet.noneOf(Product.class);
-                                    final Product product = majorMeansToProduct(Integer.parseInt(attrValue));
-                                    if (product != null)
-                                        products.add(product);
+                                    if ("STOP_MAJOR_MEANS".equals(attrName)) {
+                                        products = EnumSet.noneOf(Product.class);
+                                        final Product product = majorMeansToProduct(Integer.parseInt(attrValue));
+                                        if (product != null)
+                                            products.add(product);
+                                    }
                                 }
+                                XmlPullUtil.skipExit(pp, "genAttrList");
                             }
-                            XmlPullUtil.skipExit(pp, "genAttrList");
+
+                            if (name != null)
+                                locations.add(new Location(locationType, id, coord1, place, name, products));
                         }
 
                         XmlPullUtil.skipExit(pp, "coordInfoItem");
-
-                        if (name != null)
-                            locations.add(new Location(locationType, id, coord1, place, name, products));
                     }
 
                     XmlPullUtil.skipExit(pp, "coordInfoItemList");
@@ -2405,36 +2407,39 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                         if (XmlPullUtil.test(pp, "itdSingleTicket")) {
                             final String net = XmlPullUtil.optAttr(pp, "net", null);
                             if (net != null) {
-                                final Currency currency = parseCurrency(XmlPullUtil.attr(pp, "currency"));
-                                final String fareAdult = XmlPullUtil.optAttr(pp, "fareAdult", null);
-                                final String fareChild = XmlPullUtil.optAttr(pp, "fareChild", null);
-                                final String unitName = XmlPullUtil.optAttr(pp, "unitName", null);
-                                final String unitsAdult = XmlPullUtil.optAttr(pp, "unitsAdult", null);
-                                final String unitsChild = XmlPullUtil.optAttr(pp, "unitsChild", null);
-                                final String levelAdult = XmlPullUtil.optAttr(pp, "levelAdult", null);
-                                final String levelChild = XmlPullUtil.optAttr(pp, "levelChild", null);
-                                if (fareAdult != null)
-                                    fares.add(new Fare(net.toUpperCase(), Type.ADULT, currency,
-                                            Float.parseFloat(fareAdult) * fareCorrectionFactor,
-                                            levelAdult != null ? null : unitName,
-                                            levelAdult != null ? levelAdult : unitsAdult));
-                                if (fareChild != null)
-                                    fares.add(new Fare(net.toUpperCase(), Type.CHILD, currency,
-                                            Float.parseFloat(fareChild) * fareCorrectionFactor,
-                                            levelChild != null ? null : unitName,
-                                            levelChild != null ? levelChild : unitsChild));
+                                final String currencyStr = Strings.emptyToNull(XmlPullUtil.optAttr(pp, "currency", null));
+                                if (currencyStr != null) {
+                                    final Currency currency = parseCurrency(currencyStr);
+                                    final String fareAdult = XmlPullUtil.optAttr(pp, "fareAdult", null);
+                                    final String fareChild = XmlPullUtil.optAttr(pp, "fareChild", null);
+                                    final String unitName = XmlPullUtil.optAttr(pp, "unitName", null);
+                                    final String unitsAdult = XmlPullUtil.optAttr(pp, "unitsAdult", null);
+                                    final String unitsChild = XmlPullUtil.optAttr(pp, "unitsChild", null);
+                                    final String levelAdult = XmlPullUtil.optAttr(pp, "levelAdult", null);
+                                    final String levelChild = XmlPullUtil.optAttr(pp, "levelChild", null);
+                                    if (fareAdult != null)
+                                        fares.add(new Fare(net.toUpperCase(), Type.ADULT, currency,
+                                                Float.parseFloat(fareAdult) * fareCorrectionFactor,
+                                                levelAdult != null ? null : unitName,
+                                                levelAdult != null ? levelAdult : unitsAdult));
+                                    if (fareChild != null)
+                                        fares.add(new Fare(net.toUpperCase(), Type.CHILD, currency,
+                                                Float.parseFloat(fareChild) * fareCorrectionFactor,
+                                                levelChild != null ? null : unitName,
+                                                levelChild != null ? levelChild : unitsChild));
 
-                                if (XmlPullUtil.optEnter(pp, "itdSingleTicket")) {
-                                    if (XmlPullUtil.optEnter(pp, "itdGenericTicketList")) {
-                                        while (XmlPullUtil.test(pp, "itdGenericTicketGroup")) {
-                                            final Fare fare = processItdGenericTicketGroup(pp, net.toUpperCase(),
-                                                    currency);
-                                            if (fare != null)
-                                                fares.add(fare);
+                                    if (XmlPullUtil.optEnter(pp, "itdSingleTicket")) {
+                                        if (XmlPullUtil.optEnter(pp, "itdGenericTicketList")) {
+                                            while (XmlPullUtil.test(pp, "itdGenericTicketGroup")) {
+                                                final Fare fare = processItdGenericTicketGroup(pp, net.toUpperCase(),
+                                                        currency);
+                                                if (fare != null)
+                                                    fares.add(fare);
+                                            }
+                                            XmlPullUtil.skipExit(pp, "itdGenericTicketList");
                                         }
-                                        XmlPullUtil.skipExit(pp, "itdGenericTicketList");
+                                        XmlPullUtil.skipExit(pp, "itdSingleTicket");
                                     }
-                                    XmlPullUtil.skipExit(pp, "itdSingleTicket");
                                 }
                             }
                         }
