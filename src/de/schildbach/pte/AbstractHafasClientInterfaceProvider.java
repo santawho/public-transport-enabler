@@ -418,7 +418,18 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
 
                     final JSONArray remList = jny.optJSONArray("remL");
                     String message = null;
-                    if (remList != null) {
+                    if (remList == null) {
+                        final JSONArray msgList = jny.optJSONArray("msgL");
+                        if (msgList != null) {
+                            for (int iRem = 0; iRem < msgList.length(); iRem++) {
+                                final JSONObject rem = msgList.getJSONObject(iRem);
+                                final String[] remark = remarks.get(rem.getInt("remX"));
+                                if (remark != null && "?M".equals(remark[0])) {
+                                    message = (message != null) ? message + '\n' + remark[1] : remark[1];
+                                }
+                            }
+                        }
+                    } else {
                         for (int iRem = 0; iRem < remList.length(); iRem++) {
                             final JSONObject rem = remList.getJSONObject(iRem);
                             final String[] remark = remarks.get(rem.getInt("remX"));
@@ -730,12 +741,24 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
 
                         final JSONArray remList = jny.optJSONArray("remL");
                         String message = null;
-                        if (remList != null) {
+                        if (remList == null) {
+                            final JSONArray msgList = jny.optJSONArray("msgL");
+                            if (msgList != null) {
+                                for (int iRem = 0; iRem < msgList.length(); iRem++) {
+                                    final JSONObject rem = msgList.getJSONObject(iRem);
+                                    final String[] remark = remarks.get(rem.getInt("remX"));
+                                    if (remark != null && "?M".equals(remark[0])) {
+                                        message = (message != null) ? message + '\n' + remark[1] : remark[1];
+                                    }
+                                }
+                            }
+                        } else {
                             for (int iRem = 0; iRem < remList.length(); iRem++) {
                                 final JSONObject rem = remList.getJSONObject(iRem);
                                 final String[] remark = remarks.get(rem.getInt("remX"));
-                                if ("l?".equals(remark[0]))
+                                if ("l?".equals(remark[0])) {
                                     message = remark[1];
+                                }
                             }
                         }
 
@@ -987,9 +1010,13 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
         for (int i = 0; i < remList.length(); i++) {
             final JSONObject rem = remList.getJSONObject(i);
             final String code = rem.optString("code", null);
+            final String type = rem.optString("type", null);
             final String txtS = rem.optString("txtS", null);
             final String txtN = rem.optString("txtN", null);
-            remarks.add(new String[] { code, txtS != null ? txtS : txtN });
+            remarks.add(new String[] {
+                    code != null && !code.isEmpty() ? code : (type != null ? "?" + type : "?"),
+                    txtN != null ? txtN : txtS
+            });
         }
 
         return remarks;
