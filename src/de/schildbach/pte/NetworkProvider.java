@@ -70,6 +70,8 @@ public interface NetworkProvider {
         BIKE
     }
 
+    void setUserInterfaceLanguage(@Nullable String userInterfaceLanguage);
+
     NetworkId id();
 
     boolean hasCapabilities(final Capability... capabilities);
