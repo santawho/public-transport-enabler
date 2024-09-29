@@ -21,6 +21,9 @@ package de.schildbach.pte;
  * @author Andreas Schildbach
  */
 public enum NetworkId {
+    // World
+    TRANSITUOUS,
+
     // Europe
     RT,
 
