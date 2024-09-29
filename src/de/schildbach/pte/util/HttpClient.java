@@ -168,6 +168,9 @@ public final class HttpClient {
         builder.addNetworkInterceptor(loggingInterceptor);
         builder.addInterceptor(retryInterceptor);
         builder.addInterceptor(xmlEncodingInterceptor);
+        HttpLoggingInterceptor interceptor = new HttpLoggingInterceptor();
+        interceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
+        builder.addInterceptor(interceptor);
         OKHTTP_CLIENT = builder.build();
     }
 
