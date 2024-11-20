@@ -30,17 +30,8 @@ public enum NetworkId {
     // Austria
     OEBB, VAO, VOR, WIEN, OOEVV, LINZ, SVV, VVT, STV, VMOBIL,
 
-    // Czech Republic
-    CZECH_REPUBLIC,
-
     // Switzerland
     VBL, ZVV, SEARCHCH,
-
-    // France
-    PARIS, FRANCESOUTHWEST, FRANCESOUTHEAST, FRANCENORTHWEST, FRANCENORTHEAST,
-
-    // Spain
-    SPAIN,
 
     // Netherlands
     NS, NEGENTWEE,
@@ -50,9 +41,6 @@ public enum NetworkId {
 
     // Sweden
     SE,
-
-    // Finland
-    FINLAND,
 
     // Luxembourg
     LU,
@@ -64,44 +52,17 @@ public enum NetworkId {
     EIREANN,
 
     // Poland
-    PL, PLNAVITIA,
-
-    // Portugal
-    PT,
-
-    // Italy
-    IT,
+    PL,
 
     // United Arab Emirates
     DUB,
 
     // United States
-    BART, RTACHICAGO, OREGON, MASSACHUSETTS, CMTA, NEWYORK, CALIFORNIA, WASHINGTONDC,
-
-    // Canada
-    ONTARIO, QUEBEC, BRITISHCOLUMBIA,
+    BART, RTACHICAGO, CMTA,
 
     //Costa RICA
     CR,
 
     // Australia
-    SYDNEY, AUSTRALIA,
-
-    // New Zealand
-    NZ,
-
-    // Africa
-    GHANA,
-
-    // Nicaragua
-    NICARAGUA,
-
-    // Brazil
-    BRAZIL, BRFLORIPA,
-
-    // Hungary
-    HUNGARY,
-    
-    //Israel
-    IL,
+    SYDNEY,
 }
