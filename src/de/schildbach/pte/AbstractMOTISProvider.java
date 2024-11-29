@@ -86,7 +86,6 @@ public class AbstractMOTISProvider extends AbstractNetworkProvider {
     @Override
     public SuggestLocationsResult suggestLocations(CharSequence constraint, @Nullable Set<LocationType> types,
                                                    int maxLocations) throws IOException {
-        // FIXME: Don't hardcode server
         HttpUrl url = api.newBuilder().addPathSegment("geocode").addQueryParameter("text", constraint.toString()).build();
 
         CharSequence response = httpClient.get(url);
@@ -96,8 +95,6 @@ public class AbstractMOTISProvider extends AbstractNetworkProvider {
         JSONArray json = new JSONArray(response.toString());
         ResultHeader header = new ResultHeader(NetworkId.TRANSITOUS, "MOTIS");
         for (int i = 0; i < json.length(); i++) {
-            System.out.println("Adding suggestion");
-
             JSONObject guessObj = json.getJSONObject(i);
             JSONArray boundaries = guessObj.getJSONArray("areas");
             SuggestedLocation loc = new SuggestedLocation(new Location(LocationType.STATION,
@@ -112,20 +109,20 @@ public class AbstractMOTISProvider extends AbstractNetworkProvider {
     }
 
     private Product parseMode(String mode) {
-        if (mode.equals("BUS")) {
-            return Product.BUS;
-        } else if (mode.equals("SUBWAY")) {
-            return Product.SUBWAY;
-        } else if (mode.equals("METRO")) {
-            return Product.SUBURBAN_TRAIN;
-        } else if (mode.equals("REGIONAL_RAIL")) {
-            return Product.REGIONAL_TRAIN;
-        } else if (mode.equals("COACH")) {
-            return Product.BUS;
-        } else if (mode.equals("TRAM")) {
-            return Product.TRAM;
-        } else {
-            return Product.ON_DEMAND;
+        switch (mode) {
+            case "BUS":
+            case "COACH":
+                return Product.BUS;
+            case "SUBWAY":
+                return Product.SUBWAY;
+            case "METRO":
+                return Product.SUBURBAN_TRAIN;
+            case "REGIONAL_RAIL":
+                return Product.REGIONAL_TRAIN;
+            case "TRAM":
+                return Product.TRAM;
+            default:
+                return Product.ON_DEMAND;
         }
     }
 
@@ -133,10 +130,44 @@ public class AbstractMOTISProvider extends AbstractNetworkProvider {
     @Override
     public QueryTripsResult queryTrips(final Location from, final @Nullable Location via, final Location to,
                                        final Date date, final boolean dep, @Nullable TripOptions options) throws IOException {
+        String transitModes = "TRANSIT";
+        if (options != null && options.products != null) {
+            ArrayList<String> transitModesBuilder = new ArrayList<>();
+            for (Product product : options.products) {
+                switch (product) {
+                    case TRAM:
+                        transitModesBuilder.add("TRAM");
+                        break;
+                    case SUBWAY:
+                        transitModesBuilder.add("SUBWAY");
+                        break;
+                    case FERRY:
+                        transitModesBuilder.add("FERRY");
+                        break;
+                    case BUS:
+                        transitModesBuilder.add("BUS");
+                        transitModesBuilder.add("COACH");
+                        break;
+                    case REGIONAL_TRAIN:
+                        transitModesBuilder.add("REGIONAL_RAIL");
+                        transitModesBuilder.add("REGIONAL_FAST_RAIL");
+                        break;
+                    case SUBURBAN_TRAIN:
+                        transitModesBuilder.add("METRO");
+                        break;
+                    case HIGH_SPEED_TRAIN:
+                        transitModesBuilder.add("RAIL");
+                        break;
+                }
+            }
+            transitModes = String.join(",", transitModesBuilder);
+        }
+
         @SuppressWarnings("NewApi") HttpUrl url = api.newBuilder().addPathSegment("plan")
                 .addQueryParameter("time", DateTimeFormatter.ISO_INSTANT.format(date.toInstant()))
                 .addQueryParameter("fromPlace", from.id != null ? from.id : String.format(Locale.US, "%f,%f,0", from.getLatAsDouble(), from.getLonAsDouble()))
                 .addQueryParameter("toPlace", to.id != null ? to.id : String.format(Locale.US, "%f,%f,0", to.getLatAsDouble(), to.getLonAsDouble()))
+                .addQueryParameter("transitModes", transitModes)
                 .build();
 
         CharSequence response = httpClient.get(url);
