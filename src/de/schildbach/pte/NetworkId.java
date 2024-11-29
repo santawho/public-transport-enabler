@@ -22,7 +22,7 @@ package de.schildbach.pte;
  */
 public enum NetworkId {
     // World
-    TRANSITUOUS,
+    TRANSITOUS,
 
     // Europe
     RT,
