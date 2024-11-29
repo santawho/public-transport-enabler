@@ -50,8 +50,7 @@ class MotisQueryTripsContext implements QueryTripsContext {
 }
 
 public class AbstractMOTISProvider extends AbstractNetworkProvider {
-    // FIXME: Set in child class
-    static String API = "https://europe.motis-project.de/api/v1/";
+    HttpUrl api;
 
 
     private final List<Capability> CAPABILITIES = Arrays.asList(
@@ -61,8 +60,9 @@ public class AbstractMOTISProvider extends AbstractNetworkProvider {
             Capability.DEPARTURES
     );
 
-    public AbstractMOTISProvider() {
+    public AbstractMOTISProvider(String apiUrl) {
         super(NetworkId.TRANSITOUS);
+        api = HttpUrl.parse(apiUrl).newBuilder().addPathSegment("api").addPathSegment("v1").build();
     }
 
     @Override
@@ -87,7 +87,7 @@ public class AbstractMOTISProvider extends AbstractNetworkProvider {
     public SuggestLocationsResult suggestLocations(CharSequence constraint, @Nullable Set<LocationType> types,
                                                    int maxLocations) throws IOException {
         // FIXME: Don't hardcode server
-        HttpUrl url = HttpUrl.parse(API).newBuilder().addPathSegment("geocode").addQueryParameter("text", constraint.toString()).build();
+        HttpUrl url = api.newBuilder().addPathSegment("geocode").addQueryParameter("text", constraint.toString()).build();
 
         CharSequence response = httpClient.get(url);
 
@@ -133,7 +133,7 @@ public class AbstractMOTISProvider extends AbstractNetworkProvider {
     @Override
     public QueryTripsResult queryTrips(final Location from, final @Nullable Location via, final Location to,
                                        final Date date, final boolean dep, @Nullable TripOptions options) throws IOException {
-        @SuppressWarnings("NewApi") HttpUrl url = HttpUrl.parse(API).newBuilder().addPathSegment("plan")
+        @SuppressWarnings("NewApi") HttpUrl url = api.newBuilder().addPathSegment("plan")
                 .addQueryParameter("time", DateTimeFormatter.ISO_INSTANT.format(date.toInstant()))
                 .addQueryParameter("fromPlace", from.id != null ? from.id : String.format(Locale.US, "%f,%f,0", from.getLatAsDouble(), from.getLonAsDouble()))
                 .addQueryParameter("toPlace", to.id != null ? to.id : String.format(Locale.US, "%f,%f,0", to.getLatAsDouble(), to.getLonAsDouble()))
@@ -240,7 +240,7 @@ public class AbstractMOTISProvider extends AbstractNetworkProvider {
                 legs.add(leg);
             }
 
-            Trip trip = new Trip(legs.toString(), from, to, legs, null, null, null);
+            Trip trip = new Trip(String.format("%s", legs.toString().hashCode()), from, to, legs, null, null, null);
             trips.add(trip);
         }
 
