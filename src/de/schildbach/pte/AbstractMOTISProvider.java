@@ -3,19 +3,11 @@ package de.schildbach.pte;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.awt.Color;
 import java.io.IOException;
-import java.io.Serializable;
-import java.sql.Array;
 import java.time.Instant;
-import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.time.format.FormatStyle;
-import java.time.temporal.TemporalAccessor;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -42,11 +34,7 @@ import de.schildbach.pte.dto.SuggestLocationsResult;
 import de.schildbach.pte.dto.SuggestedLocation;
 import de.schildbach.pte.dto.Trip;
 import de.schildbach.pte.dto.TripOptions;
-import de.schildbach.pte.util.HttpClient;
-import de.schildbach.pte.util.ParserUtils;
-import jdk.internal.org.jline.utils.Log;
 import okhttp3.HttpUrl;
-import okhttp3.internal.http2.Header;
 
 
 class MotisQueryTripsContext implements QueryTripsContext {
@@ -74,18 +62,25 @@ public class AbstractMOTISProvider extends AbstractNetworkProvider {
     );
 
     public AbstractMOTISProvider() {
-        super(NetworkId.TRANSITUOUS);
+        super(NetworkId.TRANSITOUS);
     }
-
 
     @Override
     public boolean hasCapability(Capability cap) {
         return CAPABILITIES.contains(cap);
     }
 
-    private Optional<String> getCity(JSONArray boundaries) {
+    private Optional<String> getBoundary(JSONArray boundaries, int max) {
         return IntStream.range(0, boundaries.length()).mapToObj(i -> boundaries.getJSONObject(boundaries.length() - 1 - i))
-                .filter((b) -> b.getInt("adminLevel") <= 8).findFirst().map((b) -> b.getString("name"));
+                .filter((b) -> b.getInt("adminLevel") <= max).findFirst().map((b) -> b.getString("name"));
+    }
+
+    private Optional<String> getCity(JSONArray boundaries) {
+        return getBoundary(boundaries, 8);
+    }
+
+    private Optional<String> getCountry(JSONArray boundaries) {
+        return getBoundary(boundaries, 2);
     }
 
     @Override
@@ -99,15 +94,16 @@ public class AbstractMOTISProvider extends AbstractNetworkProvider {
 
         List<SuggestedLocation> suggestions = new ArrayList<>();
         JSONArray json = new JSONArray(response.toString());
-        ResultHeader header = new ResultHeader(NetworkId.TRANSITUOUS, "MOTIS");
+        ResultHeader header = new ResultHeader(NetworkId.TRANSITOUS, "MOTIS");
         for (int i = 0; i < json.length(); i++) {
             System.out.println("Adding suggestion");
 
             JSONObject guessObj = json.getJSONObject(i);
+            JSONArray boundaries = guessObj.getJSONArray("areas");
             SuggestedLocation loc = new SuggestedLocation(new Location(LocationType.STATION,
                     guessObj.getString("type").equals("STOP") ? guessObj.getString("id") : null,
                     Point.fromDouble(guessObj.getDouble("lat"), guessObj.getDouble("lon")),
-                    getCity(guessObj.getJSONArray("areas")).orElse(null),
+                    getCity(boundaries).flatMap(city -> getCountry(boundaries).map(country -> city + ", " + country)).orElse(null),
                     guessObj.getString("name")));
             suggestions.add(loc);
         }
@@ -145,7 +141,7 @@ public class AbstractMOTISProvider extends AbstractNetworkProvider {
 
         CharSequence response = httpClient.get(url);
 
-        ResultHeader header = new ResultHeader(NetworkId.TRANSITUOUS, "MOTIS");
+        ResultHeader header = new ResultHeader(NetworkId.TRANSITOUS, "MOTIS");
 
 
         JSONObject obj = new JSONObject(response.toString());
