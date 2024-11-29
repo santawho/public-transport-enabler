@@ -108,7 +108,7 @@ public class AbstractMOTISProvider extends AbstractNetworkProvider {
         return new SuggestLocationsResult(header, suggestions);
     }
 
-    private Product parseMode(String mode) {
+    private Product parseMode(String mode) throws IOException {
         switch (mode) {
             case "BUS":
             case "COACH":
@@ -118,11 +118,17 @@ public class AbstractMOTISProvider extends AbstractNetworkProvider {
             case "METRO":
                 return Product.SUBURBAN_TRAIN;
             case "REGIONAL_RAIL":
+            case "REGIONAL_FAST_RAIL":
                 return Product.REGIONAL_TRAIN;
             case "TRAM":
                 return Product.TRAM;
+            case "FERRY":
+                return Product.FERRY;
+            case "NIGHT_RAIL":
+            case "LONG_DISTANCE":
+                return Product.HIGH_SPEED_TRAIN;
             default:
-                return Product.ON_DEMAND;
+                throw new IOException("Unknown transport mode");
         }
     }
 
