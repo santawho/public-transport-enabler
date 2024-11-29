@@ -38,14 +38,34 @@ import okhttp3.HttpUrl;
 
 
 class MotisQueryTripsContext implements QueryTripsContext {
+    public String previousCursor;
+    public String nextCursor;
+    public String url;
+    public Location from;
+    public Location via;
+    public Location to;
+    public Date date;
+
+    MotisQueryTripsContext(String url,
+                           String previousCursor, String nextCursor,
+                           Location from, Location via, Location to, Date date) {
+        this.url = url;
+        this.previousCursor = previousCursor;
+        this.nextCursor = nextCursor;
+        this.from = from;
+        this.via = via;
+        this.to = to;
+        this.date = date;
+    }
+
     @Override
     public boolean canQueryLater() {
-        return false;
+        return nextCursor != null;
     }
 
     @Override
     public boolean canQueryEarlier() {
-        return false;
+        return previousCursor != null;
     }
 }
 
@@ -133,9 +153,9 @@ public class AbstractMOTISProvider extends AbstractNetworkProvider {
     }
 
     @SuppressWarnings("NewApi")
-    @Override
-    public QueryTripsResult queryTrips(final Location from, final @Nullable Location via, final Location to,
-                                       final Date date, final boolean dep, @Nullable TripOptions options) throws IOException {
+    private QueryTripsResult queryTripsInternal(final Location from, final @Nullable Location via, final Location to,
+                                                final Date date, final boolean dep, @Nullable TripOptions options,
+                                                @Nullable String contextUrl, final String cursor) throws IOException {
         String transitModes = "TRANSIT";
         if (options != null && options.products != null) {
             ArrayList<String> transitModesBuilder = new ArrayList<>();
@@ -169,17 +189,27 @@ public class AbstractMOTISProvider extends AbstractNetworkProvider {
             transitModes = String.join(",", transitModesBuilder);
         }
 
-        @SuppressWarnings("NewApi") HttpUrl url = api.newBuilder().addPathSegment("plan")
-                .addQueryParameter("time", DateTimeFormatter.ISO_INSTANT.format(date.toInstant()))
-                .addQueryParameter("fromPlace", from.id != null ? from.id : String.format(Locale.US, "%f,%f,0", from.getLatAsDouble(), from.getLonAsDouble()))
-                .addQueryParameter("toPlace", to.id != null ? to.id : String.format(Locale.US, "%f,%f,0", to.getLatAsDouble(), to.getLonAsDouble()))
-                .addQueryParameter("transitModes", transitModes)
-                .build();
+        HttpUrl.Builder builder;
+
+        if (contextUrl == null) {
+            builder = api.newBuilder().addPathSegment("plan")
+                    .addQueryParameter("time", DateTimeFormatter.ISO_INSTANT.format(date.toInstant()))
+                    .addQueryParameter("fromPlace", from.id != null ? from.id : String.format(Locale.US, "%f,%f,0", from.getLatAsDouble(), from.getLonAsDouble()))
+                    .addQueryParameter("toPlace", to.id != null ? to.id : String.format(Locale.US, "%f,%f,0", to.getLatAsDouble(), to.getLonAsDouble()))
+                    .addQueryParameter("transitModes", transitModes);
+        } else {
+            builder = HttpUrl.parse(contextUrl).newBuilder();
+        }
+
+        if (cursor != null) {
+            builder.addQueryParameter("pageCursor", cursor);
+        }
+
+        HttpUrl url = builder.build();
 
         CharSequence response = httpClient.get(url);
 
         ResultHeader header = new ResultHeader(NetworkId.TRANSITOUS, "MOTIS");
-
 
         JSONObject obj = new JSONObject(response.toString());
 
@@ -281,12 +311,27 @@ public class AbstractMOTISProvider extends AbstractNetworkProvider {
             trips.add(trip);
         }
 
-        return new QueryTripsResult(header, url.toString(), from, via, to, new MotisQueryTripsContext(), trips);
+        return new QueryTripsResult(header, url.toString(), from, via, to,
+                new MotisQueryTripsContext(
+                    contextUrl != null ? contextUrl : url.toString(),
+                    obj.has("previousPageCursor") ? obj.getString("previousPageCursor") : null,
+                    obj.has("nextPageCursor") ? obj.getString("nextPageCursor") : null,
+                from,
+                via,
+                to, date),
+                trips);
+    }
+
+    @Override
+    public QueryTripsResult queryTrips(final Location from, final @Nullable Location via, final Location to,
+                                                final Date date, final boolean dep, @Nullable TripOptions options) throws IOException {
+        return queryTripsInternal(from, via, to, date, dep, options, null, null);
     }
 
     @Override
     public QueryTripsResult queryMoreTrips(final QueryTripsContext contextObj, final boolean later) throws IOException {
-        throw new IOException();
+        MotisQueryTripsContext ctx = (MotisQueryTripsContext)contextObj;
+        return queryTripsInternal(ctx.from, ctx.via, ctx.to, ctx.date, false, null, ctx.url, later ? ctx.nextCursor : ctx.previousCursor);
     }
 
 
