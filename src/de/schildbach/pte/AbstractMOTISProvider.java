@@ -171,7 +171,6 @@ public class AbstractMOTISProvider extends AbstractNetworkProvider {
         }
     }
 
-    @SuppressWarnings("NewApi")
     private QueryTripsResult queryTripsInternal(final Location from, final @Nullable Location via, final Location to,
                                                 final Date date, final boolean dep, @Nullable TripOptions options,
                                                 @Nullable String contextUrl, final String cursor) throws IOException {
@@ -335,9 +334,7 @@ public class AbstractMOTISProvider extends AbstractNetworkProvider {
                         contextUrl != null ? contextUrl : url.toString(),
                         obj.has("previousPageCursor") ? obj.getString("previousPageCursor") : null,
                         obj.has("nextPageCursor") ? obj.getString("nextPageCursor") : null,
-                        from,
-                        via,
-                        to, date),
+                        from, via, to, date),
                 trips);
     }
 
@@ -364,7 +361,6 @@ public class AbstractMOTISProvider extends AbstractNetworkProvider {
         };
     }
 
-    @SuppressWarnings("NewApi")
     @Override
     public QueryDeparturesResult queryDepartures(String stationId, @Nullable Date time, int maxDepartures, boolean equivs)
             throws IOException {
@@ -388,7 +384,7 @@ public class AbstractMOTISProvider extends AbstractNetworkProvider {
         HashMap<String, Location> stops = new HashMap<>();
 
         // lines
-        Set<LineDestination> lines = new HashSet<LineDestination>();
+        Set<LineDestination> lines = new HashSet<>();
 
         JSONArray departuresJson = json.getJSONArray("stopTimes");
         for (int i = 0; i < departuresJson.length(); i++) {
@@ -418,7 +414,7 @@ public class AbstractMOTISProvider extends AbstractNetworkProvider {
             if (departures.containsKey(place.getString("stopId"))) {
                 departures.get(place.getString("stopId")).add(departure);
             } else {
-                departures.put(place.getString("stopId"), new ArrayList<>(Arrays.asList(new Departure[] {departure})));
+                departures.put(place.getString("stopId"), new ArrayList<>(Arrays.asList(new Departure[]{departure})));
             }
         }
 
