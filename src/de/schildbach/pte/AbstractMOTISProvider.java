@@ -4,11 +4,14 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.sql.Array;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -17,7 +20,9 @@ import java.util.stream.IntStream;
 
 import javax.annotation.Nullable;
 
+import de.schildbach.pte.dto.Departure;
 import de.schildbach.pte.dto.Line;
+import de.schildbach.pte.dto.LineDestination;
 import de.schildbach.pte.dto.Location;
 import de.schildbach.pte.dto.LocationType;
 import de.schildbach.pte.dto.NearbyLocationsResult;
@@ -28,6 +33,7 @@ import de.schildbach.pte.dto.QueryDeparturesResult;
 import de.schildbach.pte.dto.QueryTripsContext;
 import de.schildbach.pte.dto.QueryTripsResult;
 import de.schildbach.pte.dto.ResultHeader;
+import de.schildbach.pte.dto.StationDepartures;
 import de.schildbach.pte.dto.Stop;
 import de.schildbach.pte.dto.Style;
 import de.schildbach.pte.dto.SuggestLocationsResult;
@@ -76,7 +82,6 @@ public class AbstractMOTISProvider extends AbstractNetworkProvider {
     private final List<Capability> CAPABILITIES = Arrays.asList(
             Capability.SUGGEST_LOCATIONS,
             Capability.TRIPS,
-            Capability.TRIPS_VIA,
             Capability.DEPARTURES
     );
 
@@ -128,7 +133,7 @@ public class AbstractMOTISProvider extends AbstractNetworkProvider {
         return new SuggestLocationsResult(header, suggestions);
     }
 
-    private Product parseMode(String mode) throws IOException {
+    private Product parseMode(String mode) {
         switch (mode) {
             case "BUS":
             case "COACH":
@@ -146,9 +151,10 @@ public class AbstractMOTISProvider extends AbstractNetworkProvider {
                 return Product.FERRY;
             case "NIGHT_RAIL":
             case "LONG_DISTANCE":
+            case "HIGHSPEED_RAIL":
                 return Product.HIGH_SPEED_TRAIN;
             default:
-                throw new IOException("Unknown transport mode");
+                return null;
         }
     }
 
@@ -299,7 +305,7 @@ public class AbstractMOTISProvider extends AbstractNetworkProvider {
                                     arrivalTime,
                                     null, null),
                             stops,
-                            new ArrayList<Point>(),
+                            new ArrayList<>(),
                             null
                     );
                 }
@@ -313,38 +319,101 @@ public class AbstractMOTISProvider extends AbstractNetworkProvider {
 
         return new QueryTripsResult(header, url.toString(), from, via, to,
                 new MotisQueryTripsContext(
-                    contextUrl != null ? contextUrl : url.toString(),
-                    obj.has("previousPageCursor") ? obj.getString("previousPageCursor") : null,
-                    obj.has("nextPageCursor") ? obj.getString("nextPageCursor") : null,
-                from,
-                via,
-                to, date),
+                        contextUrl != null ? contextUrl : url.toString(),
+                        obj.has("previousPageCursor") ? obj.getString("previousPageCursor") : null,
+                        obj.has("nextPageCursor") ? obj.getString("nextPageCursor") : null,
+                        from,
+                        via,
+                        to, date),
                 trips);
     }
 
     @Override
     public QueryTripsResult queryTrips(final Location from, final @Nullable Location via, final Location to,
-                                                final Date date, final boolean dep, @Nullable TripOptions options) throws IOException {
+                                       final Date date, final boolean dep, @Nullable TripOptions options) throws IOException {
         return queryTripsInternal(from, via, to, date, dep, options, null, null);
     }
 
     @Override
     public QueryTripsResult queryMoreTrips(final QueryTripsContext contextObj, final boolean later) throws IOException {
-        MotisQueryTripsContext ctx = (MotisQueryTripsContext)contextObj;
+        MotisQueryTripsContext ctx = (MotisQueryTripsContext) contextObj;
         return queryTripsInternal(ctx.from, ctx.via, ctx.to, ctx.date, false, null, ctx.url, later ? ctx.nextCursor : ctx.previousCursor);
     }
 
 
     @Override
     public Point[] getArea() throws IOException {
-        return new Point[]{Point.fromDouble(0, 0), Point.fromDouble(0, 0), Point.fromDouble(0, 0), Point.fromDouble(0, 0)};
+        return new Point[]{
+                Point.fromDouble(0, 0),
+                Point.fromDouble(0, 0),
+                Point.fromDouble(0, 0),
+                Point.fromDouble(0, 0)
+        };
     }
 
+    @SuppressWarnings("NewApi")
     @Override
     public QueryDeparturesResult queryDepartures(String stationId, @Nullable Date time, int maxDepartures, boolean equivs)
             throws IOException {
-        // FIXME: Must be implemented for oeffi to be usable
-        throw new IOException("Unimplemented");
+        HttpUrl url = api.newBuilder()
+                .addPathSegment("stoptimes")
+                .addQueryParameter("stopId", stationId)
+                .addQueryParameter("time", DateTimeFormatter.ISO_INSTANT.format(time.toInstant()))
+                .addQueryParameter("n", "20")
+                .build();
+        CharSequence response = httpClient.get(url);
+        JSONObject json = new JSONObject(response.toString());
+
+        ResultHeader header = new ResultHeader(NetworkId.TRANSITOUS, "MOTIS");
+        QueryDeparturesResult result = new QueryDeparturesResult(header);
+
+        // departures by stop id
+        HashMap<String, ArrayList<Departure>> departures = new HashMap<>();
+
+        // stop location by stop id
+        HashMap<String, Location> stops = new HashMap<>();
+
+        // lines
+        Set<LineDestination> lines = new HashSet<LineDestination>();
+
+        JSONArray departuresJson = json.getJSONArray("stopTimes");
+        for (int i = 0; i < departuresJson.length(); i++) {
+            JSONObject stopTime = departuresJson.getJSONObject(i);
+
+            JSONObject place = stopTime.getJSONObject("place");
+
+            // skip arrivals
+            if (!place.has("scheduledDeparture") || !place.has("departure")) {
+                continue;
+            }
+
+            // line
+            Line line = new Line(null, null, parseMode(stopTime.getString("mode")), stopTime.getString("routeShortName"));
+            Location destination = new Location(LocationType.STATION, null, null, stopTime.getString("headsign"));
+            lines.add(new LineDestination(line, destination));
+
+            // location
+            Location stop = new Location(LocationType.STATION, place.getString("stopId"), Point.fromDouble(place.getDouble("lat"), place.getDouble("lon")), null, place.getString("name"));
+            stops.put(stopTime.getJSONObject("place").getString("stopId"), stop);
+
+            // departure
+            Date plannedDepartureTime = Date.from(DateTimeFormatter.ISO_INSTANT.parse(place.getString("scheduledDeparture"), Instant::from));
+            Date departureTime = Date.from(DateTimeFormatter.ISO_INSTANT.parse(place.getString("departure"), Instant::from));
+
+            Departure departure = new Departure(plannedDepartureTime, departureTime, line, null, destination, null, null);
+            if (departures.containsKey(place.getString("stopId"))) {
+                departures.get(place.getString("stopId")).add(departure);
+            } else {
+                departures.put(place.getString("stopId"), new ArrayList<>(Arrays.asList(new Departure[] {departure})));
+            }
+        }
+
+        for (String stopId : departures.keySet()) {
+            StationDepartures station = new StationDepartures(stops.get(stopId), departures.get(stopId), new ArrayList<>(lines));
+            result.stationDepartures.add(station);
+        }
+
+        return result;
     }
 
     @Override
