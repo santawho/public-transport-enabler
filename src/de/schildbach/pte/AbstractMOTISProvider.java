@@ -134,8 +134,9 @@ public class AbstractMOTISProvider extends AbstractNetworkProvider {
         for (int i = 0; i < json.length(); i++) {
             JSONObject guessObj = json.getJSONObject(i);
             JSONArray boundaries = guessObj.getJSONArray("areas");
-            SuggestedLocation loc = new SuggestedLocation(new Location(parseLocationType(guessObj.getString("type")),
-                    guessObj.has("id") ? guessObj.getString("id") : null,
+            LocationType type = parseLocationType(guessObj.getString("type"));
+            SuggestedLocation loc = new SuggestedLocation(new Location(type,
+                    type == LocationType.STATION ? guessObj.getString("id") : null,
                     Point.fromDouble(guessObj.getDouble("lat"), guessObj.getDouble("lon")),
                     getCity(boundaries).flatMap(city -> getCountry(boundaries).map(country -> city + ", " + country)).orElse(null),
                     guessObj.getString("name")));
