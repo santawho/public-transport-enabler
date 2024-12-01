@@ -108,6 +108,19 @@ public class AbstractMOTISProvider extends AbstractNetworkProvider {
         return getBoundary(boundaries, 2);
     }
 
+    private LocationType parseLocationType(String type) {
+        switch (type) {
+            case "STOP":
+                return LocationType.STATION;
+            case "PLACE":
+                return LocationType.POI;
+            case "ADDRESS":
+                return LocationType.ADDRESS;
+            default:
+                return LocationType.ANY;
+        }
+    }
+
     @Override
     public SuggestLocationsResult suggestLocations(CharSequence constraint, @Nullable Set<LocationType> types,
                                                    int maxLocations) throws IOException {
@@ -115,15 +128,14 @@ public class AbstractMOTISProvider extends AbstractNetworkProvider {
 
         CharSequence response = httpClient.get(url);
 
-
         List<SuggestedLocation> suggestions = new ArrayList<>();
         JSONArray json = new JSONArray(response.toString());
         ResultHeader header = new ResultHeader(NetworkId.TRANSITOUS, "MOTIS");
         for (int i = 0; i < json.length(); i++) {
             JSONObject guessObj = json.getJSONObject(i);
             JSONArray boundaries = guessObj.getJSONArray("areas");
-            SuggestedLocation loc = new SuggestedLocation(new Location(LocationType.STATION,
-                    guessObj.getString("type").equals("STOP") ? guessObj.getString("id") : null,
+            SuggestedLocation loc = new SuggestedLocation(new Location(parseLocationType(guessObj.getString("type")),
+                    guessObj.has("id") ? guessObj.getString("id") : null,
                     Point.fromDouble(guessObj.getDouble("lat"), guessObj.getDouble("lon")),
                     getCity(boundaries).flatMap(city -> getCountry(boundaries).map(country -> city + ", " + country)).orElse(null),
                     guessObj.getString("name")));
@@ -344,10 +356,10 @@ public class AbstractMOTISProvider extends AbstractNetworkProvider {
     @Override
     public Point[] getArea() throws IOException {
         return new Point[]{
-                Point.fromDouble(0, 0),
-                Point.fromDouble(0, 0),
-                Point.fromDouble(0, 0),
-                Point.fromDouble(0, 0)
+                Point.fromDouble(90, 0),
+                Point.fromDouble(90, 180),
+                Point.fromDouble(-90, 180),
+                Point.fromDouble(-90, 0)
         };
     }
 
@@ -359,7 +371,8 @@ public class AbstractMOTISProvider extends AbstractNetworkProvider {
                 .addPathSegment("stoptimes")
                 .addQueryParameter("stopId", stationId)
                 .addQueryParameter("time", DateTimeFormatter.ISO_INSTANT.format(time.toInstant()))
-                .addQueryParameter("n", "20")
+                .addQueryParameter("n", String.format(Locale.US, "%d", maxDepartures))
+                .addQueryParameter("radius", "100")
                 .build();
         CharSequence response = httpClient.get(url);
         JSONObject json = new JSONObject(response.toString());
@@ -418,7 +431,6 @@ public class AbstractMOTISProvider extends AbstractNetworkProvider {
 
     @Override
     public NearbyLocationsResult queryNearbyLocations(Set<LocationType> ls, Location l, int i, int j) throws IOException {
-        // FIXME: Must be implemented for oeffi to be usable
         throw new IOException("Unimplemented");
     }
 
