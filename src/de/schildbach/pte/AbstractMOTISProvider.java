@@ -1,6 +1,8 @@
 package de.schildbach.pte;
 
+import org.checkerframework.checker.units.qual.N;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
@@ -95,16 +97,22 @@ public class AbstractMOTISProvider extends AbstractNetworkProvider {
         return CAPABILITIES.contains(cap);
     }
 
-    private Optional<String> getBoundary(JSONArray boundaries, int max) {
-        return IntStream.range(0, boundaries.length()).mapToObj(i -> boundaries.getJSONObject(boundaries.length() - 1 - i))
-                .filter((b) -> b.getInt("adminLevel") <= max).findFirst().map((b) -> b.getString("name"));
+    private @Nullable String getBoundary(JSONArray boundaries, int max) throws JSONException {
+        for (int i = 0; i < boundaries.length(); i++) {
+            JSONObject boundary = boundaries.getJSONObject(boundaries.length() - 1 - i);
+            if (boundary.getInt("adminLevel") <= max) {
+                return boundary.getString("name");
+            }
+        }
+
+        return null;
     }
 
-    private Optional<String> getCity(JSONArray boundaries) {
+    private @Nullable String getCity(JSONArray boundaries) throws JSONException {
         return getBoundary(boundaries, 8);
     }
 
-    private Optional<String> getCountry(JSONArray boundaries) {
+    private @Nullable String getCountry(JSONArray boundaries) throws JSONException {
         return getBoundary(boundaries, 2);
     }
 
@@ -129,21 +137,37 @@ public class AbstractMOTISProvider extends AbstractNetworkProvider {
         CharSequence response = httpClient.get(url);
 
         List<SuggestedLocation> suggestions = new ArrayList<>();
-        JSONArray json = new JSONArray(response.toString());
-        ResultHeader header = new ResultHeader(NetworkId.TRANSITOUS, "MOTIS");
-        for (int i = 0; i < json.length(); i++) {
-            JSONObject guessObj = json.getJSONObject(i);
-            JSONArray boundaries = guessObj.getJSONArray("areas");
-            LocationType type = parseLocationType(guessObj.getString("type"));
-            SuggestedLocation loc = new SuggestedLocation(new Location(type,
-                    type == LocationType.STATION ? guessObj.getString("id") : null,
-                    Point.fromDouble(guessObj.getDouble("lat"), guessObj.getDouble("lon")),
-                    getCity(boundaries).flatMap(city -> getCountry(boundaries).map(country -> city + ", " + country)).orElse(null),
-                    guessObj.getString("name")));
-            suggestions.add(loc);
-        }
 
-        return new SuggestLocationsResult(header, suggestions);
+        try {
+
+            JSONArray json = new JSONArray(response.toString());
+            ResultHeader header = new ResultHeader(NetworkId.TRANSITOUS, "MOTIS");
+
+            for (int i = 0; i < json.length(); i++) {
+                JSONObject guessObj = json.getJSONObject(i);
+                JSONArray boundaries = guessObj.getJSONArray("areas");
+
+
+                String suggestedName = null;
+                String city = getCity(boundaries);
+                String country = getCountry(boundaries);
+                if (city != null && country != null) {
+                    suggestedName = city + ", " + country;
+                }
+
+                LocationType type = parseLocationType(guessObj.getString("type"));
+                SuggestedLocation loc = new SuggestedLocation(new Location(type,
+                        type == LocationType.STATION ? guessObj.getString("id") : null,
+                        Point.fromDouble(guessObj.getDouble("lat"), guessObj.getDouble("lon")),
+                        suggestedName,
+                        guessObj.getString("name")));
+                suggestions.add(loc);
+            }
+
+            return new SuggestLocationsResult(header, suggestions);
+        } catch (JSONException exc) {
+            throw new IOException(exc.toString());
+        }
     }
 
     private Product parseMode(String mode) {
@@ -173,7 +197,7 @@ public class AbstractMOTISProvider extends AbstractNetworkProvider {
 
     private QueryTripsResult queryTripsInternal(final Location from, final @Nullable Location via, final Location to,
                                                 final Date date, final boolean dep, @Nullable TripOptions options,
-                                                @Nullable String contextUrl, final String cursor) throws IOException {
+                                                @Nullable String contextUrl, final String cursor) throws IOException, JSONException {
         String transitModes = "TRANSIT";
         if (options != null && options.products != null) {
             ArrayList<String> transitModesBuilder = new ArrayList<>();
@@ -341,13 +365,22 @@ public class AbstractMOTISProvider extends AbstractNetworkProvider {
     @Override
     public QueryTripsResult queryTrips(final Location from, final @Nullable Location via, final Location to,
                                        final Date date, final boolean dep, @Nullable TripOptions options) throws IOException {
-        return queryTripsInternal(from, via, to, date, dep, options, null, null);
+        try {
+            return queryTripsInternal(from, via, to, date, dep, options, null, null);
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
+        }
+
     }
 
     @Override
     public QueryTripsResult queryMoreTrips(final QueryTripsContext contextObj, final boolean later) throws IOException {
-        MotisQueryTripsContext ctx = (MotisQueryTripsContext) contextObj;
-        return queryTripsInternal(ctx.from, ctx.via, ctx.to, ctx.date, false, null, ctx.url, later ? ctx.nextCursor : ctx.previousCursor);
+        try {
+            MotisQueryTripsContext ctx = (MotisQueryTripsContext) contextObj;
+            return queryTripsInternal(ctx.from, ctx.via, ctx.to, ctx.date, false, null, ctx.url, later ? ctx.nextCursor : ctx.previousCursor);
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 
@@ -364,66 +397,72 @@ public class AbstractMOTISProvider extends AbstractNetworkProvider {
     @Override
     public QueryDeparturesResult queryDepartures(String stationId, @Nullable Date time, int maxDepartures, boolean equivs)
             throws IOException {
-        HttpUrl url = api.newBuilder()
-                .addPathSegment("stoptimes")
-                .addQueryParameter("stopId", stationId)
-                .addQueryParameter("time", DateTimeFormatter.ISO_INSTANT.format(time.toInstant()))
-                .addQueryParameter("n", String.format(Locale.US, "%d", maxDepartures))
-                .addQueryParameter("radius", "100")
-                .build();
-        CharSequence response = httpClient.get(url);
-        JSONObject json = new JSONObject(response.toString());
 
-        ResultHeader header = new ResultHeader(NetworkId.TRANSITOUS, "MOTIS");
-        QueryDeparturesResult result = new QueryDeparturesResult(header);
+        try {
+            HttpUrl url = api.newBuilder()
+                    .addPathSegment("stoptimes")
+                    .addQueryParameter("stopId", stationId)
+                    .addQueryParameter("time", DateTimeFormatter.ISO_INSTANT.format(time.toInstant()))
+                    .addQueryParameter("n", String.format(Locale.US, "%d", maxDepartures))
+                    .addQueryParameter("radius", "100")
+                    .build();
+            CharSequence response = httpClient.get(url);
+            JSONObject json = new JSONObject(response.toString());
 
-        // departures by stop id
-        HashMap<String, ArrayList<Departure>> departures = new HashMap<>();
+            ResultHeader header = new ResultHeader(NetworkId.TRANSITOUS, "MOTIS");
+            QueryDeparturesResult result = new QueryDeparturesResult(header);
 
-        // stop location by stop id
-        HashMap<String, Location> stops = new HashMap<>();
+            // departures by stop id
+            HashMap<String, ArrayList<Departure>> departures = new HashMap<>();
 
-        // lines
-        Set<LineDestination> lines = new HashSet<>();
+            // stop location by stop id
+            HashMap<String, Location> stops = new HashMap<>();
 
-        JSONArray departuresJson = json.getJSONArray("stopTimes");
-        for (int i = 0; i < departuresJson.length(); i++) {
-            JSONObject stopTime = departuresJson.getJSONObject(i);
+            // lines
+            Set<LineDestination> lines = new HashSet<>();
 
-            JSONObject place = stopTime.getJSONObject("place");
+            JSONArray departuresJson = json.getJSONArray("stopTimes");
+            for (int i = 0; i < departuresJson.length(); i++) {
+                JSONObject stopTime = departuresJson.getJSONObject(i);
 
-            // skip arrivals
-            if (!place.has("scheduledDeparture") || !place.has("departure")) {
-                continue;
+                JSONObject place = stopTime.getJSONObject("place");
+
+                // skip arrivals
+                if (!place.has("scheduledDeparture") || !place.has("departure")) {
+                    continue;
+                }
+
+                // line
+                Line line = new Line(null, null, parseMode(stopTime.getString("mode")), stopTime.getString("routeShortName"));
+                Location destination = new Location(LocationType.STATION, null, null, stopTime.getString("headsign"));
+                lines.add(new LineDestination(line, destination));
+
+                // location
+                Location stop = new Location(LocationType.STATION, place.getString("stopId"), Point.fromDouble(place.getDouble("lat"), place.getDouble("lon")), null, place.getString("name"));
+                stops.put(stopTime.getJSONObject("place").getString("stopId"), stop);
+
+                // departure
+                Date plannedDepartureTime = Date.from(DateTimeFormatter.ISO_INSTANT.parse(place.getString("scheduledDeparture"), Instant::from));
+                Date departureTime = Date.from(DateTimeFormatter.ISO_INSTANT.parse(place.getString("departure"), Instant::from));
+
+                Departure departure = new Departure(plannedDepartureTime, departureTime, line, null, destination, null, null);
+                if (departures.containsKey(place.getString("stopId"))) {
+                    departures.get(place.getString("stopId")).add(departure);
+                } else {
+                    departures.put(place.getString("stopId"), new ArrayList<>(Arrays.asList(new Departure[]{departure})));
+                }
             }
 
-            // line
-            Line line = new Line(null, null, parseMode(stopTime.getString("mode")), stopTime.getString("routeShortName"));
-            Location destination = new Location(LocationType.STATION, null, null, stopTime.getString("headsign"));
-            lines.add(new LineDestination(line, destination));
-
-            // location
-            Location stop = new Location(LocationType.STATION, place.getString("stopId"), Point.fromDouble(place.getDouble("lat"), place.getDouble("lon")), null, place.getString("name"));
-            stops.put(stopTime.getJSONObject("place").getString("stopId"), stop);
-
-            // departure
-            Date plannedDepartureTime = Date.from(DateTimeFormatter.ISO_INSTANT.parse(place.getString("scheduledDeparture"), Instant::from));
-            Date departureTime = Date.from(DateTimeFormatter.ISO_INSTANT.parse(place.getString("departure"), Instant::from));
-
-            Departure departure = new Departure(plannedDepartureTime, departureTime, line, null, destination, null, null);
-            if (departures.containsKey(place.getString("stopId"))) {
-                departures.get(place.getString("stopId")).add(departure);
-            } else {
-                departures.put(place.getString("stopId"), new ArrayList<>(Arrays.asList(new Departure[]{departure})));
+            for (String stopId : departures.keySet()) {
+                StationDepartures station = new StationDepartures(stops.get(stopId), departures.get(stopId), new ArrayList<>(lines));
+                result.stationDepartures.add(station);
             }
+
+            return result;
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
         }
 
-        for (String stopId : departures.keySet()) {
-            StationDepartures station = new StationDepartures(stops.get(stopId), departures.get(stopId), new ArrayList<>(lines));
-            result.stationDepartures.add(station);
-        }
-
-        return result;
     }
 
     @Override
