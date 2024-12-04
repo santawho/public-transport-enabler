@@ -121,6 +121,22 @@ public class AbstractMOTISProvider extends AbstractNetworkProvider {
         }
     }
 
+    private @Nullable Style parseStyle(JSONObject obj) {
+        if (obj.has("routeColor")) {
+            int backgroundColor = Style.parseColor("#" + obj.getString("routeColor"));
+            int foregroundColor;
+
+            if (obj.has("routeTextColor")) {
+                foregroundColor = Style.parseColor("#" + obj.getString("routeTextColor"));
+            } else {
+                foregroundColor = Style.BLACK;
+            }
+            return new Style(backgroundColor, foregroundColor);
+        }
+
+        return null;
+    }
+
     @Override
     public SuggestLocationsResult suggestLocations(CharSequence constraint, @Nullable Set<LocationType> types,
                                                    int maxLocations) throws IOException {
@@ -271,18 +287,7 @@ public class AbstractMOTISProvider extends AbstractNetworkProvider {
                     Date plannedArrivalTime = Date.from(DateTimeFormatter.ISO_INSTANT.parse(legTo.getString("scheduledArrival"), Instant::from));
                     Date arrivalTime = Date.from(DateTimeFormatter.ISO_INSTANT.parse(legTo.getString("arrival"), Instant::from));
 
-                    Style style = null;
-                    if (legJson.has("routeColor")) {
-                        int backgroundColor = Style.parseColor("#" + legJson.getString("routeColor"));
-                        int foregroundColor;
-
-                        if (legJson.has("routeTextColor")) {
-                            foregroundColor = Style.parseColor("#" + legJson.getString("routeTextColor"));
-                        } else {
-                            foregroundColor = Style.BLACK;
-                        }
-                        style = new Style(backgroundColor, foregroundColor);
-                    }
+                    Style style = parseStyle(legJson);
 
                     JSONArray stopsJson = legJson.getJSONArray("intermediateStops");
                     ArrayList<Stop> stops = new ArrayList<>();
@@ -398,7 +403,9 @@ public class AbstractMOTISProvider extends AbstractNetworkProvider {
             }
 
             // line
-            Line line = new Line(null, null, parseMode(stopTime.getString("mode")), stopTime.getString("routeShortName"));
+            Style style = parseStyle(stopTime);
+            Line line = new Line(null, null, parseMode(stopTime.getString("mode")), stopTime.getString("routeShortName"), style);
+
             Location destination = new Location(LocationType.STATION, null, null, stopTime.getString("headsign"));
             lines.add(new LineDestination(line, destination));
 
