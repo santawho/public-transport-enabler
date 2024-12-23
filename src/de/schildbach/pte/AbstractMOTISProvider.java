@@ -77,7 +77,7 @@ class MotisQueryTripsContext implements QueryTripsContext {
     }
 }
 
-public class AbstractMOTISProvider extends AbstractNetworkProvider {
+public abstract class AbstractMOTISProvider extends AbstractNetworkProvider {
     HttpUrl api;
 
 
