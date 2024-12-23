@@ -46,8 +46,8 @@ import okhttp3.HttpUrl;
 
 
 class MotisQueryTripsContext implements QueryTripsContext {
-    public String previousCursor;
-    public String nextCursor;
+    public @Nullable String previousCursor;
+    public @Nullable String nextCursor;
     public String url;
     public Location from;
     public Location via;
