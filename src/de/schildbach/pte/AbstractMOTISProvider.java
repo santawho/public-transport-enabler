@@ -81,6 +81,8 @@ public abstract class AbstractMOTISProvider extends AbstractNetworkProvider {
             Capability.DEPARTURES
     );
 
+    protected static final String SERVER_PRODUCT = "MOTIS";
+
     public AbstractMOTISProvider(NetworkId networkId, String apiUrl) {
         super(networkId);
         api = HttpUrl.parse(apiUrl).newBuilder().addPathSegment("api").addPathSegment("v1").build();
@@ -135,7 +137,7 @@ public abstract class AbstractMOTISProvider extends AbstractNetworkProvider {
         try {
 
             JSONArray json = new JSONArray(response.toString());
-            ResultHeader header = new ResultHeader(NetworkId.TRANSITOUS, "MOTIS");
+            ResultHeader header = new ResultHeader(network, SERVER_PRODUCT);
 
             for (int i = 0; i < json.length(); i++) {
                 JSONObject guessObj = json.getJSONObject(i);
@@ -245,7 +247,7 @@ public abstract class AbstractMOTISProvider extends AbstractNetworkProvider {
 
         CharSequence response = httpClient.get(url);
 
-        ResultHeader header = new ResultHeader(NetworkId.TRANSITOUS, "MOTIS");
+        ResultHeader header = new ResultHeader(network, SERVER_PRODUCT);
 
         JSONObject obj = new JSONObject(response.toString());
 
@@ -401,7 +403,7 @@ public abstract class AbstractMOTISProvider extends AbstractNetworkProvider {
             CharSequence response = httpClient.get(url);
             JSONObject json = new JSONObject(response.toString());
 
-            ResultHeader header = new ResultHeader(NetworkId.TRANSITOUS, "MOTIS");
+            ResultHeader header = new ResultHeader(network, SERVER_PRODUCT);
             QueryDeparturesResult result = new QueryDeparturesResult(header);
 
             // departures by stop id
