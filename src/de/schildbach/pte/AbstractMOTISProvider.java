@@ -1,12 +1,10 @@
 package de.schildbach.pte;
 
-import org.checkerframework.checker.units.qual.N;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
-import java.sql.Array;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -16,9 +14,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Optional;
 import java.util.Set;
-import java.util.stream.IntStream;
 
 import javax.annotation.Nullable;
 
@@ -44,42 +40,40 @@ import de.schildbach.pte.dto.Trip;
 import de.schildbach.pte.dto.TripOptions;
 import okhttp3.HttpUrl;
 
-
-class MotisQueryTripsContext implements QueryTripsContext {
-    public @Nullable String previousCursor;
-    public @Nullable String nextCursor;
-    public String url;
-    public Location from;
-    public Location via;
-    public Location to;
-    public Date date;
-
-    MotisQueryTripsContext(String url,
-                           String previousCursor, String nextCursor,
-                           Location from, Location via, Location to, Date date) {
-        this.url = url;
-        this.previousCursor = previousCursor;
-        this.nextCursor = nextCursor;
-        this.from = from;
-        this.via = via;
-        this.to = to;
-        this.date = date;
-    }
-
-    @Override
-    public boolean canQueryLater() {
-        return nextCursor != null;
-    }
-
-    @Override
-    public boolean canQueryEarlier() {
-        return previousCursor != null;
-    }
-}
-
 public abstract class AbstractMOTISProvider extends AbstractNetworkProvider {
     HttpUrl api;
 
+    private static class Context implements QueryTripsContext {
+        public @Nullable String previousCursor;
+        public @Nullable String nextCursor;
+        public String url;
+        public Location from;
+        public Location via;
+        public Location to;
+        public Date date;
+
+        Context(String url,
+                String previousCursor, String nextCursor,
+                Location from, Location via, Location to, Date date) {
+            this.url = url;
+            this.previousCursor = previousCursor;
+            this.nextCursor = nextCursor;
+            this.from = from;
+            this.via = via;
+            this.to = to;
+            this.date = date;
+        }
+
+        @Override
+        public boolean canQueryLater() {
+            return nextCursor != null;
+        }
+
+        @Override
+        public boolean canQueryEarlier() {
+            return previousCursor != null;
+        }
+    }
 
     private final List<Capability> CAPABILITIES = Arrays.asList(
             Capability.SUGGEST_LOCATIONS,
@@ -352,7 +346,7 @@ public abstract class AbstractMOTISProvider extends AbstractNetworkProvider {
         }
 
         return new QueryTripsResult(header, url.toString(), from, via, to,
-                new MotisQueryTripsContext(
+                new Context(
                         contextUrl != null ? contextUrl : url.toString(),
                         obj.has("previousPageCursor") ? obj.getString("previousPageCursor") : null,
                         obj.has("nextPageCursor") ? obj.getString("nextPageCursor") : null,
@@ -374,7 +368,7 @@ public abstract class AbstractMOTISProvider extends AbstractNetworkProvider {
     @Override
     public QueryTripsResult queryMoreTrips(final QueryTripsContext contextObj, final boolean later) throws IOException {
         try {
-            MotisQueryTripsContext ctx = (MotisQueryTripsContext) contextObj;
+            Context ctx = (Context) contextObj;
             return queryTripsInternal(ctx.from, ctx.via, ctx.to, ctx.date, false, null, ctx.url, later ? ctx.nextCursor : ctx.previousCursor);
         } catch (JSONException e) {
             throw new RuntimeException(e);
