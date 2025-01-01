@@ -291,9 +291,7 @@ public abstract class AbstractMOTISProvider extends AbstractNetworkProvider {
                 } else {
 
                     Date plannedDepartureTime = Date.from(DateTimeFormatter.ISO_INSTANT.parse(legFrom.getString("scheduledDeparture"), Instant::from));
-                    Date departureTime = Date.from(DateTimeFormatter.ISO_INSTANT.parse(legFrom.getString("departure"), Instant::from));
                     Date plannedArrivalTime = Date.from(DateTimeFormatter.ISO_INSTANT.parse(legTo.getString("scheduledArrival"), Instant::from));
-                    Date arrivalTime = Date.from(DateTimeFormatter.ISO_INSTANT.parse(legTo.getString("arrival"), Instant::from));
 
                     Style style = null;
                     if (legJson.has("routeColor")) {
@@ -328,7 +326,7 @@ public abstract class AbstractMOTISProvider extends AbstractNetworkProvider {
                             new Line(legJson.has("tripId") ? legJson.getString("tripId") : "",
                                     null, parseMode(legJson.getString("mode")),
                                     legJson.has("routeShortName") ? legJson.getString("routeShortName") : "", style),
-                            legJson.has("headsign") ? legJson.getString("headsign") : null,
+                                    null, // todo: legJson.getString("headsign") would need to be converte do Location
                             new Stop(fromLocation,
                                     true,
                                     plannedDepartureTime,
