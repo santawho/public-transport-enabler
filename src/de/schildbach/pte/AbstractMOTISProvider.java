@@ -9,11 +9,13 @@ import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Set;
 
 import javax.annotation.Nullable;
@@ -234,6 +236,85 @@ public abstract class AbstractMOTISProvider extends AbstractNetworkProvider {
         return loc.id != null ? loc.id : String.format(Locale.US, "%f,%f,0", loc.getLatAsDouble(), loc.getLonAsDouble());
     }
 
+    private Location locationFromJSON(JSONObject loc, String name) throws JSONException {
+        Point coords = Point.fromDouble(loc.getDouble("lat"), loc.getDouble("lon"));
+        if (loc.has("stopId")) {
+            return new Location(LocationType.STATION, loc.getString("stopId"), coords, "", name);
+        } else {
+            return new Location(LocationType.ANY, null, coords, "", name);
+        }
+    }
+
+    private Date dateFromString(String isoDate) {
+        return Date.from(DateTimeFormatter.ISO_INSTANT.parse(isoDate, Instant::from));
+    }
+
+    private Trip.Leg parseTripLegIndividual(JSONObject leg, Location from, Date departure, Location to, Date arrival) throws JSONException {
+        int distance = leg.has("distance") ? leg.getInt("distance") : 0;
+
+        // todo: parse legGeometry
+        return new Trip.Individual(Trip.Individual.Type.WALK, from, departure, to, arrival, null, distance);
+    }
+
+    private Trip.Leg parseTripLegPublic(JSONObject leg, Location from, Date departure, Location to, Date arrival) throws JSONException {
+        Date plannedDepartureTime = dateFromString(leg.getJSONObject("from").getString("scheduledDeparture"));
+        Date plannedArrivalTime = dateFromString(leg.getJSONObject("to").getString("scheduledArrival"));
+
+        Style style = null;
+        if (leg.has("routeColor")) {
+            int backgroundColor = Style.parseColor("#" + leg.getString("routeColor"));
+            int foregroundColor = leg.has("routeTextColor") ? Style.parseColor("#" + leg.getString("routeTextColor")) : Style.BLACK;
+            style = new Style(backgroundColor, foregroundColor);
+        }
+
+        JSONArray stopsJson = leg.getJSONArray("intermediateStops");
+        ArrayList<Stop> stops = new ArrayList<>();
+        for (int k = 0; k < stopsJson.length(); k++) {
+            JSONObject stopJson = stopsJson.getJSONObject(k);
+
+            Date stopPlannedDepartureTime = dateFromString(stopJson.getString("scheduledDeparture"));
+            Date stopDepartureTime = dateFromString(stopJson.getString("departure"));
+
+            Stop stop = new Stop(locationFromJSON(stopJson, stopJson.getString("name")),
+                    true, stopPlannedDepartureTime, stopDepartureTime, null, null);
+
+            stops.add(stop);
+        }
+
+        Line line = new Line(leg.has("tripId") ? leg.getString("tripId") : "",  null, productFromString(leg.getString("mode")),
+                leg.has("routeShortName") ? leg.getString("routeShortName") : "", style);
+        return new Trip.Public(
+                line,
+                null, // todo: leg.getString("headsign") would need to be converte do Location
+                new Stop(from, true, plannedDepartureTime, departure, null, null),
+                new Stop(to, false, plannedArrivalTime, arrival, null, null),
+                stops,
+                null, // todo: parse legGeometry
+                null
+        );
+    }
+
+    private Trip.Leg parseTripLeg(JSONObject leg, Context ctx) throws JSONException {
+        JSONObject legFrom = leg.getJSONObject("from");
+        JSONObject legTo = leg.getJSONObject("to");
+
+        String startName = legFrom.getString("name");
+        if (startName.equals("START")) startName = ctx.from.name;
+        String destName = legTo.getString("name");
+        if (destName.equals("END")) destName = ctx.to.name;
+
+        Location fromLocation = locationFromJSON(legFrom, startName);
+        Location toLocation = locationFromJSON(legTo, destName);
+
+        Date departureTime = dateFromString(legFrom.getString("departure"));
+        Date arrivalTime = dateFromString(legTo.getString("arrival"));
+        if (leg.getString("mode").equals("WALK")) {
+            return parseTripLegIndividual(leg, fromLocation, departureTime, toLocation, arrivalTime);
+        } else {
+            return parseTripLegPublic(leg, fromLocation, departureTime, toLocation, arrivalTime);
+        }
+    }
+
     private QueryTripsResult parseQueryTripsResult(CharSequence response, Context ctx) throws JSONException {
 
         JSONObject obj = new JSONObject(response.toString());
@@ -248,86 +329,8 @@ public abstract class AbstractMOTISProvider extends AbstractNetworkProvider {
 
             ArrayList<Trip.Leg> legs = new ArrayList<>();
             for (int j = 0; j < legsJson.length(); j++) {
-                JSONObject legJson = legsJson.getJSONObject(j);
-                JSONObject legFrom = legJson.getJSONObject("from");
-                JSONObject legTo = legJson.getJSONObject("to");
-
-                String startName = legFrom.getString("name");
-                String destName = legTo.getString("name");
-
-                Location fromLocation = new Location(legFrom.has("stopId") ? LocationType.STATION : LocationType.ANY, legFrom.has("stopId") ? legFrom.getString("stopId") : null,
-                        Point.fromDouble(legFrom.getDouble("lat"),
-                                legFrom.getDouble("lon")), "", startName.equals("START") ? ctx.from.name : startName);
-
-                Location toLocation = new Location(legTo.has("stopId") ? LocationType.STATION : LocationType.ANY, legTo.has("stopId") ? legTo.getString("stopId") : null,
-                        Point.fromDouble(legTo.getDouble("lat"),
-                                legTo.getDouble("lon")), "", destName.equals("END") ? ctx.to.name : destName);
-
-                Trip.Leg leg;
-                Date departureTime = Date.from(DateTimeFormatter.ISO_INSTANT.parse(legFrom.getString("departure"), Instant::from));
-                Date arrivalTime = Date.from(DateTimeFormatter.ISO_INSTANT.parse(legTo.getString("arrival"), Instant::from));
-                if (legJson.getString("mode").equals("WALK")) {
-
-                    int distance = legJson.has("distance") ? legJson.getInt("distance") : 0;
-
-                    leg = new Trip.Individual(Trip.Individual.Type.WALK, fromLocation, departureTime, toLocation, arrivalTime, null, distance);
-                } else {
-
-                    Date plannedDepartureTime = Date.from(DateTimeFormatter.ISO_INSTANT.parse(legFrom.getString("scheduledDeparture"), Instant::from));
-                    Date plannedArrivalTime = Date.from(DateTimeFormatter.ISO_INSTANT.parse(legTo.getString("scheduledArrival"), Instant::from));
-
-                    Style style = null;
-                    if (legJson.has("routeColor")) {
-                        int backgroundColor = Style.parseColor("#" + legJson.getString("routeColor"));
-                        int foregroundColor;
-
-                        if (legJson.has("routeTextColor")) {
-                            foregroundColor = Style.parseColor("#" + legJson.getString("routeTextColor"));
-                        } else {
-                            foregroundColor = Style.BLACK;
-                        }
-                        style = new Style(backgroundColor, foregroundColor);
-                    }
-
-                    JSONArray stopsJson = legJson.getJSONArray("intermediateStops");
-                    ArrayList<Stop> stops = new ArrayList<>();
-                    for (int k = 0; k < stopsJson.length(); k++) {
-                        JSONObject stopJson = stopsJson.getJSONObject(k);
-
-                        Date stopPlannedDepartureTime = Date.from(DateTimeFormatter.ISO_INSTANT.parse(stopJson.getString("scheduledDeparture"), Instant::from));
-                        Date stopDepartureTime = Date.from(DateTimeFormatter.ISO_INSTANT.parse(stopJson.getString("departure"), Instant::from));
-
-                        Stop stop = new Stop(new Location(stopJson.has("stopId") ? LocationType.STATION : LocationType.ANY, stopJson.has("stopId") ? stopJson.getString("stopId") : null,
-                                Point.fromDouble(stopJson.getDouble("lat"),
-                                        stopJson.getDouble("lon")), null, stopJson.getString("name")),
-                                true, stopPlannedDepartureTime, stopDepartureTime, null, null);
-
-                        stops.add(stop);
-                    }
-
-                    leg = new Trip.Public(
-                            new Line(legJson.has("tripId") ? legJson.getString("tripId") : "",
-                                    null, productFromString(legJson.getString("mode")),
-                                    legJson.has("routeShortName") ? legJson.getString("routeShortName") : "", style),
-                                    null, // todo: legJson.getString("headsign") would need to be converte do Location
-                            new Stop(fromLocation,
-                                    true,
-                                    plannedDepartureTime,
-                                    departureTime,
-                                    null, null
-                            ),
-                            new Stop(toLocation,
-                                    false,
-                                    plannedArrivalTime,
-                                    arrivalTime,
-                                    null, null),
-                            stops,
-                            new ArrayList<>(),
-                            null
-                    );
-                }
-
-                legs.add(leg);
+                JSONObject leg = legsJson.getJSONObject(j);
+                legs.add(parseTripLeg(leg, ctx));
             }
 
             Trip trip = new Trip(String.format("%s", legs.toString().hashCode()), ctx.from, ctx.to, legs, null, null, null);
@@ -448,15 +451,15 @@ public abstract class AbstractMOTISProvider extends AbstractNetworkProvider {
                 stops.put(place.getString("stopId"), stop);
 
                 // departure
-                Date plannedDepartureTime = Date.from(DateTimeFormatter.ISO_INSTANT.parse(place.getString("scheduledDeparture"), Instant::from));
-                Date departureTime = Date.from(DateTimeFormatter.ISO_INSTANT.parse(place.getString("departure"), Instant::from));
+                Date plannedDepartureTime = dateFromString(place.getString("scheduledDeparture"));
+                Date departureTime = dateFromString(place.getString("departure"));
 
                 String stopId = place.getString("stopId");
                 Departure departure = new Departure(plannedDepartureTime, departureTime, line, null, destination, null, null);
                 if (departures.containsKey(stopId)) {
                     departures.get(stopId).add(departure);
                 } else {
-                    departures.put(stopId, new ArrayList<Departure>(Arrays.asList(departure)));
+                    departures.put(stopId, new ArrayList<Departure>(Collections.singletonList(departure)));
                 }
             }
 
