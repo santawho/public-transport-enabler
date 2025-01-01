@@ -87,8 +87,8 @@ public abstract class AbstractMOTISProvider extends AbstractNetworkProvider {
             Capability.DEPARTURES
     );
 
-    public AbstractMOTISProvider(String apiUrl) {
-        super(NetworkId.TRANSITOUS);
+    public AbstractMOTISProvider(NetworkId networkId, String apiUrl) {
+        super(networkId);
         api = HttpUrl.parse(apiUrl).newBuilder().addPathSegment("api").addPathSegment("v1").build();
     }
 
@@ -197,7 +197,7 @@ public abstract class AbstractMOTISProvider extends AbstractNetworkProvider {
 
     private QueryTripsResult queryTripsInternal(final Location from, final @Nullable Location via, final Location to,
                                                 final Date date, final boolean dep, @Nullable TripOptions options,
-                                                @Nullable String contextUrl, final String cursor) throws IOException, JSONException {
+                                                @Nullable String contextUrl, final @Nullable String cursor) throws IOException, JSONException {
         String transitModes = "TRANSIT";
         if (options != null && options.products != null) {
             ArrayList<String> transitModesBuilder = new ArrayList<>();
@@ -281,9 +281,9 @@ public abstract class AbstractMOTISProvider extends AbstractNetworkProvider {
                                 legTo.getDouble("lon")), "", destName.equals("END") ? to.name : destName);
 
                 Trip.Leg leg;
+                Date departureTime = Date.from(DateTimeFormatter.ISO_INSTANT.parse(legFrom.getString("departure"), Instant::from));
+                Date arrivalTime = Date.from(DateTimeFormatter.ISO_INSTANT.parse(legTo.getString("arrival"), Instant::from));
                 if (legJson.getString("mode").equals("WALK")) {
-                    Date departureTime = Date.from(DateTimeFormatter.ISO_INSTANT.parse(legFrom.getString("departure"), Instant::from));
-                    Date arrivalTime = Date.from(DateTimeFormatter.ISO_INSTANT.parse(legTo.getString("arrival"), Instant::from));
 
                     int distance = legJson.has("distance") ? legJson.getInt("distance") : 0;
 
@@ -328,7 +328,7 @@ public abstract class AbstractMOTISProvider extends AbstractNetworkProvider {
                             new Line(legJson.has("tripId") ? legJson.getString("tripId") : "",
                                     null, parseMode(legJson.getString("mode")),
                                     legJson.has("routeShortName") ? legJson.getString("routeShortName") : "", style),
-                            null,
+                            legJson.has("headsign") ? legJson.getString("headsign") : null,
                             new Stop(fromLocation,
                                     true,
                                     plannedDepartureTime,
@@ -439,17 +439,18 @@ public abstract class AbstractMOTISProvider extends AbstractNetworkProvider {
 
                 // location
                 Location stop = new Location(LocationType.STATION, place.getString("stopId"), Point.fromDouble(place.getDouble("lat"), place.getDouble("lon")), null, place.getString("name"));
-                stops.put(stopTime.getJSONObject("place").getString("stopId"), stop);
+                stops.put(place.getString("stopId"), stop);
 
                 // departure
                 Date plannedDepartureTime = Date.from(DateTimeFormatter.ISO_INSTANT.parse(place.getString("scheduledDeparture"), Instant::from));
                 Date departureTime = Date.from(DateTimeFormatter.ISO_INSTANT.parse(place.getString("departure"), Instant::from));
 
+                String stopId = place.getString("stopId");
                 Departure departure = new Departure(plannedDepartureTime, departureTime, line, null, destination, null, null);
-                if (departures.containsKey(place.getString("stopId"))) {
-                    departures.get(place.getString("stopId")).add(departure);
+                if (departures.containsKey(stopId)) {
+                    departures.get(stopId).add(departure);
                 } else {
-                    departures.put(place.getString("stopId"), new ArrayList<>(Arrays.asList(new Departure[]{departure})));
+                    departures.put(stopId, new ArrayList<Departure>(Arrays.asList(departure)));
                 }
             }
 
