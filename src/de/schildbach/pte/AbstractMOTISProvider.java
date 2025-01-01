@@ -477,6 +477,7 @@ public abstract class AbstractMOTISProvider extends AbstractNetworkProvider {
 
     @Override
     public NearbyLocationsResult queryNearbyLocations(Set<LocationType> ls, Location l, int i, int j) throws IOException {
+        // TODO: implement via reverse-geocode API
         throw new IOException("Unimplemented");
     }
 
