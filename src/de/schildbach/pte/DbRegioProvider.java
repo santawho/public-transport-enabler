@@ -19,15 +19,18 @@ package de.schildbach.pte;
 
 import java.util.EnumSet;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import de.schildbach.pte.dto.Product;
+import okhttp3.HttpUrl;
 
 /**
  * Provider implementation for Deutsche Bahn (Germany), regional traffic preferred.
  * 
  * @author Andreas Schildbach
  */
-public final class DbRegioHafasProvider extends DbHafasProvider {
+public final class DbRegioProvider extends DbProvider {
     public static final Set<Product> REGIO_PRODUCTS;
 
     static {
@@ -35,8 +38,8 @@ public final class DbRegioHafasProvider extends DbHafasProvider {
         REGIO_PRODUCTS.remove(Product.HIGH_SPEED_TRAIN);
     }
 
-    public DbRegioHafasProvider(final String apiAuthorization, final byte[] salt) {
-        super(NetworkId.DBREGIO, DbHafasProvider.DEFAULT_API_CLIENT, apiAuthorization, salt);
+    public DbRegioProvider(final String apiAuthorization, final byte[] salt) {
+        super(NetworkId.DBREGIO, DbProvider.DEFAULT_API_CLIENT, apiAuthorization, salt);
         setUseAddName(true);
     }
 
