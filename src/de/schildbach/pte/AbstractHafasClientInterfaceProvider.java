@@ -116,6 +116,16 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
     private static final HashFunction MD5 = Hashing.md5();
     private static final BaseEncoding HEX = BaseEncoding.base16().lowerCase();
 
+    private static class Remark {
+        String code;
+        String type;
+        @Nullable
+        String title;
+        String text;
+        @Nullable
+        String url;
+    }
+
     public AbstractHafasClientInterfaceProvider(final NetworkId network, final HttpUrl apiBase,
             final Product[] productsMap) {
         super(network, productsMap);
@@ -370,7 +380,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
             final JSONObject res = svcRes.getJSONObject("res");
 
             final JSONObject common = res.getJSONObject("common");
-            final List<String[]> remarks = parseRemList(common.getJSONArray("remL"));
+            final List<Remark> remarks = parseRemList(common.getJSONArray("remL"));
             final List<Style> styles = parseIcoList(common.getJSONArray("icoL"));
             final List<String> operators = parseOpList(common.getJSONArray("opL"));
             final List<Line> lines = parseProdList(common.getJSONArray("prodL"), operators, styles);
@@ -421,16 +431,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                         destination = new Location(LocationType.ANY, null, splitJnyDirTxt[0], splitJnyDirTxt[1]);
                     }
 
-                    final JSONArray remList = jny.optJSONArray("remL");
-                    String message = null;
-                    if (remList != null) {
-                        for (int iRem = 0; iRem < remList.length(); iRem++) {
-                            final JSONObject rem = remList.getJSONObject(iRem);
-                            final String[] remark = remarks.get(rem.getInt("remX"));
-                            if ("l?".equals(remark[0]))
-                                message = remark[1];
-                        }
-                    }
+                    final String message = buildHtmlMessageFromRemarks(jny, remarks);
 
                     if (line != null) {
                         final Departure departure = new Departure(plannedTime, predictedTime, line, position,
@@ -651,7 +652,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
             final JSONObject res = svcRes.getJSONObject("res");
 
             final JSONObject common = res.getJSONObject("common");
-            final List<String[]> remarks = parseRemList(common.getJSONArray("remL"));
+            final List<Remark> remarks = parseRemList(common.getJSONArray("remL"));
             final List<Style> styles = parseIcoList(common.getJSONArray("icoL"));
             final JSONArray crdSysList = common.optJSONArray("crdSysL");
             final JSONArray locList = common.getJSONArray("locL");
@@ -733,16 +734,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                             path = null;
                         }
 
-                        final JSONArray remList = jny.optJSONArray("remL");
-                        String message = null;
-                        if (remList != null) {
-                            for (int iRem = 0; iRem < remList.length(); iRem++) {
-                                final JSONObject rem = remList.getJSONObject(iRem);
-                                final String[] remark = remarks.get(rem.getInt("remX"));
-                                if ("l?".equals(remark[0]))
-                                    message = remark[1];
-                            }
-                        }
+                        final String message = buildHtmlMessageFromRemarks(jny, remarks);
 
                         leg = new Trip.Public(line, destination, departureStop, arrivalStop, intermediateStops, path,
                                 message);
@@ -876,11 +868,12 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
     }
 
     private String wrapJsonApiRequest(final String meth, final String req, final boolean formatted) {
+        final String lang = "de".equals(userInterfaceLanguage) ? "deu" : "eng";
         return "{" //
                 + (apiAuthorization != null ? "\"auth\":" + apiAuthorization + "," : "") //
                 + "\"client\":" + checkNotNull(apiClient) + "," //
                 + (apiExt != null ? "\"ext\":\"" + apiExt + "\"," : "") //
-                + "\"ver\":\"" + checkNotNull(apiVersion) + "\",\"lang\":\"eng\"," //
+                + "\"ver\":\"" + checkNotNull(apiVersion) + "\",\"lang\":\"" + lang + "\"," //
                 + "\"svcReqL\":[" //
                 + "{\"meth\":\"ServerInfo\",\"req\":{\"getServerDateTime\":true,\"getTimeTablePeriod\":false}}," //
                 + "{\"meth\":\"" + meth + "\",\"cfg\":{\"polyEnc\":\"GPA\"},\"req\":" + req + "}" //
@@ -999,18 +992,67 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                 plannedDeparturePosition, predictedDeparturePosition, departureCancelled);
     }
 
-    private List<String[]> parseRemList(final JSONArray remList) throws JSONException {
-        final List<String[]> remarks = new ArrayList<>(remList.length());
+    private List<Remark> parseRemList(final JSONArray remList) throws JSONException {
+        final List<Remark> remarks = new ArrayList<>(remList.length());
 
         for (int i = 0; i < remList.length(); i++) {
             final JSONObject rem = remList.getJSONObject(i);
-            final String code = rem.optString("code", null);
-            final String txtS = rem.optString("txtS", null);
-            final String txtN = rem.optString("txtN", null);
-            remarks.add(new String[] { code, txtS != null ? txtS : txtN });
+            Remark remark = new Remark();
+            remark.code = rem.optString("code", null);
+            remark.type = rem.optString("type", null);
+            remark.title = rem.optString("txtS", null);
+            remark.text = rem.optString("txtN", null);
+            remark.url = rem.optString("url", null);
+            remarks.add(remark);
         }
 
         return remarks;
+    }
+
+    private String buildHtmlMessageFromRemarks(final JSONObject jny, final List<Remark> remarks) throws JSONException {
+        final JSONArray remList = jny.optJSONArray("remL");
+        if (remList != null) {
+            String message = null;
+            for (int iRem = 0; iRem < remList.length(); iRem++) {
+                final JSONObject rem = remList.getJSONObject(iRem);
+                int remX = rem.getInt("remX");
+                if (remarks != null && remarks.size() > remX) {
+                    final Remark remark = remarks.get(remX);
+                    if ("l?".equals(remark.code))
+                        message = remark.text;
+                }
+            }
+            return message;
+        }
+        final JSONArray msgList = jny.optJSONArray("msgL");
+        if (msgList == null || msgList.length() == 0) {
+            return null;
+        }
+        StringBuilder sb = new StringBuilder();
+        for (int iRem = 0; iRem < msgList.length(); iRem++) {
+            final JSONObject rem = msgList.getJSONObject(iRem);
+            int remX = rem.getInt("remX");
+            if (remarks != null && remarks.size() > remX) {
+                final Remark remark = remarks.get(remX);
+                if (iRem > 0) {
+                    sb.append("<br>");
+                }
+                if (remark.title != null) {
+                    sb.append("<b>");
+                    sb.append(remark.title);
+                    sb.append("</b><br>");
+                } else if ("A".equals(remark.type)) {
+                    sb.append("&#8226; ");
+                }
+                sb.append(remark.text);
+                if (remark.url != null) {
+                    sb.append("<br><a href=\"");
+                    sb.append(remark.url);
+                    sb.append("\">Info&#128279;</a>");
+                }
+            }
+        }
+        return sb.toString();
     }
 
     private List<Style> parseIcoList(final JSONArray icoList) throws JSONException {
