@@ -78,7 +78,7 @@ import okhttp3.HttpUrl;
  * 
  * @author Andreas Schildbach
  */
-public final class DbProvider extends AbstractNetworkProvider {
+public class DbProvider extends AbstractNetworkProvider {
     private final List<Capability> CAPABILITIES = Arrays.asList(
             Capability.SUGGEST_LOCATIONS,
             Capability.NEARBY_LOCATIONS,
@@ -154,7 +154,11 @@ public final class DbProvider extends AbstractNetworkProvider {
     private static final Pattern P_SPLIT_NAME_ONE_COMMA = Pattern.compile("([^,]*), ([^,]*)");
 
     public DbProvider() {
-        super(NetworkId.DB);
+        this(NetworkId.DB, false);
+    }
+
+    protected DbProvider(final NetworkId networkId, final boolean addName) {
+        super(networkId);
         this.departureEndpoint = API_BASE.newBuilder().addPathSegments("bahnhofstafel/abfahrt").build();
         this.tripEndpoint = API_BASE.newBuilder().addPathSegments("angebote/fahrplan").build();
         this.locationsEndpoint = API_BASE.newBuilder().addPathSegments("location/search").build();
