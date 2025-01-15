@@ -30,7 +30,7 @@ import okhttp3.HttpUrl;
  * 
  * @author Andreas Schildbach
  */
-public class DbProvider extends AbstractHafasClientInterfaceProvider {
+public class DbHafasProvider extends AbstractHafasClientInterfaceProvider {
     private static final HttpUrl API_BASE = HttpUrl.parse("https://reiseauskunft.bahn.de/bin/");
     private static final Product[] PRODUCTS_MAP = { Product.HIGH_SPEED_TRAIN, // ICE-Züge
             Product.HIGH_SPEED_TRAIN, // Intercity- und Eurocityzüge
@@ -45,11 +45,11 @@ public class DbProvider extends AbstractHafasClientInterfaceProvider {
             null, null, null, null };
     protected static final String DEFAULT_API_CLIENT = "{\"id\":\"DB\",\"v\":\"16040000\",\"type\":\"AND\",\"name\":\"DB Navigator\"}";
 
-    public DbProvider(final String apiAuthorization, final byte[] salt) {
+    public DbHafasProvider(final String apiAuthorization, final byte[] salt) {
         this(NetworkId.DB, DEFAULT_API_CLIENT, apiAuthorization, salt);
     }
 
-    protected DbProvider(final NetworkId networkId, final String apiClient, final String apiAuthorization, final byte[] salt) {
+    protected DbHafasProvider(final NetworkId networkId, final String apiClient, final String apiAuthorization, final byte[] salt) {
         super(networkId, API_BASE, PRODUCTS_MAP);
         setApiVersion("1.15");
         setApiExt("DB.R18.06.a");
