@@ -45,7 +45,7 @@ public class DbHafasProvider extends AbstractHafasClientInterfaceProvider {
     protected static final String DEFAULT_API_CLIENT = "{\"id\":\"DB\",\"v\":\"16040000\",\"type\":\"AND\",\"name\":\"DB Navigator\"}";
 
     public DbHafasProvider(final String apiAuthorization, final byte[] salt) {
-        this(NetworkId.DB, DEFAULT_API_CLIENT, apiAuthorization, salt);
+        this(NetworkId.DBHAFAS, DEFAULT_API_CLIENT, apiAuthorization, salt);
     }
 
     protected DbHafasProvider(final NetworkId networkId, final String apiClient, final String apiAuthorization, final byte[] salt) {
