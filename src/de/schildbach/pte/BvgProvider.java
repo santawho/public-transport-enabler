@@ -118,8 +118,9 @@ public final class BvgProvider extends AbstractHafasClientInterfaceProvider {
 
     @Override
     protected Line newLine(final String id, final String operator, final Product product, final @Nullable String name,
-            final @Nullable String shortName, final @Nullable String number, final Style style) {
-        final Line line = super.newLine(id, operator, product, name, shortName, number, style);
+            final @Nullable String shortName, final @Nullable String number, final @Nullable String addName,
+            final Style style) {
+        final Line line = super.newLine(id, operator, product, name, shortName, number, addName, style);
 
         if (line.product == Product.SUBURBAN_TRAIN) {
             if ("S41".equals(line.label))
