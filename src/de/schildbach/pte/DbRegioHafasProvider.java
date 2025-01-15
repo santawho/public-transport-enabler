@@ -36,7 +36,7 @@ public final class DbRegioHafasProvider extends DbHafasProvider {
     }
 
     public DbRegioHafasProvider(final String apiAuthorization, final byte[] salt) {
-        super(NetworkId.DBREGIO, DbProvider.DEFAULT_API_CLIENT, apiAuthorization, salt);
+        super(NetworkId.DBREGIO, DbHafasProvider.DEFAULT_API_CLIENT, apiAuthorization, salt);
         setUseAddName(true);
     }
 
