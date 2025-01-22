@@ -18,17 +18,21 @@
 package de.schildbach.pte;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Date;
 import java.util.Set;
 
 import javax.annotation.Nullable;
 
+import de.schildbach.pte.dto.JourneyRef;
+import de.schildbach.pte.dto.Line;
 import de.schildbach.pte.dto.Location;
 import de.schildbach.pte.dto.LocationType;
 import de.schildbach.pte.dto.NearbyLocationsResult;
 import de.schildbach.pte.dto.Point;
 import de.schildbach.pte.dto.Product;
 import de.schildbach.pte.dto.QueryDeparturesResult;
+import de.schildbach.pte.dto.QueryJourneyResult;
 import de.schildbach.pte.dto.QueryTripsContext;
 import de.schildbach.pte.dto.QueryTripsResult;
 import de.schildbach.pte.dto.Style;
@@ -51,7 +55,8 @@ public interface NetworkProvider {
         /* can query trips */
         TRIPS,
         /* supports trip queries passing by a specific location */
-        TRIPS_VIA
+        TRIPS_VIA,
+        JOURNEY,
     }
 
     public enum Optimize {
@@ -177,6 +182,8 @@ public interface NetworkProvider {
      * @throws IOException
      */
     QueryTripsResult queryMoreTrips(QueryTripsContext context, boolean later) throws IOException;
+
+    QueryJourneyResult queryJourney(final JourneyRef journeyRef) throws IOException;
 
     /**
      * Get style of line

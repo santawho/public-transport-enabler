@@ -23,14 +23,17 @@ import java.util.Set;
 import de.schildbach.pte.dto.Product;
 
 /**
- * Provider implementation for Deutsche Bahn (Germany), regional traffic preferred.
+ * Provider implementation for movas API of Deutsche Bahn (Germany).
  * 
  * @author Andreas Schildbach
  */
-public final class DbRegioHafasProvider extends DbHafasProvider {
-    public DbRegioHafasProvider(final String apiAuthorization, final byte[] salt) {
-        super(NetworkId.DBREGIO, DbHafasProvider.DEFAULT_API_CLIENT, apiAuthorization, salt);
-        setUseAddName(true);
+public class DbRegioWebProvider extends DbWebProvider {
+    public DbRegioWebProvider() {
+        super(NetworkId.DBREGIOWEB);
+    }
+
+    public DbRegioWebProvider(final NetworkId networkId) {
+        super(networkId);
     }
 
     @Override

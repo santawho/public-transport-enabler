@@ -1,0 +1,940 @@
+/*
+ * Copyright the original author or authors.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+package de.schildbach.pte;
+
+import org.jetbrains.annotations.NotNull;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.StringJoiner;
+import java.util.TimeZone;
+import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import javax.annotation.Nullable;
+
+import de.schildbach.pte.dto.Departure;
+import de.schildbach.pte.dto.Fare;
+import de.schildbach.pte.dto.JourneyRef;
+import de.schildbach.pte.dto.Line;
+import de.schildbach.pte.dto.Location;
+import de.schildbach.pte.dto.LocationType;
+import de.schildbach.pte.dto.NearbyLocationsResult;
+import de.schildbach.pte.dto.Point;
+import de.schildbach.pte.dto.Position;
+import de.schildbach.pte.dto.Product;
+import de.schildbach.pte.dto.QueryDeparturesResult;
+import de.schildbach.pte.dto.QueryJourneyResult;
+import de.schildbach.pte.dto.QueryTripsContext;
+import de.schildbach.pte.dto.QueryTripsResult;
+import de.schildbach.pte.dto.ResultHeader;
+import de.schildbach.pte.dto.StationDepartures;
+import de.schildbach.pte.dto.Stop;
+import de.schildbach.pte.dto.SuggestLocationsResult;
+import de.schildbach.pte.dto.SuggestedLocation;
+import de.schildbach.pte.dto.Trip;
+import de.schildbach.pte.dto.TripOptions;
+import de.schildbach.pte.exception.AbstractHttpException;
+import de.schildbach.pte.exception.BlockedException;
+import de.schildbach.pte.exception.InternalErrorException;
+import de.schildbach.pte.exception.ParserException;
+import de.schildbach.pte.util.ParserUtils;
+import okhttp3.HttpUrl;
+
+/**
+ * Provider implementation for Web API of Deutsche Bahn (Germany).
+ * 
+ * @author Andreas Schildbach
+ */
+public class DbWebProvider extends AbstractNetworkProvider {
+    private final List<Capability> CAPABILITIES = Arrays.asList(
+            Capability.SUGGEST_LOCATIONS,
+            Capability.NEARBY_LOCATIONS,
+            Capability.DEPARTURES,
+            Capability.TRIPS,
+            Capability.TRIPS_VIA,
+            Capability.JOURNEY);
+
+    private static final @NotNull HttpUrl WEB_API_BASE = HttpUrl.parse("https://www.bahn.de/web/api/");
+    private final ResultHeader resultHeader;
+
+    private static final Map<String, Product> PRODUCTS_MAP = new LinkedHashMap<String, Product>() {
+        {
+            put("ICE", Product.HIGH_SPEED_TRAIN);
+            put("EC_IC", Product.HIGH_SPEED_TRAIN);
+            put("IR", Product.HIGH_SPEED_TRAIN);
+            put("REGIONAL", Product.REGIONAL_TRAIN);
+            put("SBAHN", Product.SUBURBAN_TRAIN);
+            put("BUS", Product.BUS);
+            put("SCHIFF", Product.FERRY);
+            put("UBAHN", Product.SUBWAY);
+            put("TRAM", Product.TRAM);
+            put("ANRUFPFLICHTIG", Product.ON_DEMAND);
+            put("ERSATZVERKEHR", Product.REGIONAL_TRAIN);
+        }
+    };
+
+    private static final Map<String, LocationType> ID_LOCATION_TYPE_MAP = new HashMap<String, LocationType>() {
+        {
+            put("1", LocationType.STATION);
+            put("4", LocationType.POI);
+            put("2", LocationType.ADDRESS);
+        }
+    };
+
+    private static final Map<LocationType, String> LOCATION_TYPE_MAP = new HashMap<LocationType, String>() {
+        {
+            put(LocationType.ANY, "ALL");
+            put(LocationType.STATION, "ST");
+            put(LocationType.POI, "POI");
+            put(LocationType.ADDRESS, "ADR");
+        }
+    };
+
+    private static final int DEFAULT_MAX_DEPARTURES = 100;
+    private static final int DEFAULT_MAX_LOCATIONS = 50;
+    private static final int DEFAULT_MAX_DISTANCE = 10000;
+
+    private final HttpUrl departureEndpoint;
+    private final HttpUrl tripEndpoint;
+    private final HttpUrl journeyEndpoint;
+    private final HttpUrl locationsEndpoint;
+    private final HttpUrl nearbyEndpoint;
+
+    private static final TimeZone timeZone = TimeZone.getTimeZone("Europe/Berlin");
+
+    private static final Pattern P_SPLIT_NAME_FIRST_COMMA = Pattern.compile("([^,]*), (.*)");
+    private static final Pattern P_SPLIT_NAME_ONE_COMMA = Pattern.compile("([^,]*), ([^,]*)");
+
+    public DbWebProvider() {
+        this(NetworkId.DBWEB);
+    }
+
+    protected DbWebProvider(final NetworkId networkId) {
+        super(networkId);
+        this.departureEndpoint = WEB_API_BASE.newBuilder().addPathSegments("reiseloesung/abfahrten").build();
+        this.tripEndpoint = WEB_API_BASE.newBuilder().addPathSegments("angebote/fahrplan").build();
+        this.journeyEndpoint = WEB_API_BASE.newBuilder().addPathSegments("reiseloesung/fahrt").build();
+        this.locationsEndpoint = WEB_API_BASE.newBuilder().addPathSegments("reiseloesung/orte").build();
+        this.nearbyEndpoint = WEB_API_BASE.newBuilder().addPathSegments("reiseloesung/orte/nearby").build();
+        this.resultHeader = new ResultHeader(network, "dbweb");
+    }
+
+    private String doRequest(final HttpUrl url, final String body, final String contentType) throws IOException {
+        // DB API requires these headers
+        // Content-Type must be exactly as passed below,
+        // passing it to httpClient.get would add charset suffix
+        String cType = contentType != null ? contentType : "application/json";
+        httpClient.setHeader("X-Correlation-ID", UUID.randomUUID() + "_" + UUID.randomUUID());
+        httpClient.setHeader("Accept", cType);
+        if (body != null) httpClient.setHeader("Content-Type", cType);
+        if (this.userInterfaceLanguage != null)
+            httpClient.setHeader("Accept-Language", this.userInterfaceLanguage);
+        final String page = httpClient.get(url, body, null).toString();
+        return page;
+    }
+
+    private String doRequest(final HttpUrl url, final String body) throws IOException {
+        return this.doRequest(url, body, null);
+    }
+
+    private String doRequest(final HttpUrl url) throws IOException {
+        return this.doRequest(url, null, null);
+    }
+
+    private CharSequence formatDate(final Calendar time) {
+        final int year = time.get(Calendar.YEAR);
+        final int month = time.get(Calendar.MONTH) + 1;
+        final int day = time.get(Calendar.DAY_OF_MONTH);
+        return String.format(Locale.ENGLISH, "%04d-%02d-%02d", year, month, day);
+    }
+
+    private CharSequence formatTime(final Calendar time) {
+        final int hour = time.get(Calendar.HOUR_OF_DAY);
+        final int minute = time.get(Calendar.MINUTE);
+        return String.format(Locale.ENGLISH, "%02d:%02d", hour, minute);
+    }
+
+    private static final DateFormat ISO_DATE_TIME_NO_OFFSET_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+
+    static {
+        ISO_DATE_TIME_NO_OFFSET_FORMAT.setTimeZone(timeZone);
+    }
+
+    private String formatIso8601NoOffset(final Date time) {
+        if (time == null)
+            return null;
+        return ISO_DATE_TIME_NO_OFFSET_FORMAT.format(time);
+    }
+
+    private Date parseIso8601NoOffset(final String time) {
+        if (time == null)
+            return null;
+        try {
+            return ISO_DATE_TIME_NO_OFFSET_FORMAT.parse(time);
+        } catch (final ParseException x) {
+            throw new RuntimeException(x);
+        }
+    }
+
+    private String createLidEntry(final String key, final Object value) {
+        return key + "=" + value + "@";
+    }
+
+    private String formatLid(final Location loc) {
+        if (loc.id != null && loc.id.startsWith("A=") && loc.id.contains("@")) {
+            return loc.id;
+        }
+        final String typeId = ID_LOCATION_TYPE_MAP
+                .entrySet()
+                .stream()
+                .filter(e -> e.getValue() == loc.type)
+                .findFirst()
+                .map(e -> e.getKey())
+                .orElse("0");
+
+        final StringBuilder out = new StringBuilder();
+        out.append(createLidEntry("A", typeId));
+        if (loc.name != null) {
+            out.append(createLidEntry("O", loc.name));
+        }
+        if (loc.coord != null) {
+            out.append(createLidEntry("X", loc.coord.getLonAs1E6()));
+            out.append(createLidEntry("Y", loc.coord.getLatAs1E6()));
+        }
+        if (loc.id != null) {
+            out.append(createLidEntry("L", normalizeStationId(loc.id)));
+        }
+        return out.toString();
+    }
+
+    private String formatLid(final String stationId) {
+        return formatLid(new Location(LocationType.STATION, stationId));
+    }
+
+    private Location parseLid(final String loc) {
+        if (loc == null)
+            return new Location(LocationType.STATION, null);
+        final Map<String, String> props = Arrays.stream(loc.split("@"))
+                .map(chunk -> chunk.split("="))
+                .filter(e -> e.length == 2)
+                .collect(Collectors.toMap(e -> e[0], e -> e[1]));
+        Point coord = null;
+        try {
+            coord = Point.from1E6(Integer.parseInt(props.get("Y")), Integer.parseInt(props.get("X")));
+        } catch (Exception e) {
+        }
+        return new Location(
+                Optional.ofNullable(ID_LOCATION_TYPE_MAP.get(props.get("A"))).orElse(LocationType.ANY),
+                props.get("L"),
+                coord,
+                null,
+                props.get("O"));
+    }
+
+    private String formatProducts(final Set<Product> products) {
+        if (products == null)
+            return "\"ALL\"";
+        return products.stream()
+                .flatMap(p -> PRODUCTS_MAP.entrySet().stream().filter(e -> e.getValue() == p))
+                .map(p -> "\"" + p.getKey() + "\"")
+                .collect(Collectors.joining(", "));
+    }
+
+    private Set<Product> parseProducts(final JSONArray products) {
+        if (products == null)
+            return null;
+        final Set<Product> out = new HashSet<>();
+        for (int iProd = 0; iProd < products.length(); iProd++) {
+            String prodStr = products.optString(iProd, null);
+            final Product prod = PRODUCTS_MAP.get(prodStr);
+            if (prod != null) {
+                out.add(prod);
+            } else {
+                throw new RuntimeException(prodStr);
+            }
+        }
+        return out;
+    }
+
+    private String formatLocationTypes(Set<LocationType> types) {
+        if (types == null || types.contains(LocationType.ANY))
+            return "\"" + LOCATION_TYPE_MAP.get(LocationType.ANY) + "\"";
+        return types.stream()
+                .map(t -> LOCATION_TYPE_MAP.get(t))
+                .filter(t -> t != null)
+                .map(t -> "\"" + t + "\"")
+                .collect(Collectors.joining(", "));
+    }
+
+    protected String[] splitPlaceAndName(final String placeAndName, final Pattern p, final int place, final int name) {
+        if (placeAndName == null)
+            return new String[] { null, null };
+        final Matcher m = p.matcher(placeAndName);
+        if (m.matches())
+            return new String[] { m.group(place), m.group(name) };
+        return new String[] { null, placeAndName };
+    }
+
+    protected String[] splitStationName(final String name) {
+        return splitPlaceAndName(name, P_SPLIT_NAME_ONE_COMMA, 2, 1);
+    }
+
+    protected String[] splitAddress(final String address) {
+        return splitPlaceAndName(address, P_SPLIT_NAME_FIRST_COMMA, 1, 2);
+    }
+
+    private Location createLocation(final LocationType type, final String id, final Point coord, final String name,
+                                    final Set<Product> products, final String bahnhofsInfoId) {
+        final String[] placeAndName = type == LocationType.STATION ? splitStationName(name) : splitAddress(name);
+        final String infoId = bahnhofsInfoId != null ? bahnhofsInfoId : id;
+        final String url = infoId == null ? null : (
+                "https://www.bahnhof.de"
+                    + ("de".equals(this.userInterfaceLanguage) ? "" : "/en")
+                    + "/bahnhof-de/id/" + infoId);
+        return new Location(type, id, coord, placeAndName[0], placeAndName[1], products, url);
+    }
+
+    private Location parseLocation(JSONObject loc) {
+        if (loc == null)
+            return null;
+        final String lidStr = loc.optString("id", null);
+        final Location lid = parseLid(lidStr);
+        final String id = lid.type == LocationType.STATION
+                ? Optional.ofNullable(loc.optString("extId", null)).orElse(lid.id)
+                : lidStr;
+        Point coord;
+        double latitude = loc.optDouble("lat");
+        if (!Double.isNaN(latitude)) {
+            coord = Point.fromDouble(latitude, loc.optDouble("lon"));
+        } else {
+            coord = lid.coord;
+        }
+        final String bahnhofsInfoId = loc.optString("bahnhofsInfoId", null);
+
+        return createLocation(
+                lid.type,
+                id,
+                coord,
+                loc.optString("name", null),
+                parseProducts(loc.optJSONArray("products")),
+                bahnhofsInfoId);
+    }
+
+    private Location parseDirection(final JSONObject verkehrsmittel) {
+        final String richtung = verkehrsmittel.optString("richtung", null);
+        if (richtung == null)
+            return null;
+        return createLocation(LocationType.STATION, null, null, richtung, null, null);
+    }
+
+    private List<Location> parseLocations(final JSONArray locs) throws JSONException {
+        final List<Location> locations = new ArrayList<>();
+        for (int iLoc = 0; iLoc < locs.length(); iLoc++) {
+            final Location loc = parseLocation(locs.getJSONObject(iLoc));
+            if (loc != null) {
+                locations.add(loc);
+            }
+        }
+        return locations;
+    }
+
+    private void parseMessages(final JSONArray msgs, final List<String> messages, final String prefix)
+            throws JSONException {
+        if (msgs == null)
+            return;
+        for (int iMsg = 0; iMsg < msgs.length(); iMsg++) {
+            final JSONObject msgObj = msgs.getJSONObject(iMsg);
+            final String title = msgObj.optString("ueberschrift", null);
+            final String value = msgObj.optString("value", null);
+            final String text = msgObj.optString("text", null);
+            final String url = msgObj.optString("url", null);
+            if (text != null || value != null) {
+                String msg = text;
+                if (text == null)
+                    msg = value;
+                if (prefix != null)
+                    msg = prefix + msg;
+                if (title != null && this.messagesAsSimpleHtml)
+                    msg = "<b>" + title + "</b><br>" + msg;
+                if (url != null && this.messagesAsSimpleHtml)
+                    msg = msg + "<br><a href=\"" + url + "\">Info&#128279;</a>";
+                messages.add(msg);
+            }
+        }
+    }
+
+    private String parseJourneyMessages(final JSONObject jny, final JSONArray zugattribute, final String operatorName) throws JSONException {
+        final List<String> messages = new ArrayList<>();
+        parseMessages(jny.optJSONArray("meldungen"), messages, null);
+        parseMessages(jny.optJSONArray("risNotizen"), messages, null);
+        parseMessages(jny.optJSONArray("himMeldungen"), messages, null);
+        // show very important static messages (e.g. on demand tel)
+        if (operatorName != null)
+            messages.add("&#8226; " + operatorName);
+        if (zugattribute != null)
+            parseMessages(zugattribute, messages, this.messagesAsSimpleHtml ? "&#8226; " : null);
+        return messages.isEmpty() ? null : join(this.messagesAsSimpleHtml ? "<br>" : " - ", messages);
+    }
+
+    // replace with String.join() at some point
+    private static String join(final CharSequence delimiter, final Iterable<? extends CharSequence> elements) {
+        final StringJoiner joiner = new StringJoiner(delimiter);
+        elements.forEach(joiner::add);
+        return joiner.toString();
+    }
+
+    private Line parseLine(final JSONObject verkehrsmittel) throws JSONException {
+        // TODO attrs, messages
+        final Product product = PRODUCTS_MAP.get(verkehrsmittel.optString("produktGattung", null));
+        String shortName = verkehrsmittel.optString("mittelText", null);
+        final String name = Optional.ofNullable(verkehrsmittel.optString("langText", null)).orElse(shortName);
+        if (shortName != null && (product == Product.BUS || product == Product.TRAM)) {
+            shortName = shortName.replaceAll("^[A-Za-z]+ ", "");
+        }
+        String operator = null;
+        final JSONArray attributNotizen = verkehrsmittel.optJSONArray("zugattribute");
+        if (attributNotizen != null) {
+            for (int iAttr = 0; iAttr < attributNotizen.length(); ++iAttr) {
+                JSONObject attr = attributNotizen.getJSONObject(iAttr);
+                if ("BEF".equals(attr.get("key"))) {
+                    operator = attr.getString("value");
+                    break;
+                }
+            }
+        }
+        return new Line(
+                null,
+                operator,
+                product,
+                shortName,
+                name,
+                lineStyle(operator, product, name));
+    }
+
+    private boolean parseCancelled(JSONObject stop) throws JSONException {
+        final JSONArray notices = stop.optJSONArray("risNotizen");
+        if (notices != null) {
+            for (int iNotice = 0; iNotice < notices.length(); iNotice++) {
+                final JSONObject notice = notices.optJSONObject(iNotice);
+                if (notice != null) {
+                    final String key = notice.optString("key", null);
+                    if ("text.realtime.stop.cancelled".equals(key)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    private Stop parseStop(final JSONObject stop, final Location fallbackLocation) throws JSONException {
+        final Position gleis = parsePosition(stop.optString("gleis", null));
+        final Position ezGleis = parsePosition(stop.optString("ezGleis", null));
+        final boolean cancelled = parseCancelled(stop);
+        Location stopLocation = parseLocation(stop);
+        return new Stop(
+                stopLocation != null && stopLocation.id != null ? stopLocation : fallbackLocation,
+                parseIso8601NoOffset(stop.optString("ankunftsZeitpunkt", null)),
+                parseIso8601NoOffset(stop.optString("ezAnkunftsZeitpunkt", null)),
+                gleis, ezGleis, cancelled,
+                parseIso8601NoOffset(stop.optString("abfahrtsZeitpunkt", null)),
+                parseIso8601NoOffset(stop.optString("ezAbfahrtsZeitpunkt", null)),
+                gleis, ezGleis, cancelled);
+    }
+
+    private List<Stop> parseStops(final JSONArray stops) throws JSONException {
+        if (stops == null)
+            return null;
+        List<Stop> out = new LinkedList<>();
+        for (int iStop = 0; iStop < stops.length(); iStop++) {
+            out.add(parseStop(stops.getJSONObject(iStop), null));
+        }
+        return out;
+    }
+
+    private int[] parseCapacity(final JSONObject verbindung) throws JSONException {
+        final JSONArray auslastungen = verbindung.optJSONArray("auslastungsMeldungen");
+        int[] out = { 0, 0 };
+        if (auslastungen != null) {
+            for (int i = 0; i < auslastungen.length(); i++) {
+                final JSONObject auslastung = auslastungen.getJSONObject(i);
+                final String klasse = auslastung.optString("klasse");
+                out["KLASSE_2".equals(klasse) ? 1 : 0] = auslastung.optInt("stufe", 0);
+            }
+            if (out[0] == 0 && out[1] == 0) {
+                return null;
+            }
+            return out;
+        }
+        return null;
+    }
+
+    static class DbWebJourneyRef implements JourneyRef {
+        final String journeyId;
+        final Line line;
+
+        public DbWebJourneyRef(final String journeyId, final Line line) {
+            this.journeyId = journeyId;
+            this.line = line;
+        }
+    }
+
+    private Trip.Public parseJourney(final JSONObject journey, final DbWebJourneyRef journeyRef) throws JSONException {
+        Stop departureStop = null;
+        Stop arrivalStop = null;
+        final List<Stop> intermediateStops = parseStops(journey.optJSONArray("halte"));
+        if (intermediateStops != null && intermediateStops.size() >= 2) {
+            final int size = intermediateStops.size();
+            departureStop = intermediateStops.get(0);
+            arrivalStop = intermediateStops.get(size - 1);
+            intermediateStops.remove(size - 1);
+            intermediateStops.remove(0);
+        }
+        final String message = parseJourneyMessages(journey, journey.optJSONArray("zugattribute"), journeyRef.line.network);
+        return new Trip.Public(journeyRef.line, arrivalStop.location, departureStop, arrivalStop, intermediateStops, null, message, journeyRef);
+    }
+
+    private Trip.Leg parseLeg(final JSONObject abschnitt, final @Nullable JSONObject prevAbschnitt, final @Nullable JSONObject nextAbschnitt) throws JSONException {
+        Stop departureStop = null;
+        Stop arrivalStop = null;
+        final JSONObject verkehrsmittel = abschnitt.getJSONObject("verkehrsmittel");
+        final String typ = verkehrsmittel.optString("typ", null);
+        final boolean isPublicTransportLeg = "PUBLICTRANSPORT".equals(typ);
+        final List<Stop> intermediateStops = parseStops(abschnitt.optJSONArray("halte"));
+        if (intermediateStops != null && intermediateStops.size() >= 2 && isPublicTransportLeg) {
+            final int size = intermediateStops.size();
+            departureStop = intermediateStops.get(0);
+            arrivalStop = intermediateStops.get(size - 1);
+            intermediateStops.remove(size - 1);
+            intermediateStops.remove(0);
+        } else {
+            departureStop = parseStop(abschnitt, Optional.ofNullable(prevAbschnitt)
+                        .map(prev -> prev.optJSONArray("halte"))
+                        .map(halte -> halte.optJSONObject(halte.length() - 1))
+                        .map(this::parseLocation)
+                        .orElse(createLocation(LocationType.ADDRESS, null, null, abschnitt.getString("abfahrtsOrt"), null, null)));
+            arrivalStop = parseStop(abschnitt, Optional.ofNullable(nextAbschnitt)
+                        .map(next -> next.optJSONArray("halte"))
+                        .map(halte -> halte.optJSONObject(0))
+                        .map(this::parseLocation)
+                        .orElse(createLocation(LocationType.ADDRESS, null, null, abschnitt.getString("ankunftsOrt"), null, null)));
+        }
+        if (isPublicTransportLeg) {
+            final Line line = parseLine(verkehrsmittel);
+            final Location destination = parseDirection(verkehrsmittel);
+            final String message = parseJourneyMessages(abschnitt, verkehrsmittel.optJSONArray("zugattribute"), null);
+            final String journeyId = abschnitt.optString("journeyId", null);
+            return new Trip.Public(line, destination, departureStop, arrivalStop, intermediateStops, null, message,
+                    journeyId == null ? null : new DbWebJourneyRef(journeyId, line) );
+        } else {
+            final int dist = abschnitt.optInt("distanz");
+            return new Trip.Individual(
+                    "TRANSFER".equals(typ) ? Trip.Individual.Type.TRANSFER : Trip.Individual.Type.WALK,
+                    departureStop.location,
+                    departureStop.getDepartureTime(),
+                    arrivalStop.location,
+                    departureStop.location.equals(arrivalStop.location)
+                            ? departureStop.getDepartureTime()
+                            : arrivalStop.getArrivalTime(),
+                    null, dist);
+        }
+    }
+
+    private List<Fare> parseFares(final JSONObject verbindung) {
+        List<Fare> fares = new ArrayList<>();
+        final Optional<JSONObject> angebotsPreis = Optional.ofNullable(verbindung.optJSONObject("angebotsPreis"));
+        if (angebotsPreis.isPresent()) {
+            fares.add(new Fare(
+                    "de".equals(this.userInterfaceLanguage) ? "ab" : "from",
+                    Fare.Type.ADULT,
+                    ParserUtils.getCurrency(angebotsPreis.get().optString("waehrung", "EUR")),
+                    (float) angebotsPreis.get().optDouble("betrag"),
+                    null,
+                    null));
+        }
+        return fares;
+    }
+
+    private String parseErrorCode(AbstractHttpException e) {
+        String code = null;
+        try {
+            final JSONObject res = new JSONObject(e.getBodyPeek().toString());
+            final JSONObject details = res.optJSONObject("details");
+            code = res.optString("code", null);
+            if (details != null) {
+                code = details.optString("typ", code);
+            }
+        } catch (final Exception x) {
+            // ignore
+        }
+        return code;
+    }
+
+    private QueryTripsResult doQueryTrips(Location from, @Nullable Location via, Location to, Date time, boolean dep,
+            @Nullable Set<Product> products, final boolean bike, final @Nullable String context) throws IOException {
+        // TODO minUmstiegsdauer instead of walkSpeed ?
+        // accessibility, optimize not supported
+
+        final String deparr = dep ? "ABFAHRT" : "ANKUNFT";
+        final String productsStr = "\"produktgattungen\":[" + formatProducts(products) + "]";
+        final String viaLocations = via != null
+                ? "\"zwischenhalte\":[{\"id\": \"" + formatLid(via) + "\"}],"
+                : "";
+        final String bikeStr = bike ? "\"bikeCarriage\":true," : "";
+        final String ctxStr = context != null ? "\"pagingReference\": \"" + context + "\"," : "";
+        final String request = "{\"sitzplatzOnly\":false,\"klasse\":\"KLASSE_2\"," //
+                + "\"abfahrtsHalt\": \"" + formatLid(from) + "\"," //
+                + productsStr + "," //
+                + viaLocations //
+                + bikeStr //
+                + ctxStr //
+                + "\"anfrageZeitpunkt\":\"" + formatIso8601NoOffset(time) + "\",\"ankunftSuche\":\"" + deparr + "\"," //
+                + "\"ankunftsHalt\": \"" + formatLid(to) + "\"," //
+                + "\"reisende\":[{\"ermaessigungen\":[{\"art\":\"KEINE_ERMAESSIGUNG\",\"klasse\":\"KLASSENLOS\"}],\"typ\":\"ERWACHSENER\",\"alter\":[],\"anzahl\":1}]," //
+                + "\"reservierungsKontingenteVorhanden\":false,\"schnelleVerbindungen\":false}";
+
+        final HttpUrl url = this.tripEndpoint;
+
+        String page = null;
+        try {
+            page = doRequest(url, request);
+            final JSONObject res = new JSONObject(page);
+            final JSONArray verbindungen = res.getJSONArray("verbindungen");
+            final List<Trip> trips = new ArrayList<>();
+
+            for (int iTrip = 0; iTrip < verbindungen.length(); iTrip++) {
+                final JSONObject verbindung = verbindungen.getJSONObject(iTrip);
+                final JSONArray abschnitte = verbindung.getJSONArray("verbindungsAbschnitte");
+                final List<Trip.Leg> legs = new ArrayList<>();
+                Location tripFrom = null;
+                Location tripTo = null;
+
+                for (int iLeg = 0; iLeg < abschnitte.length(); iLeg++) {
+                    final Trip.Leg leg = parseLeg(
+                            abschnitte.getJSONObject(iLeg),
+                            abschnitte.optJSONObject(iLeg - 1),
+                            abschnitte.optJSONObject(iLeg + 1));
+                    legs.add(leg);
+                    if (iLeg == 0) {
+                        tripFrom = leg.departure;
+                    }
+                    if (iLeg == abschnitte.length() - 1) {
+                        tripTo = leg.arrival;
+                    }
+                }
+                final List<Fare> fares = parseFares(verbindung);
+                final int transfers = verbindung.optInt("umstiegsAnzahl", -1);
+                final int[] capacity = parseCapacity(verbindung);
+                trips.add(new Trip(
+                        verbindung.optString("ctxRecon").split("#")[0],
+                        tripFrom,
+                        tripTo,
+                        legs,
+                        fares,
+                        capacity,
+                        transfers == -1 ? null : transfers));
+            }
+            if (trips.isEmpty()) {
+                return new QueryTripsResult(this.resultHeader, QueryTripsResult.Status.NO_TRIPS);
+            }
+            Optional<JSONObject> verbindungReference = Optional.ofNullable(res.optJSONObject("verbindungReference"));
+            final DbWebApiContext ctx = new DbWebApiContext(from, via, to, time, dep, products, bike,
+                    verbindungReference.map(v -> v.optString("later", null)).orElse(null),
+                    verbindungReference.map(v -> v.optString("earlier", null)).orElse(null));
+            return new QueryTripsResult(this.resultHeader, null, from, via, to, ctx, trips);
+        } catch (InternalErrorException | BlockedException e) {
+            final String code = parseErrorCode(e);
+            if ("MDA-AK-MSG-1001".equals(code)) {
+                return new QueryTripsResult(this.resultHeader, QueryTripsResult.Status.INVALID_DATE);
+            } else if (code != null) {
+                return new QueryTripsResult(this.resultHeader, QueryTripsResult.Status.NO_TRIPS);
+            }
+            return new QueryTripsResult(this.resultHeader, QueryTripsResult.Status.SERVICE_DOWN);
+        } catch (IOException | RuntimeException e) {
+            return new QueryTripsResult(this.resultHeader, QueryTripsResult.Status.SERVICE_DOWN);
+        } catch (final JSONException x) {
+            throw new ParserException("cannot parse json: '" + page + "' on " + url, x);
+        }
+    }
+
+    @Override
+    public NearbyLocationsResult queryNearbyLocations(Set<LocationType> types, Location location, int maxDistance,
+            int maxLocations) throws IOException {
+        // TODO POIs not supported (?)
+        if (maxDistance == 0)
+            maxDistance = DEFAULT_MAX_DISTANCE;
+        if (maxLocations == 0)
+            maxLocations = DEFAULT_MAX_LOCATIONS;
+        if (location.coord == null) {
+            return new NearbyLocationsResult(this.resultHeader, NearbyLocationsResult.Status.INVALID_ID);
+        }
+
+        HttpUrl.Builder builder = this.nearbyEndpoint.newBuilder()
+                .addQueryParameter("lat", Double.toString(location.coord.getLatAsDouble()))
+                .addQueryParameter("long", Double.toString(location.coord.getLonAsDouble()))
+                .addQueryParameter("radius", Integer.toString(maxDistance))
+                .addQueryParameter("maxNo", Integer.toString(maxLocations));
+        PRODUCTS_MAP.forEach((key, product) -> builder.addQueryParameter("product[]", key));
+        final HttpUrl url = builder.build();
+        String page = null;
+        try {
+            page = doRequest(url);
+            final JSONArray locs = new JSONArray(page);
+            final List<Location> locations = parseLocations(locs);
+            return new NearbyLocationsResult(this.resultHeader, locations);
+        } catch (InternalErrorException | BlockedException e) {
+            return new NearbyLocationsResult(this.resultHeader, NearbyLocationsResult.Status.INVALID_ID);
+        } catch (IOException | RuntimeException e) {
+            return new NearbyLocationsResult(this.resultHeader, NearbyLocationsResult.Status.SERVICE_DOWN);
+        } catch (final JSONException x) {
+            throw new ParserException("cannot parse json: '" + page + "' on " + url, x);
+        }
+    }
+
+    @Override
+    public QueryDeparturesResult queryDepartures(String stationId, @Nullable Date time, int maxDepartures,
+            boolean equivs)
+            throws IOException {
+        // TODO only 1 hour of results returned, find secret parameter?
+        if (maxDepartures == 0)
+            maxDepartures = DEFAULT_MAX_DEPARTURES;
+        final Calendar c = new GregorianCalendar(timeZone);
+        c.setTime(time);
+
+        HttpUrl.Builder builder = this.departureEndpoint.newBuilder()
+                .addQueryParameter("datum", formatDate(c).toString())
+                .addQueryParameter("zeit", formatTime(c).toString())
+                .addQueryParameter("ortExtId", stationId)
+                .addQueryParameter("ortId", formatLid(stationId))
+                .addQueryParameter("mitVias", "true")
+                .addQueryParameter("maxVias", "2");
+        PRODUCTS_MAP.forEach((key, product) -> builder.addQueryParameter("verkehrsmittel[]", key));
+        final HttpUrl url = builder.build();
+
+        String page = null;
+        try {
+            page = doRequest(url);
+            final QueryDeparturesResult result = new QueryDeparturesResult(this.resultHeader);
+            final JSONObject head = new JSONObject(page);
+            final JSONArray deps = head.optJSONArray("entries");
+            if (deps == null) return result;
+            int added = 0;
+            for (int iDep = 0; iDep < deps.length(); iDep++) {
+                final JSONObject dep = deps.getJSONObject(iDep);
+                if (parseCancelled(dep)) {
+                    continue;
+                }
+                final String bahnhofsId = dep.getString("bahnhofsId");
+                final String bahnhofsName = Optional.ofNullable(dep.optJSONArray("ueber")).map(ueber -> ueber.optString(0)).orElse(null);
+                if (!equivs && !stationId.equals(bahnhofsId)) {
+                    continue;
+                }
+                final Location location = createLocation(LocationType.STATION, bahnhofsId, null, bahnhofsName, null, null);
+                StationDepartures stationDepartures = result.findStationDepartures(bahnhofsId);
+                if (stationDepartures == null) {
+                    stationDepartures = new StationDepartures(location, new ArrayList<Departure>(8), null);
+                    result.stationDepartures.add(stationDepartures);
+                }
+
+                final String journeyId = dep.optString("journeyId", null);
+                final Line line = parseLine(dep.getJSONObject("verkehrmittel"));
+                final Departure departure = new Departure(
+                        parseIso8601NoOffset(dep.optString("zeit", null)),
+                        parseIso8601NoOffset(dep.optString("ezZeit", null)),
+                        line,
+                        parsePosition(Optional.ofNullable(dep.optString("ezGleis", null)).orElse(dep.optString("gleis", null))),
+                        createLocation(LocationType.STATION, null, null, dep.getString("terminus"), null, null),
+                        null,
+                        parseJourneyMessages(dep, null, null),
+                        journeyId == null ? null : new DbWebJourneyRef(journeyId, line));
+
+                stationDepartures.departures.add(departure);
+                added += 1;
+                if (added >= maxDepartures) {
+                    break;
+                }
+            }
+
+            for (final StationDepartures stationDepartures : result.stationDepartures)
+                Collections.sort(stationDepartures.departures, Departure.TIME_COMPARATOR);
+            return result;
+        } catch (InternalErrorException | BlockedException e) {
+            return new QueryDeparturesResult(this.resultHeader, QueryDeparturesResult.Status.INVALID_STATION);
+        } catch (IOException | RuntimeException e) {
+            return new QueryDeparturesResult(this.resultHeader, QueryDeparturesResult.Status.SERVICE_DOWN);
+        } catch (final JSONException x) {
+            throw new ParserException("cannot parse json: '" + page + "' on " + url, x);
+        }
+    }
+
+    @Override
+    public SuggestLocationsResult suggestLocations(CharSequence constraint, @Nullable Set<LocationType> types,
+            int maxLocations)
+            throws IOException {
+        if (maxLocations == 0)
+            maxLocations = DEFAULT_MAX_LOCATIONS;
+
+        final String request = "{\"searchTerm\": \"" + constraint + "\"," //
+                + "\"locationTypes\":[" + formatLocationTypes(types) + "]," //
+                + "\"maxResults\":" + maxLocations + "}";
+
+        final HttpUrl url = this.locationsEndpoint.newBuilder()
+                .addQueryParameter("suchbegriff", constraint.toString())
+                .addQueryParameter("typ", "ALL")
+                .addQueryParameter("limit", Integer.toString(maxLocations))
+                .build();
+        String page = null;
+        try {
+            page = doRequest(url);
+
+            final JSONArray locs = new JSONArray(page);
+            final List<SuggestedLocation> locations = new ArrayList<>();
+            for (int iLoc = 0; iLoc < locs.length(); iLoc++) {
+                final JSONObject jsonL = locs.getJSONObject(iLoc);
+                final Location loc = parseLocation(jsonL);
+                if (loc != null) {
+                    locations.add(new SuggestedLocation(loc, jsonL.optInt("weight", -iLoc)));
+                }
+            }
+            return new SuggestLocationsResult(this.resultHeader, locations);
+        } catch (IOException | RuntimeException e) {
+            e.printStackTrace();
+            return new SuggestLocationsResult(this.resultHeader, SuggestLocationsResult.Status.SERVICE_DOWN);
+        } catch (final JSONException x) {
+            throw new ParserException("cannot parse json: '" + page + "' on " + url, x);
+        }
+    }
+
+    @Override
+    public QueryTripsResult queryTrips(Location from, @Nullable Location via, Location to, Date date, boolean dep,
+            @Nullable TripOptions options) throws IOException {
+        return doQueryTrips(from, via, to, date, dep,
+                options != null ? options.products : null,
+                options != null && options.flags != null && options.flags.contains(TripFlag.BIKE),
+                null);
+    }
+
+    @Override
+    public QueryTripsResult queryMoreTrips(QueryTripsContext context, boolean later) throws IOException {
+        final DbWebApiContext ctx = (DbWebApiContext) context;
+        final String ctxToken;
+        if (later && ctx.canQueryLater()) {
+            ctxToken = ctx.laterContext;
+        } else if (!later && ctx.canQueryEarlier()) {
+            ctxToken = ctx.earlierContext;
+        } else {
+            return new QueryTripsResult(this.resultHeader, QueryTripsResult.Status.NO_TRIPS);
+        }
+        return doQueryTrips(ctx.from, ctx.via, ctx.to, ctx.date, ctx.dep, ctx.products, ctx.bike, ctxToken);
+    }
+
+    @Override
+    public QueryJourneyResult queryJourney(final JourneyRef aJourneyRef) throws IOException {
+        return doQueryJourney((DbWebJourneyRef) aJourneyRef);
+    }
+
+    private QueryJourneyResult doQueryJourney(final DbWebJourneyRef journeyRef) throws IOException {
+        HttpUrl url = this.journeyEndpoint.newBuilder()
+                .addQueryParameter("journeyId", journeyRef.journeyId)
+                .addQueryParameter("poly", "true")
+                .build();
+        String page = null;
+        try {
+            page = doRequest(url);
+            final JSONObject res = new JSONObject(page);
+            Trip.Public leg = parseJourney(res, journeyRef);
+            return new QueryJourneyResult(this.resultHeader, url.toString(), journeyRef, leg);
+        } catch (InternalErrorException | BlockedException e) {
+            final String code = parseErrorCode(e);
+            if (code != null) {
+                return new QueryJourneyResult(this.resultHeader, QueryJourneyResult.Status.NO_JOURNEY);
+            }
+            return new QueryJourneyResult(this.resultHeader, QueryJourneyResult.Status.SERVICE_DOWN);
+        } catch (IOException | RuntimeException e) {
+            return new QueryJourneyResult(this.resultHeader, QueryJourneyResult.Status.SERVICE_DOWN);
+        } catch (final JSONException x) {
+            throw new ParserException("cannot parse json: '" + page + "' on " + url, x);
+        }
+    }
+
+    @Override
+    protected boolean hasCapability(Capability capability) {
+        return CAPABILITIES.contains(capability);
+    }
+
+    @Override
+    public Set<Product> defaultProducts() {
+        return Product.ALL;
+    }
+
+    private static class DbWebApiContext implements QueryTripsContext {
+        public final Location from, via, to;
+        public final Date date;
+        public final boolean dep;
+        public final Set<Product> products;
+        public final boolean bike;
+        public final String laterContext, earlierContext;
+
+        public DbWebApiContext(final Location from, final @Nullable Location via, final Location to, final Date date,
+                               final boolean dep, final Set<Product> products, final boolean bike, final String laterContext,
+                               final String earlierContext) {
+            this.from = from;
+            this.via = via;
+            this.to = to;
+            this.date = date;
+            this.dep = dep;
+            this.products = products;
+            this.bike = bike;
+            this.laterContext = laterContext;
+            this.earlierContext = earlierContext;
+        }
+
+        @Override
+        public boolean canQueryLater() {
+            return laterContext != null;
+        }
+
+        @Override
+        public boolean canQueryEarlier() {
+            return earlierContext != null;
+        }
+    }
+}

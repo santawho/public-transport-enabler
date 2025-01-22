@@ -33,10 +33,13 @@ import javax.annotation.Nullable;
 import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
 
+import de.schildbach.pte.dto.JourneyRef;
+import de.schildbach.pte.dto.Line;
 import de.schildbach.pte.dto.Location;
 import de.schildbach.pte.dto.Point;
 import de.schildbach.pte.dto.Position;
 import de.schildbach.pte.dto.Product;
+import de.schildbach.pte.dto.QueryJourneyResult;
 import de.schildbach.pte.dto.QueryTripsResult;
 import de.schildbach.pte.dto.Style;
 import de.schildbach.pte.dto.SuggestLocationsResult;
@@ -101,6 +104,11 @@ public abstract class AbstractNetworkProvider implements NetworkProvider {
             @Nullable Accessibility accessibility, @Nullable Set<TripFlag> flags) throws IOException {
         return queryTrips(from, via, to, date, dep,
                 new TripOptions(products, optimize, walkSpeed, accessibility, flags));
+    }
+
+    @Override
+    public QueryJourneyResult queryJourney(final JourneyRef journeyRef) throws IOException {
+        throw new UnsupportedOperationException("queryJourney(\"" + journeyRef + "\")");
     }
 
     @Override

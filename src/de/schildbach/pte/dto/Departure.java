@@ -44,9 +44,10 @@ public final class Departure implements Serializable {
     final public @Nullable Location destination;
     final public @Nullable int[] capacity;
     final public @Nullable String message;
+    public final @Nullable JourneyRef journeyRef;
 
     public Departure(final Date plannedTime, final Date predictedTime, final Line line, final Position position,
-            final Location destination, final int[] capacity, final String message) {
+            final Location destination, final int[] capacity, final String message, final JourneyRef journeyRef) {
         this.plannedTime = plannedTime;
         this.predictedTime = predictedTime;
         checkArgument(plannedTime != null || predictedTime != null);
@@ -55,6 +56,12 @@ public final class Departure implements Serializable {
         this.destination = destination;
         this.capacity = capacity;
         this.message = message;
+        this.journeyRef = journeyRef;
+    }
+
+    public Departure(final Date plannedTime, final Date predictedTime, final Line line, final Position position,
+                     final Location destination, final int[] capacity, final String message) {
+        this(plannedTime, predictedTime, line, position, destination, capacity, message, null);
     }
 
     public Date getTime() {

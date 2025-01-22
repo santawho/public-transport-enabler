@@ -372,9 +372,14 @@ public final class Trip implements Serializable {
         public final Stop arrivalStop;
         public final @Nullable List<Stop> intermediateStops;
         public final @Nullable String message;
+        public final @Nullable JourneyRef journeyRef;
+        public @Nullable Location entryLocation;
+        public @Nullable Location exitLocation;
 
-        public Public(final Line line, final Location destination, final Stop departureStop, final Stop arrivalStop,
-                final List<Stop> intermediateStops, final List<Point> path, final String message) {
+        public Public(
+                final Line line, final Location destination, final Stop departureStop, final Stop arrivalStop,
+                final List<Stop> intermediateStops, final List<Point> path, final String message,
+                final JourneyRef journeyRef) {
             super(departureStop.location, arrivalStop.location, path);
 
             this.line = checkNotNull(line);
@@ -383,9 +388,21 @@ public final class Trip implements Serializable {
             this.arrivalStop = checkNotNull(arrivalStop);
             this.intermediateStops = intermediateStops;
             this.message = message;
+            this.journeyRef = journeyRef;
 
             checkNotNull(departureStop.getDepartureTime());
             checkNotNull(arrivalStop.getArrivalTime());
+        }
+
+        public Public(
+                final Line line, final Location destination, final Stop departureStop, final Stop arrivalStop,
+                final List<Stop> intermediateStops, final List<Point> path, final String message) {
+            this(line, destination, departureStop, arrivalStop, intermediateStops, path, message, null);
+        }
+
+        public void setEntryAndExit(final Location entryLocation, final Location exitLocation) {
+            this.entryLocation = entryLocation;
+            this.exitLocation = exitLocation;
         }
 
         @Override

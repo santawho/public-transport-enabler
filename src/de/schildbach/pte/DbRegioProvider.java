@@ -80,7 +80,7 @@ import okhttp3.HttpUrl;
  * 
  * @author Andreas Schildbach
  */
-public final class DbRegioProvider extends DbProvider {
+public final class DbRegioProvider extends DbRegioWebProvider {
     public static final Set<Product> REGIO_PRODUCTS;
 
     static {
@@ -90,10 +90,5 @@ public final class DbRegioProvider extends DbProvider {
 
     public DbRegioProvider() {
         super(NetworkId.DBREGIO);
-    }
-
-    @Override
-    public Set<Product> defaultProducts() {
-        return REGIO_PRODUCTS;
     }
 }

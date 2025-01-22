@@ -270,7 +270,7 @@ public final class HttpClient {
         try (final Response response = call.execute()) {
             final int responseCode = response.code();
             final String bodyPeek = response.peekBody(SCRAPE_PEEK_SIZE).string().replaceAll("\\p{C}", "");
-            if (responseCode == HttpURLConnection.HTTP_OK) {
+            if (responseCode == HttpURLConnection.HTTP_OK || responseCode == HttpURLConnection.HTTP_CREATED) {
 
                 final HttpUrl redirectUrl = testRedirect(url, bodyPeek);
                 if (redirectUrl != null)

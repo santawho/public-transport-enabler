@@ -1,5 +1,5 @@
 /*
- * Copyright the original author or authors.
+ * Copyright 2012-2015 the original author or authors.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,26 +15,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package de.schildbach.pte;
+package de.schildbach.pte.dto;
 
-import java.util.EnumSet;
-import java.util.Set;
-
-import de.schildbach.pte.dto.Product;
+import java.io.Serializable;
 
 /**
- * Provider implementation for Deutsche Bahn (Germany), regional traffic preferred.
- * 
  * @author Andreas Schildbach
  */
-public final class DbRegioHafasProvider extends DbHafasProvider {
-    public DbRegioHafasProvider(final String apiAuthorization, final byte[] salt) {
-        super(NetworkId.DBREGIO, DbHafasProvider.DEFAULT_API_CLIENT, apiAuthorization, salt);
-        setUseAddName(true);
-    }
-
-    @Override
-    public Set<Product> defaultProducts() {
-        return DbRegioProvider.REGIO_PRODUCTS;
-    }
+public interface JourneyRef extends Serializable {
 }
