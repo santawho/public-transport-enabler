@@ -70,6 +70,10 @@ public interface NetworkProvider {
         BIKE
     }
 
+    void setUserInterfaceLanguage(@Nullable String userInterfaceLanguage);
+
+    void setMessagesAsSimpleHtml(boolean messagesAsSimpleHtml);
+
     NetworkId id();
 
     boolean hasCapabilities(final Capability... capabilities);

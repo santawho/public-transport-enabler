@@ -53,6 +53,8 @@ public abstract class AbstractNetworkProvider implements NetworkProvider {
     protected Charset requestUrlEncoding = Charsets.ISO_8859_1;
     protected TimeZone timeZone = TimeZone.getTimeZone("CET");
     protected int numTripsRequested = 6;
+    protected @Nullable String userInterfaceLanguage = null;
+    protected boolean messagesAsSimpleHtml;
     private @Nullable Map<String, Style> styles = null;
 
     protected static final Set<Product> ALL_EXCEPT_HIGHSPEED = EnumSet
@@ -60,6 +62,14 @@ public abstract class AbstractNetworkProvider implements NetworkProvider {
 
     protected AbstractNetworkProvider(final NetworkId network) {
         this.network = network;
+    }
+
+    public void setUserInterfaceLanguage(@Nullable String userInterfaceLanguage) {
+        this.userInterfaceLanguage = userInterfaceLanguage == null ? null : userInterfaceLanguage.toLowerCase();
+    }
+
+    public void setMessagesAsSimpleHtml(boolean messagesAsSimpleHtml) {
+        this.messagesAsSimpleHtml = messagesAsSimpleHtml;
     }
 
     @Override
