@@ -98,6 +98,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
     private String apiAuthorization;
     @Nullable
     private String apiClient;
+    private boolean useAddName = false;
     @Nullable
     private byte[] requestChecksumSalt;
     @Nullable
@@ -138,6 +139,10 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
     protected AbstractHafasClientInterfaceProvider setApiEndpoint(final String apiEndpoint) {
         this.apiEndpoint = checkNotNull(apiEndpoint);
         return this;
+    }
+
+    public void setUseAddName(boolean useAddName) {
+        this.useAddName = useAddName;
     }
 
     public String getApiEndpoint() {
@@ -1212,6 +1217,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
             final String name = Strings.emptyToNull(prod.getString("name"));
             final String nameS = prod.optString("nameS", null);
             final String number = prod.optString("number", null);
+            final String addName = useAddName ? prod.optString("addName", null) : null;
             final int icoIndex = prod.getInt("icoX");
             final Style style = styles.get(icoIndex);
             final int oprIndex = prod.optInt("oprX", -1);
@@ -1220,7 +1226,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
             final JSONObject prodCtx = prod.optJSONObject("prodCtx");
             final String id = prodCtx != null ? prodCtx.optString("lineId", null) : null;
             final Product product = cls != -1 ? intToProduct(cls) : null;
-            lines.add(newLine(id, operator, product, name, nameS, number, style));
+            lines.add(newLine(id, operator, product, name, nameS, number, addName, style));
         }
 
         return lines;
@@ -1239,9 +1245,12 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
     }
 
     protected Line newLine(final String id, final String operator, final Product product, final @Nullable String name,
-            final @Nullable String shortName, final @Nullable String number, final Style style) {
+            final @Nullable String shortName, final @Nullable String number, final @Nullable String addName,
+            final Style style) {
         final String longName;
-        if (name != null)
+        if (addName != null)
+            longName = addName + (number != null && !addName.endsWith(number) ? " (" + number + ")" : "");
+        else if (name != null)
             longName = name + (number != null && !name.endsWith(number) ? " (" + number + ")" : "");
         else if (shortName != null)
             longName = shortName + (number != null && !shortName.endsWith(number) ? " (" + number + ")" : "");
@@ -1260,7 +1269,8 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
             return new Line(id, operator, product, label, longName, lineStyle(operator, product, label));
         } else {
             // Otherwise the longer label is fine
-            return new Line(id, operator, product, name, longName, lineStyle(operator, product, name));
+            final String label = addName != null ? addName : name;
+            return new Line(id, operator, product, label, longName, lineStyle(operator, product, name));
         }
     }
 
