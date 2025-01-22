@@ -79,7 +79,7 @@ import okhttp3.HttpUrl;
  * 
  * @author Andreas Schildbach
  */
-public final class DbProvider extends AbstractNetworkProvider {
+public class DbProvider extends AbstractNetworkProvider {
     private final List<Capability> CAPABILITIES = Arrays.asList(
             Capability.SUGGEST_LOCATIONS,
             Capability.NEARBY_LOCATIONS,
@@ -155,7 +155,11 @@ public final class DbProvider extends AbstractNetworkProvider {
     private static final Pattern P_SPLIT_NAME_ONE_COMMA = Pattern.compile("([^,]*), ([^,]*)");
 
     public DbProvider() {
-        super(NetworkId.DB);
+        this(NetworkId.DB);
+    }
+
+    protected DbProvider(final NetworkId networkId) {
+        super(networkId);
         this.departureEndpoint = API_BASE.newBuilder().addPathSegments("bahnhofstafel/abfahrt").build();
         this.tripEndpoint = API_BASE.newBuilder().addPathSegments("angebote/fahrplan").build();
         this.locationsEndpoint = API_BASE.newBuilder().addPathSegments("location/search").build();
@@ -170,8 +174,10 @@ public final class DbProvider extends AbstractNetworkProvider {
         httpClient.setHeader("X-Correlation-ID", UUID.randomUUID() + "_" + UUID.randomUUID());
         httpClient.setHeader("Accept", contentType);
         httpClient.setHeader("Content-Type", contentType);
-        final CharSequence page = httpClient.get(url, body, null);
-        return page.toString();
+        if (this.userInterfaceLanguage != null)
+            httpClient.setHeader("Accept-Language", this.userInterfaceLanguage);
+        final String page = httpClient.get(url, body, null).toString();
+        return page;
     }
 
     private CharSequence formatDate(final Calendar time) {
@@ -356,8 +362,8 @@ public final class DbProvider extends AbstractNetworkProvider {
 
     private List<Location> parseLocations(final JSONArray locs) throws JSONException {
         final List<Location> locations = new ArrayList<>();
-        for (int i = 0; i < locs.length(); i++) {
-            final Location l = parseLocation(locs.getJSONObject(i));
+        for (int iLoc = 0; iLoc < locs.length(); iLoc++) {
+            final Location l = parseLocation(locs.getJSONObject(iLoc));
             if (l != null) {
                 locations.add(l);
             }
@@ -365,26 +371,35 @@ public final class DbProvider extends AbstractNetworkProvider {
         return locations;
     }
 
-    private void parseMessages(final JSONArray msgs, final List<String> messages, final Integer minPriority)
+    private void parseMessages(final JSONArray msgs, final List<String> messages, final String prefix, final Integer minPriority)
             throws JSONException {
         if (msgs == null)
             return;
-        for (int i = 0; i < msgs.length(); i++) {
-            final JSONObject msgObj = msgs.getJSONObject(i);
-            final String msg = msgObj.optString("text", null);
-            if (msg != null && (minPriority == null || msgObj.optInt("priority", minPriority) < minPriority)) {
+        for (int iMsg = 0; iMsg < msgs.length(); iMsg++) {
+            final JSONObject msgObj = msgs.getJSONObject(iMsg);
+            final String title = msgObj.optString("ueberschrift", null);
+            final String text = msgObj.optString("text", null);
+            final String url = msgObj.optString("url", null);
+            if (text != null && (minPriority == null || msgObj.optInt("priority", 0) >= minPriority)) {
+                String msg = text;
+                if (prefix != null)
+                    msg = prefix + msg;
+                if (title != null && this.messagesAsSimpleHtml)
+                    msg = "<b>" + title + "</b><br>" + msg;
+                if (url != null && this.messagesAsSimpleHtml)
+                    msg = msg + "<br><a href=\"" + url + "\">Info&#128279;</a>";
                 messages.add(msg);
             }
         }
     }
 
-    private String parseMessages(final JSONObject e) throws JSONException {
+    private String parseJourneyMessages(final JSONObject jny) throws JSONException {
         final List<String> messages = new ArrayList<>();
-        parseMessages(e.optJSONArray("echtzeitNotizen"), messages, null);
-        parseMessages(e.optJSONArray("himNotizen"), messages, null);
+        parseMessages(jny.optJSONArray("echtzeitNotizen"), messages, null, null);
+        parseMessages(jny.optJSONArray("himNotizen"), messages, null, null);
         // show very important static messages (e.g. on demand tel)
-        parseMessages(e.optJSONArray("attributNotizen"), messages, 100);
-        return messages.isEmpty() ? null : join(" – ", messages);
+        parseMessages(jny.optJSONArray("attributNotizen"), messages, this.messagesAsSimpleHtml ? "&#8226; " : null, 100);
+        return messages.isEmpty() ? null : join(this.messagesAsSimpleHtml ? "<br>" : " - ", messages);
     }
 
     // replace with String.join() at some point
@@ -394,31 +409,49 @@ public final class DbProvider extends AbstractNetworkProvider {
         return joiner.toString();
     }
 
-    private Line parseLine(final JSONObject e) {
+    private Line parseLine(final JSONObject jny) throws JSONException {
         // TODO attrs, messages
-        final Product p = SHORT_PRODUCTS_MAP.get(e.optString("produktGattung", null));
-        final String name = Optional.ofNullable(e.optString("langtext", null)).orElse(e.optString("mitteltext", null));
-        String shortName = e.optString("mitteltext", null);
-        if (shortName != null && (p == Product.BUS || p == Product.TRAM)) {
+        final Product product = SHORT_PRODUCTS_MAP.get(jny.optString("produktGattung", null));
+        final String name = Optional.ofNullable(jny.optString("langtext", null)).orElse(jny.optString("mitteltext", null));
+        String shortName = jny.optString("mitteltext", null);
+        if (shortName != null && (product == Product.BUS || product == Product.TRAM)) {
             shortName = shortName.replaceAll("^[A-Za-z]+ ", "");
         }
+        String operator = null;
+        final JSONArray attributNotizen = jny.optJSONArray("attributNotizen");
+        if (attributNotizen != null) {
+            for (int iAttr = 0; iAttr < attributNotizen.length(); ++iAttr) {
+                JSONObject attr = attributNotizen.getJSONObject(iAttr);
+                if ("OP".equals(attr.get("key"))) {
+                    operator = attr.getString("text");
+                    break;
+                }
+            }
+        }
         return new Line(
-                e.optString("zuglaufId", null),
-                null,
-                p,
+                jny.optString("zuglaufId", null),
+                operator,
+                product,
                 shortName,
                 name,
-                lineStyle(null, p, name));
+                lineStyle(operator, product, name));
     }
 
-    private boolean parseCancelled(JSONObject stop) {
+    private boolean parseCancelled(JSONObject stop) throws JSONException {
         final boolean cancelled = stop.optBoolean("cancelled", false);
         if (cancelled)
             return true;
+        final JSONObject ersatzhaltNotiz = stop.optJSONObject("ersatzhaltNotiz");
+        if (ersatzhaltNotiz != null) {
+            String typ = ersatzhaltNotiz.getString("typ");
+            if ("GECANCELT".equals(typ)) {
+                return true;
+            }
+        }
         final JSONArray notices = stop.optJSONArray("echtzeitNotizen");
         if (notices != null) {
-            for (int i = 0; i < notices.length(); i++) {
-                final JSONObject notice = notices.optJSONObject(i);
+            for (int iNotice = 0; iNotice < notices.length(); iNotice++) {
+                final JSONObject notice = notices.optJSONObject(iNotice);
                 if (notice != null) {
                     final String text = notice.optString("text", null);
                     if ("Halt entfällt".equals(text) || "Stop cancelled".equals(text)) {
@@ -430,7 +463,7 @@ public final class DbProvider extends AbstractNetworkProvider {
         return false;
     }
 
-    private Stop parseStop(final JSONObject stop, final Location fallbackLocation) {
+    private Stop parseStop(final JSONObject stop, final Location fallbackLocation) throws JSONException {
         final Position gleis = parsePosition(stop.optString("gleis", null));
         final Position ezGleis = parsePosition(stop.optString("ezGleis", null));
         final boolean cancelled = parseCancelled(stop);
@@ -490,7 +523,7 @@ public final class DbProvider extends AbstractNetworkProvider {
         if (isPublicTransportLeg) {
             final Line line = parseLine(abschnitt);
             final Location destination = parseDirection(abschnitt);
-            final String message = parseMessages(abschnitt);
+            final String message = parseJourneyMessages(abschnitt);
             return new Trip.Public(line, destination, departureStop, arrivalStop, intermediateStops, null, message);
         } else {
             final int dist = abschnitt.optInt("distanz");
@@ -514,8 +547,12 @@ public final class DbProvider extends AbstractNetworkProvider {
                 .map(gesamt -> gesamt.optJSONObject("ab"));
         if (ab.isPresent()) {
             fares.add(new Fare(
-                    "ab", Fare.Type.ADULT, ParserUtils.getCurrency(ab.get().optString("waehrung", "EUR")),
-                    (float) ab.get().optDouble("betrag"), null, null));
+                    "de".equals(this.userInterfaceLanguage) ? "ab" : "from",
+                    Fare.Type.ADULT,
+                    ParserUtils.getCurrency(ab.get().optString("waehrung", "EUR")),
+                    (float) ab.get().optDouble("betrag"),
+                    null,
+                    null));
         }
         return fares;
     }
@@ -569,30 +606,35 @@ public final class DbProvider extends AbstractNetworkProvider {
             final JSONArray verbindungen = res.getJSONArray("verbindungen");
             final List<Trip> trips = new ArrayList<>();
 
-            for (int i = 0; i < verbindungen.length(); i++) {
-                final JSONObject verbindungParent = verbindungen.getJSONObject(i);
+            for (int iTrip = 0; iTrip < verbindungen.length(); iTrip++) {
+                final JSONObject verbindungParent = verbindungen.getJSONObject(iTrip);
                 final JSONObject verbindung = verbindungParent.getJSONObject("verbindung");
                 final JSONArray abschnitte = verbindung.getJSONArray("verbindungsAbschnitte");
                 final List<Trip.Leg> legs = new ArrayList<>();
                 Location tripFrom = null;
                 Location tripTo = null;
 
-                for (int j = 0; j < abschnitte.length(); j++) {
-                    final Trip.Leg leg = parseLeg(abschnitte.getJSONObject(j));
+                for (int iLeg = 0; iLeg < abschnitte.length(); iLeg++) {
+                    final Trip.Leg leg = parseLeg(abschnitte.getJSONObject(iLeg));
                     legs.add(leg);
-                    if (j == 0) {
+                    if (iLeg == 0) {
                         tripFrom = leg.departure;
                     }
-                    if (j == abschnitte.length() - 1) {
+                    if (iLeg == abschnitte.length() - 1) {
                         tripTo = leg.arrival;
                     }
                 }
                 final List<Fare> fares = parseFares(verbindungParent);
                 final int transfers = verbindung.optInt("umstiegeAnzahl", -1);
                 final int[] capacity = parseCapacity(verbindung);
-                trips.add(
-                        new Trip(verbindung.optString("kontext").split("#")[0], tripFrom, tripTo, legs, fares, capacity,
-                                transfers == -1 ? null : transfers));
+                trips.add(new Trip(
+                        verbindung.optString("kontext").split("#")[0],
+                        tripFrom,
+                        tripTo,
+                        legs,
+                        fares,
+                        capacity,
+                        transfers == -1 ? null : transfers));
             }
             if (trips.isEmpty()) {
                 return new QueryTripsResult(this.resultHeader, QueryTripsResult.Status.NO_TRIPS);
@@ -624,7 +666,7 @@ public final class DbProvider extends AbstractNetworkProvider {
         if (maxLocations == 0)
             maxLocations = DEFAULT_MAX_LOCATIONS;
         if (location.coord == null) {
-            return new NearbyLocationsResult(resultHeader, NearbyLocationsResult.Status.INVALID_ID);
+            return new NearbyLocationsResult(this.resultHeader, NearbyLocationsResult.Status.INVALID_ID);
         }
         final String request = "{\"area\":" //
                 + "{\"coordinates\":{\"longitude\":" + location.coord.getLonAsDouble() + ",\"latitude\":"
@@ -675,22 +717,22 @@ public final class DbProvider extends AbstractNetworkProvider {
             final JSONObject head = new JSONObject(page);
             final JSONArray deps = head.getJSONArray("bahnhofstafelAbfahrtPositionen");
             int added = 0;
-            for (int i = 0; i < deps.length(); i++) {
-                final JSONObject dep = deps.getJSONObject(i);
+            for (int iDep = 0; iDep < deps.length(); iDep++) {
+                final JSONObject dep = deps.getJSONObject(iDep);
                 if (parseCancelled(dep)) {
                     continue;
                 }
-                final Location l = parseLocation(dep.optJSONObject("abfrageOrt"));
-                if (!equivs && !stationId.equals(l.id)) {
+                final Location location = parseLocation(dep.optJSONObject("abfrageOrt"));
+                if (!equivs && !stationId.equals(location.id)) {
                     continue;
                 }
-                StationDepartures stationDepartures = result.findStationDepartures(l.id);
+                StationDepartures stationDepartures = result.findStationDepartures(location.id);
                 if (stationDepartures == null) {
-                    stationDepartures = new StationDepartures(l, new ArrayList<Departure>(8), null);
+                    stationDepartures = new StationDepartures(location, new ArrayList<Departure>(8), null);
                     result.stationDepartures.add(stationDepartures);
                 }
 
-                final Stop stop = parseStop(dep, l);
+                final Stop stop = parseStop(dep, location);
                 final Departure departure = new Departure(
                         stop.plannedDepartureTime,
                         stop.predictedDepartureTime,
@@ -698,7 +740,7 @@ public final class DbProvider extends AbstractNetworkProvider {
                         Optional.ofNullable(stop.predictedDeparturePosition).orElse(stop.plannedDeparturePosition),
                         parseDirection(dep),
                         null,
-                        parseMessages(dep));
+                        parseJourneyMessages(dep));
 
                 stationDepartures.departures.add(departure);
                 added += 1;
