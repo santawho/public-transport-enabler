@@ -576,9 +576,7 @@ public class DbWebProvider extends AbstractNetworkProvider {
                     departureStop.location,
                     departureStop.getDepartureTime(),
                     arrivalStop.location,
-                    departureStop.location.equals(arrivalStop.location)
-                            ? departureStop.getDepartureTime()
-                            : arrivalStop.getArrivalTime(),
+                    arrivalStop.getArrivalTime(),
                     null, dist);
         }
     }

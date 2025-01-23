@@ -326,6 +326,17 @@ public class DbMovasProvider extends AbstractNetworkProvider {
         return splitPlaceAndName(address, P_SPLIT_NAME_FIRST_COMMA, 1, 2);
     }
 
+    private Location createLocation(final LocationType type, final String id, final Point coord, final String name,
+                                    final Set<Product> products, final String bahnhofsInfoId) {
+        final String[] placeAndName = type == LocationType.STATION ? splitStationName(name) : splitAddress(name);
+        final String infoId = bahnhofsInfoId != null ? bahnhofsInfoId : id;
+        final String url = infoId == null ? null : (
+                "https://www.bahnhof.de"
+                        + ("de".equals(this.userInterfaceLanguage) ? "" : "/en")
+                        + "/bahnhof-de/id/" + infoId);
+        return new Location(type, id, coord, placeAndName[0], placeAndName[1], products, url);
+    }
+
     private Location parseLocation(JSONObject loc) {
         if (loc == null)
             return null;
@@ -344,26 +355,22 @@ public class DbMovasProvider extends AbstractNetworkProvider {
         } else {
             coord = lid.coord;
         }
+        final String bahnhofsInfoId = loc.optString("stationId", null);
 
-        return parseLocation(
+        return createLocation(
                 lid.type,
                 id,
                 coord,
                 loc.optString("name", null),
-                parseProducts(loc.optJSONArray("products")));
-    }
-
-    private Location parseLocation(final LocationType type, final String id, final Point coord, String name,
-            final Set<Product> products) {
-        final String[] placeAndName = type == LocationType.STATION ? splitStationName(name) : splitAddress(name);
-        return new Location(type, id, coord, placeAndName[0], placeAndName[1], products);
+                parseProducts(loc.optJSONArray("products")),
+                bahnhofsInfoId);
     }
 
     private Location parseDirection(final JSONObject dep) {
         final String richtung = dep.optString("richtung", null);
         if (richtung == null)
             return null;
-        return parseLocation(LocationType.STATION, null, null, richtung, null);
+        return createLocation(LocationType.STATION, null, null, richtung, null, null);
     }
 
     private List<Location> parseLocations(final JSONArray locs) throws JSONException {
@@ -533,14 +540,16 @@ public class DbMovasProvider extends AbstractNetworkProvider {
             return new Trip.Public(line, destination, departureStop, arrivalStop, intermediateStops, null, message);
         } else {
             final int dist = abschnitt.optInt("distanz");
+            if (dist == 0 && departureStop.location.id.equals(arrivalStop.location.id)) {
+                // Movas inserts a dummy walk -> skip it
+                return null;
+            }
             return new Trip.Individual(
                     "TRANSFER".equals(typ) ? Trip.Individual.Type.TRANSFER : Trip.Individual.Type.WALK,
                     departureStop.location,
                     departureStop.getDepartureTime(),
                     arrivalStop.location,
-                    departureStop.location.equals(arrivalStop.location)
-                            ? departureStop.getDepartureTime()
-                            : arrivalStop.getArrivalTime(),
+                    arrivalStop.getArrivalTime(),
                     null, dist);
         }
     }
@@ -622,6 +631,7 @@ public class DbMovasProvider extends AbstractNetworkProvider {
 
                 for (int iLeg = 0; iLeg < abschnitte.length(); iLeg++) {
                     final Trip.Leg leg = parseLeg(abschnitte.getJSONObject(iLeg));
+                    if (leg == null) continue;
                     legs.add(leg);
                     if (iLeg == 0) {
                         tripFrom = leg.departure;
