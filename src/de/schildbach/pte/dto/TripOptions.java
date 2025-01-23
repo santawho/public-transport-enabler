@@ -17,6 +17,7 @@
 
 package de.schildbach.pte.dto;
 
+import java.io.Serializable;
 import java.util.Date;
 import java.util.Set;
 
@@ -36,7 +37,7 @@ import de.schildbach.pte.NetworkProvider.WalkSpeed;
  * 
  * @author Ialokim
  */
-public class TripOptions {
+public class TripOptions implements Serializable {
     public final @Nullable Set<Product> products;
     public final @Nullable Optimize optimize;
     public final @Nullable WalkSpeed walkSpeed;
