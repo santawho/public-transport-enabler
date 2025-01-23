@@ -168,6 +168,11 @@ public class DbMovasProvider extends AbstractNetworkProvider {
         this.resultHeader = new ResultHeader(network, "movas");
     }
 
+    @Override
+    protected String[] getValidUserInterfaceLanguages() {
+        return new String[] { "en", "de", "fr", "es", "dk", "cz", "it", "nl", "pl" };
+    }
+
     private String doRequest(final HttpUrl url, final String body, final String contentType) throws IOException {
         // DB API requires these headers
         // Content-Type must be exactly as passed below,

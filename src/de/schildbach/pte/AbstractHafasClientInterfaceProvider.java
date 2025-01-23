@@ -132,6 +132,11 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
         this.apiBase = checkNotNull(apiBase);
     }
 
+    @Override
+    protected String[] getValidUserInterfaceLanguages() {
+        return new String[] { "en", "de" };
+    }
+
     public HttpUrl getApiBase() {
         return apiBase;
     }

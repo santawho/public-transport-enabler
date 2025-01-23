@@ -18,14 +18,12 @@
 package de.schildbach.pte;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.Date;
 import java.util.Set;
 
 import javax.annotation.Nullable;
 
 import de.schildbach.pte.dto.JourneyRef;
-import de.schildbach.pte.dto.Line;
 import de.schildbach.pte.dto.Location;
 import de.schildbach.pte.dto.LocationType;
 import de.schildbach.pte.dto.NearbyLocationsResult;
@@ -75,7 +73,7 @@ public interface NetworkProvider {
         BIKE
     }
 
-    void setUserInterfaceLanguage(@Nullable String userInterfaceLanguage);
+    String setUserInterfaceLanguage(@Nullable String userInterfaceLanguage);
 
     void setMessagesAsSimpleHtml(boolean messagesAsSimpleHtml);
 

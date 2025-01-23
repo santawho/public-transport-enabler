@@ -34,7 +34,6 @@ import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
 
 import de.schildbach.pte.dto.JourneyRef;
-import de.schildbach.pte.dto.Line;
 import de.schildbach.pte.dto.Location;
 import de.schildbach.pte.dto.Point;
 import de.schildbach.pte.dto.Position;
@@ -67,8 +66,26 @@ public abstract class AbstractNetworkProvider implements NetworkProvider {
         this.network = network;
     }
 
-    public void setUserInterfaceLanguage(@Nullable String userInterfaceLanguage) {
-        this.userInterfaceLanguage = userInterfaceLanguage == null ? null : userInterfaceLanguage.toLowerCase();
+    public String setUserInterfaceLanguage(@Nullable String userInterfaceLanguage) {
+        String lang = userInterfaceLanguage == null ? null : userInterfaceLanguage.toLowerCase();
+        String[] validLangs = getValidUserInterfaceLanguages();
+        String uiLang = null;
+        if (validLangs != null) {
+            for (String validLang : validLangs) {
+                if (validLang.equals(lang)) {
+                    uiLang = validLang;
+                    break;
+                }
+            }
+            if (uiLang == null)
+                uiLang = validLangs[0];
+        }
+        this.userInterfaceLanguage = uiLang;
+        return this.userInterfaceLanguage;
+    }
+
+    protected String[] getValidUserInterfaceLanguages() {
+        return null;
     }
 
     public void setMessagesAsSimpleHtml(boolean messagesAsSimpleHtml) {
