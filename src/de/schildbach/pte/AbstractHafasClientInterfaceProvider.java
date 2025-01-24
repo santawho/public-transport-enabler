@@ -58,6 +58,7 @@ import com.google.common.io.BaseEncoding;
 
 import de.schildbach.pte.dto.Departure;
 import de.schildbach.pte.dto.Fare;
+import de.schildbach.pte.dto.JourneyRef;
 import de.schildbach.pte.dto.Line;
 import de.schildbach.pte.dto.Location;
 import de.schildbach.pte.dto.LocationType;
@@ -66,6 +67,7 @@ import de.schildbach.pte.dto.Point;
 import de.schildbach.pte.dto.Position;
 import de.schildbach.pte.dto.Product;
 import de.schildbach.pte.dto.QueryDeparturesResult;
+import de.schildbach.pte.dto.QueryJourneyResult;
 import de.schildbach.pte.dto.QueryTripsContext;
 import de.schildbach.pte.dto.QueryTripsResult;
 import de.schildbach.pte.dto.ResultHeader;
@@ -244,7 +246,21 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                 jsonContext.products, jsonContext.walkSpeed, later ? jsonContext.laterContext : jsonContext.earlierContext);
     }
 
-    protected final NearbyLocationsResult jsonLocGeoPos(final Set<LocationType> types, final Point coord,
+    public static class HafasJourneyRef implements JourneyRef {
+        public String jid;
+
+        public HafasJourneyRef(final String jid) {
+            this.jid = jid;
+        }
+    }
+
+    @Override
+    public QueryJourneyResult queryJourney(JourneyRef journeyRef) throws IOException {
+        return jsonJourney((HafasJourneyRef) journeyRef);
+    }
+
+    protected final NearbyLocationsResult jsonLocGeoPos(
+            final Set<LocationType> types, final Point coord,
             int maxDistance, int maxLocations) throws IOException {
         if (maxDistance == 0)
             maxDistance = DEFAULT_MAX_DISTANCE;
@@ -440,8 +456,10 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                     final String message = buildMessageFromRemarks(jny, remarks, hims);
 
                     if (line != null) {
+                        final String journeyId = jny.optString("jid", null);
                         final Departure departure = new Departure(plannedTime, predictedTime, line, position,
-                                destination, null, message);
+                                destination, null, message,
+                                journeyId == null ? null : new HafasJourneyRef(journeyId));
 
                         StationDepartures stationDepartures = findStationDepartures(result.stationDepartures, location);
                         if (stationDepartures == null) {
@@ -553,6 +571,74 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
             }
         }
         return null;
+    }
+
+    protected final Trip.Public jsonPublicLeg(
+            final JSONObject jny,
+            final Stop aDepartureStop, final Stop aArrivalStop,
+            final List<Line> lines, final JSONArray locList, final JSONArray crdSysList, final List<String> encodedPolylines,
+            final List<Remark> remarks, final List<Remark> hims,
+            final Calendar cal, final Date baseDate) throws JSONException {
+        Stop departureStop = aDepartureStop;
+        Stop arrivalStop = aArrivalStop;
+
+        final Line line = lines.get(jny.getInt("prodX"));
+        final String dirTxt = jny.optString("dirTxt", null);
+
+        final Location destination;
+        if (dirTxt != null) {
+            final String[] splitDirTxt = splitStationName(dirTxt);
+            destination = new Location(LocationType.ANY, null, splitDirTxt[0], splitDirTxt[1]);
+        } else {
+            destination = null;
+        }
+
+        final JSONArray stopList = jny.optJSONArray("stopL");
+        final List<Stop> intermediateStops;
+        if (stopList != null) {
+            checkState(stopList.length() >= 2);
+            if (departureStop == null) {
+                departureStop = parseJsonStop(stopList.getJSONObject(0), locList, crdSysList, cal, baseDate);
+            }
+            if (arrivalStop == null) {
+                arrivalStop = parseJsonStop(stopList.getJSONObject(stopList.length() - 1), locList, crdSysList, cal, baseDate);
+            }
+            intermediateStops = new ArrayList<>(stopList.length());
+            for (int iStop = 1; iStop < stopList.length() - 1; iStop++) {
+                final JSONObject stop = stopList.getJSONObject(iStop);
+                final Stop intermediateStop = parseJsonStop(stop, locList, crdSysList, cal, baseDate);
+                intermediateStops.add(intermediateStop);
+            }
+        } else {
+            intermediateStops = null;
+        }
+
+        final List<Point> path;
+        final JSONObject polyG = jny.optJSONObject("polyG");
+        if (polyG != null) {
+            final int crdSysX = polyG.optInt("crdSysX", -1);
+            if (crdSysX != -1) {
+                final String crdSysType = crdSysList.getJSONObject(crdSysX).getString("type");
+                if (!"WGS84".equals(crdSysType))
+                    throw new RuntimeException("unknown type: " + crdSysType);
+            }
+            final JSONArray polyXList = polyG.getJSONArray("polyXL");
+            path = new LinkedList<>();
+            final int polyXListLen = polyXList.length();
+            checkState(polyXListLen <= 1);
+            for (int i = 0; i < polyXListLen; i++) {
+                final String encodedPolyline = encodedPolylines.get(polyXList.getInt(i));
+                path.addAll(PolylineFormat.decode(encodedPolyline));
+            }
+        } else {
+            path = null;
+        }
+
+        final String message = buildMessageFromRemarks(jny, remarks, hims);
+
+        final String jid = jny.optString("jid", null);
+        return new Trip.Public(line, destination, departureStop, arrivalStop, intermediateStops, path,
+                message, jid == null ? null : new HafasJourneyRef(jid));
     }
 
     protected final QueryTripsResult jsonTripSearch(Location from, @Nullable Location via, Location to, final Date time,
@@ -695,56 +781,8 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                     final Trip.Leg leg;
                     if (SECTION_TYPE_JOURNEY.equals(secType) || SECTION_TYPE_TELE_TAXI.equals(secType)) {
                         final JSONObject jny = sec.getJSONObject("jny");
-                        final Line line = lines.get(jny.getInt("prodX"));
-                        final String dirTxt = jny.optString("dirTxt", null);
-
-                        final Location destination;
-                        if (dirTxt != null) {
-                            final String[] splitDirTxt = splitStationName(dirTxt);
-                            destination = new Location(LocationType.ANY, null, splitDirTxt[0], splitDirTxt[1]);
-                        } else {
-                            destination = null;
-                        }
-
-                        final JSONArray stopList = jny.optJSONArray("stopL");
-                        final List<Stop> intermediateStops;
-                        if (stopList != null) {
-                            checkState(stopList.length() >= 2);
-                            intermediateStops = new ArrayList<>(stopList.length());
-                            for (int iStop = 1; iStop < stopList.length() - 1; iStop++) {
-                                final JSONObject stop = stopList.getJSONObject(iStop);
-                                final Stop intermediateStop = parseJsonStop(stop, locList, crdSysList, c, baseDate);
-                                intermediateStops.add(intermediateStop);
-                            }
-                        } else {
-                            intermediateStops = null;
-                        }
-
-                        final List<Point> path;
-                        final JSONObject polyG = jny.optJSONObject("polyG");
-                        if (polyG != null) {
-                            final int crdSysX = polyG.optInt("crdSysX", -1);
-                            if (crdSysX != -1) {
-                                final String crdSysType = crdSysList.getJSONObject(crdSysX).getString("type");
-                                if (!"WGS84".equals(crdSysType))
-                                    throw new RuntimeException("unknown type: " + crdSysType);
-                            }
-                            final JSONArray polyXList = polyG.getJSONArray("polyXL");
-                            path = new LinkedList<>();
-                            final int polyXListLen = polyXList.length();
-                            checkState(polyXListLen <= 1);
-                            for (int i = 0; i < polyXListLen; i++) {
-                                final String encodedPolyline = encodedPolylines.get(polyXList.getInt(i));
-                                path.addAll(PolylineFormat.decode(encodedPolyline));
-                            }
-                        } else {
-                            path = null;
-                        }
-
-                        final String message = buildMessageFromRemarks(jny, remarks, hims);
-
-                        leg = new Trip.Public(line, destination, departureStop, arrivalStop, intermediateStops, path,
-                                message);
+                        leg = jsonPublicLeg(jny, departureStop, arrivalStop,
+                                lines, locList, crdSysList, encodedPolylines, remarks, hims, c, baseDate);
                     } else if (SECTION_TYPE_WALK.equals(secType)) {
                         final JSONObject gis = sec.getJSONObject("gis");
                         final int distance = gis.optInt("dist", 0);
@@ -844,6 +882,78 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
             final JsonContext context = new JsonContext(from, via, to, time, dep, products, walkSpeed,
                     res.optString("outCtxScrF"), res.optString("outCtxScrB"));
             return new QueryTripsResult(header, null, from, null, to, context, trips);
+        } catch (final JSONException x) {
+            throw new ParserException("cannot parse json: '" + page + "' on " + url, x);
+        }
+    }
+
+    private QueryJourneyResult jsonJourney(HafasJourneyRef journeyRef) throws IOException {
+        final String request = wrapJsonApiRequest("JourneyDetails", "{" //
+                        + "\"jid\":\"" + journeyRef.jid + "\"," //
+                        + "\"getPolyline\":true}", //
+                false);
+
+        final HttpUrl url = requestUrl(request);
+        final CharSequence page = httpClient.get(url, request, "application/json");
+
+        try {
+            final JSONObject head = new JSONObject(page.toString());
+            final String headErr = head.optString("err", null);
+            if (headErr != null && !"OK".equals(headErr)) {
+                final String headErrTxt = head.optString("errTxt");
+                throw new RuntimeException(headErr + " " + headErrTxt);
+            }
+
+            final JSONArray svcResList = head.getJSONArray("svcResL");
+            checkState(svcResList.length() == 2);
+            final ResultHeader header = parseServerInfo(svcResList.getJSONObject(0), head.getString("ver"));
+
+            final JSONObject svcRes = svcResList.optJSONObject(1);
+            checkState("JourneyDetails".equals(svcRes.getString("meth")));
+            final String err = svcRes.getString("err");
+            if (!"OK".equals(err)) {
+                final String errTxt = svcRes.optString("errTxt");
+                final String msg = "err=" + err + ", errTxt=\"" + errTxt + "\"";
+                log.debug("Hafas error: {}", msg);
+                if ("H890".equals(err)) // No connections found.
+                    return new QueryJourneyResult(header, QueryJourneyResult.Status.NO_JOURNEY);
+                if ("H887".equals(err)) // HAFAS Kernel: Kernel computation time limit reached.
+                    return new QueryJourneyResult(header, QueryJourneyResult.Status.SERVICE_DOWN);
+                if ("H9240".equals(err)) // HAFAS Kernel: Internal error.
+                    return new QueryJourneyResult(header, QueryJourneyResult.Status.SERVICE_DOWN);
+                if ("FAIL".equals(err))
+                    return new QueryJourneyResult(header, QueryJourneyResult.Status.SERVICE_DOWN);
+                if ("PROBLEMS".equals(err) && "HCI Service: problems during service execution".equals(errTxt))
+                    return new QueryJourneyResult(header, QueryJourneyResult.Status.SERVICE_DOWN);
+                if ("CGI_READ_FAILED".equals(err))
+                    return new QueryJourneyResult(header, QueryJourneyResult.Status.SERVICE_DOWN);
+                if ("CGI_NO_SERVER".equals(err))
+                    return new QueryJourneyResult(header, QueryJourneyResult.Status.SERVICE_DOWN);
+                if ("H_UNKNOWN".equals(err))
+                    return new QueryJourneyResult(header, QueryJourneyResult.Status.SERVICE_DOWN);
+                throw new RuntimeException(msg);
+            }
+            final JSONObject res = svcRes.getJSONObject("res");
+
+            final JSONObject common = res.getJSONObject("common");
+            final List<Remark> remarks = parseRemList(common.optJSONArray("remL"));
+            final List<Remark> hims = parseHimList(common.optJSONArray("himL"));
+            final List<Style> styles = parseIcoList(common.getJSONArray("icoL"));
+            final JSONArray crdSysList = common.optJSONArray("crdSysL");
+            final JSONArray locList = common.getJSONArray("locL");
+            final List<String> operators = parseOpList(common.getJSONArray("opL"));
+            final List<Line> lines = parseProdList(common.getJSONArray("prodL"), operators, styles);
+            final List<String> encodedPolylines = parsePolyList(common.getJSONArray("polyL"));
+
+            final JSONObject journey = res.optJSONObject("journey");
+
+            final Calendar c = new GregorianCalendar(timeZone);
+            ParserUtils.parseIsoDate(c, journey.getString("date"));
+            final Date baseDate = c.getTime();
+
+            final Trip.Public journeyLeg = jsonPublicLeg(journey, null, null,
+                    lines, locList, crdSysList, encodedPolylines, remarks, hims, c, baseDate);
+            return new QueryJourneyResult(header, null, journeyRef, journeyLeg);
         } catch (final JSONException x) {
             throw new ParserException("cannot parse json: '" + page + "' on " + url, x);
         }
