@@ -51,6 +51,7 @@ import javax.annotation.Nullable;
 
 import de.schildbach.pte.dto.Departure;
 import de.schildbach.pte.dto.Fare;
+import de.schildbach.pte.dto.JourneyRef;
 import de.schildbach.pte.dto.Line;
 import de.schildbach.pte.dto.Location;
 import de.schildbach.pte.dto.LocationType;
@@ -59,6 +60,7 @@ import de.schildbach.pte.dto.Point;
 import de.schildbach.pte.dto.Position;
 import de.schildbach.pte.dto.Product;
 import de.schildbach.pte.dto.QueryDeparturesResult;
+import de.schildbach.pte.dto.QueryJourneyResult;
 import de.schildbach.pte.dto.QueryTripsContext;
 import de.schildbach.pte.dto.QueryTripsResult;
 import de.schildbach.pte.dto.ResultHeader;
@@ -116,7 +118,8 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
             Capability.NEARBY_LOCATIONS,
             Capability.DEPARTURES,
             Capability.TRIPS,
-            Capability.TRIPS_VIA);
+            Capability.TRIPS_VIA,
+            Capability.JOURNEY);
 
     private static final HttpUrl API_BASE = HttpUrl.parse("https://app.vendo.noncd.db.de/mob/");
     private final ResultHeader resultHeader;
@@ -177,6 +180,7 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
 
     private final HttpUrl departureEndpoint;
     private final HttpUrl tripEndpoint;
+    private final HttpUrl journeyEndpoint;
     private final HttpUrl locationsEndpoint;
     private final HttpUrl nearbyEndpoint;
 
@@ -189,6 +193,7 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
         super(networkId);
         this.departureEndpoint = API_BASE.newBuilder().addPathSegments("bahnhofstafel/abfahrt").build();
         this.tripEndpoint = API_BASE.newBuilder().addPathSegments("angebote/fahrplan").build();
+        this.journeyEndpoint = API_BASE.newBuilder().addPathSegments("zuglauf").build();
         this.locationsEndpoint = API_BASE.newBuilder().addPathSegments("location/search").build();
         this.nearbyEndpoint = API_BASE.newBuilder().addPathSegments("location/nearby").build();
         this.resultHeader = new ResultHeader(network, "movas");
@@ -432,11 +437,13 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
         }
     }
 
-    private String parseJourneyMessages(final JSONObject jny) throws JSONException {
+    private String parseJourneyMessages(final JSONObject jny, final String operatorName) throws JSONException {
         final List<String> messages = new ArrayList<>();
         parseMessages(jny.optJSONArray("echtzeitNotizen"), messages, null, null);
         parseMessages(jny.optJSONArray("himNotizen"), messages, null, null);
         // show very important static messages (e.g. on demand tel)
+        if (operatorName != null)
+            messages.add("&#8226; " + operatorName);
         parseMessages(jny.optJSONArray("attributNotizen"), messages, this.messagesAsSimpleHtml ? "&#8226; " : null, 100);
         return messages.isEmpty() ? null : join(this.messagesAsSimpleHtml ? "<br>" : " - ", messages);
     }
@@ -543,6 +550,44 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
         return null;
     }
 
+    static class DbMovasJourneyRef implements JourneyRef {
+        final String journeyId;
+        final Line line;
+
+        public DbMovasJourneyRef(final String journeyId, final Line line) {
+            this.journeyId = journeyId;
+            this.line = line;
+        }
+    }
+
+    private Trip.Public parseJourney(final JSONObject journey, final DbMovasJourneyRef journeyRef) throws JSONException {
+        Stop departureStop = null;
+        Stop arrivalStop = null;
+        final List<Stop> intermediateStops = parseStops(journey.optJSONArray("halte"));
+        if (intermediateStops != null && intermediateStops.size() >= 2) {
+            final int size = intermediateStops.size();
+            departureStop = intermediateStops.get(0);
+            arrivalStop = intermediateStops.get(size - 1);
+            intermediateStops.remove(size - 1);
+            intermediateStops.remove(0);
+        }
+        String operator = journeyRef.line != null ? journeyRef.line.network : null;
+        if (operator == null) {
+            final JSONArray attributNotizen = journey.optJSONArray("attributNotizen");
+            if (attributNotizen != null) {
+                for (int iAttr = 0; iAttr < attributNotizen.length(); ++iAttr) {
+                    JSONObject attr = attributNotizen.getJSONObject(iAttr);
+                    if ("OP".equals(attr.get("key"))) {
+                        operator = attr.getString("text");
+                        break;
+                    }
+                }
+            }
+        }
+        final String message = parseJourneyMessages(journey, operator);
+        return new Trip.Public(journeyRef.line, arrivalStop.location, departureStop, arrivalStop, intermediateStops, null, message, journeyRef);
+    }
+
     private Trip.Leg parseLeg(final JSONObject abschnitt) throws JSONException {
         Stop departureStop = null;
         Stop arrivalStop = null;
@@ -562,8 +607,10 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
         if (isPublicTransportLeg) {
             final Line line = parseLine(abschnitt);
             final Location destination = parseDirection(abschnitt);
-            final String message = parseJourneyMessages(abschnitt);
-            return new Trip.Public(line, destination, departureStop, arrivalStop, intermediateStops, null, message);
+            final String message = parseJourneyMessages(abschnitt, null);
+            final String journeyId = abschnitt.optString("zuglaufId", null);
+            return new Trip.Public(line, destination, departureStop, arrivalStop, intermediateStops, null, message,
+                    journeyId == null ? null : new DbMovasJourneyRef(journeyId, line));
         } else {
             final int dist = abschnitt.optInt("distanz");
             if (dist == 0 && departureStop.location.id.equals(arrivalStop.location.id)) {
@@ -774,15 +821,18 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
                     result.stationDepartures.add(stationDepartures);
                 }
 
+                final String journeyId = dep.optString("zuglaufId", null);
+                final Line line = parseLine(dep);
                 final Stop stop = parseStop(dep, location);
                 final Departure departure = new Departure(
                         stop.plannedDepartureTime,
                         stop.predictedDepartureTime,
-                        parseLine(dep),
+                        line,
                         Optional.ofNullable(stop.predictedDeparturePosition).orElse(stop.plannedDeparturePosition),
                         parseDirection(dep),
                         null,
-                        parseJourneyMessages(dep));
+                        parseJourneyMessages(dep, null),
+                        journeyId == null ? null : new DbMovasJourneyRef(journeyId, line));
 
                 stationDepartures.departures.add(departure);
                 added += 1;
@@ -859,6 +909,36 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
             return new QueryTripsResult(this.resultHeader, QueryTripsResult.Status.NO_TRIPS);
         }
         return doQueryTrips(ctx.from, ctx.via, ctx.to, ctx.date, ctx.dep, ctx.products, ctx.bike, ctxToken);
+    }
+
+    @Override
+    public QueryJourneyResult queryJourney(final JourneyRef aJourneyRef) throws IOException {
+        return doQueryJourney((DbMovasJourneyRef) aJourneyRef);
+    }
+
+    private QueryJourneyResult doQueryJourney(final DbMovasJourneyRef journeyRef) throws IOException {
+        HttpUrl url = this.journeyEndpoint.newBuilder()
+                .addPathSegment(journeyRef.journeyId)
+                .addQueryParameter("poly", "true")
+                .build();
+        final String contentType = "application/x.db.vendo.mob.zuglauf.v2+json";
+        String page = null;
+        try {
+            page = doRequest(url, null, contentType);
+            final JSONObject res = new JSONObject(page);
+            Trip.Public leg = parseJourney(res, journeyRef);
+            return new QueryJourneyResult(this.resultHeader, url.toString(), journeyRef, leg);
+        } catch (InternalErrorException | BlockedException e) {
+            final String code = parseErrorCode(e);
+            if (code != null) {
+                return new QueryJourneyResult(this.resultHeader, QueryJourneyResult.Status.NO_JOURNEY);
+            }
+            return new QueryJourneyResult(this.resultHeader, QueryJourneyResult.Status.SERVICE_DOWN);
+        } catch (IOException | RuntimeException e) {
+            return new QueryJourneyResult(this.resultHeader, QueryJourneyResult.Status.SERVICE_DOWN);
+        } catch (final JSONException x) {
+            throw new ParserException("cannot parse json: '" + page + "' on " + url, x);
+        }
     }
 
     @Override

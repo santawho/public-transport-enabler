@@ -596,7 +596,7 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
             final String message = parseJourneyMessages(abschnitt, verkehrsmittel.optJSONArray("zugattribute"), null);
             final String journeyId = abschnitt.optString("journeyId", null);
             return new Trip.Public(line, destination, departureStop, arrivalStop, intermediateStops, null, message,
-                    journeyId == null ? null : new DbWebJourneyRef(journeyId, line) );
+                    journeyId == null ? null : new DbWebJourneyRef(journeyId, line));
         } else {
             final int dist = abschnitt.optInt("distanz");
             return new Trip.Individual(
