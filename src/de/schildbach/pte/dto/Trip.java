@@ -401,8 +401,42 @@ public final class Trip implements Serializable {
         }
 
         public void setEntryAndExit(final Location entryLocation, final Location exitLocation) {
-            this.entryLocation = entryLocation;
-            this.exitLocation = exitLocation;
+            // some providers (like some Hafas) return different location IDs in the original trip leg and the journey
+            // try to find by ID or fallback to name comparison
+            if (entryLocation != null) {
+                Location realEntry = findRealStopLocation(entryLocation, departureStop.location);
+                if (exitLocation == null && realEntry == null)
+                    realEntry = findRealStopLocation(entryLocation, arrivalStop.location);
+                this.entryLocation = (realEntry != null) ? realEntry : entryLocation;
+            }
+            if (exitLocation != null) {
+                Location realExit = findRealStopLocation(exitLocation, arrivalStop.location);
+                this.exitLocation = (realExit != null) ? realExit : exitLocation;
+            }
+        }
+
+        private Location findRealStopLocation(final Location location, final Location additionalLocation) {
+            final String locId = location.id;
+            if (locId.equals(additionalLocation.id))
+                return additionalLocation;
+            if (intermediateStops != null) {
+                for (final Stop iStop: intermediateStops) {
+                    Location loc = iStop.location;
+                    if (locId.equals(loc.id))
+                        return loc;
+                }
+            }
+            final String locPlace = location.place;
+            final String locName = location.name;
+            if (java.util.Objects.equals(locName, additionalLocation.name)
+                    && java.util.Objects.equals(locPlace, additionalLocation.place))
+                return additionalLocation;
+            for (final Stop iStop: intermediateStops) {
+                Location iLoc = iStop.location;
+                if (java.util.Objects.equals(locName, iLoc.name) && java.util.Objects.equals(locPlace, iLoc.place))
+                    return iLoc;
+            }
+            return null;
         }
 
         @Override
