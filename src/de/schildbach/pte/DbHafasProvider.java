@@ -29,7 +29,38 @@ import okhttp3.HttpUrl;
  * 
  * @author Andreas Schildbach
  */
-public class DbHafasProvider extends AbstractHafasClientInterfaceProvider {
+public abstract class DbHafasProvider extends AbstractHafasClientInterfaceProvider {
+    public static class Fernverkehr extends DbHafasProvider {
+        public Fernverkehr(final String apiAuthorization, final byte[] salt) {
+            this(NetworkId.DB, apiAuthorization, salt);
+        }
+
+        protected Fernverkehr(final NetworkId networkId, final String apiAuthorization, final byte[] salt) {
+            super(networkId, DbHafasProvider.DEFAULT_API_CLIENT, apiAuthorization, salt);
+        }
+
+        @Override
+        public Set<Product> defaultProducts() {
+            return DbProvider.FERNVERKEHR_PRODUCTS;
+        }
+    }
+
+    public static class Regio extends DbHafasProvider {
+        public Regio(final String apiAuthorization, final byte[] salt) {
+            this(NetworkId.DBREGIO, apiAuthorization, salt);
+        }
+
+        protected Regio(final NetworkId networkId, final String apiAuthorization, final byte[] salt) {
+            super(networkId, DbHafasProvider.DEFAULT_API_CLIENT, apiAuthorization, salt);
+            setUseAddName(true);
+        }
+
+        @Override
+        public Set<Product> defaultProducts() {
+            return DbProvider.REGIO_PRODUCTS;
+        }
+    }
+
     private static final HttpUrl API_BASE = HttpUrl.parse("https://reiseauskunft.bahn.de/bin/");
     private static final Product[] PRODUCTS_MAP = { Product.HIGH_SPEED_TRAIN, // ICE-Züge
             Product.HIGH_SPEED_TRAIN, // Intercity- und Eurocityzüge
@@ -44,10 +75,6 @@ public class DbHafasProvider extends AbstractHafasClientInterfaceProvider {
             null, null, null, null };
     protected static final String DEFAULT_API_CLIENT = "{\"id\":\"DB\",\"v\":\"16040000\",\"type\":\"AND\",\"name\":\"DB Navigator\"}";
 
-    public DbHafasProvider(final String apiAuthorization, final byte[] salt) {
-        this(NetworkId.DB, DEFAULT_API_CLIENT, apiAuthorization, salt);
-    }
-
     protected DbHafasProvider(final NetworkId networkId, final String apiClient, final String apiAuthorization, final byte[] salt) {
         super(networkId, API_BASE, PRODUCTS_MAP);
         setApiVersion("1.15");
@@ -55,11 +82,6 @@ public class DbHafasProvider extends AbstractHafasClientInterfaceProvider {
         setApiClient(apiClient);
         setApiAuthorization(apiAuthorization);
         setRequestChecksumSalt(salt);
-    }
-
-    @Override
-    public Set<Product> defaultProducts() {
-        return Product.ALL;
     }
 
     private static final Pattern P_SPLIT_NAME_ONE_COMMA = Pattern.compile("([^,]*), ([^,]*)");

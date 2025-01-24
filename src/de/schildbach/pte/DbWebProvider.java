@@ -83,7 +83,37 @@ import okhttp3.HttpUrl;
  * 
  * @author Andreas Schildbach
  */
-public class DbWebProvider extends AbstractNetworkProvider {
+public abstract class DbWebProvider extends AbstractNetworkProvider {
+    public static class Fernverkehr extends DbWebProvider {
+        public Fernverkehr() {
+            this(NetworkId.DBWEB);
+        }
+
+        protected Fernverkehr(final NetworkId networkId) {
+            super(networkId);
+        }
+
+        @Override
+        public Set<Product> defaultProducts() {
+            return DbProvider.FERNVERKEHR_PRODUCTS;
+        }
+    }
+
+    public static class Regio extends DbWebProvider {
+        public Regio() {
+            this(NetworkId.DBREGIOWEB);
+        }
+
+        protected Regio(final NetworkId networkId) {
+            super(networkId);
+        }
+
+        @Override
+        public Set<Product> defaultProducts() {
+            return DbProvider.REGIO_PRODUCTS;
+        }
+    }
+
     private final List<Capability> CAPABILITIES = Arrays.asList(
             Capability.SUGGEST_LOCATIONS,
             Capability.NEARBY_LOCATIONS,
@@ -142,10 +172,6 @@ public class DbWebProvider extends AbstractNetworkProvider {
 
     private static final Pattern P_SPLIT_NAME_FIRST_COMMA = Pattern.compile("([^,]*), (.*)");
     private static final Pattern P_SPLIT_NAME_ONE_COMMA = Pattern.compile("([^,]*), ([^,]*)");
-
-    public DbWebProvider() {
-        this(NetworkId.DBWEB);
-    }
 
     protected DbWebProvider(final NetworkId networkId) {
         super(networkId);
@@ -391,10 +417,13 @@ public class DbWebProvider extends AbstractNetworkProvider {
             final String value = msgObj.optString("value", null);
             final String text = msgObj.optString("text", null);
             final String url = msgObj.optString("url", null);
+            final String teilstreckenHinweis = msgObj.optString("teilstreckenHinweis", null);
             if (text != null || value != null) {
                 String msg = text;
                 if (text == null)
                     msg = value;
+                if (teilstreckenHinweis != null)
+                    msg = msg + " " + teilstreckenHinweis;
                 if (prefix != null)
                     msg = prefix + msg;
                 if (title != null && this.messagesAsSimpleHtml)
@@ -411,7 +440,6 @@ public class DbWebProvider extends AbstractNetworkProvider {
         parseMessages(jny.optJSONArray("meldungen"), messages, null);
         parseMessages(jny.optJSONArray("risNotizen"), messages, null);
         parseMessages(jny.optJSONArray("himMeldungen"), messages, null);
-        // show very important static messages (e.g. on demand tel)
         if (operatorName != null)
             messages.add("&#8226; " + operatorName);
         if (zugattribute != null)
@@ -901,11 +929,6 @@ public class DbWebProvider extends AbstractNetworkProvider {
     @Override
     protected boolean hasCapability(Capability capability) {
         return CAPABILITIES.contains(capability);
-    }
-
-    @Override
-    public Set<Product> defaultProducts() {
-        return Product.ALL;
     }
 
     private static class DbWebApiContext implements QueryTripsContext {

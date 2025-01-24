@@ -17,69 +17,42 @@
 
 package de.schildbach.pte;
 
-import java.io.IOException;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
+import java.util.EnumSet;
 import java.util.Set;
-import java.util.StringJoiner;
-import java.util.TimeZone;
-import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
-import javax.annotation.Nullable;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-import de.schildbach.pte.dto.Departure;
-import de.schildbach.pte.dto.Fare;
-import de.schildbach.pte.dto.Line;
-import de.schildbach.pte.dto.Location;
-import de.schildbach.pte.dto.LocationType;
-import de.schildbach.pte.dto.NearbyLocationsResult;
-import de.schildbach.pte.dto.Point;
-import de.schildbach.pte.dto.Position;
 import de.schildbach.pte.dto.Product;
-import de.schildbach.pte.dto.QueryDeparturesResult;
-import de.schildbach.pte.dto.QueryTripsContext;
-import de.schildbach.pte.dto.QueryTripsResult;
-import de.schildbach.pte.dto.ResultHeader;
-import de.schildbach.pte.dto.StationDepartures;
-import de.schildbach.pte.dto.Stop;
-import de.schildbach.pte.dto.SuggestLocationsResult;
-import de.schildbach.pte.dto.SuggestedLocation;
-import de.schildbach.pte.dto.Trip;
-import de.schildbach.pte.dto.TripOptions;
-import de.schildbach.pte.exception.AbstractHttpException;
-import de.schildbach.pte.exception.BlockedException;
-import de.schildbach.pte.exception.InternalErrorException;
-import de.schildbach.pte.exception.ParserException;
-import de.schildbach.pte.util.ParserUtils;
-import okhttp3.HttpUrl;
 
 /**
  * Provider implementation for movas API of Deutsche Bahn (Germany).
  * 
  * @author Andreas Schildbach
  */
-public class DbProvider extends DbWebProvider {
+public final class DbProvider extends DbWebProvider.Fernverkehr {
+    public static final class Fernverkehr extends DbWebProvider.Fernverkehr {
+        public Fernverkehr() {
+            super(NetworkId.DB);
+        }
+    }
+
+    public static final class Regio extends DbWebProvider.Regio {
+        public Regio() {
+            super(NetworkId.DBREGIO);
+        }
+    }
+
+    public static final Set<Product> FERNVERKEHR_PRODUCTS;
+
+    static {
+        FERNVERKEHR_PRODUCTS = EnumSet.allOf(Product.class);
+    }
+
+    public static final Set<Product> REGIO_PRODUCTS;
+
+    static {
+        REGIO_PRODUCTS = EnumSet.allOf(Product.class);
+        REGIO_PRODUCTS.remove(Product.HIGH_SPEED_TRAIN);
+    }
+
     public DbProvider() {
         super(NetworkId.DB);
     }

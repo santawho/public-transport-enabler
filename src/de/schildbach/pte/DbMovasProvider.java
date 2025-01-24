@@ -80,7 +80,37 @@ import okhttp3.HttpUrl;
  * 
  * @author Andreas Schildbach
  */
-public class DbMovasProvider extends AbstractNetworkProvider {
+public abstract class DbMovasProvider extends AbstractNetworkProvider {
+    public static class Fernverkehr extends DbMovasProvider {
+        public Fernverkehr() {
+            this(NetworkId.DBMOVAS);
+        }
+
+        protected Fernverkehr(final NetworkId networkId) {
+            super(networkId);
+        }
+
+        @Override
+        public Set<Product> defaultProducts() {
+            return DbProvider.FERNVERKEHR_PRODUCTS;
+        }
+    }
+
+    public static class Regio extends DbMovasProvider {
+        public Regio() {
+            this(NetworkId.DBREGIOMOVAS);
+        }
+
+        protected Regio(final NetworkId networkId) {
+            super(networkId);
+        }
+
+        @Override
+        public Set<Product> defaultProducts() {
+            return DbProvider.REGIO_PRODUCTS;
+        }
+    }
+
     private final List<Capability> CAPABILITIES = Arrays.asList(
             Capability.SUGGEST_LOCATIONS,
             Capability.NEARBY_LOCATIONS,
@@ -154,10 +184,6 @@ public class DbMovasProvider extends AbstractNetworkProvider {
 
     private static final Pattern P_SPLIT_NAME_FIRST_COMMA = Pattern.compile("([^,]*), (.*)");
     private static final Pattern P_SPLIT_NAME_ONE_COMMA = Pattern.compile("([^,]*), ([^,]*)");
-
-    public DbMovasProvider() {
-        this(NetworkId.DB);
-    }
 
     protected DbMovasProvider(final NetworkId networkId) {
         super(networkId);
@@ -838,11 +864,6 @@ public class DbMovasProvider extends AbstractNetworkProvider {
     @Override
     protected boolean hasCapability(Capability capability) {
         return CAPABILITIES.contains(capability);
-    }
-
-    @Override
-    public Set<Product> defaultProducts() {
-        return Product.ALL;
     }
 
     private static class DbMovasContext implements QueryTripsContext {
