@@ -417,6 +417,9 @@ public final class Trip implements Serializable {
 
         private Location findRealStopLocation(final Location location, final Location additionalLocation) {
             final String locId = location.id;
+            if (locId == null) {
+                return null;
+            }
             if (locId.equals(additionalLocation.id))
                 return additionalLocation;
             if (intermediateStops != null) {
