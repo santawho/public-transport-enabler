@@ -811,8 +811,11 @@ public class VrsProvider extends AbstractNetworkProvider {
                     if (type.equals("walk")) {
                         if (departurePlanned == null)
                             departurePlanned = legs.get(legs.size() - 1).getArrivalTime();
-                        if (arrivalPlanned == null)
-                            arrivalPlanned = new Date(departurePlanned.getTime() + traveltime * 1000);
+                        final Date walkArrival = new Date(departurePlanned.getTime() + traveltime * 1000);
+                        // this old code would always ignore the walking time; historic reason?
+                        // if (arrivalPlanned == null)
+                        //    arrivalPlanned = walkArrival;
+                        arrivalPlanned = walkArrival;
 
                         legs.add(new Trip.Individual(Trip.Individual.Type.WALK, segmentOrigin, departurePlanned,
                                 segmentDestination, arrivalPlanned, points, (int) distance));
