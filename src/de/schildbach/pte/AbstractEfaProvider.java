@@ -20,6 +20,7 @@ package de.schildbach.pte;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
@@ -58,6 +59,7 @@ import com.google.common.base.Strings;
 import de.schildbach.pte.dto.Departure;
 import de.schildbach.pte.dto.Fare;
 import de.schildbach.pte.dto.Fare.Type;
+import de.schildbach.pte.dto.JourneyRef;
 import de.schildbach.pte.dto.Line;
 import de.schildbach.pte.dto.LineDestination;
 import de.schildbach.pte.dto.Location;
@@ -67,6 +69,7 @@ import de.schildbach.pte.dto.Point;
 import de.schildbach.pte.dto.Position;
 import de.schildbach.pte.dto.Product;
 import de.schildbach.pte.dto.QueryDeparturesResult;
+import de.schildbach.pte.dto.QueryJourneyResult;
 import de.schildbach.pte.dto.QueryTripsContext;
 import de.schildbach.pte.dto.QueryTripsResult;
 import de.schildbach.pte.dto.ResultHeader;
@@ -247,7 +250,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
 
     private final void appendCommonRequestParams(final HttpUrl.Builder url, final String outputFormat) {
         url.addEncodedQueryParameter("outputFormat", outputFormat);
-        url.addEncodedQueryParameter("language", language);
+        url.addEncodedQueryParameter("language", language != null ? language : userInterfaceLanguage);
         url.addEncodedQueryParameter("stateless", "1");
         url.addEncodedQueryParameter("coordOutputFormat", COORD_FORMAT);
         url.addEncodedQueryParameter("coordOutputFormatTail", Integer.toString(COORD_FORMAT_TAIL));
@@ -1512,8 +1515,16 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
 
         final HttpClient.Callback callback = (bodyPeek, body) -> {
             try {
+                BufferedReader bufferedReader = new BufferedReader(body.charStream());
+                bufferedReader.mark(1000000);
+                String s;
+                StringBuilder b = new StringBuilder();
+                while ((s = bufferedReader.readLine()) != null) b.append(s);
+                s = b.toString();
+                bufferedReader.reset();
                 final XmlPullParser pp = parserFactory.newPullParser();
-                pp.setInput(body.charStream());
+                pp.setInput(bufferedReader);
+//                pp.setInput(body.charStream());
                 final ResultHeader header = enterItdRequest(pp);
 
                 final QueryDeparturesResult r = new QueryDeparturesResult(header);
@@ -1628,7 +1639,10 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                                     predictedDepartureTime.isSet(Calendar.HOUR_OF_DAY)
                                             ? predictedDepartureTime.getTime() : null,
                                     lineDestinationAndCancelled.line, position,
-                                    lineDestinationAndCancelled.destination, null, null);
+                                    lineDestinationAndCancelled.destination, null, null,
+                                    new EfaJourneyRef(
+                                            lineDestinationAndCancelled.transportationId, stationId,
+                                            lineDestinationAndCancelled.tripCode, plannedDepartureTime.getTime()));
                             assignedStationDepartures.departures.add(departure);
                         }
                     }
@@ -1693,7 +1707,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                         // time
                         parseMobileSt(pp, plannedDepartureTime, predictedDepartureTime);
 
-                        final LineDestination lineDestination = parseMobileM(pp, true);
+                        final LineDestinationAndCancelled parseMobileMResult = parseMobileM(pp, true);
 
                         XmlPullUtil.enter(pp, "r");
                         final String assignedId = XmlPullUtil.valueTag(pp, "id");
@@ -1717,7 +1731,10 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                         stationDepartures.departures.add(new Departure(plannedDepartureTime.getTime(),
                                 predictedDepartureTime.isSet(Calendar.HOUR_OF_DAY)
                                         ? predictedDepartureTime.getTime() : null,
-                                lineDestination.line, position, lineDestination.destination, null, null));
+                                parseMobileMResult.line, position, parseMobileMResult.destination, null, null,
+                                new EfaJourneyRef(
+                                        parseMobileMResult.transportationId, stationId,
+                                        parseMobileMResult.tripCode, plannedDepartureTime.getTime())));
 
                         XmlPullUtil.skipExit(pp, "dp");
                     }
@@ -1740,7 +1757,22 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
 
     private static final Pattern P_MOBILE_M_SYMBOL = Pattern.compile("([^\\s]*)\\s+([^\\s]*)");
 
-    private LineDestination parseMobileM(final XmlPullParser pp, final boolean tyOrCo)
+//    private static class ParseMobileMResult {
+//        final Line line;
+//        final @Nullable Location destination;
+//        final String transportationId;
+//        final String tripCode;
+//
+//        ParseMobileMResult(final Line line, final Location destination,
+//                           final String transportationId, final String tripCode) {
+//            this.line = checkNotNull(line);
+//            this.destination = destination;
+//            this.transportationId = transportationId;
+//            this.tripCode = tripCode;
+//        }
+//    }
+//
+    private LineDestinationAndCancelled parseMobileM(final XmlPullParser pp, final boolean tyOrCo)
             throws XmlPullParserException, IOException {
         XmlPullUtil.enter(pp, "m");
 
@@ -1750,6 +1782,8 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
 
         final Line line;
         final Location destination;
+        String tripCode = null;
+        String transportationId = null;
         if ("100".equals(ty) || "99".equals(ty)) {
             destination = null;
             line = Line.FOOTWAY;
@@ -1773,8 +1807,19 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
             final String de = XmlPullUtil.optValueTag(pp, "de", null);
             final String productName = n != null ? n : de;
             XmlPullUtil.optValueTag(pp, "routeDesc", null);
-            XmlPullUtil.optValueTag(pp, "tco", null);
-            final String lineId = parseMobileDv(pp);
+            tripCode = XmlPullUtil.optValueTag(pp, "tco", null);
+            XmlPullUtil.enter(pp, "dv");
+            XmlPullUtil.optValueTag(pp, "branch", null);
+            final String lineIdLi = XmlPullUtil.valueTag(pp, "li");
+            final String lineIdSu = XmlPullUtil.valueTag(pp, "su");
+            final String lineIdPr = XmlPullUtil.valueTag(pp, "pr");
+            final String lineIdDct = XmlPullUtil.valueTag(pp, "dct");
+            final String lineIdNe = XmlPullUtil.valueTag(pp, "ne");
+            final String tk = XmlPullUtil.optValueTag(pp, "tk", null);
+            if (tk != null) tripCode = tk;
+            transportationId = XmlPullUtil.valueTag(pp, "stateless");
+            XmlPullUtil.skipExit(pp, "dv");
+            final String lineId =  lineIdNe + ":" + lineIdLi + ":" + lineIdSu + ":" + lineIdDct + ":" + lineIdPr;
 
             final String symbol;
             if (productName != null && productNu == null)
@@ -1795,7 +1840,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                 trainNum = null;
             }
 
-            final String network = lineId.substring(0, lineId.indexOf(':'));
+            final String network = lineIdNe; // lineId.substring(0, lineId.indexOf(':'));
             final Line parsedLine = parseLine(lineId, network, productType, symbol, symbol, null, trainType, trainNum,
                     productName);
             line = new Line(parsedLine.id, parsedLine.network, parsedLine.product, parsedLine.label,
@@ -1804,20 +1849,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
 
         XmlPullUtil.skipExit(pp, "m");
 
-        return new LineDestination(line, destination);
-    }
-
-    private String parseMobileDv(final XmlPullParser pp) throws XmlPullParserException, IOException {
-        XmlPullUtil.enter(pp, "dv");
-        XmlPullUtil.optValueTag(pp, "branch", null);
-        final String lineIdLi = XmlPullUtil.valueTag(pp, "li");
-        final String lineIdSu = XmlPullUtil.valueTag(pp, "su");
-        final String lineIdPr = XmlPullUtil.valueTag(pp, "pr");
-        final String lineIdDct = XmlPullUtil.valueTag(pp, "dct");
-        final String lineIdNe = XmlPullUtil.valueTag(pp, "ne");
-        XmlPullUtil.skipExit(pp, "dv");
-
-        return lineIdNe + ":" + lineIdLi + ":" + lineIdSu + ":" + lineIdDct + ":" + lineIdPr;
+        return new LineDestinationAndCancelled(line, destination, false, transportationId, tripCode);
     }
 
     private void parseMobileSt(final XmlPullParser pp, final Calendar plannedDepartureTime,
@@ -1911,11 +1943,17 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
         public final Line line;
         public final Location destination;
         public final boolean cancelled;
+        public final String transportationId;
+        public final String tripCode;
 
-        public LineDestinationAndCancelled(final Line line, final Location destination, final boolean cancelled) {
+        public LineDestinationAndCancelled(
+                final Line line, final Location destination, final boolean cancelled,
+                final String transportationId, final String tripCode) {
             this.line = line;
             this.destination = destination;
             this.cancelled = cancelled;
+            this.transportationId = transportationId;
+            this.tripCode = tripCode;
         }
     }
 
@@ -1937,6 +1975,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
         final String slMotType = XmlPullUtil.attr(pp, "motType");
         final String slSymbol = XmlPullUtil.optAttr(pp, "symbol", null);
         final String slNumber = XmlPullUtil.optAttr(pp, "number", null);
+        final String slKey = XmlPullUtil.optAttr(pp, "key", null);
         final String slStateless = XmlPullUtil.optAttr(pp, "stateless", null);
         final String slTrainType = XmlPullUtil.optAttr(pp, "trainType", null);
         final String slTrainName = XmlPullUtil.optAttr(pp, "trainName", null);
@@ -1981,7 +2020,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
         final Line line = new Line(slLine.id, slLine.network, slLine.product, slLine.label,
                 lineStyle(slLine.network, slLine.product, slLine.label), itdMessage);
         final boolean cancelled = "-9999".equals(itdDelay);
-        return new LineDestinationAndCancelled(line, destination, cancelled);
+        return new LineDestinationAndCancelled(line, destination, cancelled, slStateless, slKey);
     }
 
     private static final Pattern P_STATION_NAME_WHITESPACE = Pattern.compile("\\s+");
@@ -2107,6 +2146,30 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
         return url.build();
     }
 
+    public static class EfaJourneyRef implements JourneyRef {
+        public String line;
+        public String stopID;
+        public String tripCode;
+        public Date targetTime;
+
+        public EfaJourneyRef(
+                final String line,
+                final String stopID,
+                final String tripCode,
+                final Date targetTime) {
+            this.line = line;
+            this.stopID = stopID;
+            this.tripCode = tripCode;
+            this.targetTime = targetTime;
+        }
+    }
+
+    @Override
+    public QueryJourneyResult queryJourney(JourneyRef aJourneyRef) throws IOException {
+        final EfaJourneyRef journeyRef = (EfaJourneyRef) aJourneyRef;
+        return null;
+    }
+
     private final void appendCommonTripRequestParams(final HttpUrl.Builder url) {
         url.addEncodedQueryParameter("coordListOutputFormat", useStringCoordListOutputFormat ? "string" : "list");
     }
@@ -2204,8 +2267,15 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
 
     private QueryTripsResult queryTrips(final HttpUrl url, final Reader reader)
             throws XmlPullParserException, IOException {
+        BufferedReader bufferedReader = new BufferedReader(reader);
+        bufferedReader.mark(1000000);
+        String s;
+        StringBuilder b = new StringBuilder();
+        while ((s = bufferedReader.readLine()) != null) b.append(s);
+        s = b.toString();
+        bufferedReader.reset();
         final XmlPullParser pp = parserFactory.newPullParser();
-        pp.setInput(reader);
+        pp.setInput(bufferedReader);
         final ResultHeader header = enterItdRequest(pp);
         final Object context = header.context;
 
@@ -2498,6 +2568,11 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
             final Date departureTime, final Date departureTargetTime, final Location departureLocation,
             final Position departurePosition, final Date arrivalTime, final Date arrivalTargetTime,
             final Location arrivalLocation, final Position arrivalPosition) throws XmlPullParserException, IOException {
+        final String transportationLineId = XmlPullUtil.optAttr(pp, "stateless", null);
+        final String transportationTripCode = XmlPullUtil.optAttr(pp, "tC", null);
+        final EfaJourneyRef journeyRef = new EfaJourneyRef(
+                transportationLineId, departureLocation.id, transportationTripCode, departureTargetTime);
+
         final String destinationName = normalizeLocationName(XmlPullUtil.optAttr(pp, "destination", null));
         final String destinationId = XmlPullUtil.optAttr(pp, "destID", null);
         final Location destination;
@@ -2516,6 +2591,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
         final String motTrainType = XmlPullUtil.optAttr(pp, "trainType", null);
 
         XmlPullUtil.enter(pp, "itdMeansOfTransport");
+
         XmlPullUtil.require(pp, "motDivaParams");
         final String divaNetwork = XmlPullUtil.attr(pp, "network");
         final String divaLine = XmlPullUtil.attr(pp, "line");
@@ -2684,15 +2760,22 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                 arrivalTargetTime != null ? arrivalTargetTime : arrivalTime, arrivalTime != null ? arrivalTime : null,
                 arrivalPosition, null);
 
-        legs.add(new Trip.Public(styledLine, destination, departure, arrival, intermediateStops, path, message));
+        legs.add(new Trip.Public(styledLine, destination, departure, arrival, intermediateStops, path, message, journeyRef));
 
         return cancelled;
     }
 
     private QueryTripsResult queryTripsMobile(final HttpUrl url, final Location from, final @Nullable Location via,
             final Location to, final Reader reader) throws XmlPullParserException, IOException {
+        BufferedReader bufferedReader = new BufferedReader(reader);
+        bufferedReader.mark(1000000);
+        String sx;
+        StringBuilder b = new StringBuilder();
+        while ((sx = bufferedReader.readLine()) != null) b.append(sx);
+        sx = b.toString();
+        bufferedReader.reset();
         final XmlPullParser pp = parserFactory.newPullParser();
-        pp.setInput(reader);
+        pp.setInput(bufferedReader);
         final ResultHeader header = enterEfa(pp);
         XmlPullUtil.optSkip(pp, "msgs");
 
@@ -2780,7 +2863,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
 
                     final boolean isRealtime = XmlPullUtil.valueTag(pp, "realtime").equals("1");
 
-                    final LineDestination lineDestination = parseMobileM(pp, false);
+                    final LineDestinationAndCancelled parseMobileMResult = parseMobileM(pp, false);
 
                     final List<Point> path;
                     if (XmlPullUtil.test(pp, "pt"))
@@ -2859,18 +2942,20 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
 
                     XmlPullUtil.skipExit(pp, "l");
 
-                    if (lineDestination.line == Line.FOOTWAY) {
+                    if (parseMobileMResult.line == Line.FOOTWAY) {
                         legs.add(new Trip.Individual(Trip.Individual.Type.WALK, departure.location,
                                 departure.getDepartureTime(), arrival.location, arrival.getArrivalTime(), path, 0));
-                    } else if (lineDestination.line == Line.TRANSFER) {
+                    } else if (parseMobileMResult.line == Line.TRANSFER) {
                         legs.add(new Trip.Individual(Trip.Individual.Type.TRANSFER, departure.location,
                                 departure.getDepartureTime(), arrival.location, arrival.getArrivalTime(), path, 0));
-                    } else if (lineDestination.line == Line.SECURE_CONNECTION
-                            || lineDestination.line == Line.DO_NOT_CHANGE) {
+                    } else if (parseMobileMResult.line == Line.SECURE_CONNECTION
+                            || parseMobileMResult.line == Line.DO_NOT_CHANGE) {
                         // ignore
                     } else {
-                        legs.add(new Trip.Public(lineDestination.line, lineDestination.destination, departure, arrival,
-                                intermediateStops, path, null));
+                        legs.add(new Trip.Public(parseMobileMResult.line, parseMobileMResult.destination, departure, arrival,
+                                intermediateStops, path, null,
+                                new EfaJourneyRef(parseMobileMResult.transportationId, departure.location.id,
+                                        parseMobileMResult.tripCode, departure.plannedDepartureTime)));
                     }
                 }
 
