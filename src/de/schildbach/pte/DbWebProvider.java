@@ -39,6 +39,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.StringJoiner;
@@ -540,13 +541,27 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
         return null;
     }
 
-    static class DbWebJourneyRef implements JourneyRef {
+    static class DbWebJourneyRef extends JourneyRef {
         final String journeyId;
         final Line line;
 
         public DbWebJourneyRef(final String journeyId, final Line line) {
             this.journeyId = journeyId;
             this.line = line;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof DbWebJourneyRef)) return false;
+            DbWebJourneyRef that = (DbWebJourneyRef) o;
+            return Objects.equals(journeyId, that.journeyId)
+                    && Objects.equals(line, that.line);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(journeyId, line);
         }
     }
 

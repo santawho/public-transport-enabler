@@ -22,5 +22,5 @@ import java.io.Serializable;
 /**
  * @author Andreas Schildbach
  */
-public interface JourneyRef extends Serializable {
+public abstract class JourneyRef implements Serializable {
 }

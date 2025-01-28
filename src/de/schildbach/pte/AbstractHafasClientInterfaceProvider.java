@@ -35,6 +35,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -246,11 +247,24 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                 jsonContext.products, jsonContext.walkSpeed, later ? jsonContext.laterContext : jsonContext.earlierContext);
     }
 
-    public static class HafasJourneyRef implements JourneyRef {
+    public static class HafasJourneyRef extends JourneyRef {
         public String jid;
 
         public HafasJourneyRef(final String jid) {
             this.jid = jid;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof HafasJourneyRef)) return false;
+            HafasJourneyRef that = (HafasJourneyRef) o;
+            return Objects.equals(jid, that.jid);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(jid);
         }
     }
 

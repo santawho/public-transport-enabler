@@ -36,6 +36,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
@@ -2156,7 +2157,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
         return url.build();
     }
 
-    public static class EfaJourneyRef implements JourneyRef {
+    public static class EfaJourneyRef extends JourneyRef {
         public String transportationID;
         public String stopID;
         public String tripCode;
@@ -2171,6 +2172,22 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
             this.stopID = stopID;
             this.tripCode = tripCode;
             this.targetTime = targetTime;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof EfaJourneyRef)) return false;
+            EfaJourneyRef that = (EfaJourneyRef) o;
+            return Objects.equals(transportationID, that.transportationID)
+                    && Objects.equals(stopID, that.stopID)
+                    && Objects.equals(tripCode, that.tripCode)
+                    && Objects.equals(targetTime, that.targetTime);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(transportationID, stopID, tripCode, targetTime);
         }
     }
 
