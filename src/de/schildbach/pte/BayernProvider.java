@@ -30,12 +30,14 @@ import javax.annotation.Nullable;
 import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
 
+import de.schildbach.pte.dto.JourneyRef;
 import de.schildbach.pte.dto.Line;
 import de.schildbach.pte.dto.Location;
 import de.schildbach.pte.dto.LocationType;
 import de.schildbach.pte.dto.NearbyLocationsResult;
 import de.schildbach.pte.dto.Product;
 import de.schildbach.pte.dto.QueryDeparturesResult;
+import de.schildbach.pte.dto.QueryJourneyResult;
 import de.schildbach.pte.dto.QueryTripsContext;
 import de.schildbach.pte.dto.QueryTripsResult;
 import de.schildbach.pte.dto.Style;
@@ -57,7 +59,7 @@ public class BayernProvider extends AbstractEfaProvider {
     private static final String STOP_FINDER_ENDPOINT = "XML_STOPFINDER_REQUEST";
 
     public BayernProvider() {
-        super(NetworkId.BAYERN, API_BASE, DEPARTURE_MONITOR_ENDPOINT, TRIP_ENDPOINT, STOP_FINDER_ENDPOINT, null);
+        super(NetworkId.BAYERN, API_BASE, DEPARTURE_MONITOR_ENDPOINT, TRIP_ENDPOINT, STOP_FINDER_ENDPOINT, null, null, null);
 
         setRequestUrlEncoding(Charsets.UTF_8);
         setIncludeRegionId(false);
@@ -147,6 +149,11 @@ public class BayernProvider extends AbstractEfaProvider {
         super.appendTripRequestParameters(url, from, via, to, time, dep, options);
         url.addEncodedQueryParameter("inclMOT_11", "on");
         url.addEncodedQueryParameter("calcOneDirection", "1");
+    }
+
+    @Override
+    public QueryJourneyResult queryJourney(JourneyRef aJourneyRef) throws IOException {
+        return queryJourneyMobile((EfaJourneyRef) aJourneyRef);
     }
 
     @Override

@@ -41,7 +41,7 @@ public class VvoProvider extends AbstractEfaProvider {
     }
 
     public VvoProvider(final HttpUrl apiBase) {
-        super(NetworkId.VVO, apiBase, null, null, STOP_FINDER_ENDPOINT, COORD_ENDPOINT);
+        super(NetworkId.VVO, apiBase, null, null, STOP_FINDER_ENDPOINT, COORD_ENDPOINT, null, null);
         setRequestUrlEncoding(Charsets.UTF_8);
         setSessionCookieName("VVO-EFA");
     }

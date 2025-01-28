@@ -28,10 +28,12 @@ import javax.annotation.Nullable;
 import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
 
+import de.schildbach.pte.dto.JourneyRef;
 import de.schildbach.pte.dto.Location;
 import de.schildbach.pte.dto.LocationType;
 import de.schildbach.pte.dto.NearbyLocationsResult;
 import de.schildbach.pte.dto.QueryDeparturesResult;
+import de.schildbach.pte.dto.QueryJourneyResult;
 import de.schildbach.pte.dto.QueryTripsContext;
 import de.schildbach.pte.dto.QueryTripsResult;
 import de.schildbach.pte.dto.SuggestLocationsResult;
@@ -75,6 +77,11 @@ public class StvProvider extends AbstractEfaProvider {
     public SuggestLocationsResult suggestLocations(final CharSequence constraint,
             final @Nullable Set<LocationType> types, final int maxLocations) throws IOException {
         return mobileStopfinderRequest(constraint, types, maxLocations);
+    }
+
+    @Override
+    public QueryJourneyResult queryJourney(JourneyRef aJourneyRef) throws IOException {
+        return queryJourneyMobile((EfaJourneyRef) aJourneyRef);
     }
 
     @Override

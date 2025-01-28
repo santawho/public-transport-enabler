@@ -19,10 +19,13 @@ package de.schildbach.pte;
 
 import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
+
+import de.schildbach.pte.dto.JourneyRef;
 import de.schildbach.pte.dto.Location;
 import de.schildbach.pte.dto.LocationType;
 import de.schildbach.pte.dto.NearbyLocationsResult;
 import de.schildbach.pte.dto.QueryDeparturesResult;
+import de.schildbach.pte.dto.QueryJourneyResult;
 import de.schildbach.pte.dto.QueryTripsContext;
 import de.schildbach.pte.dto.QueryTripsResult;
 import de.schildbach.pte.dto.SuggestLocationsResult;
@@ -46,7 +49,7 @@ public class VvmProvider extends AbstractEfaProvider {
     private static final String TRIP_ENDPOINT = "XML_TRIP_REQUEST2";
 
     public VvmProvider() {
-        super(NetworkId.VVM, API_BASE, DEPARTURE_MONITOR_ENDPOINT, TRIP_ENDPOINT, null, null);
+        super(NetworkId.VVM, API_BASE, DEPARTURE_MONITOR_ENDPOINT, TRIP_ENDPOINT, null, null, null, null);
         setRequestUrlEncoding(Charsets.UTF_8);
         setNeedsSpEncId(true);
     }
@@ -75,6 +78,11 @@ public class VvmProvider extends AbstractEfaProvider {
     public SuggestLocationsResult suggestLocations(final CharSequence constraint,
                                                    final @Nullable Set<LocationType> types, final int maxLocations) throws IOException {
         return mobileStopfinderRequest(constraint, types, maxLocations);
+    }
+
+    @Override
+    public QueryJourneyResult queryJourney(JourneyRef aJourneyRef) throws IOException {
+        return queryJourneyMobile((EfaJourneyRef) aJourneyRef);
     }
 
     @Override

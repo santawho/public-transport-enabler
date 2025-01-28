@@ -41,7 +41,7 @@ public class VgnProvider extends AbstractEfaProvider {
     }
 
     public VgnProvider(final HttpUrl apiBase) {
-        super(NetworkId.VGN, apiBase, DEPARTURE_MONITOR_ENDPOINT, TRIP_ENDPOINT, null, null);
+        super(NetworkId.VGN, apiBase, DEPARTURE_MONITOR_ENDPOINT, TRIP_ENDPOINT, null, null, null, null);
     }
 
     @Override
