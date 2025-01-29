@@ -18,7 +18,9 @@
 package de.schildbach.pte;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -41,10 +43,18 @@ import okhttp3.HttpUrl;
  * @author Andreas Schildbach
  */
 public final class BvgProvider extends AbstractHafasClientInterfaceProvider {
+    private static final Set<Capability> BVG_CAPABILITIES;
+
     private static final HttpUrl API_BASE = HttpUrl.parse("https://bvg-apps-ext.hafas.de/bin/mgate.exe");
     private static final Product[] PRODUCTS_MAP = { Product.SUBURBAN_TRAIN, Product.SUBWAY, Product.TRAM, Product.BUS,
             Product.FERRY, Product.HIGH_SPEED_TRAIN, Product.REGIONAL_TRAIN, Product.ON_DEMAND, null, null };
     private static final String DEFAULT_API_CLIENT = "{\"id\":\"BVG\",\"type\":\"AND\"}";
+
+    static {
+        Set<Capability> capabilities = new HashSet<>(CAPABILITIES);
+        capabilities.remove(Capability.BIKE_OPTION);
+        BVG_CAPABILITIES = capabilities;
+    }
 
     public BvgProvider(final String apiAuthorization) {
         this(DEFAULT_API_CLIENT, apiAuthorization);
@@ -57,6 +67,11 @@ public final class BvgProvider extends AbstractHafasClientInterfaceProvider {
         setApiClient(apiClient);
         setApiAuthorization(apiAuthorization);
         setStyles(STYLES);
+    }
+
+    @Override
+    protected Set<Capability> getCapabilities() {
+        return BVG_CAPABILITIES;
     }
 
     private static final Pattern P_SPLIT_NAME_SU = Pattern.compile("(.*?)(?:\\s+\\((S|U|S\\+U)\\))?");

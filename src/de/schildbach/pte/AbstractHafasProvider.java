@@ -44,13 +44,14 @@ public abstract class AbstractHafasProvider extends AbstractNetworkProvider {
     protected static final int DEFAULT_MAX_LOCATIONS = 50;
     protected static final int DEFAULT_MAX_DISTANCE = 20000;
 
-    private final List CAPABILITIES = Arrays.asList(
+    protected static final Set<Capability> CAPABILITIES = Set.of(
             Capability.SUGGEST_LOCATIONS,
             Capability.NEARBY_LOCATIONS,
             Capability.DEPARTURES,
             Capability.TRIPS,
             Capability.TRIPS_VIA,
-            Capability.JOURNEY
+            Capability.JOURNEY,
+            Capability.BIKE_OPTION
     );
 
     protected static final Logger log = LoggerFactory.getLogger(AbstractHafasProvider.class);
@@ -62,10 +63,9 @@ public abstract class AbstractHafasProvider extends AbstractNetworkProvider {
         this.productsMap = productsMap;
     }
 
-    // this should be overridden by networks not providing one of the default capabilities
     @Override
-    protected boolean hasCapability(final Capability capability) {
-        return CAPABILITIES.contains(capability);
+    protected Set<Capability> getCapabilities() {
+        return CAPABILITIES;
     }
 
     protected final CharSequence productsString(final Set<Product> products) {

@@ -99,14 +99,14 @@ public abstract class AbstractNetworkProvider implements NetworkProvider {
 
     @Override
     public final boolean hasCapabilities(final Capability... capabilities) {
-        for (final Capability capability : capabilities)
-            if (!hasCapability(capability))
-                return false;
-
-        return true;
+        return getCapabilities().containsAll(Set.of(capabilities));
     }
 
-    protected abstract boolean hasCapability(Capability capability);
+    protected abstract Set<Capability> getCapabilities();
+
+    protected boolean hasCapability(Capability capability) {
+        return getCapabilities().contains(capability);
+    }
 
     @Deprecated
     @Override

@@ -115,13 +115,15 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
         }
     }
 
-    private final List<Capability> CAPABILITIES = Arrays.asList(
+    private static final Set<Capability> CAPABILITIES = Set.of(
             Capability.SUGGEST_LOCATIONS,
             Capability.NEARBY_LOCATIONS,
             Capability.DEPARTURES,
             Capability.TRIPS,
             Capability.TRIPS_VIA,
-            Capability.JOURNEY);
+            Capability.JOURNEY,
+            Capability.BIKE_OPTION
+        );
 
     private static final @NotNull HttpUrl WEB_API_BASE = HttpUrl.parse("https://www.bahn.de/web/api/");
     private final ResultHeader resultHeader;
@@ -942,8 +944,8 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
     }
 
     @Override
-    protected boolean hasCapability(Capability capability) {
-        return CAPABILITIES.contains(capability);
+    protected Set<Capability> getCapabilities() {
+        return CAPABILITIES;
     }
 
     private static class DbWebApiContext implements QueryTripsContext {

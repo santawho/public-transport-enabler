@@ -77,12 +77,13 @@ import okhttp3.HttpUrl;
  */
 public class VrsProvider extends AbstractNetworkProvider {
 
-    private final List CAPABILITIES = Arrays.asList(
+    private static final Set<Capability> CAPABILITIES = Set.of(
             Capability.SUGGEST_LOCATIONS,
             Capability.NEARBY_LOCATIONS,
             Capability.DEPARTURES,
             Capability.TRIPS,
-            Capability.TRIPS_VIA
+            Capability.TRIPS_VIA,
+            Capability.BIKE_OPTION
     );
 
     @SuppressWarnings("serial")
@@ -340,8 +341,8 @@ public class VrsProvider extends AbstractNetworkProvider {
     }
 
     @Override
-    protected boolean hasCapability(Capability capability) {
-        return CAPABILITIES.contains(capability);
+    protected Set<Capability> getCapabilities() {
+        return CAPABILITIES;
     }
 
     @Override

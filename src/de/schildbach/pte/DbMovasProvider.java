@@ -114,13 +114,15 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
         }
     }
 
-    private final List<Capability> CAPABILITIES = Arrays.asList(
+    private static final Set<Capability> CAPABILITIES = Set.of(
             Capability.SUGGEST_LOCATIONS,
             Capability.NEARBY_LOCATIONS,
             Capability.DEPARTURES,
             Capability.TRIPS,
             Capability.TRIPS_VIA,
-            Capability.JOURNEY);
+            Capability.JOURNEY,
+            Capability.BIKE_OPTION
+        );
 
     private static final HttpUrl API_BASE = HttpUrl.parse("https://app.vendo.noncd.db.de/mob/");
     private final ResultHeader resultHeader;
@@ -957,8 +959,8 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
     }
 
     @Override
-    protected boolean hasCapability(Capability capability) {
-        return CAPABILITIES.contains(capability);
+    protected Set<Capability> getCapabilities() {
+        return CAPABILITIES;
     }
 
     private static class DbMovasContext implements QueryTripsContext {

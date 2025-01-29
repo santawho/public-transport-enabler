@@ -43,7 +43,7 @@ import de.schildbach.pte.dto.TripOptions;
  * @author Andreas Schildbach
  */
 public interface NetworkProvider {
-    public enum Capability {
+    enum Capability {
         /* can suggest locations */
         SUGGEST_LOCATIONS,
         /* can determine nearby locations */
@@ -55,21 +55,22 @@ public interface NetworkProvider {
         /* supports trip queries passing by a specific location */
         TRIPS_VIA,
         JOURNEY,
+        BIKE_OPTION,
     }
 
-    public enum Optimize {
+    enum Optimize {
         LEAST_DURATION, LEAST_CHANGES, LEAST_WALKING
     }
 
-    public enum WalkSpeed {
+    enum WalkSpeed {
         SLOW, NORMAL, FAST
     }
 
-    public enum Accessibility {
+    enum Accessibility {
         NEUTRAL, LIMITED, BARRIER_FREE
     }
 
-    public enum TripFlag {
+    enum TripFlag {
         BIKE
     }
 

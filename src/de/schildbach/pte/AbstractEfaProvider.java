@@ -20,11 +20,9 @@ package de.schildbach.pte;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Currency;
 import java.util.Date;
@@ -104,12 +102,13 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
     protected static final String COORD_FORMAT = "WGS84[DD.ddddd]";
     protected static final int COORD_FORMAT_TAIL = 7;
 
-    private final List CAPABILITIES = Arrays.asList(
+    private static final Set<Capability> CAPABILITIES = Set.of(
             Capability.SUGGEST_LOCATIONS,
             Capability.NEARBY_LOCATIONS,
             Capability.DEPARTURES,
             Capability.TRIPS,
-            Capability.TRIPS_VIA
+            Capability.TRIPS_VIA,
+            Capability.BIKE_OPTION
     );
 
     private final HttpUrl departureMonitorEndpoint;
@@ -258,10 +257,9 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
         return this;
     }
 
-    // this should be overridden by networks not providing one of the default capabilities
     @Override
-    protected boolean hasCapability(final Capability capability) {
-        return CAPABILITIES.contains(capability);
+    protected Set<Capability> getCapabilities() {
+        return CAPABILITIES;
     }
 
     private final void appendCommonRequestParams(final HttpUrl.Builder url, final String outputFormat) {
