@@ -811,7 +811,8 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
                     continue;
                 }
                 final String bahnhofsId = dep.getString("bahnhofsId");
-                final String bahnhofsName = Optional.ofNullable(dep.optJSONArray("ueber")).map(ueber -> ueber.optString(0)).orElse(null);
+                final JSONArray vias = dep.optJSONArray("ueber");
+                final String bahnhofsName = Optional.ofNullable(vias).map(via -> via.optString(0)).orElse(null);
                 if (!equivs && !stationId.equals(bahnhofsId)) {
                     continue;
                 }
@@ -824,12 +825,16 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
 
                 final String journeyId = dep.optString("journeyId", null);
                 final Line line = parseLine(dep.getJSONObject("verkehrmittel"));
+                String destinationName = dep.optString("terminus", null);
+                if (destinationName == null && vias != null) {
+                    destinationName = vias.getString(vias.length() - 1);
+                }
                 final Departure departure = new Departure(
                         parseIso8601NoOffset(dep.optString("zeit", null)),
                         parseIso8601NoOffset(dep.optString("ezZeit", null)),
                         line,
                         parsePosition(Optional.ofNullable(dep.optString("ezGleis", null)).orElse(dep.optString("gleis", null))),
-                        createLocation(LocationType.STATION, null, null, dep.getString("terminus"), null, null),
+                        createLocation(LocationType.STATION, null, null, destinationName, null, null),
                         null,
                         parseJourneyMessages(dep, null, null),
                         journeyId == null ? null : new DbWebJourneyRef(journeyId, line));
