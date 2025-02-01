@@ -678,8 +678,8 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
     }
 
     private QueryTripsResult doQueryTrips(Location from, @Nullable Location via, Location to, Date time, boolean dep,
-            @Nullable Set<Product> products, final boolean bike, final @Nullable String context) throws IOException {
-        // TODO minUmstiegsdauer instead of walkSpeed ?
+            @Nullable Set<Product> products, final boolean bike, @Nullable final Integer minUmstiegsdauer,
+            final @Nullable String context) throws IOException {
         // accessibility, optimize not supported
 
         final String deparr = dep ? "ABFAHRT" : "ANKUNFT";
@@ -688,12 +688,14 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
                 ? "\"viaLocations\":[{\"locationId\": \"" + formatLid(via) + "\"," + productsStr + "}],"
                 : "";
         final String bikeStr = bike ? "\"fahrradmitnahme\":true," : "";
+        final String minUmstiegsdauerStr = minUmstiegsdauer != null ? "\"minUmstiegsdauer\":" + minUmstiegsdauer + "," : "";
         final String ctxStr = context != null ? "\"context\": \"" + context + "\"," : "";
         final String request = "{\"autonomeReservierung\":false,\"einstiegsTypList\":[\"STANDARD\"],\"klasse\":\"KLASSE_2\"," //
                 + "\"reiseHin\":{\"wunsch\":{\"abgangsLocationId\": \"" + formatLid(from) + "\"," //
                 + productsStr + "," //
                 + viaLocations //
                 + bikeStr //
+                + minUmstiegsdauerStr //
                 + ctxStr //
                 + "\"zeitWunsch\":{\"reiseDatum\":\"" + formatIso8601WOffset(time) + "\",\"zeitPunktArt\":\"" + deparr //
                 + "\"}," //
@@ -745,7 +747,7 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
             if (trips.isEmpty()) {
                 return new QueryTripsResult(this.resultHeader, QueryTripsResult.Status.NO_TRIPS);
             }
-            final DbMovasContext ctx = new DbMovasContext(from, via, to, time, dep, products, bike,
+            final DbMovasContext ctx = new DbMovasContext(from, via, to, time, dep, products, bike, minUmstiegsdauer,
                     res.optString("spaeterContext", null), res.optString("frueherContext", null));
             return new QueryTripsResult(this.resultHeader, null, from, via, to, ctx, trips);
         } catch (InternalErrorException | BlockedException e) {
@@ -908,9 +910,31 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
     @Override
     public QueryTripsResult queryTrips(Location from, @Nullable Location via, Location to, Date date, boolean dep,
             @Nullable TripOptions options) throws IOException {
+        final Integer minUmstiegsdauer;
+        final WalkSpeed walkSpeed = options == null ? null : options.walkSpeed;
+        if (walkSpeed != null) {
+            switch (walkSpeed) {
+                case FAST:
+                    minUmstiegsdauer = null;
+                    break;
+                case NORMAL:
+                    minUmstiegsdauer = 5;
+                    break;
+                case SLOW:
+                    minUmstiegsdauer = 10;
+                    break;
+                default:
+                    minUmstiegsdauer = null;
+                    break;
+            }
+        } else {
+            minUmstiegsdauer = null;
+        }
+
         return doQueryTrips(from, via, to, date, dep,
                 options != null ? options.products : null,
                 options != null && options.flags != null && options.flags.contains(TripFlag.BIKE),
+                minUmstiegsdauer,
                 null);
     }
 
@@ -925,7 +949,7 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
         } else {
             return new QueryTripsResult(this.resultHeader, QueryTripsResult.Status.NO_TRIPS);
         }
-        return doQueryTrips(ctx.from, ctx.via, ctx.to, ctx.date, ctx.dep, ctx.products, ctx.bike, ctxToken);
+        return doQueryTrips(ctx.from, ctx.via, ctx.to, ctx.date, ctx.dep, ctx.products, ctx.bike, ctx.minUmstiegsdauer, ctxToken);
     }
 
     @Override
@@ -969,11 +993,12 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
         public final boolean dep;
         public final Set<Product> products;
         public final boolean bike;
+        public final Integer minUmstiegsdauer;
         public final String laterContext, earlierContext;
 
         public DbMovasContext(final Location from, final @Nullable Location via, final Location to, final Date date,
-                final boolean dep, final Set<Product> products, final boolean bike, final String laterContext,
-                final String earlierContext) {
+                final boolean dep, final Set<Product> products, final boolean bike, final Integer minUmstiegsdauer,
+                final String laterContext, final String earlierContext) {
             this.from = from;
             this.via = via;
             this.to = to;
@@ -981,6 +1006,7 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
             this.dep = dep;
             this.products = products;
             this.bike = bike;
+            this.minUmstiegsdauer = minUmstiegsdauer;
             this.laterContext = laterContext;
             this.earlierContext = earlierContext;
         }

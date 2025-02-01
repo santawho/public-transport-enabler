@@ -657,8 +657,8 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
     }
 
     private QueryTripsResult doQueryTrips(Location from, @Nullable Location via, Location to, Date time, boolean dep,
-            @Nullable Set<Product> products, final boolean bike, final @Nullable String context) throws IOException {
-        // TODO minUmstiegsdauer instead of walkSpeed ?
+            @Nullable Set<Product> products, final boolean bike, @Nullable final Integer minUmstiegszeit,
+            final @Nullable String context) throws IOException {
         // accessibility, optimize not supported
 
         final String deparr = dep ? "ABFAHRT" : "ANKUNFT";
@@ -667,12 +667,14 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
                 ? "\"zwischenhalte\":[{\"id\": \"" + formatLid(via) + "\"}],"
                 : "";
         final String bikeStr = bike ? "\"bikeCarriage\":true," : "";
+        final String minUmstiegszeitStr = minUmstiegszeit != null ? "\"minUmstiegszeit\":" + minUmstiegszeit + "," : "";
         final String ctxStr = context != null ? "\"pagingReference\": \"" + context + "\"," : "";
         final String request = "{\"sitzplatzOnly\":false,\"klasse\":\"KLASSE_2\"," //
                 + "\"abfahrtsHalt\": \"" + formatLid(from) + "\"," //
                 + productsStr + "," //
                 + viaLocations //
                 + bikeStr //
+                + minUmstiegszeitStr //
                 + ctxStr //
                 + "\"anfrageZeitpunkt\":\"" + formatIso8601NoOffset(time) + "\",\"ankunftSuche\":\"" + deparr + "\"," //
                 + "\"ankunftsHalt\": \"" + formatLid(to) + "\"," //
@@ -724,7 +726,7 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
                 return new QueryTripsResult(this.resultHeader, QueryTripsResult.Status.NO_TRIPS);
             }
             Optional<JSONObject> verbindungReference = Optional.ofNullable(res.optJSONObject("verbindungReference"));
-            final DbWebApiContext ctx = new DbWebApiContext(from, via, to, time, dep, products, bike,
+            final DbWebApiContext ctx = new DbWebApiContext(from, via, to, time, dep, products, bike, minUmstiegszeit,
                     verbindungReference.map(v -> v.optString("later", null)).orElse(null),
                     verbindungReference.map(v -> v.optString("earlier", null)).orElse(null));
             return new QueryTripsResult(this.resultHeader, null, from, via, to, ctx, trips);
@@ -899,9 +901,31 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
     @Override
     public QueryTripsResult queryTrips(Location from, @Nullable Location via, Location to, Date date, boolean dep,
             @Nullable TripOptions options) throws IOException {
+        final Integer minUmstiegszeit;
+        final WalkSpeed walkSpeed = options == null ? null : options.walkSpeed;
+        if (walkSpeed != null) {
+            switch (walkSpeed) {
+                case FAST:
+                    minUmstiegszeit = null;
+                    break;
+                case NORMAL:
+                    minUmstiegszeit = 5;
+                    break;
+                case SLOW:
+                    minUmstiegszeit = 10;
+                    break;
+                default:
+                    minUmstiegszeit = null;
+                    break;
+            }
+        } else {
+            minUmstiegszeit = null;
+        }
+
         return doQueryTrips(from, via, to, date, dep,
                 options != null ? options.products : null,
                 options != null && options.flags != null && options.flags.contains(TripFlag.BIKE),
+                minUmstiegszeit,
                 null);
     }
 
@@ -916,7 +940,7 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
         } else {
             return new QueryTripsResult(this.resultHeader, QueryTripsResult.Status.NO_TRIPS);
         }
-        return doQueryTrips(ctx.from, ctx.via, ctx.to, ctx.date, ctx.dep, ctx.products, ctx.bike, ctxToken);
+        return doQueryTrips(ctx.from, ctx.via, ctx.to, ctx.date, ctx.dep, ctx.products, ctx.bike, ctx.minUmstiegszeit, ctxToken);
     }
 
     @Override
@@ -959,11 +983,12 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
         public final boolean dep;
         public final Set<Product> products;
         public final boolean bike;
+        public final Integer minUmstiegszeit;
         public final String laterContext, earlierContext;
 
         public DbWebApiContext(final Location from, final @Nullable Location via, final Location to, final Date date,
-                               final boolean dep, final Set<Product> products, final boolean bike, final String laterContext,
-                               final String earlierContext) {
+                   final boolean dep, final Set<Product> products, final boolean bike, final Integer minUmstiegszeit,
+                   final String laterContext, final String earlierContext) {
             this.from = from;
             this.via = via;
             this.to = to;
@@ -971,6 +996,7 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
             this.dep = dep;
             this.products = products;
             this.bike = bike;
+            this.minUmstiegszeit = minUmstiegszeit;
             this.laterContext = laterContext;
             this.earlierContext = earlierContext;
         }
