@@ -894,7 +894,7 @@ public class VrsProvider extends AbstractNetworkProvider {
     @Override
     public QueryTripsResult queryMoreTrips(QueryTripsContext context, boolean later) throws IOException {
         Context ctx = (Context) context;
-        TripOptions options = new TripOptions(ctx.products, null, null, null, null);
+        TripOptions options = new TripOptions(ctx.products, null, null, null, null, null);
         if (later) {
             return queryTrips(ctx.from, ctx.via, ctx.to, ctx.getLastDeparture(), true, options);
         } else {

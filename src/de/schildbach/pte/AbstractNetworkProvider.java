@@ -120,7 +120,7 @@ public abstract class AbstractNetworkProvider implements NetworkProvider {
             @Nullable Set<Product> products, @Nullable Optimize optimize, @Nullable WalkSpeed walkSpeed,
             @Nullable Accessibility accessibility, @Nullable Set<TripFlag> flags) throws IOException {
         return queryTrips(from, via, to, date, dep,
-                new TripOptions(products, optimize, walkSpeed, accessibility, flags));
+                new TripOptions(products, optimize, walkSpeed, null, accessibility, flags));
     }
 
     @Override

@@ -901,31 +901,11 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
     @Override
     public QueryTripsResult queryTrips(Location from, @Nullable Location via, Location to, Date date, boolean dep,
             @Nullable TripOptions options) throws IOException {
-        final Integer minUmstiegszeit;
-        final WalkSpeed walkSpeed = options == null ? null : options.walkSpeed;
-        if (walkSpeed != null) {
-            switch (walkSpeed) {
-                case FAST:
-                    minUmstiegszeit = null;
-                    break;
-                case NORMAL:
-                    minUmstiegszeit = 5;
-                    break;
-                case SLOW:
-                    minUmstiegszeit = 10;
-                    break;
-                default:
-                    minUmstiegszeit = null;
-                    break;
-            }
-        } else {
-            minUmstiegszeit = null;
-        }
-
         return doQueryTrips(from, via, to, date, dep,
                 options != null ? options.products : null,
                 options != null && options.flags != null && options.flags.contains(TripFlag.BIKE),
-                minUmstiegszeit,
+                options == null || options.minTransferTimeMinutes == null ? null
+                        : options.minTransferTimeMinutes > 45 ? 45 : options.minTransferTimeMinutes,
                 null);
     }
 

@@ -910,31 +910,10 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
     @Override
     public QueryTripsResult queryTrips(Location from, @Nullable Location via, Location to, Date date, boolean dep,
             @Nullable TripOptions options) throws IOException {
-        final Integer minUmstiegsdauer;
-        final WalkSpeed walkSpeed = options == null ? null : options.walkSpeed;
-        if (walkSpeed != null) {
-            switch (walkSpeed) {
-                case FAST:
-                    minUmstiegsdauer = null;
-                    break;
-                case NORMAL:
-                    minUmstiegsdauer = 5;
-                    break;
-                case SLOW:
-                    minUmstiegsdauer = 10;
-                    break;
-                default:
-                    minUmstiegsdauer = null;
-                    break;
-            }
-        } else {
-            minUmstiegsdauer = null;
-        }
-
         return doQueryTrips(from, via, to, date, dep,
                 options != null ? options.products : null,
                 options != null && options.flags != null && options.flags.contains(TripFlag.BIKE),
-                minUmstiegsdauer,
+                options != null ? options.minTransferTimeMinutes : null,
                 null);
     }
 

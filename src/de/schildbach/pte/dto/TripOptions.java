@@ -41,6 +41,7 @@ public class TripOptions implements Serializable {
     public final @Nullable Set<Product> products;
     public final @Nullable Optimize optimize;
     public final @Nullable WalkSpeed walkSpeed;
+    public final @Nullable Integer minTransferTimeMinutes;
     public final @Nullable Accessibility accessibility;
     public final @Nullable Set<TripFlag> flags;
 
@@ -56,11 +57,14 @@ public class TripOptions implements Serializable {
      * @param flags
      *            additional flags, or {@code null} for the provider default
      */
-    public TripOptions(@Nullable Set<Product> products, @Nullable Optimize optimize, @Nullable WalkSpeed walkSpeed,
-            @Nullable Accessibility accessibility, @Nullable Set<TripFlag> flags) {
+    public TripOptions(
+            final @Nullable Set<Product> products, final @Nullable Optimize optimize,
+            final @Nullable WalkSpeed walkSpeed, final @Nullable Integer minTransferTimeMinutes,
+            final @Nullable Accessibility accessibility, final @Nullable Set<TripFlag> flags) {
         this.products = products;
         this.optimize = optimize;
         this.walkSpeed = walkSpeed;
+        this.minTransferTimeMinutes = minTransferTimeMinutes;
         this.accessibility = accessibility;
         this.flags = flags;
     }
@@ -69,6 +73,7 @@ public class TripOptions implements Serializable {
         this.products = null;
         this.optimize = null;
         this.walkSpeed = null;
+        this.minTransferTimeMinutes = null;
         this.accessibility = null;
         this.flags = null;
     }
@@ -79,6 +84,7 @@ public class TripOptions implements Serializable {
         helper.add("products", products);
         helper.addValue(optimize);
         helper.addValue(walkSpeed);
+        helper.addValue(minTransferTimeMinutes);
         helper.addValue(accessibility);
         helper.add("flags", flags);
         return helper.toString();
