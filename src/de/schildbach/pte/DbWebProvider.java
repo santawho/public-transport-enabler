@@ -410,8 +410,9 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
         return locations;
     }
 
-    private void parseMessages(final JSONArray msgs, final List<String> messages, final String prefix)
-            throws JSONException {
+    private void parseMessages(
+            final JSONArray msgs, final List<String> messages, final String prefix,
+            final String defaultTeilstreckenHinweis) throws JSONException {
         if (msgs == null)
             return;
         for (int iMsg = 0; iMsg < msgs.length(); iMsg++) {
@@ -425,7 +426,7 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
                 String msg = text;
                 if (text == null)
                     msg = value;
-                if (teilstreckenHinweis != null)
+                if (teilstreckenHinweis != null && !teilstreckenHinweis.equals(defaultTeilstreckenHinweis))
                     msg = msg + " " + teilstreckenHinweis;
                 if (prefix != null)
                     msg = prefix + msg;
@@ -438,15 +439,17 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
         }
     }
 
-    private String parseJourneyMessages(final JSONObject jny, final JSONArray zugattribute, final String operatorName) throws JSONException {
+    private String parseJourneyMessages(
+            final JSONObject jny, final JSONArray zugattribute, final String operatorName,
+            final String defaultTeilstreckenHinweis) throws JSONException {
         final List<String> messages = new ArrayList<>();
-        parseMessages(jny.optJSONArray("meldungen"), messages, null);
-        parseMessages(jny.optJSONArray("risNotizen"), messages, null);
-        parseMessages(jny.optJSONArray("himMeldungen"), messages, null);
+        parseMessages(jny.optJSONArray("meldungen"), messages, null, defaultTeilstreckenHinweis);
+        parseMessages(jny.optJSONArray("risNotizen"), messages, null, defaultTeilstreckenHinweis);
+        parseMessages(jny.optJSONArray("himMeldungen"), messages, null, defaultTeilstreckenHinweis);
         if (operatorName != null)
             messages.add("&#8226; " + operatorName);
         if (zugattribute != null)
-            parseMessages(zugattribute, messages, this.messagesAsSimpleHtml ? "&#8226; " : null);
+            parseMessages(zugattribute, messages, this.messagesAsSimpleHtml ? "&#8226; " : null, defaultTeilstreckenHinweis);
         return messages.isEmpty() ? null : join(this.messagesAsSimpleHtml ? "<br>" : " - ", messages);
     }
 
@@ -578,13 +581,17 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
             intermediateStops.remove(size - 1);
             intermediateStops.remove(0);
         }
-        final String message = parseJourneyMessages(journey, journey.optJSONArray("zugattribute"), journeyRef.line.network);
+        final String defaultTeilstreckenHinweis = String.format("(%s - %s)",
+                departureStop.location.name, arrivalStop.location.name);
+        final String message = parseJourneyMessages(
+                journey, journey.optJSONArray("zugattribute"), journeyRef.line.network,
+                defaultTeilstreckenHinweis);
         return new Trip.Public(journeyRef.line, arrivalStop.location, departureStop, arrivalStop, intermediateStops, null, message, journeyRef);
     }
 
     private Trip.Leg parseLeg(final JSONObject abschnitt, final @Nullable JSONObject prevAbschnitt, final @Nullable JSONObject nextAbschnitt) throws JSONException {
-        Stop departureStop = null;
-        Stop arrivalStop = null;
+        final Stop departureStop;
+        final Stop arrivalStop;
         final JSONObject verkehrsmittel = abschnitt.getJSONObject("verkehrsmittel");
         final String typ = verkehrsmittel.optString("typ", null);
         final boolean isPublicTransportLeg = "PUBLICTRANSPORT".equals(typ);
@@ -610,7 +617,11 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
         if (isPublicTransportLeg) {
             final Line line = parseLine(verkehrsmittel);
             final Location destination = parseDirection(verkehrsmittel);
-            final String message = parseJourneyMessages(abschnitt, verkehrsmittel.optJSONArray("zugattribute"), null);
+            final String defaultTeilstreckenHinweis = String.format("(%s - %s)",
+                    departureStop.location.name, arrivalStop.location.name);
+            final String message = parseJourneyMessages(
+                    abschnitt, verkehrsmittel.optJSONArray("zugattribute"), null,
+                    defaultTeilstreckenHinweis);
             final String journeyId = abschnitt.optString("journeyId", null);
             return new Trip.Public(line, destination, departureStop, arrivalStop, intermediateStops, null, message,
                     journeyId == null ? null : new DbWebJourneyRef(journeyId, line));
@@ -838,7 +849,7 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
                         parsePosition(Optional.ofNullable(dep.optString("ezGleis", null)).orElse(dep.optString("gleis", null))),
                         createLocation(LocationType.STATION, null, null, destinationName, null, null),
                         null,
-                        parseJourneyMessages(dep, null, null),
+                        parseJourneyMessages(dep, null, null, null),
                         journeyId == null ? null : new DbWebJourneyRef(journeyId, line));
 
                 stationDepartures.departures.add(departure);
