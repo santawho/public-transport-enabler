@@ -51,6 +51,7 @@ public final class Trip implements Serializable {
     public final List<Fare> fares;
     public final int[] capacity;
     public final Integer numChanges;
+    private @Nullable String uniqueId;
 
     public Trip(final String id, final Location from, final Location to, final List<Leg> legs, final List<Fare> fares,
             final int[] capacity, final Integer numChanges) {
@@ -241,6 +242,31 @@ public final class Trip implements Serializable {
                 products.add(((Public) leg).line.product);
 
         return products;
+    }
+
+    public String getUniqueId() {
+        if (uniqueId == null) {
+            final StringBuilder builder = new StringBuilder();
+            int n = 0;
+            for (final Trip.Leg leg: legs) {
+                if (leg instanceof Trip.Public) {
+                    Public pubLeg = (Public) leg;
+                    final JourneyRef journeyRef = pubLeg.journeyRef;
+                    if (n++ > 0) builder.append("/");
+                    final String journeyId;
+                    if (journeyRef != null) {
+                        journeyId = Integer.toString(journeyRef.hashCode());
+                    } else {
+                        journeyId = pubLeg.line.id + "~" + (pubLeg.departureStop.plannedDepartureTime.getTime() / 60000);
+                    }
+                    builder.append(journeyId);
+                    builder.append("@");
+                    builder.append(pubLeg.departureStop.location.id);
+                }
+            }
+            uniqueId = builder.toString();
+        }
+        return uniqueId;
     }
 
     public String getId() {
