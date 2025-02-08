@@ -55,6 +55,7 @@ public interface NetworkProvider {
         /* supports trip queries passing by a specific location */
         TRIPS_VIA,
         JOURNEY,
+        MIN_TRANSFER_TIMES,
         BIKE_OPTION,
     }
 

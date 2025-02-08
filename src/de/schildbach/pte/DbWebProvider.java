@@ -122,6 +122,7 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
             Capability.TRIPS,
             Capability.TRIPS_VIA,
             Capability.JOURNEY,
+            Capability.MIN_TRANSFER_TIMES,
             Capability.BIKE_OPTION
         );
 
