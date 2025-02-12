@@ -177,6 +177,26 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
     private static final Pattern P_SPLIT_NAME_FIRST_COMMA = Pattern.compile("([^,]*), (.*)");
     private static final Pattern P_SPLIT_NAME_ONE_COMMA = Pattern.compile("([^,]*), ([^,]*)");
 
+    private static final int[] VALID_MIN_TRANSFER_TIMES = { 0, 10, 15, 20, 25, 30, 35, 40, 45 };
+
+    private static int getApplicableMinTransferTime(final int requestedMinTransferTime) {
+        if (requestedMinTransferTime <= VALID_MIN_TRANSFER_TIMES[0])
+            return VALID_MIN_TRANSFER_TIMES[0];
+
+        if (requestedMinTransferTime >= VALID_MIN_TRANSFER_TIMES[VALID_MIN_TRANSFER_TIMES.length - 1])
+            return VALID_MIN_TRANSFER_TIMES[VALID_MIN_TRANSFER_TIMES.length - 1];
+
+        for (int i = VALID_MIN_TRANSFER_TIMES.length; i > 0; --i) {
+            final int time = VALID_MIN_TRANSFER_TIMES[i - 1];
+            if (time == requestedMinTransferTime)
+                return requestedMinTransferTime;
+            if (time < requestedMinTransferTime)
+                return VALID_MIN_TRANSFER_TIMES[i];
+        }
+
+        return VALID_MIN_TRANSFER_TIMES[0];
+    }
+
     protected DbWebProvider(final NetworkId networkId) {
         super(networkId);
         this.departureEndpoint = WEB_API_BASE.newBuilder().addPathSegments("reiseloesung/abfahrten").build();
@@ -917,7 +937,7 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
                 options != null ? options.products : null,
                 options != null && options.flags != null && options.flags.contains(TripFlag.BIKE),
                 options == null || options.minTransferTimeMinutes == null ? null
-                        : options.minTransferTimeMinutes > 45 ? 45 : options.minTransferTimeMinutes,
+                        : getApplicableMinTransferTime(options.minTransferTimeMinutes),
                 null);
     }
 
