@@ -441,6 +441,51 @@ public final class Trip implements Serializable {
             }
         }
 
+        public Stop findStopByLocation(final Location location) {
+            String locId = location.id;
+            if (locId.equals(departure.id))
+                return departureStop;
+
+            if (locId.equals(arrival.id))
+                return arrivalStop;
+
+            for (final Stop stop: intermediateStops) {
+                if (locId.equals(stop.location.id))
+                    return stop;
+            }
+
+            return null;
+        }
+
+        public boolean isStopAfterOther(final Stop stop, final Location other) {
+            String stopId = stop.location.id;
+            String otherId = other.id;
+            if (stopId.equals(otherId))
+                return false;
+
+            if (stopId.equals(departure.id))
+                return false;
+
+            if (stopId.equals(arrival.id))
+                return true;
+
+            boolean otherFound = false;
+            boolean stopFound = false;
+            for (final Stop iStop: intermediateStops) {
+                String locId = iStop.location.id;
+                if (locId.equals(otherId)) {
+                    if (stopFound) return false;
+                    otherFound = true;
+                }
+                if (locId.equals(stopId)) {
+                    if (otherFound) return true;
+                    stopFound = true;
+                }
+            }
+
+            return false;
+        }
+
         private Location findRealStopLocation(final Location location, final Location additionalLocation) {
             final String locId = location.id;
             if (locId == null) {
