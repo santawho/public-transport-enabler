@@ -101,6 +101,10 @@ public final class Line implements Serializable, Comparable<Line> {
         return attrs != null && attrs.contains(attr);
     }
 
+    public boolean isTrain() {
+        return product != null && product.isTrain();
+    }
+
     @Override
     public boolean equals(final Object o) {
         if (o == this)

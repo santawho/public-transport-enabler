@@ -24,16 +24,33 @@ import java.util.Set;
  * @author Andreas Schildbach
  */
 public enum Product {
-    HIGH_SPEED_TRAIN('I'), REGIONAL_TRAIN('R'), SUBURBAN_TRAIN('S'), SUBWAY('U'), TRAM('T'), BUS('B'), FERRY(
-            'F'), CABLECAR('C'), ON_DEMAND('P');
+    HIGH_SPEED_TRAIN('I'),
+    REGIONAL_TRAIN('R'),
+    SUBURBAN_TRAIN('S'),
+    SUBWAY('U'),
+    TRAM('T'),
+    BUS('B'),
+    FERRY('F'),
+    CABLECAR('C'),
+    ON_DEMAND('P');
+
 
     public static final char UNKNOWN = '?';
     public static final Set<Product> ALL = EnumSet.allOf(Product.class);
+    public static final EnumSet<Product> TRAIN_PRODUCTS = EnumSet.of(
+            Product.HIGH_SPEED_TRAIN,
+            Product.REGIONAL_TRAIN,
+            Product.SUBURBAN_TRAIN,
+            Product.SUBWAY);
 
     public final char code;
 
     private Product(final char code) {
         this.code = code;
+    }
+
+    public boolean isTrain() {
+        return TRAIN_PRODUCTS.contains(this);
     }
 
     public static Product fromCode(final char code) {
