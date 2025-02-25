@@ -40,6 +40,12 @@ public final class DbProvider extends DbWebProvider.Fernverkehr {
         }
     }
 
+    public static final class DeutschlandTicket extends DbWebProvider.Regio {
+        public DeutschlandTicket() {
+            super(NetworkId.DEUTSCHLANDTICKET);
+        }
+    }
+
     public static final Set<Product> FERNVERKEHR_PRODUCTS;
 
     static {

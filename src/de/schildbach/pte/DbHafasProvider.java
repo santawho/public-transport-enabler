@@ -32,7 +32,7 @@ import okhttp3.HttpUrl;
 public abstract class DbHafasProvider extends AbstractHafasClientInterfaceProvider {
     public static class Fernverkehr extends DbHafasProvider {
         public Fernverkehr(final String apiAuthorization, final byte[] salt) {
-            this(NetworkId.DB, apiAuthorization, salt);
+            this(NetworkId.DBHAFAS, apiAuthorization, salt);
         }
 
         protected Fernverkehr(final NetworkId networkId, final String apiAuthorization, final byte[] salt) {
@@ -47,7 +47,7 @@ public abstract class DbHafasProvider extends AbstractHafasClientInterfaceProvid
 
     public static class Regio extends DbHafasProvider {
         public Regio(final String apiAuthorization, final byte[] salt) {
-            this(NetworkId.DBREGIO, apiAuthorization, salt);
+            this(NetworkId.DBREGIOHAFAS, apiAuthorization, salt);
         }
 
         protected Regio(final NetworkId networkId, final String apiAuthorization, final byte[] salt) {
