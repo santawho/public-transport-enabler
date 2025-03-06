@@ -40,9 +40,9 @@ public final class DbProvider extends DbWebProvider.Fernverkehr {
         }
     }
 
-    public static final class DeutschlandTicket extends DbWebProvider.Regio {
+    public static final class DeutschlandTicket extends DbWebProvider.DeutschlandTicket {
         public DeutschlandTicket() {
-            super(NetworkId.DEUTSCHLANDTICKET);
+            super(NetworkId.DBDEUTSCHLANDTICKET);
         }
     }
 

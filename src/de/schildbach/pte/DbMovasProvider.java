@@ -114,6 +114,21 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
         }
     }
 
+    public static class DeutschlandTicket extends Regio {
+        public DeutschlandTicket() {
+            this(NetworkId.DBDEUTSCHLANDTICKETMOVAS);
+        }
+
+        protected DeutschlandTicket(final NetworkId networkId) {
+            super(networkId);
+        }
+
+        @Override
+        protected boolean isModeDeutschlandTicket() {
+            return true;
+        }
+    }
+
     private static final Set<Capability> CAPABILITIES = Set.of(
             Capability.SUGGEST_LOCATIONS,
             Capability.NEARBY_LOCATIONS,
@@ -226,6 +241,10 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
     @Override
     protected String[] getValidUserInterfaceLanguages() {
         return new String[] { "en", "de", "fr", "es", "dk", "cz", "it", "nl", "pl" };
+    }
+
+    protected boolean isModeDeutschlandTicket() {
+        return false;
     }
 
     private String doRequest(final HttpUrl url, final String body, final String contentType) throws IOException {
@@ -704,7 +723,25 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
         // accessibility, optimize not supported
 
         final String deparr = dep ? "ABFAHRT" : "ANKUNFT";
-        final String productsStr = "\"verkehrsmittel\":[" + formatProducts(products) + "]";
+        final Set<Product> useProducts;
+        final String limitToDticket;
+        final String hasDticket;
+        if (isModeDeutschlandTicket()) {
+            hasDticket = "true";
+            if (products != null && products.contains(Product.HIGH_SPEED_TRAIN)) {
+                limitToDticket = "false";
+                useProducts = products;
+            } else {
+                limitToDticket = "true";
+                useProducts = new HashSet<>(products != null ? products : Product.ALL);
+                useProducts.add(Product.HIGH_SPEED_TRAIN);
+            }
+        } else {
+            hasDticket = "false";
+            limitToDticket = "false";
+            useProducts = products;
+        }
+        final String productsStr = "\"verkehrsmittel\":[" + formatProducts(useProducts) + "]";
         final String viaLocations = via != null
                 ? "\"viaLocations\":[{\"locationId\": \"" + formatLid(via) + "\"," + productsStr + "}],"
                 : "";
@@ -718,10 +755,10 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
                 + bikeStr //
                 + minUmstiegsdauerStr //
                 + ctxStr //
-                + "\"zeitWunsch\":{\"reiseDatum\":\"" + formatIso8601WOffset(time) + "\",\"zeitPunktArt\":\"" + deparr //
-                + "\"}," //
+                + "\"zeitWunsch\":{\"reiseDatum\":\"" + formatIso8601WOffset(time) + "\",\"zeitPunktArt\":\"" + deparr + "\"}," //
                 + "\"zielLocationId\": \"" + formatLid(to) + "\"}}," //
                 + "\"reisendenProfil\":{\"reisende\":[{\"ermaessigungen\":[\"KEINE_ERMAESSIGUNG KLASSENLOS\"],\"reisendenTyp\":\"ERWACHSENER\"}]}," //
+                + "\"fahrverguenstigungen\":{\"deutschlandTicketVorhanden\":" + hasDticket + ",\"nurDeutschlandTicketVerbindungen\":" + limitToDticket + "},"
                 + "\"reservierungsKontingenteVorhanden\":false}";
 
         final HttpUrl url = this.tripEndpoint;

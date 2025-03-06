@@ -115,6 +115,21 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
         }
     }
 
+    public static class DeutschlandTicket extends Regio {
+        public DeutschlandTicket() {
+            this(NetworkId.DBDEUTSCHLANDTICKETWEB);
+        }
+
+        protected DeutschlandTicket(final NetworkId networkId) {
+            super(networkId);
+        }
+
+        @Override
+        protected boolean isModeDeutschlandTicket() {
+            return true;
+        }
+    }
+
     private static final Set<Capability> CAPABILITIES = Set.of(
             Capability.SUGGEST_LOCATIONS,
             Capability.NEARBY_LOCATIONS,
@@ -210,6 +225,10 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
     @Override
     protected String[] getValidUserInterfaceLanguages() {
         return new String[] { "en", "de", "fr", "es", "dk", "cz", "it", "nl", "pl" };
+    }
+
+    protected boolean isModeDeutschlandTicket() {
+        return false;
     }
 
     private String doRequest(final HttpUrl url, final String body, final String contentType) throws IOException {
@@ -688,22 +707,43 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
         return code;
     }
 
-    private QueryTripsResult doQueryTrips(Location from, @Nullable Location via, Location to, Date time, boolean dep,
-            @Nullable Set<Product> products, final boolean bike, @Nullable final Integer minUmstiegszeit,
+    private QueryTripsResult doQueryTrips(
+            final Location from, @Nullable final Location via, final Location to,
+            final Date time, final boolean dep,
+            @Nullable final Set<Product> products, final boolean bike, @Nullable final Integer minUmstiegszeit,
             final @Nullable String context) throws IOException {
         // accessibility, optimize not supported
 
         final String deparr = dep ? "ABFAHRT" : "ANKUNFT";
-        final String productsStr = "\"produktgattungen\":[" + formatProducts(products) + "]";
-        final String viaLocations = via != null
-                ? "\"zwischenhalte\":[{\"id\": \"" + formatLid(via) + "\"}],"
-                : "";
+        final Set<Product> useProducts;
+        final String limitToDticket;
+        final String hasDticket;
+        if (isModeDeutschlandTicket()) {
+            hasDticket = "true";
+            if (products != null && products.contains(Product.HIGH_SPEED_TRAIN)) {
+                limitToDticket = "false";
+                useProducts = products;
+            } else {
+                limitToDticket = "true";
+                useProducts = new HashSet<>(products != null ? products : Product.ALL);
+                useProducts.add(Product.HIGH_SPEED_TRAIN);
+            }
+        } else {
+            hasDticket = "false";
+            limitToDticket = "false";
+            useProducts = products;
+        }
+        final String productsStr = "\"produktgattungen\":[" + formatProducts(useProducts)
+                + "],\"deutschlandTicketVorhanden\":" + hasDticket
+                + ",\"nurDeutschlandTicketVerbindungen\":" + limitToDticket + ",";
+        final String viaLocations = via == null ? ""
+                : "\"zwischenhalte\":[{\"id\": \"" + formatLid(via) + "\"}],";
         final String bikeStr = bike ? "\"bikeCarriage\":true," : "";
         final String minUmstiegszeitStr = minUmstiegszeit != null ? "\"minUmstiegszeit\":" + minUmstiegszeit + "," : "";
         final String ctxStr = context != null ? "\"pagingReference\": \"" + context + "\"," : "";
         final String request = "{\"sitzplatzOnly\":false,\"klasse\":\"KLASSE_2\"," //
                 + "\"abfahrtsHalt\": \"" + formatLid(from) + "\"," //
-                + productsStr + "," //
+                + productsStr //
                 + viaLocations //
                 + bikeStr //
                 + minUmstiegszeitStr //
