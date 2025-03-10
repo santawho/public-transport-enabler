@@ -2788,7 +2788,9 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
 
                     XmlPullUtil.skipExit(pp, "itdRoute");
 
-                    final Trip trip = new Trip(tripId, firstDepartureLocation, lastArrivalLocation, legs,
+                    final Trip trip = new Trip(
+                            new Date(),
+                            tripId, firstDepartureLocation, lastArrivalLocation, legs,
                             fares.isEmpty() ? null : fares, null, numChanges);
 
                     if (!cancelled)
@@ -3256,7 +3258,9 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                     fares = null;
                 }
 
-                final Trip trip = new Trip(tripId, firstDepartureLocation, lastArrivalLocation, legs, fares, null,
+                final Trip trip = new Trip(
+                        new Date(),
+                        tripId, firstDepartureLocation, lastArrivalLocation, legs, fares, null,
                         numChanges);
                 trips.add(trip);
 

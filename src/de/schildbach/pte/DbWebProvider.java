@@ -786,6 +786,7 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
                 final int transfers = verbindung.optInt("umstiegsAnzahl", -1);
                 final int[] capacity = parseCapacity(verbindung);
                 trips.add(new Trip(
+                        new Date(),
                         verbindung.optString("ctxRecon").split("#")[0],
                         tripFrom,
                         tripTo,

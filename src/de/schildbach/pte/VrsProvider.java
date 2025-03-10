@@ -835,7 +835,9 @@ public class VrsProvider extends AbstractNetworkProvider {
                 int changes = route.getInt("changes");
                 List<Fare> fares = parseFare(route.optJSONObject("costs"));
 
-                trips.add(new Trip(null /* id */, tripOrigin, tripDestination, legs, fares, null /* capacity */,
+                trips.add(new Trip(
+                        new Date(),
+                        null /* id */, tripOrigin, tripDestination, legs, fares, null /* capacity */,
                         changes));
             }
             String generatedStr = head.getString("generated");

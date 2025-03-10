@@ -794,6 +794,7 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
                 final int transfers = verbindung.optInt("umstiegeAnzahl", -1);
                 final int[] capacity = parseCapacity(verbindung);
                 trips.add(new Trip(
+                        new Date(),
                         verbindung.optString("kontext").split("#")[0],
                         tripFrom,
                         tripTo,

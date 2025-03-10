@@ -1169,7 +1169,9 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
 
                     XmlPullUtil.skipExit(pp, "Connection");
 
-                    trips.add(new Trip(id, departureLocation, arrivalLocation, legs, null, capacity, numTransfers));
+                    trips.add(new Trip(
+                            new Date(),
+                            id, departureLocation, arrivalLocation, legs, null, capacity, numTransfers));
                 }
 
                 XmlPullUtil.skipExit(pp, "ConnectionList");
@@ -1898,7 +1900,9 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
                         legs.add(leg);
                     }
 
-                    final Trip trip = new Trip(connectionId, resDeparture, resArrival, legs, null, null,
+                    final Trip trip = new Trip(
+                            new Date(),
+                            connectionId, resDeparture, resArrival, legs, null, null,
                             (int) numChanges);
 
                     if (realtimeStatus != 2) // Verbindung fällt aus

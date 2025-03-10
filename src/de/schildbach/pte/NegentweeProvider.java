@@ -503,7 +503,11 @@ public class NegentweeProvider extends AbstractNetworkProvider {
                     fareInfo.getInt("reducedPriceCents") / 100, null, null));
         }
 
-        return new Trip(trip.getString("id"), from, to, foundLegs, tripFares, null, trip.getInt("numberOfChanges"));
+        final String id = trip.getString("id");
+        final int numberOfChanges = trip.getInt("numberOfChanges");
+        return new Trip(
+                new Date(),
+                id, from, to, foundLegs, tripFares, null, numberOfChanges);
     }
 
     private Stop stopFromJSONObject(JSONObject stop) throws JSONException {

@@ -885,7 +885,9 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                     fares = null;
                 }
 
-                final Trip trip = new Trip(null, tripFrom, tripTo, legs, fares, null, null);
+                final Trip trip = new Trip(
+                        new Date(),
+                        null, tripFrom, tripTo, legs, fares, null, null);
                 trips.add(trip);
             }
 

@@ -44,6 +44,7 @@ import com.google.common.base.Objects;
 public final class Trip implements Serializable {
     private static final long serialVersionUID = 2508466068307110312L;
 
+    public final Date loadedAt;
     private String id;
     public final Location from;
     public final Location to;
@@ -53,8 +54,12 @@ public final class Trip implements Serializable {
     public final Integer numChanges;
     private @Nullable String uniqueId;
 
-    public Trip(final String id, final Location from, final Location to, final List<Leg> legs, final List<Fare> fares,
-            final int[] capacity, final Integer numChanges) {
+    public Trip(
+            final Date loadedAt,
+            final String id,
+            final Location from, final Location to, final List<Leg> legs,
+            final List<Fare> fares, final int[] capacity, final Integer numChanges) {
+        this.loadedAt = loadedAt;
         this.id = id;
         this.from = checkNotNull(from);
         this.to = checkNotNull(to);
