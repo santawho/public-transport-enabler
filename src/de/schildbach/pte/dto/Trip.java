@@ -46,6 +46,7 @@ public final class Trip implements Serializable {
 
     public final Date loadedAt;
     private String id;
+    public final @Nullable TripRef tripRef;
     public final Location from;
     public final Location to;
     public final List<Leg> legs;
@@ -56,11 +57,12 @@ public final class Trip implements Serializable {
 
     public Trip(
             final Date loadedAt,
-            final String id,
+            final String id, final TripRef tripRef,
             final Location from, final Location to, final List<Leg> legs,
             final List<Fare> fares, final int[] capacity, final Integer numChanges) {
         this.loadedAt = loadedAt;
         this.id = id;
+        this.tripRef = tripRef;
         this.from = checkNotNull(from);
         this.to = checkNotNull(to);
         this.legs = checkNotNull(legs);

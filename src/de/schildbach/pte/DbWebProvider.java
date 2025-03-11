@@ -72,6 +72,7 @@ import de.schildbach.pte.dto.SuggestLocationsResult;
 import de.schildbach.pte.dto.SuggestedLocation;
 import de.schildbach.pte.dto.Trip;
 import de.schildbach.pte.dto.TripOptions;
+import de.schildbach.pte.dto.TripRef;
 import de.schildbach.pte.exception.AbstractHttpException;
 import de.schildbach.pte.exception.BlockedException;
 import de.schildbach.pte.exception.InternalErrorException;
@@ -137,6 +138,7 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
             Capability.TRIPS,
             Capability.TRIPS_VIA,
             Capability.JOURNEY,
+            Capability.TRIP_RELOAD,
             Capability.MIN_TRANSFER_TIMES,
             Capability.BIKE_OPTION
         );
@@ -183,6 +185,7 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
 
     private final HttpUrl departureEndpoint;
     private final HttpUrl tripEndpoint;
+    private final HttpUrl tripReconEndpoint;
     private final HttpUrl journeyEndpoint;
     private final HttpUrl locationsEndpoint;
     private final HttpUrl nearbyEndpoint;
@@ -216,6 +219,7 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
         super(networkId);
         this.departureEndpoint = WEB_API_BASE.newBuilder().addPathSegments("reiseloesung/abfahrten").build();
         this.tripEndpoint = WEB_API_BASE.newBuilder().addPathSegments("angebote/fahrplan").build();
+        this.tripReconEndpoint = WEB_API_BASE.newBuilder().addPathSegments("angebote/recon").build();
         this.journeyEndpoint = WEB_API_BASE.newBuilder().addPathSegments("reiseloesung/fahrt").build();
         this.locationsEndpoint = WEB_API_BASE.newBuilder().addPathSegments("reiseloesung/orte").build();
         this.nearbyEndpoint = WEB_API_BASE.newBuilder().addPathSegments("reiseloesung/orte/nearby").build();
@@ -586,6 +590,38 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
         return null;
     }
 
+    static class DbWebTripRef extends TripRef {
+        final String ctxRecon;
+        final boolean limitToDticket;
+        final boolean hasDticket;
+
+        public DbWebTripRef(
+                final NetworkId network, final String ctxRecon,
+                final Location from, final Location via, final Location to,
+                final boolean limitToDticket, final boolean hasDticket) {
+            super(network, from, via, to);
+            this.ctxRecon = ctxRecon;
+            this.limitToDticket = limitToDticket;
+            this.hasDticket = hasDticket;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof DbWebTripRef)) return false;
+            DbWebTripRef that = (DbWebTripRef) o;
+            return super.equals(that)
+                    && Objects.equals(ctxRecon, that.ctxRecon)
+                    && limitToDticket == that.limitToDticket
+                    && hasDticket == that.limitToDticket;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(super.hashCode(), ctxRecon, limitToDticket, hasDticket);
+        }
+    }
+
     static class DbWebJourneyRef extends JourneyRef {
         final String journeyId;
         final Line line;
@@ -707,6 +743,56 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
         return code;
     }
 
+    private QueryTripsResult parseTrips(
+            final JSONObject res,
+            final DbWebApiContext context,
+            final Location from, final Location via, final Location to,
+            final boolean limitToDticket, final boolean hasDticket
+    ) throws JSONException {
+        final JSONArray verbindungen = res.getJSONArray("verbindungen");
+        final List<Trip> trips = new ArrayList<>();
+
+        for (int iTrip = 0; iTrip < verbindungen.length(); iTrip++) {
+            final JSONObject verbindung = verbindungen.getJSONObject(iTrip);
+            final JSONArray abschnitte = verbindung.getJSONArray("verbindungsAbschnitte");
+            final List<Trip.Leg> legs = new ArrayList<>();
+            Location tripFrom = null;
+            Location tripTo = null;
+
+            for (int iLeg = 0; iLeg < abschnitte.length(); iLeg++) {
+                final Trip.Leg leg = parseLeg(
+                        abschnitte.getJSONObject(iLeg),
+                        abschnitte.optJSONObject(iLeg - 1),
+                        abschnitte.optJSONObject(iLeg + 1));
+                legs.add(leg);
+                if (iLeg == 0) {
+                    tripFrom = leg.departure;
+                }
+                if (iLeg == abschnitte.length() - 1) {
+                    tripTo = leg.arrival;
+                }
+            }
+            final List<Fare> fares = parseFares(verbindung);
+            final int transfers = verbindung.optInt("umstiegsAnzahl", -1);
+            final int[] capacity = parseCapacity(verbindung);
+            final String ctxRecon = verbindung.optString("ctxRecon");
+            trips.add(new Trip(
+                    new Date(),
+                    ctxRecon.split("#")[0],
+                    new DbWebTripRef(network, ctxRecon, from, via, to, limitToDticket, hasDticket),
+                    tripFrom,
+                    tripTo,
+                    legs,
+                    fares,
+                    capacity,
+                    transfers == -1 ? null : transfers));
+        }
+        if (trips.isEmpty()) {
+            return new QueryTripsResult(this.resultHeader, QueryTripsResult.Status.NO_TRIPS);
+        }
+        return new QueryTripsResult(this.resultHeader, null, from, via, to, context, trips);
+    }
+
     private QueryTripsResult doQueryTrips(
             final Location from, @Nullable final Location via, final Location to,
             final Date time, final boolean dep,
@@ -716,21 +802,21 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
 
         final String deparr = dep ? "ABFAHRT" : "ANKUNFT";
         final Set<Product> useProducts;
-        final String limitToDticket;
-        final String hasDticket;
+        final boolean limitToDticket;
+        final boolean hasDticket;
         if (isModeDeutschlandTicket()) {
-            hasDticket = "true";
+            hasDticket = true;
             if (products != null && products.contains(Product.HIGH_SPEED_TRAIN)) {
-                limitToDticket = "false";
+                limitToDticket = false;
                 useProducts = products;
             } else {
-                limitToDticket = "true";
+                limitToDticket = true;
                 useProducts = new HashSet<>(products != null ? products : Product.ALL);
                 useProducts.add(Product.HIGH_SPEED_TRAIN);
             }
         } else {
-            hasDticket = "false";
-            limitToDticket = "false";
+            hasDticket = false;
+            limitToDticket = false;
             useProducts = products;
         }
         final String productsStr = "\"produktgattungen\":[" + formatProducts(useProducts)
@@ -759,50 +845,41 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
         try {
             page = doRequest(url, request);
             final JSONObject res = new JSONObject(page);
-            final JSONArray verbindungen = res.getJSONArray("verbindungen");
-            final List<Trip> trips = new ArrayList<>();
-
-            for (int iTrip = 0; iTrip < verbindungen.length(); iTrip++) {
-                final JSONObject verbindung = verbindungen.getJSONObject(iTrip);
-                final JSONArray abschnitte = verbindung.getJSONArray("verbindungsAbschnitte");
-                final List<Trip.Leg> legs = new ArrayList<>();
-                Location tripFrom = null;
-                Location tripTo = null;
-
-                for (int iLeg = 0; iLeg < abschnitte.length(); iLeg++) {
-                    final Trip.Leg leg = parseLeg(
-                            abschnitte.getJSONObject(iLeg),
-                            abschnitte.optJSONObject(iLeg - 1),
-                            abschnitte.optJSONObject(iLeg + 1));
-                    legs.add(leg);
-                    if (iLeg == 0) {
-                        tripFrom = leg.departure;
-                    }
-                    if (iLeg == abschnitte.length() - 1) {
-                        tripTo = leg.arrival;
-                    }
-                }
-                final List<Fare> fares = parseFares(verbindung);
-                final int transfers = verbindung.optInt("umstiegsAnzahl", -1);
-                final int[] capacity = parseCapacity(verbindung);
-                trips.add(new Trip(
-                        new Date(),
-                        verbindung.optString("ctxRecon").split("#")[0],
-                        tripFrom,
-                        tripTo,
-                        legs,
-                        fares,
-                        capacity,
-                        transfers == -1 ? null : transfers));
-            }
-            if (trips.isEmpty()) {
-                return new QueryTripsResult(this.resultHeader, QueryTripsResult.Status.NO_TRIPS);
-            }
             Optional<JSONObject> verbindungReference = Optional.ofNullable(res.optJSONObject("verbindungReference"));
-            final DbWebApiContext ctx = new DbWebApiContext(from, via, to, time, dep, products, bike, minUmstiegszeit,
+            final DbWebApiContext apiContext = new DbWebApiContext(from, via, to, time, dep, products, bike, minUmstiegszeit,
                     verbindungReference.map(v -> v.optString("later", null)).orElse(null),
                     verbindungReference.map(v -> v.optString("earlier", null)).orElse(null));
-            return new QueryTripsResult(this.resultHeader, null, from, via, to, ctx, trips);
+            return parseTrips(res, apiContext, from, via, to, limitToDticket, hasDticket);
+        } catch (InternalErrorException | BlockedException e) {
+            final String code = parseErrorCode(e);
+            if ("MDA-AK-MSG-1001".equals(code)) {
+                return new QueryTripsResult(this.resultHeader, QueryTripsResult.Status.INVALID_DATE);
+            } else if (code != null) {
+                return new QueryTripsResult(this.resultHeader, QueryTripsResult.Status.NO_TRIPS);
+            }
+            return new QueryTripsResult(this.resultHeader, QueryTripsResult.Status.SERVICE_DOWN);
+        } catch (IOException | RuntimeException e) {
+            return new QueryTripsResult(this.resultHeader, QueryTripsResult.Status.SERVICE_DOWN);
+        } catch (final JSONException x) {
+            throw new ParserException("cannot parse json: '" + page + "' on " + url, x);
+        }
+    }
+
+    private QueryTripsResult doQueryReloadTrip(final DbWebTripRef tripRef) throws IOException {
+        final String request = "{\"ctxRecon\":\"" + tripRef.ctxRecon
+                + "\",\"klasse\":\"KLASSE_2\"" //
+                + ",\"deutschlandTicketVorhanden\":" + tripRef.hasDticket
+                + ",\"nurDeutschlandTicketVerbindungen\":" + tripRef.limitToDticket //
+                + ",\"reisende\":[{\"ermaessigungen\":[{\"art\":\"KEINE_ERMAESSIGUNG\",\"klasse\":\"KLASSENLOS\"}],\"typ\":\"ERWACHSENER\",\"alter\":[],\"anzahl\":1}]," //
+                + "\"reservierungsKontingenteVorhanden\":false}";
+
+        final HttpUrl url = this.tripReconEndpoint;
+
+        String page = null;
+        try {
+            page = doRequest(url, request);
+            final JSONObject res = new JSONObject(page);
+            return parseTrips(res, null, tripRef.from, tripRef.via, tripRef.to, tripRef.limitToDticket, tripRef.hasDticket);
         } catch (InternalErrorException | BlockedException e) {
             final String code = parseErrorCode(e);
             if ("MDA-AK-MSG-1001".equals(code)) {
@@ -994,6 +1071,11 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
             return new QueryTripsResult(this.resultHeader, QueryTripsResult.Status.NO_TRIPS);
         }
         return doQueryTrips(ctx.from, ctx.via, ctx.to, ctx.date, ctx.dep, ctx.products, ctx.bike, ctx.minUmstiegszeit, ctxToken);
+    }
+
+    @Override
+    public QueryTripsResult queryReloadTrip(final TripRef tripRef) throws IOException {
+        return doQueryReloadTrip((DbWebTripRef) tripRef);
     }
 
     @Override

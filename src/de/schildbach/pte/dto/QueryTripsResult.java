@@ -58,7 +58,7 @@ public final class QueryTripsResult implements Serializable {
         this.from = from;
         this.via = via;
         this.to = to;
-        this.context = checkNotNull(context);
+        this.context = context;
         this.trips = checkNotNull(trips);
 
         this.ambiguousFrom = null;

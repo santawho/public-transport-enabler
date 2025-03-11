@@ -507,7 +507,7 @@ public class NegentweeProvider extends AbstractNetworkProvider {
         final int numberOfChanges = trip.getInt("numberOfChanges");
         return new Trip(
                 new Date(),
-                id, from, to, foundLegs, tripFares, null, numberOfChanges);
+                id, null, from, to, foundLegs, tripFares, null, numberOfChanges);
     }
 
     private Stop stopFromJSONObject(JSONObject stop) throws JSONException {

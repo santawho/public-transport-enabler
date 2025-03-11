@@ -71,6 +71,7 @@ import de.schildbach.pte.dto.SuggestLocationsResult;
 import de.schildbach.pte.dto.SuggestedLocation;
 import de.schildbach.pte.dto.Trip;
 import de.schildbach.pte.dto.TripOptions;
+import de.schildbach.pte.dto.TripRef;
 import de.schildbach.pte.exception.AbstractHttpException;
 import de.schildbach.pte.exception.BlockedException;
 import de.schildbach.pte.exception.InternalErrorException;
@@ -136,6 +137,7 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
             Capability.TRIPS,
             Capability.TRIPS_VIA,
             Capability.JOURNEY,
+            Capability.TRIP_RELOAD,
             Capability.MIN_TRANSFER_TIMES,
             Capability.BIKE_OPTION
         );
@@ -199,6 +201,7 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
 
     private final HttpUrl departureEndpoint;
     private final HttpUrl tripEndpoint;
+    private final HttpUrl tripReconEndpoint;
     private final HttpUrl journeyEndpoint;
     private final HttpUrl locationsEndpoint;
     private final HttpUrl nearbyEndpoint;
@@ -232,6 +235,7 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
         super(networkId);
         this.departureEndpoint = API_BASE.newBuilder().addPathSegments("bahnhofstafel/abfahrt").build();
         this.tripEndpoint = API_BASE.newBuilder().addPathSegments("angebote/fahrplan").build();
+        this.tripReconEndpoint = API_BASE.newBuilder().addPathSegments("angebote/recon").build();
         this.journeyEndpoint = API_BASE.newBuilder().addPathSegments("zuglauf").build();
         this.locationsEndpoint = API_BASE.newBuilder().addPathSegments("location/search").build();
         this.nearbyEndpoint = API_BASE.newBuilder().addPathSegments("location/nearby").build();
@@ -593,6 +597,38 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
         return null;
     }
 
+    static class DbMovasTripRef extends TripRef {
+        final String kontext;
+        final boolean limitToDticket;
+        final boolean hasDticket;
+
+        public DbMovasTripRef(
+                final NetworkId network, final String kontext,
+                final Location from, final Location via, final Location to,
+                final boolean limitToDticket, final boolean hasDticket) {
+            super(network, from, via, to);
+            this.kontext = kontext;
+            this.limitToDticket = limitToDticket;
+            this.hasDticket = hasDticket;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof DbMovasTripRef)) return false;
+            DbMovasTripRef that = (DbMovasTripRef) o;
+            return super.equals(that)
+                    && Objects.equals(kontext, that.kontext)
+                    && limitToDticket == that.limitToDticket
+                    && hasDticket == that.limitToDticket;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(super.hashCode(), limitToDticket, hasDticket);
+        }
+    }
+
     static class DbMovasJourneyRef extends JourneyRef {
         final String journeyId;
         final Line line;
@@ -717,6 +753,44 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
         return code;
     }
 
+    private Trip parseTrip(
+            final JSONObject verbindungParent,
+            final Location from, final Location via, final Location to,
+            final boolean limitToDticket, final boolean hasDticket
+    ) throws JSONException {
+        final JSONObject verbindung = verbindungParent.getJSONObject("verbindung");
+        final JSONArray abschnitte = verbindung.getJSONArray("verbindungsAbschnitte");
+        final List<Trip.Leg> legs = new ArrayList<>();
+        Location tripFrom = null;
+        Location tripTo = null;
+
+        for (int iLeg = 0; iLeg < abschnitte.length(); iLeg++) {
+            final Trip.Leg leg = parseLeg(abschnitte.getJSONObject(iLeg));
+            if (leg == null) continue;
+            legs.add(leg);
+            if (iLeg == 0) {
+                tripFrom = leg.departure;
+            }
+            if (iLeg == abschnitte.length() - 1) {
+                tripTo = leg.arrival;
+            }
+        }
+        final List<Fare> fares = parseFares(verbindungParent);
+        final int transfers = verbindung.optInt("umstiegeAnzahl", -1);
+        final int[] capacity = parseCapacity(verbindung);
+        final String kontext = verbindung.optString("kontext");
+        return new Trip(
+                new Date(),
+                kontext.split("#")[0],
+                new DbMovasTripRef(network, kontext, from, via, to, limitToDticket, hasDticket),
+                tripFrom,
+                tripTo,
+                legs,
+                fares,
+                capacity,
+                transfers == -1 ? null : transfers);
+    }
+
     private QueryTripsResult doQueryTrips(Location from, @Nullable Location via, Location to, Date time, boolean dep,
             @Nullable Set<Product> products, final boolean bike, @Nullable final Integer minUmstiegsdauer,
             final @Nullable String context) throws IOException {
@@ -724,21 +798,21 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
 
         final String deparr = dep ? "ABFAHRT" : "ANKUNFT";
         final Set<Product> useProducts;
-        final String limitToDticket;
-        final String hasDticket;
+        final boolean limitToDticket;
+        final boolean hasDticket;
         if (isModeDeutschlandTicket()) {
-            hasDticket = "true";
+            hasDticket = true;
             if (products != null && products.contains(Product.HIGH_SPEED_TRAIN)) {
-                limitToDticket = "false";
+                limitToDticket = false;
                 useProducts = products;
             } else {
-                limitToDticket = "true";
+                limitToDticket = true;
                 useProducts = new HashSet<>(products != null ? products : Product.ALL);
                 useProducts.add(Product.HIGH_SPEED_TRAIN);
             }
         } else {
-            hasDticket = "false";
-            limitToDticket = "false";
+            hasDticket = false;
+            limitToDticket = false;
             useProducts = products;
         }
         final String productsStr = "\"verkehrsmittel\":[" + formatProducts(useProducts) + "]";
@@ -773,35 +847,8 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
 
             for (int iTrip = 0; iTrip < verbindungen.length(); iTrip++) {
                 final JSONObject verbindungParent = verbindungen.getJSONObject(iTrip);
-                final JSONObject verbindung = verbindungParent.getJSONObject("verbindung");
-                final JSONArray abschnitte = verbindung.getJSONArray("verbindungsAbschnitte");
-                final List<Trip.Leg> legs = new ArrayList<>();
-                Location tripFrom = null;
-                Location tripTo = null;
-
-                for (int iLeg = 0; iLeg < abschnitte.length(); iLeg++) {
-                    final Trip.Leg leg = parseLeg(abschnitte.getJSONObject(iLeg));
-                    if (leg == null) continue;
-                    legs.add(leg);
-                    if (iLeg == 0) {
-                        tripFrom = leg.departure;
-                    }
-                    if (iLeg == abschnitte.length() - 1) {
-                        tripTo = leg.arrival;
-                    }
-                }
-                final List<Fare> fares = parseFares(verbindungParent);
-                final int transfers = verbindung.optInt("umstiegeAnzahl", -1);
-                final int[] capacity = parseCapacity(verbindung);
-                trips.add(new Trip(
-                        new Date(),
-                        verbindung.optString("kontext").split("#")[0],
-                        tripFrom,
-                        tripTo,
-                        legs,
-                        fares,
-                        capacity,
-                        transfers == -1 ? null : transfers));
+                final Trip trip = parseTrip(verbindungParent, from, via, to, limitToDticket, hasDticket);
+                trips.add(trip);
             }
             if (trips.isEmpty()) {
                 return new QueryTripsResult(this.resultHeader, QueryTripsResult.Status.NO_TRIPS);
@@ -809,6 +856,40 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
             final DbMovasContext ctx = new DbMovasContext(from, via, to, time, dep, products, bike, minUmstiegsdauer,
                     res.optString("spaeterContext", null), res.optString("frueherContext", null));
             return new QueryTripsResult(this.resultHeader, null, from, via, to, ctx, trips);
+        } catch (InternalErrorException | BlockedException e) {
+            final String code = parseErrorCode(e);
+            if ("MDA-AK-MSG-1001".equals(code)) {
+                return new QueryTripsResult(this.resultHeader, QueryTripsResult.Status.INVALID_DATE);
+            } else if (code != null) {
+                return new QueryTripsResult(this.resultHeader, QueryTripsResult.Status.NO_TRIPS);
+            }
+            return new QueryTripsResult(this.resultHeader, QueryTripsResult.Status.SERVICE_DOWN);
+        } catch (IOException | RuntimeException e) {
+            return new QueryTripsResult(this.resultHeader, QueryTripsResult.Status.SERVICE_DOWN);
+        } catch (final JSONException x) {
+            throw new ParserException("cannot parse json: '" + page + "' on " + url, x);
+        }
+    }
+
+    private QueryTripsResult doQueryReloadTrip(final DbMovasTripRef tripRef) throws IOException {
+        final String request = "{\"autonomeReservierung\":false,\"einstiegsTypList\":[\"STANDARD\"],\"klasse\":\"KLASSE_2\"," //
+                + "\"verbindungHin\":{\"kontext\":\"" + tripRef.kontext + "\"},"
+                + "\"reisendenProfil\":{\"reisende\":[{\"ermaessigungen\":[\"KEINE_ERMAESSIGUNG KLASSENLOS\"],\"reisendenTyp\":\"ERWACHSENER\"}]}," //
+                + "\"fahrverguenstigungen\":{\"deutschlandTicketVorhanden\":" + tripRef.hasDticket + ",\"nurDeutschlandTicketVerbindungen\":" + tripRef.limitToDticket + "},"
+                + "\"reservierungsKontingenteVorhanden\":false}";
+
+        final HttpUrl url = this.tripReconEndpoint;
+        final String contentType = "application/x.db.vendo.mob.verbindungssuche.v8+json";
+
+        String page = null;
+        try {
+            page = doRequest(url, request, contentType);
+            final JSONObject res = new JSONObject(page);
+            if (res.isNull("verbindung")) {
+                return new QueryTripsResult(this.resultHeader, QueryTripsResult.Status.NO_TRIPS);
+            }
+            final Trip trip = parseTrip(res, tripRef.from, tripRef.via, tripRef.to, tripRef.limitToDticket, tripRef.hasDticket);
+            return new QueryTripsResult(this.resultHeader, null, tripRef.from, tripRef.via, tripRef.to, null, Collections.singletonList(trip));
         } catch (InternalErrorException | BlockedException e) {
             final String code = parseErrorCode(e);
             if ("MDA-AK-MSG-1001".equals(code)) {
@@ -989,6 +1070,11 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
             return new QueryTripsResult(this.resultHeader, QueryTripsResult.Status.NO_TRIPS);
         }
         return doQueryTrips(ctx.from, ctx.via, ctx.to, ctx.date, ctx.dep, ctx.products, ctx.bike, ctx.minUmstiegsdauer, ctxToken);
+    }
+
+    @Override
+    public QueryTripsResult queryReloadTrip(final TripRef tripRef) throws IOException {
+        return doQueryReloadTrip((DbMovasTripRef) tripRef);
     }
 
     @Override

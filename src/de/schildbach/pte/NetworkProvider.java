@@ -36,6 +36,7 @@ import de.schildbach.pte.dto.QueryTripsResult;
 import de.schildbach.pte.dto.Style;
 import de.schildbach.pte.dto.SuggestLocationsResult;
 import de.schildbach.pte.dto.TripOptions;
+import de.schildbach.pte.dto.TripRef;
 
 /**
  * Interface to be implemented by providers of transportation networks.
@@ -55,6 +56,7 @@ public interface NetworkProvider {
         /* supports trip queries passing by a specific location */
         TRIPS_VIA,
         JOURNEY,
+        TRIP_RELOAD,
         MIN_TRANSFER_TIMES,
         BIKE_OPTION,
     }
@@ -182,6 +184,8 @@ public interface NetworkProvider {
      * @throws IOException
      */
     QueryTripsResult queryMoreTrips(QueryTripsContext context, boolean later) throws IOException;
+
+    QueryTripsResult queryReloadTrip(final TripRef tripRef) throws IOException;
 
     QueryJourneyResult queryJourney(final JourneyRef journeyRef) throws IOException;
 

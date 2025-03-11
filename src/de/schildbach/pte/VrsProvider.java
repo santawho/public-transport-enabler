@@ -837,7 +837,7 @@ public class VrsProvider extends AbstractNetworkProvider {
 
                 trips.add(new Trip(
                         new Date(),
-                        null /* id */, tripOrigin, tripDestination, legs, fares, null /* capacity */,
+                        null /* id */, null, tripOrigin, tripDestination, legs, fares, null /* capacity */,
                         changes));
             }
             String generatedStr = head.getString("generated");

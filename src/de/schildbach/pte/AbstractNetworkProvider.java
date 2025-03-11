@@ -43,6 +43,7 @@ import de.schildbach.pte.dto.QueryTripsResult;
 import de.schildbach.pte.dto.Style;
 import de.schildbach.pte.dto.SuggestLocationsResult;
 import de.schildbach.pte.dto.TripOptions;
+import de.schildbach.pte.dto.TripRef;
 import de.schildbach.pte.util.HttpClient;
 
 /**
@@ -121,6 +122,11 @@ public abstract class AbstractNetworkProvider implements NetworkProvider {
             @Nullable Accessibility accessibility, @Nullable Set<TripFlag> flags) throws IOException {
         return queryTrips(from, via, to, date, dep,
                 new TripOptions(products, optimize, walkSpeed, null, accessibility, flags));
+    }
+
+    @Override
+    public QueryTripsResult queryReloadTrip(final TripRef tripRef) throws IOException {
+        throw new UnsupportedOperationException("queryReloadTrip(\"" + tripRef + "\")");
     }
 
     @Override

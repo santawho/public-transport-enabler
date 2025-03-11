@@ -233,7 +233,7 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
         return this;
     }
 
-    private final String wrapReqC(final CharSequence request, final Charset encoding) {
+    private String wrapReqC(final CharSequence request, final Charset encoding) {
         return "<?xml version=\"1.0\" encoding=\"" + (encoding != null ? encoding.name() : "iso-8859-1") + "\"?>" //
                 + "<ReqC ver=\"1.1\" prod=\"" + REQC_PROD + "\" lang=\"DE\""
                 + (accessId != null ? " accessId=\"" + accessId + "\"" : "") + ">" //
@@ -241,7 +241,7 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
                 + "</ReqC>";
     }
 
-    private final Location parseStation(final XmlPullParser pp) {
+    private Location parseStation(final XmlPullParser pp) {
         final String type = pp.getName();
         if ("Station".equals(type)) {
             final String name = XmlPullUtil.attr(pp, "name");
@@ -255,7 +255,7 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
         throw new IllegalStateException("cannot handle: " + type);
     }
 
-    private static final Location parsePoi(final XmlPullParser pp) {
+    private static Location parsePoi(final XmlPullParser pp) {
         final String type = pp.getName();
         if ("Poi".equals(type)) {
             String name = XmlPullUtil.attr(pp, "name");
@@ -269,7 +269,7 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
         throw new IllegalStateException("cannot handle: " + type);
     }
 
-    private final Location parseAddress(final XmlPullParser pp) {
+    private Location parseAddress(final XmlPullParser pp) {
         final String type = pp.getName();
         if ("Address".equals(type)) {
             String name = XmlPullUtil.attr(pp, "name");
@@ -284,7 +284,7 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
         throw new IllegalStateException("cannot handle: " + type);
     }
 
-    private final Position parsePlatform(final XmlPullParser pp) throws XmlPullParserException, IOException {
+    private Position parsePlatform(final XmlPullParser pp) throws XmlPullParserException, IOException {
         XmlPullUtil.enter(pp, "Platform");
         final String platformText = XmlPullUtil.valueTag(pp, "Text");
         XmlPullUtil.skipExit(pp, "Platform");
@@ -1171,7 +1171,7 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
 
                     trips.add(new Trip(
                             new Date(),
-                            id, departureLocation, arrivalLocation, legs, null, capacity, numTransfers));
+                            id, null, departureLocation, arrivalLocation, legs, null, capacity, numTransfers));
                 }
 
                 XmlPullUtil.skipExit(pp, "ConnectionList");
@@ -1902,7 +1902,7 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
 
                     final Trip trip = new Trip(
                             new Date(),
-                            connectionId, resDeparture, resArrival, legs, null, null,
+                            connectionId, null, resDeparture, resArrival, legs, null, null,
                             (int) numChanges);
 
                     if (realtimeStatus != 2) // Verbindung fällt aus

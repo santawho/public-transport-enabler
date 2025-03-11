@@ -2790,7 +2790,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
 
                     final Trip trip = new Trip(
                             new Date(),
-                            tripId, firstDepartureLocation, lastArrivalLocation, legs,
+                            tripId, null, firstDepartureLocation, lastArrivalLocation, legs,
                             fares.isEmpty() ? null : fares, null, numChanges);
 
                     if (!cancelled)
@@ -3260,7 +3260,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
 
                 final Trip trip = new Trip(
                         new Date(),
-                        tripId, firstDepartureLocation, lastArrivalLocation, legs, fares, null,
+                        tripId, null, firstDepartureLocation, lastArrivalLocation, legs, fares, null,
                         numChanges);
                 trips.add(trip);
 
