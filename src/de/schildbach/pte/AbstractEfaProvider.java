@@ -1421,6 +1421,8 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
             // generic
             if (trainName != null && trainType == null && trainNum == null)
                 return new Line(id, network, null, trainName);
+            if (trainName == null && trainType == null && trainNum != null)
+                return new Line(id, network, null, trainNum);
         } else if ("1".equals(mot)) {
             if (symbol != null)
                 return new Line(id, network, Product.SUBURBAN_TRAIN, symbol);
