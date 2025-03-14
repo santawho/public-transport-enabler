@@ -48,6 +48,8 @@ import javax.crypto.spec.SecretKeySpec;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.msgpack.core.MessagePacker;
+import org.msgpack.core.MessageUnpacker;
 
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
@@ -130,10 +132,15 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
         String url;
     }
 
-    public AbstractHafasClientInterfaceProvider(final NetworkId network, final HttpUrl apiBase,
+    protected AbstractHafasClientInterfaceProvider(final NetworkId network, final HttpUrl apiBase,
             final Product[] productsMap) {
         super(network, productsMap);
         this.apiBase = checkNotNull(apiBase);
+    }
+
+    @Override
+    public TripRef unpackTripRefFromMessage(final MessageUnpacker unpacker) throws IOException {
+        return new HafasTripRef(network, unpacker);
     }
 
     @Override
@@ -262,6 +269,17 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                 final String ctxRecon) {
             super(network, from, via, to);
             this.ctxRecon = ctxRecon;
+        }
+
+        public HafasTripRef(final NetworkId network, final MessageUnpacker unpacker) throws IOException {
+            super(network, unpacker);
+            this.ctxRecon = unpacker.unpackString();
+        }
+
+        @Override
+        public void packToMessage(final MessagePacker packer) throws IOException {
+            super.packToMessage(packer);
+            packer.packString(ctxRecon);
         }
 
         @Override

@@ -21,6 +21,8 @@ import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.msgpack.core.MessagePacker;
+import org.msgpack.core.MessageUnpacker;
 
 import java.io.IOException;
 import java.text.DateFormat;
@@ -224,6 +226,11 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
         this.locationsEndpoint = WEB_API_BASE.newBuilder().addPathSegments("reiseloesung/orte").build();
         this.nearbyEndpoint = WEB_API_BASE.newBuilder().addPathSegments("reiseloesung/orte/nearby").build();
         this.resultHeader = new ResultHeader(network, "dbweb");
+    }
+
+    @Override
+    public TripRef unpackTripRefFromMessage(final MessageUnpacker unpacker) throws IOException {
+        return new DbWebTripRef(network, unpacker);
     }
 
     @Override
@@ -603,6 +610,21 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
             this.ctxRecon = ctxRecon;
             this.limitToDticket = limitToDticket;
             this.hasDticket = hasDticket;
+        }
+
+        public DbWebTripRef(final NetworkId network, final MessageUnpacker unpacker) throws IOException {
+            super(network, unpacker);
+            this.ctxRecon = unpacker.unpackString();
+            this.limitToDticket = unpacker.unpackBoolean();
+            this.hasDticket = unpacker.unpackBoolean();
+        }
+
+        @Override
+        public void packToMessage(final MessagePacker packer) throws IOException {
+            super.packToMessage(packer);
+            packer.packString(ctxRecon);
+            packer.packBoolean(limitToDticket);
+            packer.packBoolean(hasDticket);
         }
 
         @Override

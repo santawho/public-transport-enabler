@@ -17,8 +17,14 @@
 
 package de.schildbach.pte.dto;
 
+import org.msgpack.core.MessagePacker;
+import org.msgpack.core.MessageUnpacker;
+
+import java.io.IOException;
 import java.util.EnumSet;
 import java.util.Set;
+
+import de.schildbach.pte.util.MessagePackUtils;
 
 /**
  * @author Andreas Schildbach
@@ -95,5 +101,16 @@ public enum Product {
         for (final Product product : products)
             codes[i++] = product.code;
         return codes;
+    }
+
+    public static void packToMessage(final MessagePacker packer, final Set<Product> products) throws IOException {
+        MessagePackUtils.packNullableString(packer, products == null ? null : new String(toCodes(products)));
+    }
+
+    public static Set<Product> unpackFromMessage(final MessageUnpacker unpacker) throws IOException {
+        final String s = MessagePackUtils.unpackNullableString(unpacker);
+        if (s == null)
+            return null;
+        return fromCodes(s.toCharArray());
     }
 }

@@ -33,6 +33,8 @@ import javax.annotation.Nullable;
 import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
 
+import org.msgpack.core.MessageUnpacker;
+
 import de.schildbach.pte.dto.JourneyRef;
 import de.schildbach.pte.dto.Location;
 import de.schildbach.pte.dto.Point;
@@ -275,5 +277,10 @@ public abstract class AbstractNetworkProvider implements NetworkProvider {
             return new Position(Integer.toString(Integer.parseInt(mNosw.group(1))), mNosw.group(2).substring(0, 1));
 
         return new Position(position);
+    }
+
+    @Override
+    public TripRef unpackTripRefFromMessage(final MessageUnpacker unpacker) throws IOException {
+        throw new UnsupportedOperationException();
     }
 }

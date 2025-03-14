@@ -20,6 +20,8 @@ package de.schildbach.pte;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.msgpack.core.MessagePacker;
+import org.msgpack.core.MessageUnpacker;
 
 import java.io.IOException;
 import java.text.DateFormat;
@@ -240,6 +242,11 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
         this.locationsEndpoint = API_BASE.newBuilder().addPathSegments("location/search").build();
         this.nearbyEndpoint = API_BASE.newBuilder().addPathSegments("location/nearby").build();
         this.resultHeader = new ResultHeader(network, "movas");
+    }
+
+    @Override
+    public TripRef unpackTripRefFromMessage(final MessageUnpacker unpacker) throws IOException {
+        return new DbMovasTripRef(network, unpacker);
     }
 
     @Override
@@ -610,6 +617,21 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
             this.kontext = kontext;
             this.limitToDticket = limitToDticket;
             this.hasDticket = hasDticket;
+        }
+
+        public DbMovasTripRef(final NetworkId network, final MessageUnpacker unpacker) throws IOException {
+            super(network, unpacker);
+            this.kontext = unpacker.unpackString();
+            this.limitToDticket = unpacker.unpackBoolean();
+            this.hasDticket = unpacker.unpackBoolean();
+        }
+
+        @Override
+        public void packToMessage(final MessagePacker packer) throws IOException {
+            super.packToMessage(packer);
+            packer.packString(kontext);
+            packer.packBoolean(limitToDticket);
+            packer.packBoolean(hasDticket);
         }
 
         @Override

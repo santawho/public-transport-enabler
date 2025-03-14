@@ -17,15 +17,21 @@
 
 package de.schildbach.pte.dto;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.Locale;
 
 import com.google.common.base.Objects;
 
+import org.msgpack.core.MessagePacker;
+import org.msgpack.core.MessageUnpacker;
+
+import de.schildbach.pte.util.MessagePackUtils;
+
 /**
  * @author Andreas Schildbach
  */
-public final class Point implements Serializable {
+public final class Point implements Serializable, MessagePackUtils.Packable {
     private static final long serialVersionUID = -256077054671402897L;
 
     private final double lat, lon;
@@ -33,6 +39,16 @@ public final class Point implements Serializable {
     private Point(final double lat, final double lon) {
         this.lat = lat;
         this.lon = lon;
+    }
+
+    public static Point unpackFromMessage(final MessageUnpacker unpacker) throws IOException {
+        return new Point(unpacker.unpackDouble(), unpacker.unpackDouble());
+    }
+
+    @Override
+    public void packToMessage(final MessagePacker packer) throws IOException {
+        packer.packDouble(lat);
+        packer.packDouble(lon);
     }
 
     public static Point fromDouble(final double lat, final double lon) {

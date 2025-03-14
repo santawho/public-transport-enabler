@@ -17,15 +17,20 @@
 
 package de.schildbach.pte.dto;
 
+import org.msgpack.core.MessagePacker;
+import org.msgpack.core.MessageUnpacker;
+
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.Objects;
 
 import de.schildbach.pte.NetworkId;
+import de.schildbach.pte.util.MessagePackUtils;
 
 /**
  * @author Andreas Schildbach
  */
-public abstract class TripRef implements Serializable {
+public abstract class TripRef implements Serializable, MessagePackUtils.Packable {
     public final NetworkId network;
     public Location from;
     public Location via;
@@ -38,6 +43,23 @@ public abstract class TripRef implements Serializable {
         this.from = from;
         this.via = via;
         this.to = to;
+    }
+
+    public TripRef(
+            final NetworkId network,
+            final MessageUnpacker unpacker
+    ) throws IOException {
+        this.network = network;
+        this.from = MessagePackUtils.unpackNullable(unpacker, Location::unpackFromMessage);
+        this.via = MessagePackUtils.unpackNullable(unpacker, Location::unpackFromMessage);
+        this.to = MessagePackUtils.unpackNullable(unpacker, Location::unpackFromMessage);
+    }
+
+    @Override
+    public void packToMessage(final MessagePacker packer) throws IOException {
+        MessagePackUtils.packNullable(packer, from);
+        MessagePackUtils.packNullable(packer, via);
+        MessagePackUtils.packNullable(packer, to);
     }
 
     @Override

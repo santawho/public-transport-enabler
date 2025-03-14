@@ -21,6 +21,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Set;
@@ -32,10 +33,15 @@ import com.google.common.base.MoreObjects.ToStringHelper;
 import com.google.common.base.Objects;
 import com.google.common.base.Strings;
 
+import org.msgpack.core.MessagePacker;
+import org.msgpack.core.MessageUnpacker;
+
+import de.schildbach.pte.util.MessagePackUtils;
+
 /**
  * @author Andreas Schildbach
  */
-public final class Location implements Serializable {
+public final class Location implements Serializable, MessagePackUtils.Packable {
     private static final long serialVersionUID = -2124775933106309127L;
 
     public final LocationType type;
@@ -86,6 +92,28 @@ public final class Location implements Serializable {
 
     public Location(final LocationType type, final String id) {
         this(type, id, null, null);
+    }
+
+    public static Location unpackFromMessage(final MessageUnpacker unpacker) throws IOException {
+        return new Location(
+                LocationType.valueOf(unpacker.unpackString()),
+                MessagePackUtils.unpackNullableString(unpacker),
+                MessagePackUtils.unpackNullable(unpacker, Point::unpackFromMessage),
+                MessagePackUtils.unpackNullableString(unpacker),
+                MessagePackUtils.unpackNullableString(unpacker),
+                Product.unpackFromMessage(unpacker),
+                MessagePackUtils.unpackNullableString(unpacker));
+    }
+
+    @Override
+    public void packToMessage(final MessagePacker packer) throws IOException {
+        packer.packString(type.name());
+        MessagePackUtils.packNullableString(packer, id);
+        MessagePackUtils.packNullable(packer, coord);
+        MessagePackUtils.packNullableString(packer, place);
+        MessagePackUtils.packNullableString(packer, name);
+        Product.packToMessage(packer, products);
+        MessagePackUtils.packNullableString(packer, infoUrl);
     }
 
     public static Location coord(final int lat, final int lon) {

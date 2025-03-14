@@ -17,6 +17,8 @@
 
 package de.schildbach.pte;
 
+import org.msgpack.core.MessageUnpacker;
+
 import java.io.IOException;
 import java.util.Date;
 import java.util.Set;
@@ -210,4 +212,6 @@ public interface NetworkProvider {
      * @throws IOException
      */
     Point[] getArea() throws IOException;
+
+    TripRef unpackTripRefFromMessage(final MessageUnpacker unpacker) throws IOException;
 }
