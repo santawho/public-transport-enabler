@@ -261,6 +261,8 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
     }
 
     public static class HafasTripRef extends TripRef {
+        private static final long serialVersionUID = -3651797810123427825L;
+
         public final String ctxRecon;
 
         public HafasTripRef(
@@ -298,6 +300,8 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
     }
 
     public static class HafasJourneyRef extends JourneyRef {
+        private static final long serialVersionUID = -3103436830992954576L;
+
         public final String jid;
 
         public HafasJourneyRef(final String jid) {
@@ -1477,8 +1481,9 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
         }
     }
 
-    @SuppressWarnings("serial")
     public static class JsonContext implements QueryTripsContext {
+        private static final long serialVersionUID = -4657767855558556495L;
+
         public final Location from, via, to;
         public final Date date;
         public final boolean dep;

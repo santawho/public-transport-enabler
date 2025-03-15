@@ -131,8 +131,9 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
         }
     }
 
-    @SuppressWarnings("serial")
     public static class QueryTripsBinaryContext implements QueryTripsContext {
+        private static final long serialVersionUID = 4199617766367274951L;
+
         public final String ident;
         public final int seqNr;
         public final String ld;

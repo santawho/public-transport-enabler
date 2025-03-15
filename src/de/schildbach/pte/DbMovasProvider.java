@@ -605,6 +605,8 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
     }
 
     public static class DbMovasTripRef extends TripRef {
+        private static final long serialVersionUID = -6844201755459607718L;
+
         public final String kontext;
         public final boolean limitToDticket;
         public final boolean hasDticket;
@@ -652,6 +654,8 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
     }
 
     public static class DbMovasJourneyRef extends JourneyRef {
+        private static final long serialVersionUID = -4247207547836359686L;
+
         public final String journeyId;
         public final Line line;
 
@@ -1135,6 +1139,8 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
     }
 
     private static class DbMovasContext implements QueryTripsContext {
+        private static final long serialVersionUID = -2477885850367572930L;
+
         public final Location from, via, to;
         public final Date date;
         public final boolean dep;

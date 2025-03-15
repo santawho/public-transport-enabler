@@ -30,8 +30,9 @@ import de.schildbach.pte.NetworkId;
 /**
  * @author Andreas Schildbach
  */
-@SuppressWarnings("serial")
 public final class ResultHeader implements Serializable {
+    private static final long serialVersionUID = -6692011253193787470L;
+
     public final NetworkId network;
     public final String serverProduct;
     public final @Nullable String serverVersion;

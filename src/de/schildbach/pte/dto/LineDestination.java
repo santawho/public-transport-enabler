@@ -29,8 +29,9 @@ import com.google.common.base.Objects;
 /**
  * @author Andreas Schildbach
  */
-@SuppressWarnings("serial")
 public final class LineDestination implements Serializable {
+    private static final long serialVersionUID = 8016508795997086017L;
+
     final public Line line;
     final public @Nullable Location destination;
 

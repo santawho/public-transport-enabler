@@ -30,8 +30,9 @@ import com.google.common.base.MoreObjects.ToStringHelper;
 /**
  * @author Andreas Schildbach
  */
-@SuppressWarnings("serial")
 public final class QueryTripsResult implements Serializable {
+    private static final long serialVersionUID = -6297974271448555505L;
+
     public enum Status {
         OK, AMBIGUOUS, TOO_CLOSE, UNKNOWN_FROM, UNKNOWN_VIA, UNKNOWN_TO, UNKNOWN_LOCATION, UNRESOLVABLE_ADDRESS, NO_TRIPS, INVALID_DATE, SERVICE_DOWN
     }

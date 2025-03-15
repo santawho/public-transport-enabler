@@ -31,8 +31,9 @@ import com.google.common.base.Objects;
 /**
  * @author Andreas Schildbach
  */
-@SuppressWarnings("serial")
 public final class StationDepartures implements Serializable {
+    private static final long serialVersionUID = -1709149432543580295L;
+
     public final Location location;
     public final List<Departure> departures;
     public final @Nullable List<LineDestination> lines;

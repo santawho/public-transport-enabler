@@ -31,10 +31,12 @@ import de.schildbach.pte.util.MessagePackUtils;
  * @author Andreas Schildbach
  */
 public abstract class TripRef implements Serializable, MessagePackUtils.Packable {
+    private static final long serialVersionUID = -7675828917328992747L;
+
     public final NetworkId network;
-    public Location from;
-    public Location via;
-    public Location to;
+    public final Location from;
+    public final Location via;
+    public final Location to;
 
     public TripRef(
             final NetworkId network,

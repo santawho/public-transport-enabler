@@ -32,8 +32,9 @@ import de.schildbach.pte.NetworkProvider;
 /**
  * @author Andreas Schildbach
  */
-@SuppressWarnings("serial")
 public final class QueryJourneyResult implements Serializable {
+    private static final long serialVersionUID = -6893303645828170447L;
+
     public enum Status {
         OK, NO_JOURNEY, SERVICE_DOWN
     }

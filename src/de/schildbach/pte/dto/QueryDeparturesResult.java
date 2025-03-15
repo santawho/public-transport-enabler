@@ -31,8 +31,9 @@ import com.google.common.base.MoreObjects.ToStringHelper;
 /**
  * @author Andreas Schildbach
  */
-@SuppressWarnings("serial")
 public final class QueryDeparturesResult implements Serializable {
+    private static final long serialVersionUID = 5333898202401323425L;
+
     public enum Status {
         OK, INVALID_STATION, SERVICE_DOWN
     }

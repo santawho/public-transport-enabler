@@ -30,8 +30,9 @@ import com.google.common.base.MoreObjects.ToStringHelper;
 /**
  * @author Andreas Schildbach
  */
-@SuppressWarnings("serial")
 public final class NearbyLocationsResult implements Serializable {
+    private static final long serialVersionUID = -8981923545535242574L;
+
     public enum Status {
         OK, INVALID_ID, SERVICE_DOWN
     }

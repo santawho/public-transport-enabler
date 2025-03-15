@@ -23,4 +23,5 @@ import java.io.Serializable;
  * @author Andreas Schildbach
  */
 public abstract class JourneyRef implements Serializable {
+    private static final long serialVersionUID = -2538131312898228807L;
 }

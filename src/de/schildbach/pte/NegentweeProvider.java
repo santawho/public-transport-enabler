@@ -133,8 +133,9 @@ public class NegentweeProvider extends AbstractNetworkProvider {
         }
     }
 
-    @SuppressWarnings("serial")
     private static class TripsContext implements QueryTripsContext {
+        private static final long serialVersionUID = -7934124534284180966L;
+
         private String url, earlier, later;
         public Location from, to, via;
 

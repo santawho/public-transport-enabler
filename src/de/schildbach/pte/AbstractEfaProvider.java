@@ -133,8 +133,9 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractEfaProvider.class);
 
-    @SuppressWarnings("serial")
     private static class Context implements QueryTripsContext {
+        private static final long serialVersionUID = 5683979131609096441L;
+
         private final String context;
 
         private Context(final String context) {
@@ -2158,6 +2159,8 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
     }
 
     public static class EfaJourneyRef extends JourneyRef {
+        private static final long serialVersionUID = -368229817892222104L;
+
         public final String transportationID;
         public final String stopID;
         public final String tripCode;

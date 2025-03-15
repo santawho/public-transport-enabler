@@ -38,6 +38,8 @@ import de.schildbach.pte.NetworkProvider.WalkSpeed;
  * @author Ialokim
  */
 public class TripOptions implements Serializable {
+    private static final long serialVersionUID = -2678061845284649123L;
+
     public final @Nullable Set<Product> products;
     public final @Nullable Optimize optimize;
     public final @Nullable WalkSpeed walkSpeed;

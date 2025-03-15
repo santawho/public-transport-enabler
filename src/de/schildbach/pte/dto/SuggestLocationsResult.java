@@ -34,8 +34,9 @@ import com.google.common.base.MoreObjects.ToStringHelper;
 /**
  * @author Andreas Schildbach
  */
-@SuppressWarnings("serial")
 public final class SuggestLocationsResult implements Serializable {
+    private static final long serialVersionUID = 5284638869825775092L;
+
     public enum Status {
         OK, SERVICE_DOWN
     }

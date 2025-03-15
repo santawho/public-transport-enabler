@@ -86,8 +86,9 @@ public class VrsProvider extends AbstractNetworkProvider {
             Capability.BIKE_OPTION
     );
 
-    @SuppressWarnings("serial")
     private static class Context implements QueryTripsContext {
+        private static final long serialVersionUID = -9122136139520398375L;
+
         private boolean canQueryLater = true;
         private boolean canQueryEarlier = true;
         private Date lastDeparture = null;

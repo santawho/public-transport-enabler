@@ -26,8 +26,9 @@ import com.google.common.base.Objects;
 /**
  * @author Andreas Schildbach
  */
-@SuppressWarnings("serial")
 public final class SuggestedLocation implements Serializable, Comparable<SuggestedLocation> {
+    private static final long serialVersionUID = -2027119950056608700L;
+
     public final Location location;
     public final int priority;
 

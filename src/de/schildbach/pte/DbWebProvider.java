@@ -598,6 +598,8 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
     }
 
     public static class DbWebTripRef extends TripRef {
+        private static final long serialVersionUID = -1951536102104578242L;
+
         public final String ctxRecon;
         public final boolean limitToDticket;
         public final boolean hasDticket;
@@ -645,6 +647,8 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
     }
 
     public static class DbWebJourneyRef extends JourneyRef {
+        private static final long serialVersionUID = 7738174208212249291L;
+
         public final String journeyId;
         public final Line line;
 
@@ -1135,6 +1139,8 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
     }
 
     private static class DbWebApiContext implements QueryTripsContext {
+        private static final long serialVersionUID = 7740081144778106239L;
+
         public final Location from, via, to;
         public final Date date;
         public final boolean dep;
