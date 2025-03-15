@@ -2158,10 +2158,10 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
     }
 
     public static class EfaJourneyRef extends JourneyRef {
-        public String transportationID;
-        public String stopID;
-        public String tripCode;
-        public Date targetTime;
+        public final String transportationID;
+        public final String stopID;
+        public final String tripCode;
+        public final Date targetTime;
 
         public EfaJourneyRef(
                 final String transportationID,

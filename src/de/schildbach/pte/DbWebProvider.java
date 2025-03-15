@@ -597,10 +597,10 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
         return null;
     }
 
-    static class DbWebTripRef extends TripRef {
-        final String ctxRecon;
-        final boolean limitToDticket;
-        final boolean hasDticket;
+    public static class DbWebTripRef extends TripRef {
+        public final String ctxRecon;
+        public final boolean limitToDticket;
+        public final boolean hasDticket;
 
         public DbWebTripRef(
                 final NetworkId network, final String ctxRecon,
@@ -644,9 +644,9 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
         }
     }
 
-    static class DbWebJourneyRef extends JourneyRef {
-        final String journeyId;
-        final Line line;
+    public static class DbWebJourneyRef extends JourneyRef {
+        public final String journeyId;
+        public final Line line;
 
         public DbWebJourneyRef(final String journeyId, final Line line) {
             this.journeyId = journeyId;

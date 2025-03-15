@@ -604,10 +604,10 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
         return null;
     }
 
-    static class DbMovasTripRef extends TripRef {
-        final String kontext;
-        final boolean limitToDticket;
-        final boolean hasDticket;
+    public static class DbMovasTripRef extends TripRef {
+        public final String kontext;
+        public final boolean limitToDticket;
+        public final boolean hasDticket;
 
         public DbMovasTripRef(
                 final NetworkId network, final String kontext,
@@ -651,9 +651,9 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
         }
     }
 
-    static class DbMovasJourneyRef extends JourneyRef {
-        final String journeyId;
-        final Line line;
+    public static class DbMovasJourneyRef extends JourneyRef {
+        public final String journeyId;
+        public final Line line;
 
         public DbMovasJourneyRef(final String journeyId, final Line line) {
             this.journeyId = journeyId;

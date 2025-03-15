@@ -78,7 +78,7 @@ public final class Fare implements Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(name, type, currency, fare, unitName, units);
+        return Objects.hashCode(name, type.name(), currency, fare, unitName, units);
     }
 
     @Override

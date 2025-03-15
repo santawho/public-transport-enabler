@@ -123,7 +123,7 @@ public final class Line implements Serializable, Comparable<Line> {
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(network, product, label);
+        return Objects.hashCode(network, product == null ? null : product.name(), label);
     }
 
     @Override

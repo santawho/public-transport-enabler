@@ -260,8 +260,8 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
         return jsonTripReload((HafasTripRef) tripRef);
     }
 
-    static class HafasTripRef extends TripRef {
-        final String ctxRecon;
+    public static class HafasTripRef extends TripRef {
+        public final String ctxRecon;
 
         public HafasTripRef(
                 final NetworkId network,
@@ -298,7 +298,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
     }
 
     public static class HafasJourneyRef extends JourneyRef {
-        public String jid;
+        public final String jid;
 
         public HafasJourneyRef(final String jid) {
             this.jid = jid;

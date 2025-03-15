@@ -232,9 +232,9 @@ public final class Location implements Serializable, MessagePackUtils.Packable {
     @Override
     public int hashCode() {
         if (id != null)
-            return Objects.hashCode(type, id);
+            return Objects.hashCode(type.name(), id);
         else
-            return Objects.hashCode(type, coord);
+            return Objects.hashCode(type.name(), coord);
     }
 
     @Override
