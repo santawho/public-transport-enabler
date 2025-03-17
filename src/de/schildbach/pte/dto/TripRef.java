@@ -57,6 +57,13 @@ public abstract class TripRef implements Serializable, MessagePackUtils.Packable
         this.to = MessagePackUtils.unpackNullable(unpacker, Location::unpackFromMessage);
     }
 
+    public TripRef(final TripRef other) {
+        this.network = other.network;
+        this.from = other.from;
+        this.via = other.via;
+        this.to = other.to;
+    }
+
     @Override
     public void packToMessage(final MessagePacker packer) throws IOException {
         MessagePackUtils.packNullable(packer, from);

@@ -37,8 +37,10 @@ import de.schildbach.pte.dto.QueryTripsContext;
 import de.schildbach.pte.dto.QueryTripsResult;
 import de.schildbach.pte.dto.Style;
 import de.schildbach.pte.dto.SuggestLocationsResult;
+import de.schildbach.pte.dto.Trip;
 import de.schildbach.pte.dto.TripOptions;
 import de.schildbach.pte.dto.TripRef;
+import de.schildbach.pte.dto.TripShare;
 
 /**
  * Interface to be implemented by providers of transportation networks.
@@ -61,6 +63,7 @@ public interface NetworkProvider {
         TRIP_RELOAD,
         MIN_TRANSFER_TIMES,
         BIKE_OPTION,
+        TRIP_SHARING,
     }
 
     enum Optimize {
@@ -214,4 +217,10 @@ public interface NetworkProvider {
     Point[] getArea() throws IOException;
 
     TripRef unpackTripRefFromMessage(final MessageUnpacker unpacker) throws IOException;
+
+    TripShare unpackTripShareFromMessage(final MessageUnpacker unpacker) throws IOException;
+
+    TripShare shareTrip(final Trip trip) throws IOException;
+
+    QueryTripsResult loadSharedTrip(final TripShare tripShare) throws IOException;
 }

@@ -74,6 +74,7 @@ import de.schildbach.pte.dto.SuggestedLocation;
 import de.schildbach.pte.dto.Trip;
 import de.schildbach.pte.dto.TripOptions;
 import de.schildbach.pte.dto.TripRef;
+import de.schildbach.pte.dto.TripShare;
 import de.schildbach.pte.exception.AbstractHttpException;
 import de.schildbach.pte.exception.BlockedException;
 import de.schildbach.pte.exception.InternalErrorException;
@@ -141,13 +142,16 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
             Capability.JOURNEY,
             Capability.TRIP_RELOAD,
             Capability.MIN_TRANSFER_TIMES,
-            Capability.BIKE_OPTION
+            Capability.BIKE_OPTION,
+            Capability.TRIP_SHARING
         );
 
     private static final HttpUrl API_BASE = HttpUrl.parse("https://app.vendo.noncd.db.de/mob/");
     private final ResultHeader resultHeader;
 
     private static final Map<String, Product> PRODUCTS_MAP = new LinkedHashMap<String, Product>() {
+        private static final long serialVersionUID = 8275557003393170940L;
+
         {
             put("HOCHGESCHWINDIGKEITSZUEGE", Product.HIGH_SPEED_TRAIN);
             put("INTERCITYUNDEUROCITYZUEGE", Product.HIGH_SPEED_TRAIN);
@@ -163,6 +167,8 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
     };
 
     private static final Map<String, Product> SHORT_PRODUCTS_MAP = new LinkedHashMap<String, Product>() {
+        private static final long serialVersionUID = -3576798382139244659L;
+
         {
             put("ICE", Product.HIGH_SPEED_TRAIN);
             put("IC_EC", Product.HIGH_SPEED_TRAIN);
@@ -181,6 +187,8 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
     };
 
     private static final Map<String, LocationType> ID_LOCATION_TYPE_MAP = new HashMap<String, LocationType>() {
+        private static final long serialVersionUID = -1200641123866654217L;
+
         {
             put("1", LocationType.STATION);
             put("4", LocationType.POI);
@@ -189,6 +197,8 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
     };
 
     private static final Map<LocationType, String> LOCATION_TYPE_MAP = new HashMap<LocationType, String>() {
+        private static final long serialVersionUID = -2827675532432392114L;
+
         {
             put(LocationType.ANY, "ALL");
             put(LocationType.STATION, "ST");
@@ -242,6 +252,8 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
         this.locationsEndpoint = API_BASE.newBuilder().addPathSegments("location/search").build();
         this.nearbyEndpoint = API_BASE.newBuilder().addPathSegments("location/nearby").build();
         this.resultHeader = new ResultHeader(network, "movas");
+
+        this.linkSharing = new DbWebProvider.DbWebLinkSharing();
     }
 
     @Override
@@ -628,12 +640,23 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
             this.hasDticket = unpacker.unpackBoolean();
         }
 
+        public DbMovasTripRef(final DbWebProvider.DbWebTripRef simplifiedTripRef, final String kontext) {
+            super(simplifiedTripRef);
+            this.kontext = kontext;
+            this.limitToDticket = simplifiedTripRef.limitToDticket;
+            this.hasDticket = simplifiedTripRef.hasDticket;
+        }
+
         @Override
         public void packToMessage(final MessagePacker packer) throws IOException {
             super.packToMessage(packer);
             packer.packString(kontext);
             packer.packBoolean(limitToDticket);
             packer.packBoolean(hasDticket);
+        }
+
+        public DbMovasTripRef getSimplified() {
+            return new DbMovasTripRef(network, null, from, via, to, limitToDticket, hasDticket);
         }
 
         @Override
@@ -1173,5 +1196,21 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
         public boolean canQueryEarlier() {
             return earlierContext != null;
         }
+    }
+
+    final DbWebProvider.DbWebLinkSharing linkSharing;
+
+    @Override
+    public TripShare shareTrip(final Trip trip) throws IOException {
+        final DbMovasTripRef tripRef = (DbMovasTripRef) trip.tripRef;
+        return linkSharing.shareTrip(httpClient, trip, tripRef.getSimplified(), tripRef.kontext);
+    }
+
+    @Override
+    public QueryTripsResult loadSharedTrip(final TripShare tripShare) throws IOException {
+        final DbWebProvider.DbWebTripShare dbWebTripShare = (DbWebProvider.DbWebTripShare) tripShare;
+        final String recon = linkSharing.loadSharedTrip(httpClient, dbWebTripShare);
+        final DbMovasTripRef tripRef = new DbMovasTripRef((DbWebProvider.DbWebTripRef) tripShare.simplifiedTripRef, recon);
+        return queryReloadTrip(tripRef);
     }
 }

@@ -44,8 +44,10 @@ import de.schildbach.pte.dto.QueryJourneyResult;
 import de.schildbach.pte.dto.QueryTripsResult;
 import de.schildbach.pte.dto.Style;
 import de.schildbach.pte.dto.SuggestLocationsResult;
+import de.schildbach.pte.dto.Trip;
 import de.schildbach.pte.dto.TripOptions;
 import de.schildbach.pte.dto.TripRef;
+import de.schildbach.pte.dto.TripShare;
 import de.schildbach.pte.util.HttpClient;
 
 /**
@@ -281,6 +283,21 @@ public abstract class AbstractNetworkProvider implements NetworkProvider {
 
     @Override
     public TripRef unpackTripRefFromMessage(final MessageUnpacker unpacker) throws IOException {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("unpackTripRefFromMessage");
+    }
+
+    @Override
+    public TripShare unpackTripShareFromMessage(final MessageUnpacker unpacker) throws IOException {
+        throw new UnsupportedOperationException("unpackTripRefFromMessage");
+    }
+
+    @Override
+    public TripShare shareTrip(final Trip trip) throws IOException {
+        throw new UnsupportedOperationException("shareTrip");
+    }
+
+    @Override
+    public QueryTripsResult loadSharedTrip(final TripShare tripShare) throws IOException {
+        throw new UnsupportedOperationException("loadSharedTrip");
     }
 }

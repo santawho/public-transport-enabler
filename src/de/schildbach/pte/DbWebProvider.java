@@ -75,10 +75,12 @@ import de.schildbach.pte.dto.SuggestedLocation;
 import de.schildbach.pte.dto.Trip;
 import de.schildbach.pte.dto.TripOptions;
 import de.schildbach.pte.dto.TripRef;
+import de.schildbach.pte.dto.TripShare;
 import de.schildbach.pte.exception.AbstractHttpException;
 import de.schildbach.pte.exception.BlockedException;
 import de.schildbach.pte.exception.InternalErrorException;
 import de.schildbach.pte.exception.ParserException;
+import de.schildbach.pte.util.HttpClient;
 import de.schildbach.pte.util.ParserUtils;
 import okhttp3.HttpUrl;
 
@@ -142,13 +144,16 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
             Capability.JOURNEY,
             Capability.TRIP_RELOAD,
             Capability.MIN_TRANSFER_TIMES,
-            Capability.BIKE_OPTION
+            Capability.BIKE_OPTION,
+            Capability.TRIP_SHARING
         );
 
     private static final @NotNull HttpUrl WEB_API_BASE = HttpUrl.parse("https://www.bahn.de/web/api/");
     private final ResultHeader resultHeader;
 
     private static final Map<String, Product> PRODUCTS_MAP = new LinkedHashMap<String, Product>() {
+        private static final long serialVersionUID = 6581845892244269924L;
+
         {
             put("ICE", Product.HIGH_SPEED_TRAIN);
             put("EC_IC", Product.HIGH_SPEED_TRAIN);
@@ -165,6 +170,8 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
     };
 
     private static final Map<String, LocationType> ID_LOCATION_TYPE_MAP = new HashMap<String, LocationType>() {
+        private static final long serialVersionUID = 295592979187174489L;
+
         {
             put("1", LocationType.STATION);
             put("4", LocationType.POI);
@@ -173,6 +180,8 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
     };
 
     private static final Map<LocationType, String> LOCATION_TYPE_MAP = new HashMap<LocationType, String>() {
+        private static final long serialVersionUID = 3738440155820969289L;
+
         {
             put(LocationType.ANY, "ALL");
             put(LocationType.STATION, "ST");
@@ -226,11 +235,18 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
         this.locationsEndpoint = WEB_API_BASE.newBuilder().addPathSegments("reiseloesung/orte").build();
         this.nearbyEndpoint = WEB_API_BASE.newBuilder().addPathSegments("reiseloesung/orte/nearby").build();
         this.resultHeader = new ResultHeader(network, "dbweb");
+
+        this.linkSharing = new DbWebLinkSharing();
     }
 
     @Override
     public TripRef unpackTripRefFromMessage(final MessageUnpacker unpacker) throws IOException {
         return new DbWebTripRef(network, unpacker);
+    }
+
+    @Override
+    public TripShare unpackTripShareFromMessage(final MessageUnpacker unpacker) throws IOException {
+        return new TripShare(unpackTripRefFromMessage(unpacker));
     }
 
     @Override
@@ -242,7 +258,9 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
         return false;
     }
 
-    private String doRequest(final HttpUrl url, final String body, final String contentType) throws IOException {
+    private static String doRequest(
+            final HttpClient httpClient, final String userInterfaceLanguage,
+            final HttpUrl url, final String body, final String contentType) throws IOException {
         // DB API requires these headers
         // Content-Type must be exactly as passed below,
         // passing it to httpClient.get would add charset suffix
@@ -250,18 +268,18 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
         httpClient.setHeader("X-Correlation-ID", UUID.randomUUID() + "_" + UUID.randomUUID());
         httpClient.setHeader("Accept", cType);
         if (body != null) httpClient.setHeader("Content-Type", cType);
-        if (this.userInterfaceLanguage != null)
-            httpClient.setHeader("Accept-Language", this.userInterfaceLanguage);
+        if (userInterfaceLanguage != null)
+            httpClient.setHeader("Accept-Language", userInterfaceLanguage);
         final String page = httpClient.get(url, body, null).toString();
         return page;
     }
 
     private String doRequest(final HttpUrl url, final String body) throws IOException {
-        return this.doRequest(url, body, null);
+        return doRequest(httpClient, userInterfaceLanguage, url, body, null);
     }
 
     private String doRequest(final HttpUrl url) throws IOException {
-        return this.doRequest(url, null, null);
+        return doRequest(url, null);
     }
 
     private CharSequence formatDate(final Calendar time) {
@@ -279,8 +297,11 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
 
     private static final DateFormat ISO_DATE_TIME_NO_OFFSET_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
 
+    private static final DateFormat ISO_DATE_TIME_UTC_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+
     static {
         ISO_DATE_TIME_NO_OFFSET_FORMAT.setTimeZone(timeZone);
+        ISO_DATE_TIME_UTC_FORMAT.setTimeZone(TimeZone.getTimeZone("UTC"));
     }
 
     private String formatIso8601NoOffset(final Date time) {
@@ -621,12 +642,23 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
             this.hasDticket = unpacker.unpackBoolean();
         }
 
+        public DbWebTripRef(final DbWebTripRef simplifiedTripRef, final String ctxRecon) {
+            super(simplifiedTripRef);
+            this.ctxRecon = ctxRecon;
+            this.limitToDticket = simplifiedTripRef.limitToDticket;
+            this.hasDticket = simplifiedTripRef.hasDticket;
+        }
+
         @Override
         public void packToMessage(final MessagePacker packer) throws IOException {
             super.packToMessage(packer);
             packer.packString(ctxRecon);
             packer.packBoolean(limitToDticket);
             packer.packBoolean(hasDticket);
+        }
+
+        public DbWebTripRef getSimplified() {
+            return new DbWebTripRef(network, null, from, via, to, limitToDticket, hasDticket);
         }
 
         @Override
@@ -1172,6 +1204,102 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
         @Override
         public boolean canQueryEarlier() {
             return earlierContext != null;
+        }
+    }
+
+    final DbWebLinkSharing linkSharing;
+
+    @Override
+    public TripShare shareTrip(final Trip trip) throws IOException {
+        final DbWebTripRef tripRef = (DbWebTripRef) trip.tripRef;
+        return linkSharing.shareTrip(httpClient, trip, tripRef.getSimplified(), tripRef.ctxRecon);
+    }
+
+    @Override
+    public QueryTripsResult loadSharedTrip(final TripShare tripShare) throws IOException {
+        final DbWebTripShare dbWebTripShare = (DbWebTripShare) tripShare;
+        final String recon = linkSharing.loadSharedTrip(httpClient, dbWebTripShare);
+        final DbWebTripRef tripRef = new DbWebTripRef((DbWebTripRef) tripShare.simplifiedTripRef, recon);
+        return queryReloadTrip(tripRef);
+    }
+
+    public static class DbWebTripShare extends TripShare {
+        private static final long serialVersionUID = 7612659403554504831L;
+
+        final String vbid;
+
+        public DbWebTripShare(final TripRef tripRef, final String vbid) {
+            super(tripRef);
+            this.vbid = vbid;
+        }
+
+        public DbWebTripShare(
+                final TripRef tripRef,
+                final MessageUnpacker unpacker) throws IOException {
+            super(tripRef, unpacker);
+            this.vbid = unpacker.unpackString();
+        }
+
+        @Override
+        public void packToMessage(final MessagePacker packer) throws IOException {
+            super.packToMessage(packer);
+            packer.packString(vbid);
+        }
+    }
+
+    public static class DbWebLinkSharing {
+        final HttpUrl saveConnectionEndpoint;
+        final HttpUrl loadConnectionEndpoint;
+
+        public DbWebLinkSharing() {
+            this.saveConnectionEndpoint = WEB_API_BASE.newBuilder().addPathSegments("angebote/verbindung/teilen").build();
+            this.loadConnectionEndpoint = WEB_API_BASE.newBuilder().addPathSegments("angebote/verbindung").build();
+        }
+        public DbWebTripShare shareTrip(
+                final HttpClient httpClient,
+                final Trip trip,
+                final TripRef simplifiedTripRef, String recon) throws IOException {
+            final String request = "{\"hinfahrtDatum\":\"" + ISO_DATE_TIME_UTC_FORMAT.format(trip.getFirstDepartureTime()) + "\"," //
+                    + "\"hinfahrtRecon\": \"" + recon + "\"," //
+                    + "\"startOrt\": \"" + trip.from.uniqueShortName() + "\"," //
+                    + "\"zielOrt\": \"" + trip.to.uniqueShortName() + "\"}";
+
+            final HttpUrl url = this.saveConnectionEndpoint;
+
+            String page = null;
+            try {
+                page = DbWebProvider.doRequest(httpClient, null, url, request, null);
+                final JSONObject res = new JSONObject(page);
+                final String vbid = res.optString("vbid");
+                return new DbWebTripShare(simplifiedTripRef, vbid);
+            } catch (InternalErrorException | BlockedException e) {
+                return null;
+            } catch (IOException | RuntimeException e) {
+                return null;
+            } catch (final JSONException x) {
+                throw new ParserException("cannot parse json: '" + page + "' on " + url, x);
+            }
+        }
+
+        public String loadSharedTrip(
+                final HttpClient httpClient,
+                final DbWebTripShare tripShare) throws IOException {
+            final HttpUrl url = this.loadConnectionEndpoint.newBuilder()
+                    .addEncodedPathSegment(tripShare.vbid)
+                    .build();
+
+            String page = null;
+            try {
+                page = DbWebProvider.doRequest(httpClient, null, url, null, null);
+                final JSONObject res = new JSONObject(page);
+                return res.optString("hinfahrtRecon");
+            } catch (InternalErrorException | BlockedException e) {
+                return null;
+            } catch (IOException | RuntimeException e) {
+                return null;
+            } catch (final JSONException x) {
+                throw new ParserException("cannot parse json: '" + page + "' on " + url, x);
+            }
         }
     }
 }
