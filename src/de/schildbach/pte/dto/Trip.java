@@ -269,6 +269,12 @@ public final class Trip implements Serializable {
                     builder.append(journeyId);
                     builder.append("@");
                     builder.append(pubLeg.departureStop.location.id);
+                    builder.append(",");
+                    builder.append(pubLeg.departureStop.plannedDepartureTime.getTime() / 60000);
+                    builder.append(",");
+                    builder.append(pubLeg.arrivalStop.location.id);
+                    builder.append(",");
+                    builder.append(pubLeg.arrivalStop.plannedArrivalTime.getTime() / 60000);
                 }
             }
             uniqueId = builder.toString();
