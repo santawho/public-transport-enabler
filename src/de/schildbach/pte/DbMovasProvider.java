@@ -144,7 +144,8 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
             Capability.TRIP_RELOAD,
             Capability.MIN_TRANSFER_TIMES,
             Capability.BIKE_OPTION,
-            Capability.TRIP_SHARING
+            Capability.TRIP_SHARING,
+            Capability.TRIP_LINKING
         );
 
     private static final HttpUrl API_BASE = HttpUrl.parse("https://app.vendo.noncd.db.de/mob/");
@@ -1206,6 +1207,18 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
     }
 
     final DbWebProvider.DbWebLinkSharing linkSharing;
+
+    @Override
+    public String getOpenLink(final Trip trip) throws IOException {
+        final DbMovasTripRef tripRef = (DbMovasTripRef) trip.tripRef;
+        return linkSharing.getOpenLink(trip, tripRef.getSimplified(), tripRef.kontext);
+    }
+
+    @Override
+    public String getShareLink(final Trip trip) throws IOException {
+        final DbMovasTripRef tripRef = (DbMovasTripRef) trip.tripRef;
+        return linkSharing.getShareLink(httpClient, trip, tripRef.getSimplified(), tripRef.kontext);
+    }
 
     @Override
     public TripShare shareTrip(final Trip trip) throws IOException {

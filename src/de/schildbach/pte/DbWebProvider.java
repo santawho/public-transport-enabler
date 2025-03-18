@@ -146,7 +146,8 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
             Capability.TRIP_RELOAD,
             Capability.MIN_TRANSFER_TIMES,
             Capability.BIKE_OPTION,
-            Capability.TRIP_SHARING
+            Capability.TRIP_SHARING,
+            Capability.TRIP_LINKING
         );
 
     private static final @NotNull HttpUrl WEB_API_BASE = HttpUrl.parse("https://www.bahn.de/web/api/");
@@ -1212,6 +1213,18 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
     final DbWebLinkSharing linkSharing;
 
     @Override
+    public String getOpenLink(final Trip trip) throws IOException {
+        final DbWebTripRef tripRef = (DbWebTripRef) trip.tripRef;
+        return linkSharing.getOpenLink(trip, tripRef.getSimplified(), tripRef.ctxRecon);
+    }
+
+    @Override
+    public String getShareLink(final Trip trip) throws IOException {
+        final DbWebTripRef tripRef = (DbWebTripRef) trip.tripRef;
+        return linkSharing.getShareLink(httpClient, trip, tripRef.getSimplified(), tripRef.ctxRecon);
+    }
+
+    @Override
     public TripShare shareTrip(final Trip trip) throws IOException {
         final DbWebTripRef tripRef = (DbWebTripRef) trip.tripRef;
         return linkSharing.shareTrip(httpClient, trip, tripRef.getSimplified(), tripRef.ctxRecon);
@@ -1257,14 +1270,54 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
             this.saveConnectionEndpoint = WEB_API_BASE.newBuilder().addPathSegments("angebote/verbindung/teilen").build();
             this.loadConnectionEndpoint = WEB_API_BASE.newBuilder().addPathSegments("angebote/verbindung").build();
         }
+
+        public String getOpenLink(
+                final Trip trip,
+                final TripRef simplifiedTripRef,
+                final String recon) {
+            final StringBuilder sb = new StringBuilder();
+            final String[] split = recon.split("¶");
+            for (int i = 1; i < split.length; i += 2) {
+                final String k = split[i];
+                final String v = split[i+1];
+                if ("KCC".equals(k) || "SC".equals(k))
+                    continue;
+                sb.append("¶");
+                sb.append(k);
+                sb.append("¶");
+                sb.append(v);
+            }
+            final String strippedCon = sb.toString();
+
+            return HttpUrl.parse("https://www.bahn.de/buchung/fahrplan/suche").newBuilder()
+                    .addQueryParameter("so", simplifiedTripRef.from.uniqueShortName())
+                    .addQueryParameter("zo", simplifiedTripRef.to.uniqueShortName())
+                    .addQueryParameter("gh", strippedCon)
+                    .build().toString();
+        }
+
+        public String getShareLink(
+                final HttpClient httpClient,
+                final Trip trip,
+                final TripRef simplifiedTripRef,
+                final String recon) throws IOException {
+            final DbWebTripShare tripShare = shareTrip(httpClient, trip, simplifiedTripRef, recon);
+            if (tripShare == null)
+                return null;
+            final String vbid = tripShare.vbid;
+            if (vbid == null)
+                return null;
+            return String.format("https://www.bahn.de/buchung/start?vbid=%1$s", vbid);
+        }
+
         public DbWebTripShare shareTrip(
                 final HttpClient httpClient,
                 final Trip trip,
                 final TripRef simplifiedTripRef, String recon) throws IOException {
             final String request = "{\"hinfahrtDatum\":\"" + ISO_DATE_TIME_UTC_FORMAT.format(trip.getFirstDepartureTime()) + "\"," //
                     + "\"hinfahrtRecon\": \"" + recon + "\"," //
-                    + "\"startOrt\": \"" + trip.from.uniqueShortName() + "\"," //
-                    + "\"zielOrt\": \"" + trip.to.uniqueShortName() + "\"}";
+                    + "\"startOrt\": \"" + simplifiedTripRef.from.uniqueShortName() + "\"," //
+                    + "\"zielOrt\": \"" + simplifiedTripRef.to.uniqueShortName() + "\"}";
 
             final HttpUrl url = this.saveConnectionEndpoint;
 

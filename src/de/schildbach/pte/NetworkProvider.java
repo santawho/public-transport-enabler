@@ -64,6 +64,7 @@ public interface NetworkProvider {
         MIN_TRANSFER_TIMES,
         BIKE_OPTION,
         TRIP_SHARING,
+        TRIP_LINKING,
     }
 
     enum Optimize {
@@ -219,6 +220,10 @@ public interface NetworkProvider {
     TripRef unpackTripRefFromMessage(final MessageUnpacker unpacker) throws IOException;
 
     TripShare unpackTripShareFromMessage(final MessageUnpacker unpacker) throws IOException;
+
+    String getOpenLink(final Trip trip) throws IOException;
+
+    String getShareLink(final Trip trip) throws IOException;
 
     TripShare shareTrip(final Trip trip) throws IOException;
 

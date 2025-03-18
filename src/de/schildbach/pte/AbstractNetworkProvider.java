@@ -292,6 +292,16 @@ public abstract class AbstractNetworkProvider implements NetworkProvider {
     }
 
     @Override
+    public String getOpenLink(final Trip trip) throws IOException {
+        throw new UnsupportedOperationException("getOpenLink");
+    }
+
+    @Override
+    public String getShareLink(final Trip trip) throws IOException {
+        throw new UnsupportedOperationException("getShareLink");
+    }
+
+    @Override
     public TripShare shareTrip(final Trip trip) throws IOException {
         throw new UnsupportedOperationException("shareTrip");
     }
