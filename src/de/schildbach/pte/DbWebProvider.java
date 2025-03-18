@@ -81,6 +81,7 @@ import de.schildbach.pte.exception.BlockedException;
 import de.schildbach.pte.exception.InternalErrorException;
 import de.schildbach.pte.exception.ParserException;
 import de.schildbach.pte.util.HttpClient;
+import de.schildbach.pte.util.MessagePackUtils;
 import de.schildbach.pte.util.ParserUtils;
 import okhttp3.HttpUrl;
 
@@ -246,7 +247,8 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
 
     @Override
     public TripShare unpackTripShareFromMessage(final MessageUnpacker unpacker) throws IOException {
-        return new TripShare(unpackTripRefFromMessage(unpacker));
+        final TripRef tripRef = unpackTripRefFromMessage(unpacker);
+        return new DbWebTripShare(tripRef, unpacker);
     }
 
     @Override
@@ -635,13 +637,6 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
             this.hasDticket = hasDticket;
         }
 
-        public DbWebTripRef(final NetworkId network, final MessageUnpacker unpacker) throws IOException {
-            super(network, unpacker);
-            this.ctxRecon = unpacker.unpackString();
-            this.limitToDticket = unpacker.unpackBoolean();
-            this.hasDticket = unpacker.unpackBoolean();
-        }
-
         public DbWebTripRef(final DbWebTripRef simplifiedTripRef, final String ctxRecon) {
             super(simplifiedTripRef);
             this.ctxRecon = ctxRecon;
@@ -649,10 +644,17 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
             this.hasDticket = simplifiedTripRef.hasDticket;
         }
 
+        public DbWebTripRef(final NetworkId network, final MessageUnpacker unpacker) throws IOException {
+            super(network, unpacker);
+            this.ctxRecon = MessagePackUtils.unpackNullableString(unpacker);
+            this.limitToDticket = unpacker.unpackBoolean();
+            this.hasDticket = unpacker.unpackBoolean();
+        }
+
         @Override
         public void packToMessage(final MessagePacker packer) throws IOException {
             super.packToMessage(packer);
-            packer.packString(ctxRecon);
+            MessagePackUtils.packNullableString(packer, ctxRecon);
             packer.packBoolean(limitToDticket);
             packer.packBoolean(hasDticket);
         }

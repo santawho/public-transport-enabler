@@ -79,6 +79,7 @@ import de.schildbach.pte.exception.AbstractHttpException;
 import de.schildbach.pte.exception.BlockedException;
 import de.schildbach.pte.exception.InternalErrorException;
 import de.schildbach.pte.exception.ParserException;
+import de.schildbach.pte.util.MessagePackUtils;
 import de.schildbach.pte.util.ParserUtils;
 import okhttp3.HttpUrl;
 
@@ -259,6 +260,12 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
     @Override
     public TripRef unpackTripRefFromMessage(final MessageUnpacker unpacker) throws IOException {
         return new DbMovasTripRef(network, unpacker);
+    }
+
+    @Override
+    public TripShare unpackTripShareFromMessage(final MessageUnpacker unpacker) throws IOException {
+        final TripRef tripRef = unpackTripRefFromMessage(unpacker);
+        return new DbWebProvider.DbWebTripShare(tripRef, unpacker);
     }
 
     @Override
@@ -633,13 +640,6 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
             this.hasDticket = hasDticket;
         }
 
-        public DbMovasTripRef(final NetworkId network, final MessageUnpacker unpacker) throws IOException {
-            super(network, unpacker);
-            this.kontext = unpacker.unpackString();
-            this.limitToDticket = unpacker.unpackBoolean();
-            this.hasDticket = unpacker.unpackBoolean();
-        }
-
         public DbMovasTripRef(final DbWebProvider.DbWebTripRef simplifiedTripRef, final String kontext) {
             super(simplifiedTripRef);
             this.kontext = kontext;
@@ -647,10 +647,17 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
             this.hasDticket = simplifiedTripRef.hasDticket;
         }
 
+        public DbMovasTripRef(final NetworkId network, final MessageUnpacker unpacker) throws IOException {
+            super(network, unpacker);
+            this.kontext = MessagePackUtils.unpackNullableString(unpacker);
+            this.limitToDticket = unpacker.unpackBoolean();
+            this.hasDticket = unpacker.unpackBoolean();
+        }
+
         @Override
         public void packToMessage(final MessagePacker packer) throws IOException {
             super.packToMessage(packer);
-            packer.packString(kontext);
+            MessagePackUtils.packNullableString(packer, kontext);
             packer.packBoolean(limitToDticket);
             packer.packBoolean(hasDticket);
         }
