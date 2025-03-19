@@ -836,11 +836,11 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
             final List<Fare> fares = parseFares(verbindung);
             final int transfers = verbindung.optInt("umstiegsAnzahl", -1);
             final int[] capacity = parseCapacity(verbindung);
-            final String ctxRecon = verbindung.optString("ctxRecon");
+            final CtxRecon ctxRecon = new CtxRecon(verbindung.optString("ctxRecon"));
             trips.add(new Trip(
                     new Date(),
-                    ctxRecon.split("#")[0],
-                    new DbWebTripRef(network, ctxRecon, from, via, to, limitToDticket, hasDticket),
+                    ctxRecon.tripId,
+                    new DbWebTripRef(network, ctxRecon.ctxRecon, from, via, to, limitToDticket, hasDticket),
                     tripFrom,
                     tripTo,
                     legs,
@@ -1275,24 +1275,15 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
                 final Trip trip,
                 final TripRef simplifiedTripRef,
                 final String recon) {
-            final StringBuilder sb = new StringBuilder();
-            final String[] split = recon.split("¶");
-            for (int i = 1; i < split.length; i += 2) {
-                final String k = split[i];
-                final String v = split[i+1];
-                if ("KCC".equals(k) || "SC".equals(k))
-                    continue;
-                sb.append("¶");
-                sb.append(k);
-                sb.append("¶");
-                sb.append(v);
-            }
-            final String strippedCon = sb.toString();
-
+            final CtxRecon ctxRecon = new CtxRecon(recon);
             return HttpUrl.parse("https://www.bahn.de/buchung/fahrplan/suche").newBuilder()
                     .addQueryParameter("so", simplifiedTripRef.from.uniqueShortName())
                     .addQueryParameter("zo", simplifiedTripRef.to.uniqueShortName())
-                    .addQueryParameter("gh", strippedCon)
+                    .addQueryParameter("soid", ctxRecon.startLocation)
+                    .addQueryParameter("zoid", ctxRecon.endLocation)
+                    .addQueryParameter("cbs", "true")
+                    .addQueryParameter("hd", ISO_DATE_TIME_UTC_FORMAT.format(new Date()))
+                    .addQueryParameter("gh", ctxRecon.shortRecon)
                     .build().toString();
         }
 
@@ -1356,5 +1347,73 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
                 throw new ParserException("cannot parse json: '" + page + "' on " + url, x);
             }
         }
+    }
+
+    public static class CtxRecon {
+        public final String ctxRecon;
+        public final Map<String, String> entries;
+        public final String shortRecon;
+        public final String startLocation;
+        public final String endLocation;
+        public final String tripId;
+
+        public CtxRecon(final String ctxRecon) {
+            this.ctxRecon = ctxRecon;
+            this.entries = parseMap("¶", ctxRecon);
+            if (entries != null) {
+                final StringBuilder sb = new StringBuilder();
+                for (String key : entries.keySet()) {
+                    if ("KCC".equals(key) || "SC".equals(key))
+                        continue;
+                    final String value = entries.get(key);
+                    sb.append("¶");
+                    sb.append(key);
+                    sb.append("¶");
+                    sb.append(value);
+                }
+                shortRecon = sb.toString();
+            } else {
+                shortRecon = null;
+            }
+            String startLocation = null;
+            String endLocation = null;
+            this.tripId = getEntry("HKI");
+            final List<String> hkiEntries = parseArray("§", tripId);
+            if (hkiEntries != null && hkiEntries.size() >= 1) {
+                final List<String> firstLeg = parseArray("\\$", hkiEntries.get(0));
+                final List<String> lastLeg = parseArray("\\$", hkiEntries.get(hkiEntries.size()-1));
+                if (firstLeg != null && firstLeg.size() >= 2)
+                    startLocation = firstLeg.get(1);
+                if (lastLeg != null && lastLeg.size() >= 3)
+                    endLocation = lastLeg.get(2);
+            }
+            this.startLocation = startLocation;
+            this.endLocation = endLocation;
+        }
+
+        public String getEntry(final String key) {
+            if (key == null || entries == null)
+                return null;
+            return entries.get(key);
+        }
+
+        public static Map<String, String> parseMap(final String separator, final String value) {
+            if (value == null)
+                return null;
+            final HashMap<String, String> entries = new HashMap<>();
+            final String[] split = value.split(separator);
+            for (int i = 2, splitLength = split.length; i < splitLength; i += 2) {
+                final String k = split[i-1];
+                final String v = split[i];
+                entries.put(k, v);
+            }
+            return entries;
+        }
+    }
+
+    public static List<String> parseArray(final String separator, final String value) {
+        if (value == null)
+            return null;
+        return Arrays.asList(value.split(separator));
     }
 }

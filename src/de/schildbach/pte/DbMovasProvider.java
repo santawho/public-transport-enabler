@@ -835,11 +835,11 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
         final List<Fare> fares = parseFares(verbindungParent);
         final int transfers = verbindung.optInt("umstiegeAnzahl", -1);
         final int[] capacity = parseCapacity(verbindung);
-        final String kontext = verbindung.optString("kontext");
+        final DbWebProvider.CtxRecon ctxRecon = new DbWebProvider.CtxRecon(verbindung.optString("kontext"));
         return new Trip(
                 new Date(),
-                kontext.split("#")[0],
-                new DbMovasTripRef(network, kontext, from, via, to, limitToDticket, hasDticket),
+                ctxRecon.tripId,
+                new DbMovasTripRef(network, ctxRecon.ctxRecon, from, via, to, limitToDticket, hasDticket),
                 tripFrom,
                 tripTo,
                 legs,
