@@ -1276,7 +1276,12 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
                 final TripRef simplifiedTripRef,
                 final String recon) {
             final CtxRecon ctxRecon = new CtxRecon(recon);
-            return HttpUrl.parse("https://www.bahn.de/buchung/fahrplan/suche").newBuilder()
+            // this URL opens in browser, because DB Navigator does not deep link this pattern
+            final String baseUrl = "https://www.bahn.de/buchung/fahrplan/suche";
+            // this URL opens in DB Navigator if installed, because it deep links this pattern.
+            // However DB Navigator cannot handle these parameters, so drops of to an embedded browser.
+            // final String baseUrl = "https://www.bahn.de/buchung/start";
+            return HttpUrl.parse(baseUrl).newBuilder()
                     .addQueryParameter("so", simplifiedTripRef.from.uniqueShortName())
                     .addQueryParameter("zo", simplifiedTripRef.to.uniqueShortName())
                     .addQueryParameter("soid", ctxRecon.startLocation)
@@ -1284,7 +1289,7 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
                     .addQueryParameter("cbs", "true")
                     .addQueryParameter("hd", ISO_DATE_TIME_UTC_FORMAT.format(new Date()))
                     .addQueryParameter("gh", ctxRecon.shortRecon)
-                    .build().toString();
+                    .build().toString().replaceFirst("\\?", "#");
         }
 
         public String getShareLink(
