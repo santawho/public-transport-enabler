@@ -545,13 +545,18 @@ public class NegentweeProvider extends AbstractNetworkProvider {
 
         /* String lineName = */ departure.optString("service");
         Product lineProduct = productFromMode(mode.getString("type"), mode.getString("name"));
-        return new Departure(timeFromJSONObject(departure, "time"), timeFromJSONObject(departure, "time"),
+        return new Departure(
+                timeFromJSONObject(departure, "time"),
+                timeFromJSONObject(departure, "time"),
                 new Line(null, departure.getString("operatorName"), lineProduct,
                         !departure.isNull("service") ? departure.getString("service") : mode.getString("name"), null,
                         Standard.STYLES.get(lineProduct), null, null),
                 !departure.isNull("platform") ? new Position(departure.getString("platform")) : null,
-                new Location(LocationType.STATION, null, null, departure.getString("destinationName")), null,
-                !departure.isNull("realtimeText") ? departure.optString("realtimeText") : null);
+                new Location(LocationType.STATION, null, null, departure.getString("destinationName")),
+                false,
+                null,
+                !departure.isNull("realtimeText") ? departure.optString("realtimeText") : null,
+                null);
     }
 
     private Position positionFromJSONObject(JSONObject obj, String key) throws JSONException {

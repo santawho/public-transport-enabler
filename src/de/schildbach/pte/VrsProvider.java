@@ -496,7 +496,15 @@ public class VrsProvider extends AbstractNetworkProvider {
                     if (!lines.contains(lineDestination)) {
                         lines.add(lineDestination);
                     }
-                    final Departure d = new Departure(plannedTime, predictedTime, line, position, destination, null,
+                    final Departure d = new Departure(
+                            plannedTime,
+                            predictedTime,
+                            line,
+                            position,
+                            destination,
+                            false,
+                            null,
+                            null,
                             null);
                     departures.add(d);
                 }

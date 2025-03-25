@@ -1046,6 +1046,7 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
                         line,
                         Optional.ofNullable(stop.predictedDeparturePosition).orElse(stop.plannedDeparturePosition),
                         parseDirection(dep),
+                        false,
                         null,
                         parseJourneyMessages(dep, null),
                         journeyId == null ? null : new DbMovasJourneyRef(journeyId, line));

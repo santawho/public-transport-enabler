@@ -1042,12 +1042,25 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
                 if (destinationName == null && vias != null) {
                     destinationName = vias.getString(vias.length() - 1);
                 }
+                boolean cancelled = false;
+                final JSONArray meldungen = dep.optJSONArray("meldungen");
+                if (meldungen != null) {
+                    for (int iMsg = 0; iMsg < meldungen.length(); iMsg++) {
+                        final JSONObject msgObj = meldungen.getJSONObject(iMsg);
+                        final String type = msgObj.optString("type", null);
+                        if ("HALT_AUSFALL".equals(type))
+                            cancelled = true;
+                    }
+                }
+                if (cancelled)
+                    continue;
                 final Departure departure = new Departure(
                         parseIso8601NoOffset(dep.optString("zeit", null)),
                         parseIso8601NoOffset(dep.optString("ezZeit", null)),
                         line,
                         parsePosition(Optional.ofNullable(dep.optString("ezGleis", null)).orElse(dep.optString("gleis", null))),
                         createLocation(LocationType.STATION, null, null, destinationName, null, null),
+                        cancelled,
                         null,
                         parseJourneyMessages(dep, null, null, null),
                         journeyId == null ? null : new DbWebJourneyRef(journeyId, line));

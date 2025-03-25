@@ -37,31 +37,36 @@ import com.google.common.base.Objects;
 public final class Departure implements Serializable {
     private static final long serialVersionUID = -9104517779537062795L;
 
-    final public @Nullable Date plannedTime;
-    final public @Nullable Date predictedTime;
-    final public Line line;
-    final public @Nullable Position position;
-    final public @Nullable Location destination;
-    final public @Nullable int[] capacity;
-    final public @Nullable String message;
+    public final @Nullable Date plannedTime;
+    public final @Nullable Date predictedTime;
+    public final Line line;
+    public final @Nullable Position position;
+    public final @Nullable Location destination;
+    public final boolean cancelled;
+    public final @Nullable int[] capacity;
+    public final @Nullable String message;
     public final @Nullable JourneyRef journeyRef;
 
-    public Departure(final Date plannedTime, final Date predictedTime, final Line line, final Position position,
-            final Location destination, final int[] capacity, final String message, final JourneyRef journeyRef) {
+    public Departure(
+            final Date plannedTime,
+            final Date predictedTime,
+            final Line line,
+            final Position position,
+            final Location destination,
+            final boolean cancelled,
+            final int[] capacity,
+            final String message,
+            final JourneyRef journeyRef) {
         this.plannedTime = plannedTime;
         this.predictedTime = predictedTime;
         checkArgument(plannedTime != null || predictedTime != null);
         this.line = checkNotNull(line);
         this.position = position;
         this.destination = destination;
+        this.cancelled = cancelled;
         this.capacity = capacity;
         this.message = message;
         this.journeyRef = journeyRef;
-    }
-
-    public Departure(final Date plannedTime, final Date predictedTime, final Line line, final Position position,
-                     final Location destination, final int[] capacity, final String message) {
-        this(plannedTime, predictedTime, line, position, destination, capacity, message, null);
     }
 
     public Date getTime() {

@@ -622,9 +622,16 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
                             message = null;
                         }
 
-                        final Departure departure = new Departure(plannedTime.getTime(),
-                                predictedTime != null ? predictedTime.getTime() : null, line, position, destination,
-                                capacity, message);
+                        final Departure departure = new Departure(
+                                plannedTime.getTime(),
+                                predictedTime != null ? predictedTime.getTime() : null,
+                                line,
+                                position,
+                                destination,
+                                false,
+                                capacity,
+                                message,
+                                null);
 
                         final Location location;
                         if (!stationBoardCanDoEquivs || depStation == null) {

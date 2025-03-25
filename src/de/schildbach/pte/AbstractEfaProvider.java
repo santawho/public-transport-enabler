@@ -1662,7 +1662,10 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                                     predictedDepartureTime.isSet(Calendar.HOUR_OF_DAY)
                                             ? predictedDepartureTime.getTime() : null,
                                     lineDestinationAndCancelled.line, position,
-                                    lineDestinationAndCancelled.destination, null, null,
+                                    lineDestinationAndCancelled.destination,
+                                    lineDestinationAndCancelled.cancelled,
+                                    null,
+                                    null,
                                     new EfaJourneyRef(
                                             lineDestinationAndCancelled.transportationId, stationId,
                                             lineDestinationAndCancelled.tripCode, plannedDepartureTime.getTime()));
@@ -1751,10 +1754,16 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                             r.stationDepartures.add(stationDepartures);
                         }
 
-                        stationDepartures.departures.add(new Departure(plannedDepartureTime.getTime(),
+                        stationDepartures.departures.add(new Departure(
+                                plannedDepartureTime.getTime(),
                                 predictedDepartureTime.isSet(Calendar.HOUR_OF_DAY)
                                         ? predictedDepartureTime.getTime() : null,
-                                parseMobileMResult.line, position, parseMobileMResult.destination, null, null,
+                                parseMobileMResult.line,
+                                position,
+                                parseMobileMResult.destination,
+                                false,
+                                null,
+                                null,
                                 new EfaJourneyRef(
                                         parseMobileMResult.transportationId, stationId,
                                         parseMobileMResult.tripCode, plannedDepartureTime.getTime())));
