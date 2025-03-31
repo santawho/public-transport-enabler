@@ -484,8 +484,8 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                     final JSONObject stbStop = jny.getJSONObject("stbStop");
 
                     final boolean cancelled = stbStop.optBoolean("dCncl", false);
-                    if (cancelled)
-                        continue;
+//                    if (cancelled)
+//                        continue;
 
                     final Position position = parseJsonPosition(stbStop, "dPlatfS", "dPltfS");
 
@@ -531,7 +531,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                                 line,
                                 position,
                                 destination,
-                                false,
+                                cancelled,
                                 null,
                                 message,
                                 journeyId == null ? null : new HafasJourneyRef(journeyId));

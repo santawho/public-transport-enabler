@@ -20,6 +20,7 @@ package de.schildbach.pte.dto;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.annotation.Nullable;
@@ -43,6 +44,15 @@ public final class StationDepartures implements Serializable {
         this.location = checkNotNull(location);
         this.departures = checkNotNull(departures);
         this.lines = lines;
+    }
+
+    public List<Departure> getNonCancelledDepartures() {
+        final List<Departure> deps = new ArrayList<>();
+        for (final Departure departure : departures) {
+            if (!departure.cancelled)
+                deps.add(departure);
+        }
+        return deps;
     }
 
     @Override

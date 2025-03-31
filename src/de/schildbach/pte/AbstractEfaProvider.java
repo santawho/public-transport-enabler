@@ -1657,7 +1657,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
 
                         XmlPullUtil.skipExit(pp, "itdDeparture");
 
-                        if (!lineDestinationAndCancelled.cancelled) {
+//                        if (!lineDestinationAndCancelled.cancelled) {
                             final Departure departure = new Departure(plannedDepartureTime.getTime(),
                                     predictedDepartureTime.isSet(Calendar.HOUR_OF_DAY)
                                             ? predictedDepartureTime.getTime() : null,
@@ -1670,7 +1670,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                                             lineDestinationAndCancelled.transportationId, stationId,
                                             lineDestinationAndCancelled.tripCode, plannedDepartureTime.getTime()));
                             assignedStationDepartures.departures.add(departure);
-                        }
+//                        }
                     }
 
                     XmlPullUtil.skipExit(pp, "itdDepartureList");

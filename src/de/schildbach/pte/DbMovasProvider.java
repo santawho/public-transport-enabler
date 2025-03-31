@@ -1024,9 +1024,10 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
             int added = 0;
             for (int iDep = 0; iDep < deps.length(); iDep++) {
                 final JSONObject dep = deps.getJSONObject(iDep);
-                if (parseCancelled(dep)) {
-                    continue;
-                }
+                final boolean cancelled = parseCancelled(dep);
+//                if (cancelled) {
+//                    continue;
+//                }
                 final Location location = parseLocation(dep.optJSONObject("abfrageOrt"));
                 if (!equivs && !stationId.equals(location.id)) {
                     continue;
@@ -1046,7 +1047,7 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
                         line,
                         Optional.ofNullable(stop.predictedDeparturePosition).orElse(stop.plannedDeparturePosition),
                         parseDirection(dep),
-                        false,
+                        cancelled,
                         null,
                         parseJourneyMessages(dep, null),
                         journeyId == null ? null : new DbMovasJourneyRef(journeyId, line));

@@ -536,7 +536,8 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
                     final String administration = normalizeLineAdministration(
                             XmlPullUtil.optAttr(pp, "administration", null));
 
-                    if (!"cancel".equals(delay) && !"cancel".equals(eDelay)) {
+                    final boolean cancelled = !"cancel".equals(delay) && !"cancel".equals(eDelay);
+//                    if (cancelled) {
                         final Calendar plannedTime = new GregorianCalendar(timeZone);
                         plannedTime.clear();
                         parseXmlStationBoardDate(plannedTime, fpDate);
@@ -628,7 +629,7 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
                                 line,
                                 position,
                                 destination,
-                                false,
+                                cancelled,
                                 capacity,
                                 message,
                                 null);
@@ -651,7 +652,7 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
                         }
 
                         stationDepartures.departures.add(departure);
-                    }
+//                    }
 
                     XmlPullUtil.requireSkip(pp, "Journey");
                 }

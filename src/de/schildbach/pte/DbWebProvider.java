@@ -1052,8 +1052,8 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
                             cancelled = true;
                     }
                 }
-                if (cancelled)
-                    continue;
+//                if (cancelled)
+//                    continue;
                 final Departure departure = new Departure(
                         parseIso8601NoOffset(dep.optString("zeit", null)),
                         parseIso8601NoOffset(dep.optString("ezZeit", null)),
