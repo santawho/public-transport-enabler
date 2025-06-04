@@ -870,6 +870,12 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
             if (products != null && products.contains(Product.HIGH_SPEED_TRAIN)) {
                 limitToDticket = false;
                 useProducts = products;
+            } else if (products != null && (products.size() != defaultProducts().size() || !products.containsAll(defaultProducts()))) {
+                // special case, because the web service does not work as expected:
+                // when D-Ticket only is active, then deselection of products is not observed
+                // so we fix it meanwhile by ignoring the D-Ticket only option
+                limitToDticket = false;
+                useProducts = products;
             } else {
                 limitToDticket = true;
                 useProducts = new HashSet<>(products != null ? products : Product.ALL);
