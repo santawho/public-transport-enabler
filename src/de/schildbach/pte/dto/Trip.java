@@ -405,6 +405,7 @@ public final class Trip implements Serializable {
     public final static class Public extends Leg {
         private static final long serialVersionUID = 1312066446239817422L;
 
+        public final Date loadedAt;
         public final Line line;
         public final @Nullable Location destination;
         public final Stop departureStop;
@@ -418,9 +419,10 @@ public final class Trip implements Serializable {
         public Public(
                 final Line line, final Location destination, final Stop departureStop, final Stop arrivalStop,
                 final List<Stop> intermediateStops, final List<Point> path, final String message,
-                final JourneyRef journeyRef) {
+                final JourneyRef journeyRef, final Date loadedAt) {
             super(departureStop.location, arrivalStop.location, path);
 
+            this.loadedAt = loadedAt;
             this.line = checkNotNull(line);
             this.destination = destination;
             this.departureStop = checkNotNull(departureStop);
@@ -431,6 +433,12 @@ public final class Trip implements Serializable {
 
             checkNotNull(departureStop.getDepartureTime());
             checkNotNull(arrivalStop.getArrivalTime());
+        }
+
+        public Public(
+                final Line line, final Location destination, final Stop departureStop, final Stop arrivalStop,
+                final List<Stop> intermediateStops, final List<Point> path, final String message, final JourneyRef journeyRef) {
+            this(line, destination, departureStop, arrivalStop, intermediateStops, path, message, journeyRef, new Date());
         }
 
         public Public(
