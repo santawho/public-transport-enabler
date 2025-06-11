@@ -2868,34 +2868,37 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
             XmlPullUtil.optSkip(pp, "sPAs");
             XmlPullUtil.require(pp, "itdDateTime");
 
-            final Date plannedStopArrivalTime;
-            final Date predictedStopArrivalTime;
+            Date plannedStopArrivalTime = null;
+            Date predictedStopArrivalTime = null;
             if (processItdDateTime(pp, calendar)) {
                 plannedStopArrivalTime = calendar.getTime();
                 if (arrivalDelay != null) {
-                    calendar.add(Calendar.MINUTE, arrivalDelay);
-                    predictedStopArrivalTime = calendar.getTime();
-                } else {
-                    predictedStopArrivalTime = null;
+                    predictedStopArrivalTime = new Date(plannedStopArrivalTime.getTime() + 60000 * arrivalDelay);
                 }
-            } else {
-                plannedStopArrivalTime = null;
-                predictedStopArrivalTime = null;
             }
 
-            final Date plannedStopDepartureTime;
-            final Date predictedStopDepartureTime;
-            if (XmlPullUtil.test(pp, "itdDateTime") && processItdDateTime(pp, calendar)) {
+            Date plannedStopDepartureTime = null;
+            Date predictedStopDepartureTime = null;
+            if (!XmlPullUtil.test(pp, "itdDateTime")) {
+                // there is only one <itdDateTime>, hence departure is same as arrival
+                if (plannedStopArrivalTime != null) {
+                    plannedStopDepartureTime = plannedStopArrivalTime;
+                    if (departureDelay != null) {
+                        predictedStopDepartureTime = new Date(plannedStopDepartureTime.getTime() + 60000 * departureDelay);
+                    }
+                }
+            } else if (processItdDateTime(pp, calendar)) {
                 plannedStopDepartureTime = calendar.getTime();
                 if (departureDelay != null) {
-                    calendar.add(Calendar.MINUTE, departureDelay);
-                    predictedStopDepartureTime = calendar.getTime();
-                } else {
-                    predictedStopDepartureTime = null;
+                    predictedStopDepartureTime = new Date(plannedStopDepartureTime.getTime() + 60000 * departureDelay);
                 }
-            } else {
-                plannedStopDepartureTime = null;
-                predictedStopDepartureTime = null;
+            }
+
+            if (intermediateStops.isEmpty()) {
+                // first stop is departure only, remove arrival
+                // note that on the last stop they provide an explicit dummy departure time, so it does not have to be removed here
+                plannedStopArrivalTime = null;
+                predictedStopArrivalTime = null;
             }
 
             final Stop stop = new Stop(stopLocation,
