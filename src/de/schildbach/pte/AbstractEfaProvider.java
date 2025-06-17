@@ -3240,8 +3240,15 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
 
                     XmlPullUtil.optSkip(pp, "interchange");
 
-                    XmlPullUtil.requireSkip(pp, "ns");
-                    // TODO messages
+                    StringBuilder message = new StringBuilder();
+                    XmlPullUtil.enter(pp, "ns");
+                    while (XmlPullUtil.optEnter(pp, "no")) {
+                        String text = XmlPullUtil.valueTag(pp, "tx");
+                        if (text != null)
+                            message.append(text).append('\n');
+                        XmlPullUtil.skipExit(pp, "no");
+                    }
+                    XmlPullUtil.skipExit(pp, "ns");
 
                     XmlPullUtil.skipExit(pp, "l");
 
@@ -3256,7 +3263,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                         // ignore
                     } else {
                         legs.add(new Trip.Public(parseMobileMResult.line, parseMobileMResult.destination, departure, arrival,
-                                intermediateStops, path, null,
+                                intermediateStops, path, Strings.emptyToNull(message.toString()),
                                 new EfaJourneyRef(parseMobileMResult.transportationId, departure.location.id,
                                         parseMobileMResult.tripCode, departure.plannedDepartureTime)));
                     }
