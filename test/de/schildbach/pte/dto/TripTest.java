@@ -28,15 +28,18 @@ import org.junit.Test;
  * @author Patrick Kanzler
  */
 public class TripTest {
+    private final Date DUMMY_DATE = new Date(2025, 6, 10, 12, 0);
+    private final String DUMMY_TRIP_ID = "dummyTrip";
+
     private Trip getDummyTripForChanges(Integer changes, Boolean numChangesNull, Integer mode) {
         Trip dummy;
         Location from = new Location(LocationType.ANY, null);
         Location to = new Location(LocationType.ANY, null);
         List<Trip.Leg> legs = getDummyLegsForChanges(mode, changes);
         if (numChangesNull) {
-            dummy = new Trip(null, from, to, legs, null, null, null);
+            dummy = new Trip(DUMMY_DATE, DUMMY_TRIP_ID, null, from, to, legs, null, null, null);
         } else {
-            dummy = new Trip(null, from, to, legs, null, null, changes);
+            dummy = new Trip(DUMMY_DATE, DUMMY_TRIP_ID, null, from, to, legs, null, null, changes);
         }
         return dummy;
     }
