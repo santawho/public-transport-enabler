@@ -108,6 +108,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
             Capability.DEPARTURES,
             Capability.TRIPS,
             Capability.TRIPS_VIA,
+            Capability.JOURNEY,
             Capability.BIKE_OPTION
     );
 
