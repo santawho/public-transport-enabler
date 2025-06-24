@@ -45,6 +45,7 @@ public final class Trip implements Serializable {
     private static final long serialVersionUID = 2508466068307110312L;
 
     public final Date loadedAt;
+    public Date updatedAt;
     private String id;
     public final @Nullable TripRef tripRef;
     public final Location from;
@@ -61,6 +62,7 @@ public final class Trip implements Serializable {
             final Location from, final Location to, final List<Leg> legs,
             final List<Fare> fares, final int[] capacity, final Integer numChanges) {
         this.loadedAt = loadedAt;
+        this.updatedAt = loadedAt;
         this.id = id;
         this.tripRef = tripRef;
         this.from = checkNotNull(from);
@@ -406,6 +408,7 @@ public final class Trip implements Serializable {
         private static final long serialVersionUID = 1312066446239817422L;
 
         public final Date loadedAt;
+        public Date updateDelayedUntil;
         public final Line line;
         public final @Nullable Location destination;
         public final Stop departureStop;
