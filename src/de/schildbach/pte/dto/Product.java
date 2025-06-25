@@ -49,6 +49,13 @@ public enum Product {
             Product.SUBURBAN_TRAIN,
             Product.SUBWAY);
 
+    public static final EnumSet<Product> LOCAL_PRODUCTS = EnumSet.of(
+            Product.SUBURBAN_TRAIN,
+            Product.SUBWAY,
+            Product.TRAM,
+            Product.BUS,
+            Product.ON_DEMAND);
+
     public final char code;
 
     private Product(final char code) {
