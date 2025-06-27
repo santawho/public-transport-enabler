@@ -17,8 +17,12 @@
 
 package de.schildbach.pte;
 
+import com.google.common.base.Strings;
+
 import java.util.HashMap;
 import java.util.Map;
+
+import javax.annotation.Nullable;
 
 import de.schildbach.pte.dto.Product;
 import de.schildbach.pte.dto.Style;
@@ -50,5 +54,60 @@ public class Standard {
         STYLES.put(Product.ON_DEMAND, new Style(COLOR_BACKGROUND_ON_DEMAND, Style.WHITE));
         STYLES.put(Product.FERRY, new Style(Shape.CIRCLE, COLOR_BACKGROUND_FERRY, Style.WHITE));
         STYLES.put(null, new Style(Style.DKGRAY, Style.WHITE));
+    }
+
+    private static final char STYLES_SEP = '|';
+
+    protected static Style defaultLineStyle(
+            final @Nullable String network,
+            final @Nullable Product product,
+            final @Nullable String label) {
+        return STYLES.get(product);
+    }
+
+    public static Style specialLineStyle(
+            final @Nullable Map<String, Style> styles,
+            final @Nullable String network,
+            final @Nullable Product product,
+            final @Nullable String label) {
+        if (styles != null && product != null) {
+            if (network != null) {
+                // check for line match
+                final Style lineStyle = styles.get(network + STYLES_SEP + product.code + Strings.nullToEmpty(label));
+                if (lineStyle != null)
+                    return lineStyle;
+
+                // check for product match
+                final Style productStyle = styles.get(network + STYLES_SEP + product.code);
+                if (productStyle != null)
+                    return productStyle;
+
+                // check for night bus, as that's a common special case
+                if (product == Product.BUS && label != null && label.startsWith("N")) {
+                    final Style nightStyle = styles.get(network + STYLES_SEP + "BN");
+                    if (nightStyle != null)
+                        return nightStyle;
+                }
+            }
+
+            // check for line match
+            final String string = product.code + Strings.nullToEmpty(label);
+            final Style lineStyle = styles.get(string);
+            if (lineStyle != null)
+                return lineStyle;
+
+            // check for product match
+            final Style productStyle = styles.get(Character.toString(product.code));
+            if (productStyle != null)
+                return productStyle;
+
+            // check for night bus, as that's a common special case
+            if (product == Product.BUS && label != null && label.startsWith("N")) {
+                final Style nightStyle = styles.get("BN");
+                if (nightStyle != null)
+                    return nightStyle;
+            }
+        }
+        return null;
     }
 }

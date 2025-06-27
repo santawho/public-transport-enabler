@@ -560,7 +560,7 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
                 product,
                 shortName,
                 name,
-                lineStyle(operator, product, name));
+                DbProvider.lineStyle(styles, operator, product, name));
     }
 
     private boolean parseCancelled(JSONObject stop) throws JSONException {

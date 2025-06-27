@@ -18,9 +18,13 @@
 package de.schildbach.pte;
 
 import java.util.EnumSet;
+import java.util.Map;
 import java.util.Set;
 
+import javax.annotation.Nullable;
+
 import de.schildbach.pte.dto.Product;
+import de.schildbach.pte.dto.Style;
 
 /**
  * Provider implementation for movas API of Deutsche Bahn (Germany).
@@ -62,4 +66,22 @@ public final class DbProvider extends DbWebProvider.Fernverkehr {
     public DbProvider() {
         super(NetworkId.DB);
     }
+
+    public static final String OPERATOR_DB_FERNVERKEHR = "DB Fernverkehr AG";
+    public static final int COLOR_BACKGROUND_NON_DB_HIGH_SPEED_TRAIN = Style.parseColor("#e8d1be");
+    public static final Style STYLE_NON_DB_HIGH_SPEED_TRAIN = new Style(Style.Shape.RECT, COLOR_BACKGROUND_NON_DB_HIGH_SPEED_TRAIN, Style.RED, Style.RED);
+
+    public static Style lineStyle(
+            final @Nullable Map<String, Style> styles,
+            @Nullable final String network,
+            @Nullable final Product product,
+            @Nullable final String label) {
+        final Style specialStyle = Standard.specialLineStyle(styles, network, product, label);
+        if (specialStyle != null) return specialStyle;
+        if (product != null && product.equals(Product.HIGH_SPEED_TRAIN) && !OPERATOR_DB_FERNVERKEHR.equals(network)) {
+            return STYLE_NON_DB_HIGH_SPEED_TRAIN;
+        }
+        return Standard.defaultLineStyle(network, product, label);
+    }
+
 }

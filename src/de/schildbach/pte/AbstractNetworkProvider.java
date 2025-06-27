@@ -62,7 +62,7 @@ public abstract class AbstractNetworkProvider implements NetworkProvider {
     protected int numTripsRequested = 6;
     protected @Nullable String userInterfaceLanguage = null;
     protected boolean messagesAsSimpleHtml;
-    private @Nullable Map<String, Style> styles = null;
+    protected @Nullable Map<String, Style> styles = null;
 
     protected static final Set<Product> ALL_EXCEPT_HIGHSPEED = EnumSet
             .complementOf(EnumSet.of(Product.HIGH_SPEED_TRAIN));
@@ -187,53 +187,12 @@ public abstract class AbstractNetworkProvider implements NetworkProvider {
         return this;
     }
 
-    private static final char STYLES_SEP = '|';
-
     @Override
     public Style lineStyle(final @Nullable String network, final @Nullable Product product,
-            final @Nullable String label) {
-        final Map<String, Style> styles = this.styles;
-        if (styles != null && product != null) {
-            if (network != null) {
-                // check for line match
-                final Style lineStyle = styles.get(network + STYLES_SEP + product.code + Strings.nullToEmpty(label));
-                if (lineStyle != null)
-                    return lineStyle;
-
-                // check for product match
-                final Style productStyle = styles.get(network + STYLES_SEP + product.code);
-                if (productStyle != null)
-                    return productStyle;
-
-                // check for night bus, as that's a common special case
-                if (product == Product.BUS && label != null && label.startsWith("N")) {
-                    final Style nightStyle = styles.get(network + STYLES_SEP + "BN");
-                    if (nightStyle != null)
-                        return nightStyle;
-                }
-            }
-
-            // check for line match
-            final String string = product.code + Strings.nullToEmpty(label);
-            final Style lineStyle = styles.get(string);
-            if (lineStyle != null)
-                return lineStyle;
-
-            // check for product match
-            final Style productStyle = styles.get(Character.toString(product.code));
-            if (productStyle != null)
-                return productStyle;
-
-            // check for night bus, as that's a common special case
-            if (product == Product.BUS && label != null && label.startsWith("N")) {
-                final Style nightStyle = styles.get("BN");
-                if (nightStyle != null)
-                    return nightStyle;
-            }
-        }
-
-        // standard colors
-        return Standard.STYLES.get(product);
+                           final @Nullable String label) {
+        final Style specialStyle = Standard.specialLineStyle(styles, network, product, label);
+        if (specialStyle != null) return specialStyle;
+        return Standard.defaultLineStyle(network, product, label);
     }
 
     @Override
