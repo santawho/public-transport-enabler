@@ -23,6 +23,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.msgpack.core.MessagePacker;
 import org.msgpack.core.MessageUnpacker;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.text.DateFormat;
@@ -91,6 +93,8 @@ import okhttp3.HttpUrl;
  * @author Andreas Schildbach
  */
 public abstract class DbWebProvider extends AbstractNetworkProvider {
+    private static final Logger log = LoggerFactory.getLogger(DbWebProvider.class);
+
     public static class Fernverkehr extends DbWebProvider {
         public Fernverkehr() {
             this(NetworkId.DBWEB);
@@ -401,16 +405,6 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
             }
         }
         return out;
-    }
-
-    private String formatLocationTypes(Set<LocationType> types) {
-        if (types == null || types.contains(LocationType.ANY))
-            return "\"" + LOCATION_TYPE_MAP.get(LocationType.ANY) + "\"";
-        return types.stream()
-                .map(t -> LOCATION_TYPE_MAP.get(t))
-                .filter(t -> t != null)
-                .map(t -> "\"" + t + "\"")
-                .collect(Collectors.joining(", "));
     }
 
     protected String[] splitPlaceAndName(final String placeAndName, final Pattern p, final int place, final int name) {
@@ -1091,19 +1085,41 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
     }
 
     @Override
-    public SuggestLocationsResult suggestLocations(CharSequence constraint, @Nullable Set<LocationType> types,
+    public SuggestLocationsResult suggestLocations(
+            CharSequence constraint,
+            @Nullable Set<LocationType> types,
             int maxLocations)
             throws IOException {
         if (maxLocations == 0)
             maxLocations = DEFAULT_MAX_LOCATIONS;
 
-        final String request = "{\"searchTerm\": \"" + constraint + "\"," //
-                + "\"locationTypes\":[" + formatLocationTypes(types) + "]," //
-                + "\"maxResults\":" + maxLocations + "}";
+        boolean haveStation = false;
+        boolean haveAddress = false;
+        boolean havePOI = false;
+        if (types == null || types.isEmpty()) {
+            haveStation = true;
+            haveAddress = true;
+            havePOI = true;
+        } else {
+            for (LocationType type : types) {
+                switch (type) {
+                    case STATION: haveStation = true; break;
+                    case ADDRESS: haveAddress = true; break;
+                    case POI: havePOI = true; break;
+                }
+            }
+        }
+
+        final String locationTypes;
+        if (haveStation && !haveAddress && !havePOI) {
+            locationTypes = "HALTESTELLEN";
+        } else {
+            locationTypes = "ALL";
+        }
 
         final HttpUrl url = this.locationsEndpoint.newBuilder()
                 .addQueryParameter("suchbegriff", constraint.toString())
-                .addQueryParameter("typ", "ALL")
+                .addQueryParameter("typ", locationTypes)
                 .addQueryParameter("limit", Integer.toString(maxLocations))
                 .build();
         String page = null;
@@ -1121,7 +1137,7 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
             }
             return new SuggestLocationsResult(this.resultHeader, locations);
         } catch (IOException | RuntimeException e) {
-            e.printStackTrace();
+            log.error("error getting locations", e);
             return new SuggestLocationsResult(this.resultHeader, SuggestLocationsResult.Status.SERVICE_DOWN);
         } catch (final JSONException x) {
             throw new ParserException("cannot parse json: '" + page + "' on " + url, x);
