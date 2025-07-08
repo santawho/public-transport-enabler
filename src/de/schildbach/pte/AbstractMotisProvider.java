@@ -482,7 +482,8 @@ public abstract class AbstractMotisProvider extends AbstractNetworkProvider {
                 }
 
                 // line
-                Line line = new Line(null, null, productFromString(stopTime.getString("mode")), stopTime.getString("routeShortName"));
+                Style style = parseStyle(stopTime);
+                Line line = new Line(null, null, productFromString(stopTime.getString("mode")), stopTime.getString("routeShortName"), style);
                 Location destination = new Location(LocationType.STATION, null, null, stopTime.getString("headsign"));
                 lines.add(new LineDestination(line, destination));
 
