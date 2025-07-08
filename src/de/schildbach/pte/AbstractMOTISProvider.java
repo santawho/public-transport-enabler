@@ -284,10 +284,13 @@ public abstract class AbstractMOTISProvider extends AbstractNetworkProvider {
             JSONObject stopJson = stopsJson.getJSONObject(k);
 
             Date stopPlannedDepartureTime = dateFromString(stopJson.getString("scheduledDeparture"));
+            Date stopPlannedArrivalTime = dateFromString(stopJson.getString("scheduledArrival"));
             Date stopDepartureTime = leg.getBoolean("realTime") ? dateFromString(stopJson.getString("departure")) : null;
+            Date stopArrivalTime = leg.getBoolean("realTime") ? dateFromString(stopJson.getString("arrival")) : null;
 
             Stop stop = new Stop(locationFromJSON(stopJson, stopJson.getString("name")),
-                    true, stopPlannedDepartureTime, stopDepartureTime, null, null);
+                    stopPlannedArrivalTime, stopArrivalTime, null,
+                    null, stopPlannedDepartureTime, stopDepartureTime, null, null);
 
             stops.add(stop);
         }
