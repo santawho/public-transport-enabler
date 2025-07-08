@@ -43,7 +43,7 @@ import de.schildbach.pte.dto.Trip;
 import de.schildbach.pte.dto.TripOptions;
 import okhttp3.HttpUrl;
 
-public abstract class AbstractMOTISProvider extends AbstractNetworkProvider {
+public abstract class AbstractMotisProvider extends AbstractNetworkProvider {
     HttpUrl api;
 
     private static class Context implements QueryTripsContext {
@@ -98,7 +98,7 @@ public abstract class AbstractMOTISProvider extends AbstractNetworkProvider {
 
     private static final int MAX_TRIPS = 100;
 
-    public AbstractMOTISProvider(NetworkId networkId, String apiUrl) {
+    public AbstractMotisProvider(NetworkId networkId, String apiUrl) {
         super(networkId);
         api = HttpUrl.parse(apiUrl).newBuilder().addPathSegment("api").build();
     }
