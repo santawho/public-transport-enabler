@@ -268,11 +268,25 @@ public abstract class AbstractMotisProvider extends AbstractNetworkProvider {
         return Date.from(DateTimeFormatter.ISO_INSTANT.parse(isoDate, Instant::from));
     }
 
-    private Trip.Leg parseTripLegIndividual(JSONObject leg, Location from, Date departure, Location to, Date arrival) throws JSONException {
+    private Trip.Leg parseTripLegIndividual(JSONObject leg, Context ctx) throws JSONException {
         int distance = leg.has("distance") ? leg.getInt("distance") : 0;
 
+        JSONObject legFrom = leg.getJSONObject("from");
+        JSONObject legTo = leg.getJSONObject("to");
+
+        String startName = legFrom.getString("name");
+        if (startName.equals("START")) startName = ctx.from.name;
+        String destName = legTo.getString("name");
+        if (destName.equals("END")) destName = ctx.to.name;
+
+        Location fromLocation = parseLocation(legFrom, startName);
+        Location toLocation = parseLocation(legTo, destName);
+
+        Date departureTime = dateFromString(legFrom.getString("departure"));
+        Date arrivalTime = dateFromString(legTo.getString("arrival"));
+
         // todo: parse legGeometry
-        return new Trip.Individual(Trip.Individual.Type.WALK, from, departure, to, arrival, null, distance);
+        return new Trip.Individual(Trip.Individual.Type.WALK, fromLocation, departureTime, toLocation, arrivalTime, null, distance);
     }
 
     private Stop parseStop(JSONObject stop, boolean realTime) throws JSONException {
@@ -289,10 +303,7 @@ public abstract class AbstractMotisProvider extends AbstractNetworkProvider {
         return new Stop(location, plannedArrivalTime, arrivalTime, plannedTrack, track, cancelled, plannedDepartureTime, departureTime, plannedTrack, track, cancelled);
     }
 
-    private Trip.Leg parseTripLegPublic(JSONObject leg, Location from, Date departure, Location to, Date arrival) throws JSONException {
-        Date plannedDepartureTime = dateFromString(leg.getJSONObject("from").getString("scheduledDeparture"));
-        Date plannedArrivalTime = dateFromString(leg.getJSONObject("to").getString("scheduledArrival"));
-
+    private Trip.Leg parseTripLegPublic(JSONObject leg) throws JSONException {
         Style style = parseStyle(leg);
 
         boolean realTime = leg.getBoolean("realTime");
@@ -323,23 +334,10 @@ public abstract class AbstractMotisProvider extends AbstractNetworkProvider {
     }
 
     private Trip.Leg parseTripLeg(JSONObject leg, Context ctx) throws JSONException {
-        JSONObject legFrom = leg.getJSONObject("from");
-        JSONObject legTo = leg.getJSONObject("to");
-
-        String startName = legFrom.getString("name");
-        if (startName.equals("START")) startName = ctx.from.name;
-        String destName = legTo.getString("name");
-        if (destName.equals("END")) destName = ctx.to.name;
-
-        Location fromLocation = parseLocation(legFrom, startName);
-        Location toLocation = parseLocation(legTo, destName);
-
-        Date departureTime = dateFromString(legFrom.getString("departure"));
-        Date arrivalTime = dateFromString(legTo.getString("arrival"));
         if (leg.getString("mode").equals("WALK")) {
-            return parseTripLegIndividual(leg, fromLocation, departureTime, toLocation, arrivalTime);
+            return parseTripLegIndividual(leg, ctx);
         } else {
-            return parseTripLegPublic(leg, fromLocation, departureTime, toLocation, arrivalTime);
+            return parseTripLegPublic(leg);
         }
     }
 
