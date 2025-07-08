@@ -4,11 +4,8 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.IOException;
-import java.sql.Array;
 import org.json.JSONException;
-import org.json.JSONObject;
 
-import java.io.IOException;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -19,10 +16,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.IntStream;
-import java.util.Objects;
 import java.util.Set;
 
 import javax.annotation.Nullable;
@@ -283,12 +276,7 @@ public abstract class AbstractMOTISProvider extends AbstractNetworkProvider {
         Date plannedDepartureTime = dateFromString(leg.getJSONObject("from").getString("scheduledDeparture"));
         Date plannedArrivalTime = dateFromString(leg.getJSONObject("to").getString("scheduledArrival"));
 
-        Style style = null;
-        if (leg.has("routeColor")) {
-            int backgroundColor = Style.parseColor("#" + leg.getString("routeColor"));
-            int foregroundColor = leg.has("routeTextColor") ? Style.parseColor("#" + leg.getString("routeTextColor")) : Style.BLACK;
-            style = new Style(backgroundColor, foregroundColor);
-        }
+        Style style = parseStyle(leg);
 
         JSONArray stopsJson = leg.getJSONArray("intermediateStops");
         ArrayList<Stop> stops = new ArrayList<>();
