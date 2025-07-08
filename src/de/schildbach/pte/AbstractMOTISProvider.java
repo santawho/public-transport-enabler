@@ -294,9 +294,12 @@ public abstract class AbstractMOTISProvider extends AbstractNetworkProvider {
 
         Line line = new Line(leg.has("tripId") ? leg.getString("tripId") : "",  null, productFromString(leg.getString("mode")),
                 leg.has("routeShortName") ? leg.getString("routeShortName") : "", style);
+
+        Location destination = new Location(LocationType.STATION, null, null, leg.getString("headsign"));
+
         return new Trip.Public(
                 line,
-                null, // todo: leg.getString("headsign") would need to be converte do Location
+                destination,
                 new Stop(from, true, plannedDepartureTime, departure, null, null),
                 new Stop(to, false, plannedArrivalTime, arrival, null, null),
                 stops,
