@@ -28,6 +28,7 @@ import de.schildbach.pte.dto.LocationType;
 import de.schildbach.pte.dto.NearbyLocationsResult;
 import de.schildbach.pte.dto.Point;
 
+import de.schildbach.pte.dto.Position;
 import de.schildbach.pte.dto.Product;
 import de.schildbach.pte.dto.QueryDeparturesResult;
 import de.schildbach.pte.dto.QueryTripsContext;
@@ -252,7 +253,7 @@ public abstract class AbstractMOTISProvider extends AbstractNetworkProvider {
         return loc.id != null ? loc.id : String.format(Locale.US, "%f,%f,0", loc.getLatAsDouble(), loc.getLonAsDouble());
     }
 
-    private Location locationFromJSON(JSONObject loc, String name) throws JSONException {
+    private Location parseLocation(JSONObject loc, String name) throws JSONException {
         Point coords = Point.fromDouble(loc.getDouble("lat"), loc.getDouble("lon"));
         if (loc.has("stopId")) {
             return new Location(LocationType.STATION, loc.getString("stopId"), coords, "", name);
@@ -272,27 +273,34 @@ public abstract class AbstractMOTISProvider extends AbstractNetworkProvider {
         return new Trip.Individual(Trip.Individual.Type.WALK, from, departure, to, arrival, null, distance);
     }
 
+    private Stop parseStop(JSONObject stop, boolean realTime) throws JSONException {
+        Location location = parseLocation(stop, stop.getString("name"));
+        Date departureTime = realTime && stop.has("departure") ? dateFromString(stop.getString("departure")) : null;
+        Date arrivalTime = realTime && stop.has("arrival") ? dateFromString(stop.getString("arrival")) : null;
+        Date plannedDepartureTime = stop.has("scheduledDeparture") ? dateFromString(stop.getString("scheduledDeparture")) : null;
+        Date plannedArrivalTime = stop.has("scheduledArrival") ? dateFromString(stop.getString("scheduledArrival")) : null;
+        boolean cancelled = stop.getBoolean("cancelled");
+
+        Position plannedTrack = stop.has("scheduledTrack") ? new Position(stop.getString("scheduledTrack")) : null;
+        Position track = stop.has("track") ? new Position(stop.getString("track")) : null;
+
+        return new Stop(location, plannedArrivalTime, arrivalTime, plannedTrack, track, cancelled, plannedDepartureTime, departureTime, plannedTrack, track, cancelled);
+    }
+
     private Trip.Leg parseTripLegPublic(JSONObject leg, Location from, Date departure, Location to, Date arrival) throws JSONException {
         Date plannedDepartureTime = dateFromString(leg.getJSONObject("from").getString("scheduledDeparture"));
         Date plannedArrivalTime = dateFromString(leg.getJSONObject("to").getString("scheduledArrival"));
 
         Style style = parseStyle(leg);
 
+        boolean realTime = leg.getBoolean("realTime");
+
         JSONArray stopsJson = leg.getJSONArray("intermediateStops");
         ArrayList<Stop> stops = new ArrayList<>();
         for (int k = 0; k < stopsJson.length(); k++) {
             JSONObject stopJson = stopsJson.getJSONObject(k);
 
-            Date stopPlannedDepartureTime = dateFromString(stopJson.getString("scheduledDeparture"));
-            Date stopPlannedArrivalTime = dateFromString(stopJson.getString("scheduledArrival"));
-            Date stopDepartureTime = leg.getBoolean("realTime") ? dateFromString(stopJson.getString("departure")) : null;
-            Date stopArrivalTime = leg.getBoolean("realTime") ? dateFromString(stopJson.getString("arrival")) : null;
-
-            Stop stop = new Stop(locationFromJSON(stopJson, stopJson.getString("name")),
-                    stopPlannedArrivalTime, stopArrivalTime, null,
-                    null, stopPlannedDepartureTime, stopDepartureTime, null, null);
-
-            stops.add(stop);
+            stops.add(parseStop(stopJson, realTime));
         }
 
         Line line = new Line(leg.has("tripId") ? leg.getString("tripId") : "",  null, productFromString(leg.getString("mode")),
@@ -300,11 +308,12 @@ public abstract class AbstractMOTISProvider extends AbstractNetworkProvider {
 
         Location destination = new Location(LocationType.STATION, null, null, leg.getString("headsign"));
 
+
         return new Trip.Public(
                 line,
                 destination,
-                new Stop(from, true, plannedDepartureTime, departure, null, null),
-                new Stop(to, false, plannedArrivalTime, arrival, null, null),
+                parseStop(leg.getJSONObject("from"), realTime),
+                parseStop(leg.getJSONObject("to"), realTime),
                 stops,
                 null, // todo: parse legGeometry
                 null
@@ -320,8 +329,8 @@ public abstract class AbstractMOTISProvider extends AbstractNetworkProvider {
         String destName = legTo.getString("name");
         if (destName.equals("END")) destName = ctx.to.name;
 
-        Location fromLocation = locationFromJSON(legFrom, startName);
-        Location toLocation = locationFromJSON(legTo, destName);
+        Location fromLocation = parseLocation(legFrom, startName);
+        Location toLocation = parseLocation(legTo, destName);
 
         Date departureTime = dateFromString(legFrom.getString("departure"));
         Date arrivalTime = dateFromString(legTo.getString("arrival"));
