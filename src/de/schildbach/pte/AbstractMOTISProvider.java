@@ -104,7 +104,7 @@ public abstract class AbstractMOTISProvider extends AbstractNetworkProvider {
 
     public AbstractMOTISProvider(NetworkId networkId, String apiUrl) {
         super(networkId);
-        api = HttpUrl.parse(apiUrl).newBuilder().addPathSegment("api").addPathSegment("v1").build();
+        api = HttpUrl.parse(apiUrl).newBuilder().addPathSegment("api").build();
     }
 
     @Override
@@ -163,7 +163,7 @@ public abstract class AbstractMOTISProvider extends AbstractNetworkProvider {
     @Override
     public SuggestLocationsResult suggestLocations(CharSequence constraint, @Nullable Set<LocationType> types,
                                                    int maxLocations) throws IOException {
-        HttpUrl url = api.newBuilder().addPathSegment("geocode").addQueryParameter("text", constraint.toString()).build();
+        HttpUrl url = api.newBuilder().addPathSegment("v1").addPathSegment("geocode").addQueryParameter("text", constraint.toString()).build();
 
         CharSequence response = httpClient.get(url);
 
@@ -380,7 +380,9 @@ public abstract class AbstractMOTISProvider extends AbstractNetworkProvider {
             transitModes = String.join(",", transitModesBuilder);
         }
 
-        HttpUrl.Builder builder = api.newBuilder().addPathSegment("plan")
+        HttpUrl.Builder builder = api.newBuilder()
+                    .addPathSegment("v3")
+                    .addPathSegment("plan")
                     .addQueryParameter("time", DateTimeFormatter.ISO_INSTANT.format(date.toInstant()))
                     .addQueryParameter("fromPlace", stringFromLocation(from))
                     .addQueryParameter("toPlace", stringFromLocation(to))
@@ -430,6 +432,7 @@ public abstract class AbstractMOTISProvider extends AbstractNetworkProvider {
 
         try {
             HttpUrl url = api.newBuilder()
+                    .addPathSegment("v1")
                     .addPathSegment("stoptimes")
                     .addQueryParameter("stopId", stationId)
                     .addQueryParameter("time", DateTimeFormatter.ISO_INSTANT.format(time.toInstant()))
