@@ -179,6 +179,10 @@ public final class HttpClient {
 
     private static final Logger log = LoggerFactory.getLogger(HttpClient.class);
 
+    public HttpClient() {
+        setHeader("Accept", SCRAPE_ACCEPT);
+    }
+
     public void setUserAgent(final String userAgent) {
         this.userAgent = userAgent;
     }
@@ -239,9 +243,10 @@ public final class HttpClient {
         final Request.Builder request = new Request.Builder();
         request.url(url);
         request.headers(Headers.of(headers));
-        if (postRequest != null)
-            request.post(RequestBody.create(MediaType.parse(requestContentType), postRequest));
-        request.header("Accept", SCRAPE_ACCEPT);
+        if (postRequest != null) {
+            final MediaType m = requestContentType != null ? MediaType.parse(requestContentType) : null;
+            request.post(RequestBody.create(m, postRequest));
+        }
         if (userAgent != null)
             request.header("User-Agent", userAgent);
         if (referer != null)
