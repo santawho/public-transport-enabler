@@ -362,16 +362,16 @@ public abstract class AbstractMotisProvider extends AbstractNetworkProvider {
             trips.add(trip);
         }
 
-        if (later) {
-            trips = new ArrayList<Trip>(trips.subList(0, Math.min(MAX_TRIPS, trips.size() - 1)));
-        } else {
-            trips = new ArrayList<Trip>(trips.subList(Math.max(trips.size() - 1 - 100, 0), trips.size() - 1));
-        }
-
         ResultHeader header = new ResultHeader(network, SERVER_PRODUCT);
 
         if (trips.isEmpty()) {
             return new QueryTripsResult(header, QueryTripsResult.Status.NO_TRIPS);
+        }
+
+        if (later) {
+            trips = new ArrayList<Trip>(trips.subList(0, Math.min(MAX_TRIPS, trips.size() - 1)));
+        } else {
+            trips = new ArrayList<Trip>(trips.subList(Math.max(trips.size() - 1 - 100, 0), trips.size() - 1));
         }
 
         // HACK: Since we truncate the number of results on the client side to avoid hitting binder limitations (TransactionTooLargeException),
@@ -468,7 +468,7 @@ public abstract class AbstractMotisProvider extends AbstractNetworkProvider {
             HashMap<String, Location> stops = new HashMap<>();
 
             // lines
-            Set<LineDestination> lines = new HashSet<>();
+            HashMap<String, ArrayList<LineDestination>> lines = new HashMap<>();
 
             JSONArray departuresJson = json.getJSONArray("stopTimes");
             for (int i = 0; i < departuresJson.length(); i++) {
@@ -476,16 +476,25 @@ public abstract class AbstractMotisProvider extends AbstractNetworkProvider {
 
                 JSONObject place = stopTime.getJSONObject("place");
 
+
                 // skip arrivals
                 if (!place.has("scheduledDeparture") || !place.has("departure")) {
                     continue;
                 }
 
+                String stopId = place.getString("stopId");
+
                 // line
                 Style style = parseStyle(stopTime);
                 Line line = new Line(null, null, productFromString(stopTime.getString("mode")), stopTime.getString("routeShortName"), style);
                 Location destination = new Location(LocationType.STATION, null, null, stopTime.getString("headsign"));
-                lines.add(new LineDestination(line, destination));
+                LineDestination lineDestination = new LineDestination(line, destination);
+
+                if (lines.containsKey(stopId)) {
+                    lines.get(stopId).add(lineDestination);
+                } else {
+                    lines.put(stopId, new ArrayList<LineDestination>(Collections.singletonList(lineDestination)));
+                }
 
                 // location
                 Location stop = new Location(LocationType.STATION, place.getString("stopId"), Point.fromDouble(place.getDouble("lat"), place.getDouble("lon")), null, place.getString("name"));
@@ -495,7 +504,6 @@ public abstract class AbstractMotisProvider extends AbstractNetworkProvider {
                 Date plannedDepartureTime = dateFromString(place.getString("scheduledDeparture"));
                 Date departureTime = dateFromString(place.getString("departure"));
 
-                String stopId = place.getString("stopId");
                 Departure departure = new Departure(plannedDepartureTime, departureTime, line, null, destination, null, null);
                 if (departures.containsKey(stopId)) {
                     departures.get(stopId).add(departure);
@@ -505,7 +513,7 @@ public abstract class AbstractMotisProvider extends AbstractNetworkProvider {
             }
 
             for (String stopId : departures.keySet()) {
-                StationDepartures station = new StationDepartures(stops.get(stopId), departures.get(stopId), new ArrayList<>(lines));
+                StationDepartures station = new StationDepartures(stops.get(stopId), departures.get(stopId), new ArrayList<>(lines.get(stopId)));
                 result.stationDepartures.add(station);
             }
 
