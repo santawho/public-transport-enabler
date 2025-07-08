@@ -96,6 +96,8 @@ public abstract class AbstractMOTISProvider extends AbstractNetworkProvider {
 
     protected static final String SERVER_PRODUCT = "MOTIS";
 
+    private static final int MAX_TRIPS = 100;
+
     public AbstractMOTISProvider(NetworkId networkId, String apiUrl) {
         super(networkId);
         api = HttpUrl.parse(apiUrl).newBuilder().addPathSegment("api").build();
@@ -341,7 +343,7 @@ public abstract class AbstractMOTISProvider extends AbstractNetworkProvider {
         }
     }
 
-    private QueryTripsResult parseQueryTripsResult(CharSequence response, Context ctx) throws JSONException {
+    private QueryTripsResult parseQueryTripsResult(CharSequence response, Context ctx, boolean later) throws JSONException {
         JSONObject obj = new JSONObject(response.toString());
 
         JSONArray itineraries = obj.getJSONArray("itineraries");
@@ -362,12 +364,25 @@ public abstract class AbstractMOTISProvider extends AbstractNetworkProvider {
             trips.add(trip);
         }
 
+        if (later) {
+            trips = new ArrayList<Trip>(trips.subList(0, Math.min(MAX_TRIPS, trips.size() - 1)));
+        } else {
+            trips = new ArrayList<Trip>(trips.subList(Math.max(trips.size() - 1 - 100, 0), trips.size() - 1));
+        }
+
         ResultHeader header = new ResultHeader(network, SERVER_PRODUCT);
+
+        if (trips.isEmpty()) {
+            return new QueryTripsResult(header, QueryTripsResult.Status.NO_TRIPS);
+        }
+
+        // HACK: Since we truncate the number of results on the client side to avoid hitting binder limitations (TransactionTooLargeException),
+        // we can't use the string provided by MOTIS.
         Context ctxNew = new Context(ctx);
         if (obj.has("previousPageCursor"))
-            ctxNew.previousCursor = obj.getString("previousPageCursor");
+            ctxNew.previousCursor = String.format(Locale.US, "EARLIER|%d", trips.get(0).getLastArrivalTime().toInstant().getEpochSecond());
         if (obj.has("nextPageCursor"))
-            ctxNew.nextCursor = obj.getString("nextPageCursor");
+            ctxNew.nextCursor = String.format(Locale.US, "LATER|%d", trips.get(trips.size() - 1).getLastArrivalTime().toInstant().getEpochSecond());
         return new QueryTripsResult(header, ctx.url, ctx.from, ctx.via, ctx.to, ctxNew, trips);
     }
 
@@ -396,7 +411,7 @@ public abstract class AbstractMOTISProvider extends AbstractNetworkProvider {
 
         try {
             Context contextObj = new Context(url.toString(), null, null, from, via, to, date);
-            return parseQueryTripsResult(response, contextObj);
+            return parseQueryTripsResult(response, contextObj, true);
         } catch (JSONException e) {
             throw new RuntimeException(e);
         }
@@ -412,7 +427,7 @@ public abstract class AbstractMOTISProvider extends AbstractNetworkProvider {
         CharSequence response = httpClient.get(url);
 
         try {
-            return parseQueryTripsResult(response, ctx);
+            return parseQueryTripsResult(response, ctx, later);
         } catch (JSONException e) {
             throw new RuntimeException(e);
         }
