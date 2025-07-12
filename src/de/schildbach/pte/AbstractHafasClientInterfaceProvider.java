@@ -672,8 +672,10 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
         final List<Stop> intermediateStops;
         if (stopList != null) {
             checkState(stopList.length() >= 2);
-            departureStop = parseJsonStop(stopList.getJSONObject(0), locList, crdSysList, cal, baseDate);
-            arrivalStop = parseJsonStop(stopList.getJSONObject(stopList.length() - 1), locList, crdSysList, cal, baseDate);
+            if (departureStop == null)
+                departureStop = parseJsonStop(stopList.getJSONObject(0), locList, crdSysList, cal, baseDate);
+            if (arrivalStop == null)
+                arrivalStop = parseJsonStop(stopList.getJSONObject(stopList.length() - 1), locList, crdSysList, cal, baseDate);
             intermediateStops = new ArrayList<>(stopList.length());
             for (int iStop = 1; iStop < stopList.length() - 1; iStop++) {
                 final JSONObject stop = stopList.getJSONObject(iStop);
