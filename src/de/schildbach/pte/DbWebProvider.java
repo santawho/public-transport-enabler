@@ -17,7 +17,6 @@
 
 package de.schildbach.pte;
 
-import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -89,8 +88,6 @@ import okhttp3.HttpUrl;
 
 /**
  * Provider implementation for Web API of Deutsche Bahn (Germany).
- * 
- * @author Andreas Schildbach
  */
 public abstract class DbWebProvider extends AbstractNetworkProvider {
     private static final Logger log = LoggerFactory.getLogger(DbWebProvider.class);
@@ -154,7 +151,7 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
             Capability.TRIP_LINKING
         );
 
-    private static final @NotNull HttpUrl WEB_API_BASE = HttpUrl.parse("https://www.bahn.de/web/api/");
+    private static final HttpUrl WEB_API_BASE = HttpUrl.parse("https://www.bahn.de/web/api/");
     private final ResultHeader resultHeader;
 
     private static final Map<String, Product> PRODUCTS_MAP = new LinkedHashMap<String, Product>() {
@@ -182,17 +179,6 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
             put("1", LocationType.STATION);
             put("4", LocationType.POI);
             put("2", LocationType.ADDRESS);
-        }
-    };
-
-    private static final Map<LocationType, String> LOCATION_TYPE_MAP = new HashMap<LocationType, String>() {
-        private static final long serialVersionUID = 3738440155820969289L;
-
-        {
-            put(LocationType.ANY, "ALL");
-            put(LocationType.STATION, "ST");
-            put(LocationType.POI, "POI");
-            put(LocationType.ADDRESS, "ADR");
         }
     };
 
