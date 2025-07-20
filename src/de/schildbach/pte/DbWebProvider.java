@@ -720,7 +720,7 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
         return new Trip.Public(journeyRef.line, arrivalStop.location, departureStop, arrivalStop, intermediateStops, null, message, journeyRef);
     }
 
-    private Trip.Leg parseLeg(final JSONObject abschnitt, final @Nullable JSONObject prevAbschnitt, final @Nullable JSONObject nextAbschnitt) throws JSONException {
+    private Trip.Leg parseLeg(final JSONObject abschnitt, final @Nullable Location fallbackDeparture, final @Nullable Location fallbackArrival) throws JSONException {
         final Stop departureStop;
         final Stop arrivalStop;
         final JSONObject verkehrsmittel = abschnitt.getJSONObject("verkehrsmittel");
@@ -734,16 +734,8 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
             intermediateStops.remove(size - 1);
             intermediateStops.remove(0);
         } else {
-            departureStop = parseStop(abschnitt, Optional.ofNullable(prevAbschnitt)
-                        .map(prev -> prev.optJSONArray("halte"))
-                        .map(halte -> halte.optJSONObject(halte.length() - 1))
-                        .map(this::parseLocation)
-                        .orElse(createLocation(LocationType.ADDRESS, null, null, abschnitt.getString("abfahrtsOrt"), null, null)));
-            arrivalStop = parseStop(abschnitt, Optional.ofNullable(nextAbschnitt)
-                        .map(next -> next.optJSONArray("halte"))
-                        .map(halte -> halte.optJSONObject(0))
-                        .map(this::parseLocation)
-                        .orElse(createLocation(LocationType.ADDRESS, null, null, abschnitt.getString("ankunftsOrt"), null, null)));
+            departureStop = parseStop(abschnitt, fallbackDeparture);
+            arrivalStop = parseStop(abschnitt, fallbackArrival);
         }
         if (isPublicTransportLeg) {
             final Line line = parseLine(verkehrsmittel);
@@ -815,10 +807,24 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
             Location tripTo = null;
 
             for (int iLeg = 0; iLeg < abschnitte.length(); iLeg++) {
-                final Trip.Leg leg = parseLeg(
-                        abschnitte.getJSONObject(iLeg),
-                        abschnitte.optJSONObject(iLeg - 1),
-                        abschnitte.optJSONObject(iLeg + 1));
+                final JSONObject abschnitt = abschnitte.getJSONObject(iLeg);
+                final Location fallbackDeparture = Optional.ofNullable(abschnitte.optJSONObject(iLeg - 1))
+                        .map(prev -> prev.optJSONArray("halte"))
+                        .map(halte -> halte.optJSONObject(halte.length() - 1))
+                        .map(this::parseLocation)
+                        .orElse(
+                                from
+//                                createLocation(LocationType.ADDRESS, null, null, abschnitt.getString("abfahrtsOrt"), null, null)
+                        );
+                final Location fallbackArrival = Optional.ofNullable(abschnitte.optJSONObject(iLeg + 1))
+                        .map(next -> next.optJSONArray("halte"))
+                        .map(halte -> halte.optJSONObject(0))
+                        .map(this::parseLocation)
+                        .orElse(
+                                to
+//                                createLocation(LocationType.ADDRESS, null, null, abschnitt.getString("ankunftsOrt"), null, null)
+                        );
+                final Trip.Leg leg = parseLeg(abschnitt, fallbackDeparture, fallbackArrival);
                 legs.add(leg);
                 if (iLeg == 0) {
                     tripFrom = leg.departure;
