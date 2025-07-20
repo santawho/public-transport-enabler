@@ -36,7 +36,6 @@ import de.schildbach.pte.dto.QueryJourneyResult;
 import de.schildbach.pte.dto.QueryTripsContext;
 import de.schildbach.pte.dto.QueryTripsResult;
 import de.schildbach.pte.dto.Style;
-import de.schildbach.pte.dto.SuggestLocationsResult;
 import de.schildbach.pte.dto.Trip;
 import de.schildbach.pte.dto.TripOptions;
 import de.schildbach.pte.dto.TripRef;
@@ -47,7 +46,7 @@ import de.schildbach.pte.dto.TripShare;
  * 
  * @author Andreas Schildbach
  */
-public interface NetworkProvider {
+public interface NetworkProvider extends LocationSearchProvider {
     enum Capability {
         /* can suggest locations */
         SUGGEST_LOCATIONS,
@@ -82,10 +81,6 @@ public interface NetworkProvider {
     enum TripFlag {
         BIKE
     }
-
-    String setUserInterfaceLanguage(@Nullable String userInterfaceLanguage);
-
-    void setMessagesAsSimpleHtml(boolean messagesAsSimpleHtml);
 
     NetworkId id();
 
@@ -125,24 +120,6 @@ public interface NetworkProvider {
      */
     QueryDeparturesResult queryDepartures(String stationId, @Nullable Date time, int maxDepartures, boolean equivs)
             throws IOException;
-
-    /**
-     * Meant for auto-completion of location names, like in an Android AutoCompleteTextView.
-     * 
-     * @param constraint
-     *            input by user so far
-     * @param types
-     *            types of locations to suggest, or {@code null} for any
-     * @param maxLocations
-     *            maximum number of locations to suggest or {@code 0}
-     * @return location suggestions
-     * @throws IOException
-     */
-    SuggestLocationsResult suggestLocations(CharSequence constraint, @Nullable Set<LocationType> types,
-            int maxLocations) throws IOException;
-
-    @Deprecated
-    SuggestLocationsResult suggestLocations(CharSequence constraint) throws IOException;
 
     /**
      * Typical products for a network

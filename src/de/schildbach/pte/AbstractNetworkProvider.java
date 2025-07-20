@@ -18,7 +18,6 @@
 package de.schildbach.pte;
 
 import java.io.IOException;
-import java.net.Proxy;
 import java.nio.charset.Charset;
 import java.util.Date;
 import java.util.EnumSet;
@@ -31,7 +30,6 @@ import java.util.regex.Pattern;
 import javax.annotation.Nullable;
 
 import com.google.common.base.Charsets;
-import com.google.common.base.Strings;
 
 import org.msgpack.core.MessageUnpacker;
 
@@ -43,25 +41,20 @@ import de.schildbach.pte.dto.Product;
 import de.schildbach.pte.dto.QueryJourneyResult;
 import de.schildbach.pte.dto.QueryTripsResult;
 import de.schildbach.pte.dto.Style;
-import de.schildbach.pte.dto.SuggestLocationsResult;
 import de.schildbach.pte.dto.Trip;
 import de.schildbach.pte.dto.TripOptions;
 import de.schildbach.pte.dto.TripRef;
 import de.schildbach.pte.dto.TripShare;
-import de.schildbach.pte.util.HttpClient;
 
 /**
  * @author Andreas Schildbach
  */
-public abstract class AbstractNetworkProvider implements NetworkProvider {
+public abstract class AbstractNetworkProvider extends AbstractLocationSearchProvider implements NetworkApiProvider {
     protected final NetworkId network;
-    protected final HttpClient httpClient = new HttpClient();
 
     protected Charset requestUrlEncoding = Charsets.ISO_8859_1;
     protected TimeZone timeZone = TimeZone.getTimeZone("CET");
     protected int numTripsRequested = 6;
-    protected @Nullable String userInterfaceLanguage = null;
-    protected boolean messagesAsSimpleHtml;
     protected @Nullable Map<String, Style> styles = null;
 
     protected static final Set<Product> ALL_EXCEPT_HIGHSPEED = EnumSet
@@ -69,32 +62,6 @@ public abstract class AbstractNetworkProvider implements NetworkProvider {
 
     protected AbstractNetworkProvider(final NetworkId network) {
         this.network = network;
-    }
-
-    public String setUserInterfaceLanguage(@Nullable String userInterfaceLanguage) {
-        String lang = userInterfaceLanguage == null ? null : userInterfaceLanguage.toLowerCase();
-        String[] validLangs = getValidUserInterfaceLanguages();
-        String uiLang = null;
-        if (validLangs != null) {
-            for (String validLang : validLangs) {
-                if (validLang.equals(lang)) {
-                    uiLang = validLang;
-                    break;
-                }
-            }
-            if (uiLang == null)
-                uiLang = validLangs[0];
-        }
-        this.userInterfaceLanguage = uiLang;
-        return this.userInterfaceLanguage;
-    }
-
-    protected String[] getValidUserInterfaceLanguages() {
-        return null;
-    }
-
-    public void setMessagesAsSimpleHtml(boolean messagesAsSimpleHtml) {
-        this.messagesAsSimpleHtml = messagesAsSimpleHtml;
     }
 
     @Override
@@ -111,12 +78,6 @@ public abstract class AbstractNetworkProvider implements NetworkProvider {
 
     protected boolean hasCapability(Capability capability) {
         return getCapabilities().contains(capability);
-    }
-
-    @Deprecated
-    @Override
-    public final SuggestLocationsResult suggestLocations(final CharSequence constraint) throws IOException {
-        return suggestLocations(constraint, null, 0);
     }
 
     @Deprecated
@@ -143,21 +104,6 @@ public abstract class AbstractNetworkProvider implements NetworkProvider {
         return ALL_EXCEPT_HIGHSPEED;
     }
 
-    public AbstractNetworkProvider setUserAgent(final String userAgent) {
-        httpClient.setUserAgent(userAgent);
-        return this;
-    }
-
-    public AbstractNetworkProvider setProxy(final Proxy proxy) {
-        httpClient.setProxy(proxy);
-        return this;
-    }
-
-    public AbstractNetworkProvider setTrustAllCertificates(final boolean trustAllCertificates) {
-        httpClient.setTrustAllCertificates(trustAllCertificates);
-        return this;
-    }
-
     protected AbstractNetworkProvider setRequestUrlEncoding(final Charset requestUrlEncoding) {
         this.requestUrlEncoding = requestUrlEncoding;
         return this;
@@ -179,11 +125,6 @@ public abstract class AbstractNetworkProvider implements NetworkProvider {
 
     protected AbstractNetworkProvider setStyles(final Map<String, Style> styles) {
         this.styles = styles;
-        return this;
-    }
-
-    protected AbstractNetworkProvider setSessionCookieName(final String sessionCookieName) {
-        httpClient.setSessionCookieName(sessionCookieName);
         return this;
     }
 
