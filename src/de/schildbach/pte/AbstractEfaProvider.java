@@ -3242,14 +3242,15 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                     XmlPullUtil.optSkip(pp, "interchange");
 
                     StringBuilder message = new StringBuilder();
-                    XmlPullUtil.enter(pp, "ns");
-                    while (XmlPullUtil.optEnter(pp, "no")) {
-                        String text = XmlPullUtil.valueTag(pp, "tx");
-                        if (text != null)
-                            message.append(text).append('\n');
-                        XmlPullUtil.skipExit(pp, "no");
+                    if (XmlPullUtil.optEnter(pp, "ns")) {
+                        while (XmlPullUtil.optEnter(pp, "no")) {
+                            String text = XmlPullUtil.valueTag(pp, "tx");
+                            if (text != null)
+                                message.append(text).append('\n');
+                            XmlPullUtil.skipExit(pp, "no");
+                        }
+                        XmlPullUtil.skipExit(pp, "ns");
                     }
-                    XmlPullUtil.skipExit(pp, "ns");
 
                     XmlPullUtil.skipExit(pp, "l");
 
