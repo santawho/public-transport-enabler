@@ -298,7 +298,7 @@ public abstract class AbstractMotisProvider extends AbstractNetworkProvider {
         boolean cancelled = stop.getBoolean("cancelled");
 
         Position plannedTrack = stop.has("scheduledTrack") ? new Position(stop.getString("scheduledTrack")) : null;
-        Position track = stop.has("track") ? new Position(stop.getString("track")) : null;
+        Position track = realTime && stop.has("track") ? new Position(stop.getString("track")) : null;
 
         return new Stop(location, plannedArrivalTime, arrivalTime, plannedTrack, track, cancelled, plannedDepartureTime, departureTime, plannedTrack, track, cancelled);
     }
