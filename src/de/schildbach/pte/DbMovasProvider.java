@@ -185,6 +185,7 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
             put("UBAHN", Product.SUBWAY);
             put("STR", Product.TRAM);
             put("ANRUFPFLICHTIGEVERKEHRE", Product.ON_DEMAND);
+            put("ERSATZVERKEHR", Product.REPLACEMENT);
         }
     };
 
@@ -531,7 +532,9 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
 
     private Line parseLine(final JSONObject jny) throws JSONException {
         // TODO attrs, messages
-        final Product product = SHORT_PRODUCTS_MAP.get(jny.optString("produktGattung", null));
+        Product product = SHORT_PRODUCTS_MAP.get(jny.optString("produktGattung", null));
+        if (product == null)
+            product = SHORT_PRODUCTS_MAP.get(jny.optString("produktGattungen", null));
         final String name = Optional.ofNullable(jny.optString("langtext", null)).orElse(jny.optString("mitteltext", null));
         String shortName = jny.optString("mitteltext", null);
         if (shortName != null && (product == Product.BUS || product == Product.TRAM)) {

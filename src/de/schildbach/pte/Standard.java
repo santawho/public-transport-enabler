@@ -40,6 +40,7 @@ public class Standard {
     public static final int COLOR_BACKGROUND_BUS = Style.parseColor("#993399");
     public static final int COLOR_BACKGROUND_ON_DEMAND = Style.parseColor("#00695c");
     public static final int COLOR_BACKGROUND_FERRY = Style.BLUE;
+    public static final int COLOR_BACKGROUND_REPLACEMENT = Style.parseColor("#663366");
 
     public static final Map<Product, Style> STYLES = new HashMap<>();
 
@@ -53,6 +54,7 @@ public class Standard {
         STYLES.put(Product.BUS, new Style(COLOR_BACKGROUND_BUS, Style.WHITE));
         STYLES.put(Product.ON_DEMAND, new Style(COLOR_BACKGROUND_ON_DEMAND, Style.WHITE));
         STYLES.put(Product.FERRY, new Style(Shape.CIRCLE, COLOR_BACKGROUND_FERRY, Style.WHITE));
+        STYLES.put(Product.REPLACEMENT, new Style(COLOR_BACKGROUND_REPLACEMENT, Style.WHITE));
         STYLES.put(null, new Style(Style.DKGRAY, Style.WHITE));
     }
 

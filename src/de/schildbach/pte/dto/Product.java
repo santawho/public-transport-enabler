@@ -38,7 +38,8 @@ public enum Product {
     BUS('B'),
     FERRY('F'),
     CABLECAR('C'),
-    ON_DEMAND('P');
+    ON_DEMAND('P'),
+    REPLACEMENT('E');
 
 
     public static final char UNKNOWN = '?';
