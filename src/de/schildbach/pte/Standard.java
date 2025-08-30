@@ -32,15 +32,15 @@ import de.schildbach.pte.dto.Style.Shape;
  * @author Andreas Schildbach
  */
 public class Standard {
-    public static final int COLOR_BACKGROUND_HIGH_SPEED_TRAIN = Style.WHITE;
-    public static final int COLOR_BACKGROUND_REGIONAL_TRAIN = Style.GRAY;
+    public static final int COLOR_BACKGROUND_HIGH_SPEED_TRAIN = Style.parseColor("#ffffff");
+    public static final int COLOR_BACKGROUND_REGIONAL_TRAIN = Style.parseColor("#808080");
     public static final int COLOR_BACKGROUND_SUBURBAN_TRAIN = Style.parseColor("#006e34");
     public static final int COLOR_BACKGROUND_SUBWAY = Style.parseColor("#003090");
     public static final int COLOR_BACKGROUND_TRAM = Style.parseColor("#cc0000");
     public static final int COLOR_BACKGROUND_BUS = Style.parseColor("#993399");
     public static final int COLOR_BACKGROUND_ON_DEMAND = Style.parseColor("#00695c");
-    public static final int COLOR_BACKGROUND_FERRY = Style.BLUE;
-    public static final int COLOR_BACKGROUND_REPLACEMENT_SERVICE = Style.parseColor("#663366");
+    public static final int COLOR_BACKGROUND_FERRY = Style.parseColor("#0000ff");
+    public static final int COLOR_BACKGROUND_REPLACEMENT_SERVICE = Style.parseColor("#805080");
 
     public static final Map<Product, Style> STYLES = new HashMap<>();
 
