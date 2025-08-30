@@ -165,6 +165,7 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
             put("UBAHN", Product.SUBWAY);
             put("STRASSENBAHN", Product.TRAM);
             put("ANRUFPFLICHTIGEVERKEHRE", Product.ON_DEMAND);
+            put("ERSATZVERKEHR", Product.REPLACEMENT_SERVICE);
         }
     };
 
@@ -185,7 +186,7 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
             put("UBAHN", Product.SUBWAY);
             put("STR", Product.TRAM);
             put("ANRUFPFLICHTIGEVERKEHRE", Product.ON_DEMAND);
-            put("ERSATZVERKEHR", Product.REPLACEMENT);
+            put("ERSATZVERKEHR", Product.REPLACEMENT_SERVICE);
         }
     };
 

@@ -168,7 +168,7 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
             put("UBAHN", Product.SUBWAY);
             put("TRAM", Product.TRAM);
             put("ANRUFPFLICHTIG", Product.ON_DEMAND);
-            put("ERSATZVERKEHR", Product.REPLACEMENT);
+            put("ERSATZVERKEHR", Product.REPLACEMENT_SERVICE);
         }
     };
 

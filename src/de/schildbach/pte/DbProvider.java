@@ -61,6 +61,7 @@ public final class DbProvider extends DbWebProvider.Fernverkehr {
     static {
         REGIO_PRODUCTS = EnumSet.allOf(Product.class);
         REGIO_PRODUCTS.remove(Product.HIGH_SPEED_TRAIN);
+        REGIO_PRODUCTS.remove(Product.REPLACEMENT_SERVICE);
     }
 
     public DbProvider() {

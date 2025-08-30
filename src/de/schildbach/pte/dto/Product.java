@@ -39,7 +39,7 @@ public enum Product {
     FERRY('F'),
     CABLECAR('C'),
     ON_DEMAND('P'),
-    REPLACEMENT('E');
+    REPLACEMENT_SERVICE('E');
 
 
     public static final char UNKNOWN = '?';
@@ -51,6 +51,7 @@ public enum Product {
             Product.SUBWAY);
 
     public static final EnumSet<Product> LOCAL_PRODUCTS = EnumSet.of(
+            Product.REGIONAL_TRAIN,
             Product.SUBURBAN_TRAIN,
             Product.SUBWAY,
             Product.TRAM,
@@ -86,6 +87,8 @@ public enum Product {
             return CABLECAR;
         else if (code == ON_DEMAND.code)
             return ON_DEMAND;
+        else if (code == REPLACEMENT_SERVICE.code)
+            return REPLACEMENT_SERVICE;
         else
             throw new IllegalArgumentException("unknown code: '" + code + "'");
     }
