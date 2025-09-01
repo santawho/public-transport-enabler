@@ -102,7 +102,7 @@ public class ZvvProvider extends AbstractHafasClientInterfaceProvider {
 
     @Override
     public Set<Product> defaultProducts() {
-        return Product.ALL;
+        return Product.ALL_INCLUDING_HIGHSPEED;
     }
 
     private static final Map<String, Style> STYLES = new HashMap<>();

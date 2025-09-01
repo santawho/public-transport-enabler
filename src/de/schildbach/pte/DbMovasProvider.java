@@ -874,7 +874,7 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
                 useProducts = products;
             } else {
                 limitToDticket = true;
-                useProducts = new HashSet<>(products != null ? products : Product.ALL);
+                useProducts = new HashSet<>(products != null ? products : Product.ALL_INCLUDING_HIGHSPEED);
                 useProducts.add(Product.HIGH_SPEED_TRAIN);
             }
         } else {

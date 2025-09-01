@@ -61,7 +61,7 @@ public class TlemProvider extends AbstractEfaProvider {
 
     @Override
     public Set<Product> defaultProducts() {
-        return Product.ALL;
+        return Product.ALL_INCLUDING_HIGHSPEED;
     }
 
     @Override

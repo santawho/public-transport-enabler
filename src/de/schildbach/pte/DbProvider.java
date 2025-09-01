@@ -50,19 +50,9 @@ public final class DbProvider extends DbWebProvider.Fernverkehr {
         }
     }
 
-    public static final Set<Product> FERNVERKEHR_PRODUCTS;
+    public static final Set<Product> FERNVERKEHR_PRODUCTS = Product.ALL_INCLUDING_HIGHSPEED;
 
-    static {
-        FERNVERKEHR_PRODUCTS = EnumSet.allOf(Product.class);
-    }
-
-    public static final Set<Product> REGIO_PRODUCTS;
-
-    static {
-        REGIO_PRODUCTS = EnumSet.allOf(Product.class);
-        REGIO_PRODUCTS.remove(Product.HIGH_SPEED_TRAIN);
-        REGIO_PRODUCTS.remove(Product.REPLACEMENT_SERVICE);
-    }
+    public static final Set<Product> REGIO_PRODUCTS = Product.ALL_EXCEPT_HIGHSPEED;
 
     public DbProvider() {
         super(NetworkId.DB);

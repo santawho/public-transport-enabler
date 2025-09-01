@@ -46,7 +46,7 @@ public class MerseyProvider extends AbstractEfaProvider {
 
     @Override
     public Set<Product> defaultProducts() {
-        return Product.ALL;
+        return Product.ALL_INCLUDING_HIGHSPEED;
     }
 
     private static final Pattern P_POSITION_BOUND = Pattern.compile("([NESW]+)-bound", Pattern.CASE_INSENSITIVE);

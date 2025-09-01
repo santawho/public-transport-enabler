@@ -43,7 +43,13 @@ public enum Product {
 
 
     public static final char UNKNOWN = '?';
-    public static final Set<Product> ALL = EnumSet.allOf(Product.class);
+    public static final Set<Product> ALL_SELECTABLE = EnumSet
+            .complementOf(EnumSet.of(Product.REPLACEMENT_SERVICE));
+    public static final Set<Product> ALL_INCLUDING_HIGHSPEED = EnumSet
+            .complementOf(EnumSet.of(Product.REPLACEMENT_SERVICE));
+    public static final Set<Product> ALL_EXCEPT_HIGHSPEED = EnumSet
+            .complementOf(EnumSet.of(Product.HIGH_SPEED_TRAIN, Product.REPLACEMENT_SERVICE));
+
     public static final EnumSet<Product> TRAIN_PRODUCTS = EnumSet.of(
             Product.HIGH_SPEED_TRAIN,
             Product.REGIONAL_TRAIN,

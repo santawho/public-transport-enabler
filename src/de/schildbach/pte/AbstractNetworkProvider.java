@@ -57,9 +57,6 @@ public abstract class AbstractNetworkProvider extends AbstractLocationSearchProv
     protected int numTripsRequested = 6;
     protected @Nullable Map<String, Style> styles = null;
 
-    protected static final Set<Product> ALL_EXCEPT_HIGHSPEED = EnumSet
-            .complementOf(EnumSet.of(Product.HIGH_SPEED_TRAIN));
-
     protected AbstractNetworkProvider(final NetworkId network) {
         this.network = network;
     }
@@ -101,7 +98,7 @@ public abstract class AbstractNetworkProvider extends AbstractLocationSearchProv
 
     @Override
     public Set<Product> defaultProducts() {
-        return ALL_EXCEPT_HIGHSPEED;
+        return Product.ALL_EXCEPT_HIGHSPEED;
     }
 
     protected AbstractNetworkProvider setRequestUrlEncoding(final Charset requestUrlEncoding) {
