@@ -36,8 +36,6 @@ public class VbbProvider extends AbstractHafasClientInterfaceProvider {
     private static final HttpUrl API_BASE = HttpUrl.parse("https://fahrinfo.vbb.de/bin/");
     private static final Product[] PRODUCTS_MAP = { Product.SUBURBAN_TRAIN, Product.SUBWAY, Product.TRAM, Product.BUS,
             Product.FERRY, Product.HIGH_SPEED_TRAIN, Product.REGIONAL_TRAIN, null, null, Product.BUS /* BEV */ };
-    private static final Set<Product> ALL_EXCEPT_HIGHSPEED_AND_ONDEMAND = EnumSet
-            .complementOf(EnumSet.of(Product.HIGH_SPEED_TRAIN, Product.ON_DEMAND));
     private static final String DEFAULT_API_CLIENT = "{\"id\":\"VBB\",\"type\":\"AND\"}";
 
     public VbbProvider(final String apiAuthorization, final byte[] salt) {
@@ -121,6 +119,6 @@ public class VbbProvider extends AbstractHafasClientInterfaceProvider {
 
     @Override
     public Set<Product> defaultProducts() {
-        return ALL_EXCEPT_HIGHSPEED_AND_ONDEMAND;
+        return Product.ALL_EXCEPT_HIGHSPEED_AND_ONDEMAND;
     }
 }

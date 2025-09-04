@@ -49,6 +49,8 @@ public enum Product {
             .complementOf(EnumSet.of(Product.REPLACEMENT_SERVICE));
     public static final Set<Product> ALL_EXCEPT_HIGHSPEED = EnumSet
             .complementOf(EnumSet.of(Product.HIGH_SPEED_TRAIN, Product.REPLACEMENT_SERVICE));
+    public static final Set<Product> ALL_EXCEPT_HIGHSPEED_AND_ONDEMAND = EnumSet
+            .complementOf(EnumSet.of(Product.HIGH_SPEED_TRAIN, Product.ON_DEMAND, Product.REPLACEMENT_SERVICE));
 
     public static final EnumSet<Product> TRAIN_PRODUCTS = EnumSet.of(
             Product.HIGH_SPEED_TRAIN,
