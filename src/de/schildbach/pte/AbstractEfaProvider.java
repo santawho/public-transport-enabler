@@ -122,6 +122,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
     private String language = "de";
     private boolean needsSpEncId = false;
     private boolean includeRegionId = true;
+    private int reducedAnyTooManyObjFilter = 2;
     private boolean useProxFootSearch = true;
     private @Nullable String httpReferer = null;
     private @Nullable String httpRefererTrip = null;
@@ -226,6 +227,11 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
 
     protected AbstractEfaProvider setIncludeRegionId(final boolean includeRegionId) {
         this.includeRegionId = includeRegionId;
+        return this;
+    }
+
+    public AbstractEfaProvider setReducedAnyTooManyObjFilter(final int reducedAnyTooManyObjFilter) {
+        this.reducedAnyTooManyObjFilter = reducedAnyTooManyObjFilter;
         return this;
     }
 
@@ -381,7 +387,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
         return new SuggestedLocation(location, quality);
     }
 
-    private void appendStopfinderRequestParameters(final HttpUrl.Builder url, final CharSequence constraint,
+    protected void appendStopfinderRequestParameters(final HttpUrl.Builder url, final CharSequence constraint,
             final String outputFormat, final @Nullable Set<LocationType> types, final int maxLocations) {
         appendCommonRequestParams(url, outputFormat);
         url.addEncodedQueryParameter("locationServerActive", "1");
@@ -400,7 +406,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
             filter += 4 + 8 + 16 + 64; // street + address + crossing + postcode
         url.addEncodedQueryParameter("anyObjFilter_sf", Integer.toString(filter));
         url.addEncodedQueryParameter("reducedAnyPostcodeObjFilter_sf", "64");
-        url.addEncodedQueryParameter("reducedAnyTooManyObjFilter_sf", "2");
+        url.addEncodedQueryParameter("reducedAnyTooManyObjFilter_sf", Integer.toString(reducedAnyTooManyObjFilter));
         url.addEncodedQueryParameter("useHouseNumberList", "true");
         if (maxLocations > 0)
             url.addEncodedQueryParameter("anyMaxSizeHitList", Integer.toString(maxLocations));
