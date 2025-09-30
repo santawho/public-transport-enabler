@@ -463,7 +463,7 @@ public abstract class AbstractMotisProvider extends AbstractNetworkProvider {
 
         try {
             HttpUrl url = api.newBuilder()
-                    .addPathSegment("v1")
+                    .addPathSegment("v5")
                     .addPathSegment("stoptimes")
                     .addQueryParameter("stopId", stationId)
                     .addQueryParameter("time", DateTimeFormatter.ISO_INSTANT.format(time.toInstant()))
