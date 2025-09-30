@@ -74,7 +74,7 @@ import de.schildbach.pte.dto.StationDepartures;
 import de.schildbach.pte.dto.Stop;
 import de.schildbach.pte.dto.SuggestLocationsResult;
 import de.schildbach.pte.dto.SuggestedLocation;
-import de.schildbach.pte.dto.Timestamp;
+import de.schildbach.pte.dto.PTDate;
 import de.schildbach.pte.dto.Trip;
 import de.schildbach.pte.dto.TripOptions;
 import de.schildbach.pte.exception.ParserException;
@@ -86,7 +86,6 @@ import de.schildbach.pte.util.StringReplaceReader;
 import de.schildbach.pte.util.XmlPullUtil;
 
 import okhttp3.HttpUrl;
-import okhttp3.ResponseBody;
 
 /**
  * @author Andreas Schildbach
@@ -625,8 +624,8 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
                         }
 
                         final Departure departure = new Departure(
-                                Timestamp.fromCalendar(plannedTime),
-                                predictedTime != null ? Timestamp.fromCalendar(predictedTime) : null,
+                                PTDate.fromCalendar(plannedTime),
+                                predictedTime != null ? PTDate.fromCalendar(predictedTime) : null,
                                 line,
                                 position,
                                 destination,
@@ -1003,7 +1002,7 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
                         XmlPullUtil.enter(pp, "Dep");
                         time.setTimeInMillis(currentDate.getTimeInMillis());
                         parseTime(time, XmlPullUtil.valueTag(pp, "Time"));
-                        final Timestamp departureTime = Timestamp.fromCalendar(time);
+                        final PTDate departureTime = PTDate.fromCalendar(time);
                         final Position departurePos = parsePlatform(pp);
                         XmlPullUtil.skipExit(pp, "Dep");
 
@@ -1063,8 +1062,8 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
                                         XmlPullUtil.next(pp);
                                     final Location location = parseLocation(pp);
                                     if (location.id.equals(sectionDepartureLocation.id)) {
-                                        Timestamp stopArrivalTime = null;
-                                        Timestamp stopDepartureTime = null;
+                                        PTDate stopArrivalTime = null;
+                                        PTDate stopDepartureTime = null;
                                         Position stopArrivalPosition = null;
                                         Position stopDeparturePosition = null;
 
@@ -1072,7 +1071,7 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
                                             XmlPullUtil.enter(pp, "Arr");
                                             time.setTimeInMillis(currentDate.getTimeInMillis());
                                             parseTime(time, XmlPullUtil.valueTag(pp, "Time"));
-                                            stopArrivalTime = Timestamp.fromCalendar(time);
+                                            stopArrivalTime = PTDate.fromCalendar(time);
                                             stopArrivalPosition = parsePlatform(pp);
                                             XmlPullUtil.skipExit(pp, "Arr");
                                         }
@@ -1081,7 +1080,7 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
                                             XmlPullUtil.enter(pp, "Dep");
                                             time.setTimeInMillis(currentDate.getTimeInMillis());
                                             parseTime(time, XmlPullUtil.valueTag(pp, "Time"));
-                                            stopDepartureTime = Timestamp.fromCalendar(time);
+                                            stopDepartureTime = PTDate.fromCalendar(time);
                                             stopDeparturePosition = parsePlatform(pp);
                                             XmlPullUtil.skipExit(pp, "Dep");
                                         }
@@ -1137,7 +1136,7 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
                         XmlPullUtil.enter(pp, "Arr");
                         time.setTimeInMillis(currentDate.getTimeInMillis());
                         parseTime(time, XmlPullUtil.valueTag(pp, "Time"));
-                        final Timestamp arrivalTime = Timestamp.fromCalendar(time);
+                        final PTDate arrivalTime = PTDate.fromCalendar(time);
                         final Position arrivalPos = parsePlatform(pp);
                         XmlPullUtil.skipExit(pp, "Arr");
 
@@ -1799,21 +1798,18 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
 
                             for (int iStop = 0; iStop < numStops; iStop++) {
                                 final long plannedStopDepartureTime = time(is, resDate, tripDayOffset);
-                                final Date plannedStopDepartureDate = plannedStopDepartureTime != 0
-                                        ? new Date(plannedStopDepartureTime) : null;
+                                final PTDate plannedStopDepartureDate = timestampFromMillis(plannedStopDepartureTime);
                                 final long plannedStopArrivalTime = time(is, resDate, tripDayOffset);
-                                final Timestamp plannedStopArrivalDate = timestampFromMillis(plannedStopArrivalTime);
+                                final PTDate plannedStopArrivalDate = timestampFromMillis(plannedStopArrivalTime);
                                 final Position plannedStopDeparturePosition = normalizePosition(strings.read(is));
                                 final Position plannedStopArrivalPosition = normalizePosition(strings.read(is));
 
                                 is.readInt();
 
                                 final long predictedStopDepartureTime = time(is, resDate, tripDayOffset);
-                                final Date predictedStopDepartureDate = predictedStopDepartureTime != 0
-                                        ? new Date(predictedStopDepartureTime) : null;
+                                final PTDate predictedStopDepartureDate = timestampFromMillis(predictedStopDepartureTime);
                                 final long predictedStopArrivalTime = time(is, resDate, tripDayOffset);
-                                final Date predictedStopArrivalDate = predictedStopArrivalTime != 0
-                                        ? new Date(predictedStopArrivalTime) : null;
+                                final PTDate predictedStopArrivalDate = timestampFromMillis(predictedStopArrivalTime);
                                 final Position predictedStopDeparturePosition = normalizePosition(strings.read(is));
                                 final Position predictedStopArrivalPosition = normalizePosition(strings.read(is));
 
@@ -1829,10 +1825,10 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
                                         || (plannedStopArrivalDate != null && plannedStopDepartureDate != null);
 
                                 final Stop stop = new Stop(stopLocation, plannedStopArrivalDate,
-                                        validPredictedDate ? Timestamp.fromDateAndTimezone(predictedStopArrivalDate, timeZone) : null,
+                                        validPredictedDate ? predictedStopArrivalDate : null,
                                         plannedStopArrivalPosition, predictedStopArrivalPosition,
-                                        stopArrivalCancelled, Timestamp.fromDateAndTimezone(plannedStopDepartureDate, timeZone),
-                                        validPredictedDate ? Timestamp.fromDateAndTimezone(predictedStopDepartureDate, timeZone) : null,
+                                        stopArrivalCancelled, plannedStopDepartureDate,
+                                        validPredictedDate ? predictedStopDepartureDate : null,
                                         plannedStopDeparturePosition, predictedStopDeparturePosition,
                                         stopDepartureCancelled);
 
@@ -1855,8 +1851,8 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
                             else
                                 throw new IllegalStateException("unknown routingType: " + routingType);
 
-                            final Timestamp departureTime = timestampFromMillis(predictedDepartureTime);
-                            final Timestamp arrivalTime = timestampFromMillis(predictedArrivalTime);
+                            final PTDate departureTime = timestampFromMillis(predictedDepartureTime);
+                            final PTDate arrivalTime = timestampFromMillis(predictedArrivalTime);
 
                             final Trip.Leg lastLeg = legs.size() > 0 ? legs.get(legs.size() - 1) : null;
                             if (lastLeg != null && lastLeg instanceof Trip.Individual
@@ -3007,7 +3003,7 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
         }
     }
 
-    protected final Timestamp timestampFromMillis(long time) {
-        return Timestamp.fromDateAndTimezone(time != 0 ? new Date(time) : null, timeZone);
+    protected final PTDate timestampFromMillis(long time) {
+        return time == 0 ? null : new PTDate(time, timeZone);
     }
 }

@@ -30,7 +30,7 @@ import java.util.GregorianCalendar;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import de.schildbach.pte.dto.Timestamp;
+import de.schildbach.pte.dto.PTDate;
 
 /**
  * @author Andreas Schildbach
@@ -247,8 +247,8 @@ public final class ParserUtils {
         return c.getTime();
     }
 
-    public static Timestamp addMinutes(final Timestamp time, final int minutes) {
-        return Timestamp.fromDateAndOffset(new Date(time.getTime() + (long) minutes * 60000L), time.getOffset());
+    public static PTDate addMinutes(final PTDate time, final int minutes) {
+        return new PTDate(time.getTime() + (long) minutes * 60000L, time.getOffset());
     }
 
     public static void printGroups(final Matcher m) {

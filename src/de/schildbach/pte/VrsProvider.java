@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.EnumSet;
@@ -41,7 +40,7 @@ import java.util.regex.Pattern;
 
 import javax.annotation.Nullable;
 
-import de.schildbach.pte.dto.Timestamp;
+import de.schildbach.pte.dto.PTDate;
 import de.schildbach.pte.util.ParserUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -92,8 +91,8 @@ public class VrsProvider extends AbstractNetworkProvider {
 
         private boolean canQueryLater = true;
         private boolean canQueryEarlier = true;
-        private Timestamp lastDeparture = null;
-        private Timestamp firstArrival = null;
+        private PTDate lastDeparture = null;
+        private PTDate firstArrival = null;
         public Location from;
         public Location via;
         public Location to;
@@ -112,23 +111,23 @@ public class VrsProvider extends AbstractNetworkProvider {
             return this.canQueryEarlier && this.firstArrival != null;
         }
 
-        public void departure(final Timestamp departure) {
+        public void departure(final PTDate departure) {
             if (this.lastDeparture == null || this.lastDeparture.compareTo(departure) < 0) {
                 this.lastDeparture = departure;
             }
         }
 
-        public void arrival(final Timestamp arrival) {
+        public void arrival(final PTDate arrival) {
             if (this.firstArrival == null || this.firstArrival.compareTo(arrival) > 0) {
                 this.firstArrival = arrival;
             }
         }
 
-        public Timestamp getLastDeparture() {
+        public PTDate getLastDeparture() {
             return this.lastDeparture;
         }
 
-        public Timestamp getFirstArrival() {
+        public PTDate getFirstArrival() {
             return this.firstArrival;
         }
 
@@ -463,8 +462,8 @@ public class VrsProvider extends AbstractNetworkProvider {
                 // for all departures
                 for (int iEvent = 0; iEvent < events.length(); iEvent++) {
                     final JSONObject event = events.getJSONObject(iEvent);
-                    Timestamp plannedTime = null;
-                    Timestamp predictedTime = null;
+                    PTDate plannedTime = null;
+                    PTDate predictedTime = null;
                     if (event.has("departureScheduled")) {
                         plannedTime = parseDateTime(event.getString("departureScheduled"));
                         predictedTime = parseDateTime(event.getString("departure"));
@@ -744,8 +743,8 @@ public class VrsProvider extends AbstractNetworkProvider {
                                     viaJsonObject, null);
                             final Location viaLocation = viaLocationWithPosition.location;
                             final Position viaPosition = viaLocationWithPosition.position;
-                            Timestamp arrivalPlanned = null;
-                            Timestamp arrivalPredicted = null;
+                            PTDate arrivalPlanned = null;
+                            PTDate arrivalPredicted = null;
                             if (viaJsonObject.has("arrivalScheduled")) {
                                 arrivalPlanned = parseDateTime(viaJsonObject.getString("arrivalScheduled"));
                                 arrivalPredicted = (viaJsonObject.has("arrival"))
@@ -758,8 +757,8 @@ public class VrsProvider extends AbstractNetworkProvider {
                             intermediateStops.add(intermediateStop);
                         }
                     }
-                    Timestamp departurePlanned = null;
-                    Timestamp departurePredicted = null;
+                    PTDate departurePlanned = null;
+                    PTDate departurePredicted = null;
                     if (segment.has("departureScheduled")) {
                         departurePlanned = parseDateTime(segment.getString("departureScheduled"));
                         departurePredicted = (segment.has("departure")) ? parseDateTime(segment.getString("departure"))
@@ -773,8 +772,8 @@ public class VrsProvider extends AbstractNetworkProvider {
                             context.departure(departurePlanned);
                         }
                     }
-                    Timestamp arrivalPlanned = null;
-                    Timestamp arrivalPredicted = null;
+                    PTDate arrivalPlanned = null;
+                    PTDate arrivalPredicted = null;
                     if (segment.has("arrivalScheduled")) {
                         arrivalPlanned = parseDateTime(segment.getString("arrivalScheduled"));
                         arrivalPredicted = (segment.has("arrival")) ? parseDateTime(segment.getString("arrival"))
@@ -822,7 +821,7 @@ public class VrsProvider extends AbstractNetworkProvider {
                     if (type.equals("walk")) {
                         if (departurePlanned == null)
                             departurePlanned = legs.get(legs.size() - 1).getArrivalTime();
-                        final Timestamp walkArrival = Timestamp.fromDateAndOffset(new Date(departurePlanned.getTime() + traveltime * 1000), departurePlanned.getOffset());
+                        final PTDate walkArrival = new PTDate(departurePlanned.getTime() + traveltime * 1000, departurePlanned.getOffset());
                         // this old code would always ignore the walking time; historic reason?
                         // if (arrivalPlanned == null)
                         //    arrivalPlanned = walkArrival;
@@ -908,9 +907,9 @@ public class VrsProvider extends AbstractNetworkProvider {
         Context ctx = (Context) context;
         TripOptions options = new TripOptions(ctx.products, null, null, null, null, null);
         if (later) {
-            return queryTrips(ctx.from, ctx.via, ctx.to, ctx.getLastDeparture().getDate(), true, options);
+            return queryTrips(ctx.from, ctx.via, ctx.to, ctx.getLastDeparture(), true, options);
         } else {
-            return queryTrips(ctx.from, ctx.via, ctx.to, ctx.getFirstArrival().getDate(), false, options);
+            return queryTrips(ctx.from, ctx.via, ctx.to, ctx.getFirstArrival(), false, options);
         }
     }
 
@@ -1100,13 +1099,13 @@ public class VrsProvider extends AbstractNetworkProvider {
         return String.format(Locale.ENGLISH, "%04d-%02d-%02dT%02d:%02d:%02dZ", year, month, day, hour, minute, second);
     }
 
-    private Timestamp parseDateTime(final String dateTimeStr) throws ParseException {
+    private PTDate parseDateTime(final String dateTimeStr) throws ParseException {
         final int lastColonIndex = dateTimeStr.lastIndexOf(':');
         if (lastColonIndex < 0)
             throw new ParseException(dateTimeStr, lastColonIndex);
         final Date date = new SimpleDateFormat("yyyy-MM-dd'T'kk:mm:ssZ")
                 .parse(dateTimeStr.substring(0, lastColonIndex) + "00");
-        return Timestamp.fromDateAndTimezone(date, timeZone);
+        return date == null ? null : new PTDate(date, timeZone);
     }
 
     private final Point stationToCoord(String id) throws IOException {

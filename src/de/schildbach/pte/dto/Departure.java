@@ -22,7 +22,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.io.Serializable;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.Locale;
 
 import javax.annotation.Nullable;
@@ -37,8 +36,8 @@ import com.google.common.base.Objects;
 public final class Departure implements Serializable {
     private static final long serialVersionUID = -9104517779537062795L;
 
-    public final @Nullable Timestamp plannedTime;
-    public final @Nullable Timestamp predictedTime;
+    public final @Nullable PTDate plannedTime;
+    public final @Nullable PTDate predictedTime;
     public final Line line;
     public final @Nullable Position position;
     public final @Nullable Location destination;
@@ -48,8 +47,8 @@ public final class Departure implements Serializable {
     public final @Nullable JourneyRef journeyRef;
 
     public Departure(
-            final Timestamp plannedTime,
-            final Timestamp predictedTime,
+            final PTDate plannedTime,
+            final PTDate predictedTime,
             final Line line,
             final Position position,
             final Location destination,
@@ -69,7 +68,7 @@ public final class Departure implements Serializable {
         this.journeyRef = journeyRef;
     }
 
-    public Timestamp getTime() {
+    public PTDate getTime() {
         if (predictedTime != null)
             return predictedTime;
         else

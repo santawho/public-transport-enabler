@@ -24,9 +24,6 @@ import org.msgpack.core.MessagePacker;
 import org.msgpack.core.MessageUnpacker;
 
 import java.io.IOException;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
@@ -47,7 +44,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.StringJoiner;
-import java.util.TimeZone;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -74,7 +70,7 @@ import de.schildbach.pte.dto.StationDepartures;
 import de.schildbach.pte.dto.Stop;
 import de.schildbach.pte.dto.SuggestLocationsResult;
 import de.schildbach.pte.dto.SuggestedLocation;
-import de.schildbach.pte.dto.Timestamp;
+import de.schildbach.pte.dto.PTDate;
 import de.schildbach.pte.dto.Trip;
 import de.schildbach.pte.dto.TripOptions;
 import de.schildbach.pte.dto.TripRef;
@@ -320,12 +316,11 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
     }
 
 
-    private Timestamp parseIso8601WOffset(final String time) {
+    private PTDate parseIso8601WOffset(final String time) {
         if (time == null)
             return null;
         final OffsetDateTime offsetDateTime = OffsetDateTime.parse(time, ISO_DATE_TIME_WITH_OFFSET_FORMAT);
-        return Timestamp.fromDateAndOffset(
-                new Date(offsetDateTime.toInstant().toEpochMilli()),
+        return new PTDate(offsetDateTime.toInstant().toEpochMilli(),
                 offsetDateTime.getOffset().getTotalSeconds() * 1000);
     }
 

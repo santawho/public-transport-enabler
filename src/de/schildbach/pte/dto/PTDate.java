@@ -17,68 +17,56 @@
 
 package de.schildbach.pte.dto;
 
-import java.io.Serializable;
-import java.time.ZonedDateTime;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 
 import javax.annotation.Nonnull;
 
-public class Timestamp
-        implements Serializable, Cloneable, Comparable<Timestamp> {
+public class PTDate extends Date {
     private static final long serialVersionUID = 5427597351571580029L;
 
     public static int UNKNOWN_LOCATION_SPECIFIC_OFFSET = Integer.MIN_VALUE + 1;
     public static int SYSTEM_OFFSET = Integer.MIN_VALUE + 2;
     public static int NETWORK_OFFSET = Integer.MIN_VALUE + 3;
 
-    public static Timestamp fromDateAndTimezone(final Date date, TimeZone timeZone) {
-        if (date == null)
+    public static PTDate withUnknownLocationSpecificOffset(final long time) {
+        return new PTDate(time, UNKNOWN_LOCATION_SPECIFIC_OFFSET);
+    }
+
+    public static PTDate withSystemOffset(final long time) {
+        return new PTDate(time, SYSTEM_OFFSET);
+    }
+
+    public static PTDate withNetworkOffset(final long time) {
+        return new PTDate(time, NETWORK_OFFSET);
+    }
+
+    public static PTDate fromCalendar(final Calendar calendar) {
+        if (calendar == null)
             return null;
-
-        return new Timestamp(date, timeZone.getOffset(date.getTime()));
-    }
-
-    public static Timestamp fromDateAndOffset(final Date date, int offset) {
-        if (date == null)
-            return null;
-
-        return new Timestamp(date, offset);
-    }
-
-    public static Timestamp fromDateAndUnknownLocationSpecificOffset(final Date date) {
-        return fromDateAndOffset(date, UNKNOWN_LOCATION_SPECIFIC_OFFSET);
-    }
-
-    public static Timestamp fromDateAndSystemOffset(final Date date) {
-        return fromDateAndOffset(date, SYSTEM_OFFSET);
-    }
-
-    public static Timestamp fromDateAndNetworkOffset(final Date date) {
-        return fromDateAndOffset(date, NETWORK_OFFSET);
-    }
-
-    public static Timestamp fromCalendar(final Calendar calendar) {
         final Date date = calendar.getTime();
         final int offset = calendar.getTimeZone().getOffset(date.getTime());
-        return fromDateAndOffset(date, offset);
+        return new PTDate(date, offset);
     }
 
-    private Date date;
-    private int offset;
+    private final int offset;
 
-    private Timestamp(@Nonnull final Date date, int offset) {
-        this.date = date;
+    public PTDate(@Nonnull final Date date, int offset) {
+        this(date.getTime(), offset);
+    }
+
+    public PTDate(final long time, int offset) {
+        super(time);
         this.offset = offset;
     }
 
-    public Date getDate() {
-        return date;
+    public PTDate(final Date date, final TimeZone timeZone) {
+        this(date.getTime(), timeZone);
     }
 
-    public long getTime() {
-        return date.getTime();
+    public PTDate(final long time, final TimeZone timeZone) {
+        this(time, timeZone.getOffset(time));
     }
 
     public boolean isOffsetUnknownLocationSpecific() {
@@ -110,11 +98,7 @@ public class Timestamp
     }
 
     @Override
-    public int compareTo(final Timestamp other) {
-        return date.compareTo(other.date);
-    }
-
-    public static Date toDate(final Timestamp timestamp) {
-        return timestamp == null ? null : timestamp.date;
+    public int compareTo(final Date other) {
+        return super.compareTo(other);
     }
 }

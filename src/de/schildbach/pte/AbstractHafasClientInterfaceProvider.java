@@ -79,7 +79,7 @@ import de.schildbach.pte.dto.Stop;
 import de.schildbach.pte.dto.Style;
 import de.schildbach.pte.dto.SuggestLocationsResult;
 import de.schildbach.pte.dto.SuggestedLocation;
-import de.schildbach.pte.dto.Timestamp;
+import de.schildbach.pte.dto.PTDate;
 import de.schildbach.pte.dto.Trip;
 import de.schildbach.pte.dto.TripOptions;
 import de.schildbach.pte.dto.TripRef;
@@ -494,9 +494,9 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                     ParserUtils.parseIsoDate(c, jny.getString("date"));
                     final Date baseDate = c.getTime();
 
-                    final Timestamp plannedTime = parseJsonTime(c, baseDate, stbStop.getString("dTimeS"));
+                    final PTDate plannedTime = parseJsonTime(c, baseDate, stbStop.getString("dTimeS"));
 
-                    final Timestamp predictedTime = parseJsonTime(c, baseDate, stbStop.optString("dTimeR", null));
+                    final PTDate predictedTime = parseJsonTime(c, baseDate, stbStop.optString("dTimeR", null));
 
                     final int dProdX = stbStop.optInt("dProdX", -1);
                     final Line line = dProdX != -1 ? lines.get(dProdX) : null;
@@ -1153,13 +1153,13 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
         final JSONObject res = serverInfo.getJSONObject("res");
         final Calendar c = new GregorianCalendar(timeZone);
         ParserUtils.parseIsoDate(c, res.getString("sD"));
-        final Timestamp timestamp = parseJsonTime(c, c.getTime(), res.getString("sT"));
+        final PTDate timestamp = parseJsonTime(c, c.getTime(), res.getString("sT"));
         return new ResultHeader(network, SERVER_PRODUCT, serverVersion, null, timestamp.getTime(), null);
     }
 
     private static final Pattern P_JSON_TIME = Pattern.compile("(\\d{2})?(\\d{2})(\\d{2})(\\d{2})");
 
-    private Timestamp parseJsonTime(final Calendar calendar, final Date baseDate, final CharSequence str) {
+    private PTDate parseJsonTime(final Calendar calendar, final Date baseDate, final CharSequence str) {
         if (str == null)
             return null;
 
@@ -1173,7 +1173,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
             calendar.set(Calendar.MINUTE, Integer.parseInt(m.group(3)));
             calendar.set(Calendar.SECOND, Integer.parseInt(m.group(4)));
 
-            return Timestamp.fromCalendar(calendar);
+            return PTDate.fromCalendar(calendar);
         }
 
         throw new RuntimeException("cannot parse: '" + str + "'");
@@ -1195,14 +1195,14 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
         final Location location = parseLoc(locList, json.getInt("locX"), new HashSet<Integer>(), crdSysList);
 
         final boolean arrivalCancelled = json.optBoolean("aCncl", false);
-        final Timestamp plannedArrivalTime = parseJsonTime(c, baseDate, json.optString("aTimeS", null));
-        final Timestamp predictedArrivalTime = parseJsonTime(c, baseDate, json.optString("aTimeR", null));
+        final PTDate plannedArrivalTime = parseJsonTime(c, baseDate, json.optString("aTimeS", null));
+        final PTDate predictedArrivalTime = parseJsonTime(c, baseDate, json.optString("aTimeR", null));
         final Position plannedArrivalPosition = parseJsonPosition(json, "aPlatfS", "aPltfS");
         final Position predictedArrivalPosition = parseJsonPosition(json, "aPlatfR", "aPltfR");
 
         final boolean departureCancelled = json.optBoolean("dCncl", false);
-        final Timestamp plannedDepartureTime = parseJsonTime(c, baseDate, json.optString("dTimeS", null));
-        final Timestamp predictedDepartureTime = parseJsonTime(c, baseDate, json.optString("dTimeR", null));
+        final PTDate plannedDepartureTime = parseJsonTime(c, baseDate, json.optString("dTimeS", null));
+        final PTDate predictedDepartureTime = parseJsonTime(c, baseDate, json.optString("dTimeR", null));
         final Position plannedDeparturePosition = parseJsonPosition(json, "dPlatfS", "dPltfS");
         final Position predictedDeparturePosition = parseJsonPosition(json, "dPlatfR", "dPltfR");
 

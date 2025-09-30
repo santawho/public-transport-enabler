@@ -58,7 +58,7 @@ import de.schildbach.pte.dto.StationDepartures;
 import de.schildbach.pte.dto.Stop;
 import de.schildbach.pte.dto.SuggestLocationsResult;
 import de.schildbach.pte.dto.SuggestedLocation;
-import de.schildbach.pte.dto.Timestamp;
+import de.schildbach.pte.dto.PTDate;
 import de.schildbach.pte.dto.Trip;
 import de.schildbach.pte.dto.TripOptions;
 import de.schildbach.pte.exception.InternalErrorException;
@@ -362,17 +362,17 @@ public class NegentweeProvider extends AbstractNetworkProvider {
         return formatter.format(date.getTime());
     }
 
-    private Timestamp dateFromJSONObject(JSONObject obj, String key) throws JSONException {
+    private PTDate dateFromJSONObject(JSONObject obj, String key) throws JSONException {
         try {
             Calendar cal = Calendar.getInstance(API_TIMEZONE);
             ParserUtils.parseIsoDateTime(cal, obj.getString(key));
-            return Timestamp.fromDateAndTimezone(cal.getTime(), API_TIMEZONE);
+            return new PTDate(cal.getTime(), API_TIMEZONE);
         } catch (RuntimeException e) {
             return null;
         }
     }
 
-    private Timestamp timeFromJSONObject(JSONObject obj, String key) throws JSONException {
+    private PTDate timeFromJSONObject(JSONObject obj, String key) throws JSONException {
         try {
             Calendar calParsed = Calendar.getInstance(API_TIMEZONE);
             ParserUtils.parseIsoTime(calParsed, obj.getString(key));
@@ -384,13 +384,13 @@ public class NegentweeProvider extends AbstractNetworkProvider {
                 calNow.add(Calendar.HOUR, 24);
             }
 
-            return Timestamp.fromDateAndTimezone(calParsed.getTime(), API_TIMEZONE);
+            return new PTDate(calParsed.getTime(), API_TIMEZONE);
         } catch (RuntimeException e) {
             return null;
         }
     }
 
-    private Timestamp realtimeDateFromJSONObject(JSONObject obj, String key, String realtimeKey) throws JSONException {
+    private PTDate realtimeDateFromJSONObject(JSONObject obj, String key, String realtimeKey) throws JSONException {
         return dateFromJSONObject(obj, (!obj.isNull(realtimeKey)) ? realtimeKey : key);
     }
 
@@ -398,7 +398,7 @@ public class NegentweeProvider extends AbstractNetworkProvider {
             @Nullable Map<String, JSONObject> disturbances) throws JSONException {
         JSONArray legs = trip.getJSONArray("legs");
 
-        Timestamp tripDeparture = realtimeDateFromJSONObject(trip, "departure", "realtimeDeparture");
+        PTDate tripDeparture = realtimeDateFromJSONObject(trip, "departure", "realtimeDeparture");
         /* Date tripArrival = */ realtimeDateFromJSONObject(trip, "arrival", "realtimeArrival");
 
         // Get journey legs
@@ -481,8 +481,8 @@ public class NegentweeProvider extends AbstractNetworkProvider {
                 break;
             case "continuous":
                 // Get leg time from trip or previous leg
-                Timestamp legDeparture = (i == 0) ? tripDeparture : foundLegs.getLast().getArrivalTime();
-                Timestamp legArrival = ParserUtils.addMinutes(legDeparture,
+                PTDate legDeparture = (i == 0) ? tripDeparture : foundLegs.getLast().getArrivalTime();
+                PTDate legArrival = ParserUtils.addMinutes(legDeparture,
                         ParserUtils.parseMinutesFromTimeString(leg.getString("duration")));
 
                 foundLegs.add(new Trip.Individual(Trip.Individual.Type.WALK, firstStop.location, legDeparture,
