@@ -36,29 +36,29 @@ public final class Stop implements Serializable {
     private static final long serialVersionUID = 5034616799626145715L;
 
     public final Location location;
-    public final @Nullable Date plannedArrivalTime;
-    public final @Nullable Date predictedArrivalTime;
+    public final @Nullable Timestamp plannedArrivalTime;
+    public final @Nullable Timestamp predictedArrivalTime;
     public final @Nullable Position plannedArrivalPosition;
     public final @Nullable Position predictedArrivalPosition;
     public final boolean arrivalCancelled;
-    public final @Nullable Date plannedDepartureTime;
-    public final @Nullable Date predictedDepartureTime;
+    public final @Nullable Timestamp plannedDepartureTime;
+    public final @Nullable Timestamp predictedDepartureTime;
     public final @Nullable Position plannedDeparturePosition;
     public final @Nullable Position predictedDeparturePosition;
     public final boolean departureCancelled;
 
-    public Stop(final Location location, final Date plannedArrivalTime, final Date predictedArrivalTime,
+    public Stop(final Location location, final Timestamp plannedArrivalTime, final Timestamp predictedArrivalTime,
             final Position plannedArrivalPosition, final Position predictedArrivalPosition,
-            final Date plannedDepartureTime, final Date predictedDepartureTime, final Position plannedDeparturePosition,
+            final Timestamp plannedDepartureTime, final Timestamp predictedDepartureTime, final Position plannedDeparturePosition,
             final Position predictedDeparturePosition) {
         this(location, plannedArrivalTime, predictedArrivalTime, plannedArrivalPosition, predictedArrivalPosition,
                 false, plannedDepartureTime, predictedDepartureTime, plannedDeparturePosition,
                 predictedDeparturePosition, false);
     }
 
-    public Stop(final Location location, final Date plannedArrivalTime, final Date predictedArrivalTime,
+    public Stop(final Location location, final Timestamp plannedArrivalTime, final Timestamp predictedArrivalTime,
             final Position plannedArrivalPosition, final Position predictedArrivalPosition,
-            final boolean arrivalCancelled, final Date plannedDepartureTime, final Date predictedDepartureTime,
+            final boolean arrivalCancelled, final Timestamp plannedDepartureTime, final Timestamp predictedDepartureTime,
             final Position plannedDeparturePosition, final Position predictedDeparturePosition,
             final boolean departureCancelled) {
         this.location = checkNotNull(location);
@@ -74,12 +74,12 @@ public final class Stop implements Serializable {
         this.departureCancelled = departureCancelled;
     }
 
-    public Stop(final Location location, final boolean departure, final Date plannedTime, final Date predictedTime,
+    public Stop(final Location location, final boolean departure, final Timestamp plannedTime, final Timestamp predictedTime,
             final Position plannedPosition, final Position predictedPosition) {
         this(location, departure, plannedTime, predictedTime, plannedPosition, predictedPosition, false);
     }
 
-    public Stop(final Location location, final boolean departure, final Date plannedTime, final Date predictedTime,
+    public Stop(final Location location, final boolean departure, final Timestamp plannedTime, final Timestamp predictedTime,
             final Position plannedPosition, final Position predictedPosition, final boolean cancelled) {
         this.location = checkNotNull(location);
         this.plannedArrivalTime = !departure ? plannedTime : null;
@@ -94,8 +94,8 @@ public final class Stop implements Serializable {
         this.departureCancelled = departure ? cancelled : false;
     }
 
-    public Stop(final Location location, final Date plannedArrivalTime, final Position plannedArrivalPosition,
-            final Date plannedDepartureTime, final Position plannedDeparturePosition) {
+    public Stop(final Location location, final Timestamp plannedArrivalTime, final Position plannedArrivalPosition,
+            final Timestamp plannedDepartureTime, final Position plannedDeparturePosition) {
         this.location = checkNotNull(location);
         this.plannedArrivalTime = plannedArrivalTime;
         this.predictedArrivalTime = null;
@@ -109,11 +109,11 @@ public final class Stop implements Serializable {
         this.departureCancelled = false;
     }
 
-    public Date getArrivalTime() {
+    public Timestamp getArrivalTime() {
         return getArrivalTime(false);
     }
 
-    public Date getArrivalTime(final boolean preferPlanTime) {
+    public Timestamp getArrivalTime(final boolean preferPlanTime) {
         if (preferPlanTime && plannedArrivalTime != null)
             return plannedArrivalTime;
         else if (predictedArrivalTime != null)
@@ -136,8 +136,8 @@ public final class Stop implements Serializable {
     }
 
     public Long getArrivalDelay() {
-        final Date plannedArrivalTime = this.plannedArrivalTime;
-        final Date predictedArrivalTime = this.predictedArrivalTime;
+        final Timestamp plannedArrivalTime = this.plannedArrivalTime;
+        final Timestamp predictedArrivalTime = this.predictedArrivalTime;
         if (plannedArrivalTime != null && predictedArrivalTime != null)
             return predictedArrivalTime.getTime() - plannedArrivalTime.getTime();
         else
@@ -157,11 +157,11 @@ public final class Stop implements Serializable {
         return predictedArrivalPosition != null;
     }
 
-    public Date getDepartureTime() {
+    public Timestamp getDepartureTime() {
         return getDepartureTime(false);
     }
 
-    public Date getDepartureTime(final boolean preferPlanTime) {
+    public Timestamp getDepartureTime(final boolean preferPlanTime) {
         if (preferPlanTime && plannedDepartureTime != null)
             return plannedDepartureTime;
         else if (predictedDepartureTime != null)
@@ -184,8 +184,8 @@ public final class Stop implements Serializable {
     }
 
     public Long getDepartureDelay() {
-        final Date plannedDepartureTime = this.plannedDepartureTime;
-        final Date predictedDepartureTime = this.predictedDepartureTime;
+        final Timestamp plannedDepartureTime = this.plannedDepartureTime;
+        final Timestamp predictedDepartureTime = this.predictedDepartureTime;
         if (plannedDepartureTime != null && predictedDepartureTime != null)
             return predictedDepartureTime.getTime() - plannedDepartureTime.getTime();
         else
@@ -205,22 +205,28 @@ public final class Stop implements Serializable {
         return predictedDeparturePosition != null;
     }
 
-    public Date getMinTime() {
-        final Date predictedDepartureTime = this.predictedDepartureTime;
-        if (plannedDepartureTime == null
-                || (predictedDepartureTime != null && predictedDepartureTime.before(plannedDepartureTime)))
+    public Timestamp getMinTime() {
+        if (plannedDepartureTime == null)
             return predictedDepartureTime;
-        else
+
+        if (predictedDepartureTime == null)
             return plannedDepartureTime;
+
+        return predictedDepartureTime.getDate().before(plannedDepartureTime.getDate())
+                ? predictedDepartureTime
+                : plannedDepartureTime;
     }
 
-    public Date getMaxTime() {
-        final Date predictedArrivalTime = this.predictedArrivalTime;
-        if (plannedArrivalTime == null
-                || (predictedArrivalTime != null && predictedArrivalTime.after(plannedArrivalTime)))
+    public Timestamp getMaxTime() {
+        if (plannedArrivalTime == null)
             return predictedArrivalTime;
-        else
+
+        if (predictedArrivalTime == null)
             return plannedArrivalTime;
+
+        return predictedArrivalTime.getDate().after(plannedArrivalTime.getDate())
+                ? predictedArrivalTime
+                : plannedArrivalTime;
     }
 
     @Override

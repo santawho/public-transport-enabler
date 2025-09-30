@@ -27,6 +27,9 @@ import java.io.IOException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -71,6 +74,7 @@ import de.schildbach.pte.dto.StationDepartures;
 import de.schildbach.pte.dto.Stop;
 import de.schildbach.pte.dto.SuggestLocationsResult;
 import de.schildbach.pte.dto.SuggestedLocation;
+import de.schildbach.pte.dto.Timestamp;
 import de.schildbach.pte.dto.Trip;
 import de.schildbach.pte.dto.TripOptions;
 import de.schildbach.pte.dto.TripRef;
@@ -222,8 +226,6 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
     private final HttpUrl locationsEndpoint;
     private final HttpUrl nearbyEndpoint;
 
-    private static final TimeZone timeZone = TimeZone.getTimeZone("Europe/Berlin");
-
     private static final Pattern P_SPLIT_NAME_FIRST_COMMA = Pattern.compile("([^,]*), (.*)");
     private static final Pattern P_SPLIT_NAME_ONE_COMMA = Pattern.compile("([^,]*), ([^,]*)");
 
@@ -306,27 +308,25 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
         return String.format(Locale.ENGLISH, "%02d:%02d", hour, minute);
     }
 
-    private static final DateFormat ISO_DATE_TIME_WOFFSET_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX");
-
-    static {
-        ISO_DATE_TIME_WOFFSET_FORMAT.setTimeZone(timeZone);
-    }
+    private final DateTimeFormatter ISO_DATE_TIME_WITH_OFFSET_FORMAT = DateTimeFormatter
+            .ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX")
+            .withZone(timeZone.toZoneId());
 
     private String formatIso8601WOffset(final Date time) {
         if (time == null)
             return null;
-        return ISO_DATE_TIME_WOFFSET_FORMAT.format(time);
+        return ISO_DATE_TIME_WITH_OFFSET_FORMAT.format(
+                OffsetDateTime.ofInstant(Instant.ofEpochMilli(time.getTime()), timeZone.toZoneId()));
     }
 
 
-    private Date parseIso8601WOffset(final String time) {
+    private Timestamp parseIso8601WOffset(final String time) {
         if (time == null)
             return null;
-        try {
-            return ISO_DATE_TIME_WOFFSET_FORMAT.parse(time);
-        } catch (final ParseException x) {
-            throw new RuntimeException(x);
-        }
+        final OffsetDateTime offsetDateTime = OffsetDateTime.parse(time, ISO_DATE_TIME_WITH_OFFSET_FORMAT);
+        return Timestamp.fromDateAndOffset(
+                new Date(offsetDateTime.toInstant().toEpochMilli()),
+                offsetDateTime.getOffset().getTotalSeconds() * 1000);
     }
 
     private String createLidEntry(final String key, final Object value) {

@@ -37,8 +37,8 @@ import com.google.common.base.Objects;
 public final class Departure implements Serializable {
     private static final long serialVersionUID = -9104517779537062795L;
 
-    public final @Nullable Date plannedTime;
-    public final @Nullable Date predictedTime;
+    public final @Nullable Timestamp plannedTime;
+    public final @Nullable Timestamp predictedTime;
     public final Line line;
     public final @Nullable Position position;
     public final @Nullable Location destination;
@@ -48,8 +48,8 @@ public final class Departure implements Serializable {
     public final @Nullable JourneyRef journeyRef;
 
     public Departure(
-            final Date plannedTime,
-            final Date predictedTime,
+            final Timestamp plannedTime,
+            final Timestamp predictedTime,
             final Line line,
             final Position position,
             final Location destination,
@@ -69,7 +69,7 @@ public final class Departure implements Serializable {
         this.journeyRef = journeyRef;
     }
 
-    public Date getTime() {
+    public Timestamp getTime() {
         if (predictedTime != null)
             return predictedTime;
         else

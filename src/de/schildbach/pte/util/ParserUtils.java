@@ -30,6 +30,8 @@ import java.util.GregorianCalendar;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import de.schildbach.pte.dto.Timestamp;
+
 /**
  * @author Andreas Schildbach
  */
@@ -132,7 +134,7 @@ public final class ParserUtils {
     private static final Pattern P_ISO_DATE = Pattern.compile("(\\d{4})-?(\\d{2})-?(\\d{2})");
     private static final Pattern P_ISO_DATE_REVERSE = Pattern.compile("(\\d{2})[-\\.](\\d{2})[-\\.](\\d{4})");
 
-    public static final void parseIsoDate(final Calendar calendar, final CharSequence str) {
+    public static void parseIsoDate(final Calendar calendar, final CharSequence str) {
         final Matcher mIso = P_ISO_DATE.matcher(str);
         if (mIso.matches()) {
             calendar.set(Calendar.YEAR, Integer.parseInt(mIso.group(1)));
@@ -154,7 +156,7 @@ public final class ParserUtils {
 
     private static final Pattern P_ISO_TIME = Pattern.compile("(\\d{2})[-:]?(\\d{2})([-:]?(\\d{2}))?");
 
-    public static final void parseIsoTime(final Calendar calendar, final CharSequence str) {
+    public static void parseIsoTime(final Calendar calendar, final CharSequence str) {
         final Matcher mIso = P_ISO_TIME.matcher(str);
         if (mIso.matches()) {
             calendar.set(Calendar.HOUR_OF_DAY, Integer.parseInt(mIso.group(1)));
@@ -167,7 +169,7 @@ public final class ParserUtils {
         throw new RuntimeException("cannot parse: '" + str + "'");
     }
 
-    public static final void parseIsoDateTime(final Calendar calendar, final CharSequence str) {
+    public static void parseIsoDateTime(final Calendar calendar, final CharSequence str) {
         final String[] timeParts = str.toString().split("T");
         if (timeParts.length != 2)
             throw new RuntimeException("cannot parse :'" + str + "'");
@@ -178,7 +180,7 @@ public final class ParserUtils {
 
     private static final Pattern P_GERMAN_DATE = Pattern.compile("(\\d{2})[\\./-](\\d{2})[\\./-](\\d{2,4})");
 
-    public static final void parseGermanDate(final Calendar calendar, final CharSequence str) {
+    public static void parseGermanDate(final Calendar calendar, final CharSequence str) {
         final Matcher m = P_GERMAN_DATE.matcher(str);
         if (!m.matches())
             throw new RuntimeException("cannot parse: '" + str + "'");
@@ -191,7 +193,7 @@ public final class ParserUtils {
 
     private static final Pattern P_AMERICAN_DATE = Pattern.compile("(\\d{2})/(\\d{2})/(\\d{2,4})");
 
-    public static final void parseAmericanDate(final Calendar calendar, final CharSequence str) {
+    public static void parseAmericanDate(final Calendar calendar, final CharSequence str) {
         final Matcher m = P_AMERICAN_DATE.matcher(str);
         if (!m.matches())
             throw new RuntimeException("cannot parse: '" + str + "'");
@@ -204,7 +206,7 @@ public final class ParserUtils {
 
     private static final Pattern P_EUROPEAN_TIME = Pattern.compile("(\\d{1,2}):(\\d{2})(?::(\\d{2}))?");
 
-    public static final void parseEuropeanTime(final Calendar calendar, final CharSequence str) {
+    public static void parseEuropeanTime(final Calendar calendar, final CharSequence str) {
         final Matcher m = P_EUROPEAN_TIME.matcher(str);
         if (!m.matches())
             throw new RuntimeException("cannot parse: '" + str + "'");
@@ -216,7 +218,7 @@ public final class ParserUtils {
 
     private static final Pattern P_AMERICAN_TIME = Pattern.compile("(\\d{1,2}):(\\d{2})(?::(\\d{2}))? (AM|PM)");
 
-    public static final void parseAmericanTime(final Calendar calendar, final CharSequence str) {
+    public static void parseAmericanTime(final Calendar calendar, final CharSequence str) {
         final Matcher m = P_AMERICAN_TIME.matcher(str);
         if (!m.matches())
             throw new RuntimeException("cannot parse: '" + str + "'");
@@ -245,11 +247,8 @@ public final class ParserUtils {
         return c.getTime();
     }
 
-    public static Date addMinutes(final Date time, final int minutes) {
-        final Calendar c = new GregorianCalendar();
-        c.setTime(time);
-        c.add(Calendar.MINUTE, minutes);
-        return c.getTime();
+    public static Timestamp addMinutes(final Timestamp time, final int minutes) {
+        return Timestamp.fromDateAndOffset(new Date(time.getTime() + (long) minutes * 60000L), time.getOffset());
     }
 
     public static void printGroups(final Matcher m) {

@@ -20,6 +20,8 @@ package de.schildbach.pte.dto;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import androidx.annotation.NonNull;
+
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -75,7 +77,7 @@ public final class Trip implements Serializable {
         checkArgument(!legs.isEmpty());
     }
 
-    public Date getFirstDepartureTime() {
+    public Timestamp getFirstDepartureTime() {
         return legs.get(0).getDepartureTime();
     }
 
@@ -87,7 +89,7 @@ public final class Trip implements Serializable {
         return null;
     }
 
-    public @Nullable Date getFirstPublicLegDepartureTime() {
+    public @Nullable Timestamp getFirstPublicLegDepartureTime() {
         final Public firstPublicLeg = getFirstPublicLeg();
         if (firstPublicLeg != null)
             return firstPublicLeg.getDepartureTime();
@@ -95,7 +97,7 @@ public final class Trip implements Serializable {
             return null;
     }
 
-    public Date getLastArrivalTime() {
+    public Timestamp getLastArrivalTime() {
         return legs.get(legs.size() - 1).getArrivalTime();
     }
 
@@ -109,7 +111,7 @@ public final class Trip implements Serializable {
         return null;
     }
 
-    public @Nullable Date getLastPublicLegArrivalTime() {
+    public @Nullable Timestamp getLastPublicLegArrivalTime() {
         final Public lastPublicLeg = getLastPublicLeg();
         if (lastPublicLeg != null)
             return lastPublicLeg.getArrivalTime();
@@ -123,8 +125,8 @@ public final class Trip implements Serializable {
      * @return duration in ms
      */
     public long getDuration() {
-        final Date first = getFirstDepartureTime();
-        final Date last = getLastArrivalTime();
+        final Timestamp first = getFirstDepartureTime();
+        final Timestamp last = getLastArrivalTime();
         return last.getTime() - first.getTime();
     }
 
@@ -135,8 +137,8 @@ public final class Trip implements Serializable {
      * @return duration in ms, or null if there are no public legs
      */
     public @Nullable Long getPublicDuration() {
-        final Date first = getFirstPublicLegDepartureTime();
-        final Date last = getLastPublicLegArrivalTime();
+        final Timestamp first = getFirstPublicLegDepartureTime();
+        final Timestamp last = getLastPublicLegArrivalTime();
         if (first != null && last != null)
             return last.getTime() - first.getTime();
         else
@@ -144,22 +146,22 @@ public final class Trip implements Serializable {
     }
 
     /** Minimum time occurring in this trip. */
-    public Date getMinTime() {
-        Date minTime = null;
+    public Timestamp getMinTime() {
+        Timestamp minTime = null;
 
         for (final Leg leg : legs)
-            if (minTime == null || leg.getMinTime().before(minTime))
+            if (minTime == null || leg.getMinTime().getDate().before(minTime.getDate()))
                 minTime = leg.getMinTime();
 
         return minTime;
     }
 
     /** Maximum time occurring in this trip. */
-    public Date getMaxTime() {
-        Date maxTime = null;
+    public Timestamp getMaxTime() {
+        Timestamp maxTime = null;
 
         for (final Leg leg : legs)
-            if (maxTime == null || leg.getMaxTime().after(maxTime))
+            if (maxTime == null || leg.getMaxTime().getDate().after(maxTime.getDate()))
                 maxTime = leg.getMaxTime();
 
         return maxTime;
@@ -211,12 +213,12 @@ public final class Trip implements Serializable {
                     return false;
             }
 
-            final Date departureTime = leg.getDepartureTime();
+            final Date departureTime = leg.getDepartureTime().getDate();
             if (time != null && departureTime.before(time))
                 return false;
             time = departureTime;
 
-            final Date arrivalTime = leg.getArrivalTime();
+            final Date arrivalTime = leg.getArrivalTime().getDate();
             if (time != null && arrivalTime.before(time))
                 return false;
             time = arrivalTime;
@@ -237,7 +239,7 @@ public final class Trip implements Serializable {
             if (leg instanceof Trip.Individual) {
                 final Trip.Leg previous = legs.get(i - 1);
 
-                if (leg.getDepartureTime().before(previous.getArrivalTime()))
+                if (leg.getDepartureTime().getDate().before(previous.getArrivalTime().getDate()))
                     legs.set(i, ((Trip.Individual) leg).movedClone(previous.getArrivalTime()));
             }
         }
@@ -302,10 +304,10 @@ public final class Trip implements Serializable {
                 builder.append("individual");
             } else if (leg instanceof Public) {
                 final Public publicLeg = (Public) leg;
-                final Date plannedDepartureTime = publicLeg.departureStop.plannedDepartureTime;
+                final Timestamp plannedDepartureTime = publicLeg.departureStop.plannedDepartureTime;
                 if (plannedDepartureTime != null)
                     builder.append(plannedDepartureTime.getTime()).append('-');
-                final Date plannedArrivalTime = publicLeg.arrivalStop.plannedArrivalTime;
+                final Timestamp plannedArrivalTime = publicLeg.arrivalStop.plannedArrivalTime;
                 if (plannedArrivalTime != null)
                     builder.append(plannedArrivalTime.getTime()).append('-');
                 final Line line = publicLeg.line;
@@ -336,15 +338,16 @@ public final class Trip implements Serializable {
         return Objects.hashCode(getId());
     }
 
+    @NonNull
     @Override
     public String toString() {
         final ToStringHelper helper = MoreObjects.toStringHelper(this).addValue(getId());
-        final Date firstPublicLegDepartureTime = getFirstPublicLegDepartureTime();
-        final Date lastPublicLegArrivalTime = getLastPublicLegArrivalTime();
+        final Timestamp firstPublicLegDepartureTime = getFirstPublicLegDepartureTime();
+        final Timestamp lastPublicLegArrivalTime = getLastPublicLegArrivalTime();
         helper.addValue(
-                firstPublicLegDepartureTime != null ? String.format(Locale.US, "%ta %<tR", firstPublicLegDepartureTime)
-                        : "null" + '-' + lastPublicLegArrivalTime != null
-                                ? String.format(Locale.US, "%ta %<tR", lastPublicLegArrivalTime) : "null");
+                firstPublicLegDepartureTime != null ? String.format(Locale.US, "%ta %<tR", firstPublicLegDepartureTime.getDate())
+                        : "null" + '-' + (lastPublicLegArrivalTime != null
+                                ? String.format(Locale.US, "%ta %<tR", lastPublicLegArrivalTime.getDate()) : "null"));
         helper.add("numChanges", numChanges);
         return helper.toString();
     }
@@ -362,17 +365,25 @@ public final class Trip implements Serializable {
             this.path = path;
         }
 
-        /** Coarse departure time. */
-        public abstract Date getDepartureTime();
+        /**
+         * Coarse departure time.
+         */
+        public abstract Timestamp getDepartureTime();
 
-        /** Coarse arrival time. */
-        public abstract Date getArrivalTime();
+        /**
+         * Coarse arrival time.
+         */
+        public abstract Timestamp getArrivalTime();
 
-        /** Minimum time occurring in this leg. */
-        public abstract Date getMinTime();
+        /**
+         * Minimum time occurring in this leg.
+         */
+        public abstract Timestamp getMinTime();
 
-        /** Maximum time occurring in this leg. */
-        public abstract Date getMaxTime();
+        /**
+         * Maximum time occurring in this leg.
+         */
+        public abstract Timestamp getMaxTime();
 
         private void writeObject(final ObjectOutputStream os) throws IOException {
             os.defaultWriteObject();
@@ -538,11 +549,11 @@ public final class Trip implements Serializable {
         }
 
         @Override
-        public Date getDepartureTime() {
+        public Timestamp getDepartureTime() {
             return departureStop.getDepartureTime(false);
         }
 
-        public Date getDepartureTime(final boolean preferPlanTime) {
+        public Timestamp getDepartureTime(final boolean preferPlanTime) {
             return departureStop.getDepartureTime(preferPlanTime);
         }
 
@@ -563,11 +574,11 @@ public final class Trip implements Serializable {
         }
 
         @Override
-        public Date getArrivalTime() {
+        public Timestamp getArrivalTime() {
             return arrivalStop.getArrivalTime(false);
         }
 
-        public Date getArrivalTime(final boolean preferPlanTime) {
+        public Timestamp getArrivalTime(final boolean preferPlanTime) {
             return arrivalStop.getArrivalTime(preferPlanTime);
         }
 
@@ -588,12 +599,12 @@ public final class Trip implements Serializable {
         }
 
         @Override
-        public Date getMinTime() {
+        public Timestamp getMinTime() {
             return departureStop.getMinTime();
         }
 
         @Override
-        public Date getMaxTime() {
+        public Timestamp getMaxTime() {
             return arrivalStop.getMaxTime();
         }
 
@@ -612,13 +623,13 @@ public final class Trip implements Serializable {
         private static final long serialVersionUID = -6651381862837233925L;
 
         public final Type type;
-        public final Date departureTime;
-        public final Date arrivalTime;
+        public final Timestamp departureTime;
+        public final Timestamp arrivalTime;
         public final int min;
         public final int distance;
 
-        public Individual(final Type type, final Location departure, final Date departureTime, final Location arrival,
-                final Date arrivalTime, final List<Point> path, final int distance) {
+        public Individual(final Type type, final Location departure, final Timestamp departureTime, final Location arrival,
+                final Timestamp arrivalTime, final List<Point> path, final int distance) {
             super(departure, arrival, path);
 
             this.type = checkNotNull(type);
@@ -628,30 +639,31 @@ public final class Trip implements Serializable {
             this.distance = distance;
         }
 
-        public Individual movedClone(final Date departureTime) {
-            final Date arrivalTime = new Date(
-                    departureTime.getTime() + this.arrivalTime.getTime() - this.departureTime.getTime());
+        public Individual movedClone(final Timestamp departureTime) {
+            final Timestamp arrivalTime = Timestamp.fromDateAndOffset(
+                    new Date(departureTime.getTime() + this.arrivalTime.getTime() - this.departureTime.getTime()),
+                    departureTime.getOffset());
             return new Trip.Individual(this.type, this.departure, departureTime, this.arrival, arrivalTime, this.path,
                     this.distance);
         }
 
         @Override
-        public Date getDepartureTime() {
+        public Timestamp getDepartureTime() {
             return departureTime;
         }
 
         @Override
-        public Date getArrivalTime() {
+        public Timestamp getArrivalTime() {
             return arrivalTime;
         }
 
         @Override
-        public Date getMinTime() {
+        public Timestamp getMinTime() {
             return departureTime;
         }
 
         @Override
-        public Date getMaxTime() {
+        public Timestamp getMaxTime() {
             return arrivalTime;
         }
 
