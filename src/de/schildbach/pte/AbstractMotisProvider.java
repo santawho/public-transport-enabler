@@ -245,7 +245,9 @@ public abstract class AbstractMotisProvider extends AbstractNetworkProvider {
                 list.add("METRO");
                 break;
             case HIGH_SPEED_TRAIN:
-                list.add("RAIL");
+                list.add("HIGHSPEED_RAIL");
+                list.add("LONG_DISTANCE");
+                list.add("NIGHT_RAIL");
                 break;
         }
     }
@@ -410,7 +412,7 @@ public abstract class AbstractMotisProvider extends AbstractNetworkProvider {
         }
 
         HttpUrl.Builder builder = api.newBuilder()
-                    .addPathSegment("v3")
+                    .addPathSegment("v4")
                     .addPathSegment("plan")
                     .addQueryParameter("time", DateTimeFormatter.ISO_INSTANT.format(date.toInstant()))
                     .addQueryParameter("fromPlace", stringFromLocation(from))
@@ -499,7 +501,7 @@ public abstract class AbstractMotisProvider extends AbstractNetworkProvider {
 
                 // line
                 Style style = parseStyle(stopTime);
-                Line line = new Line(null, null, productFromString(stopTime.getString("mode")), stopTime.getString("routeShortName"), style);
+                Line line = new Line(null, null, productFromString(stopTime.getString("mode")), stopTime.getString("displayName"), style);
                 Location destination = new Location(LocationType.STATION, null, null, stopTime.getString("headsign"));
                 LineDestination lineDestination = new LineDestination(line, destination);
 
