@@ -251,8 +251,21 @@ public abstract class AbstractMotisProvider extends AbstractNetworkProvider {
     }
 
     private String stringFromLocation(Location loc) {
-        // TODO: is level=0 really the right value here?
-        return loc.id != null ? loc.id : String.format(Locale.US, "%f,%f,0", loc.getLatAsDouble(), loc.getLonAsDouble());
+        if (loc.hasCoord()) {
+            return String.format(Locale.US, "%f,%f", loc.getLatAsDouble(), loc.getLonAsDouble());
+        } else if (loc.name != null && loc.name.contains(",")) {
+            String[] result = loc.name.split(",");
+
+            try {
+                float lat = Float.parseFloat(result[0]);
+                float lon = Float.parseFloat(result[1]);
+                return loc.name;
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException();
+            }
+        } else {
+            throw new IllegalArgumentException();
+        }
     }
 
     private Location parseLocation(JSONObject loc, String name) throws JSONException {
