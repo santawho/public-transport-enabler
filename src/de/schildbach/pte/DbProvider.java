@@ -44,6 +44,12 @@ public final class DbProvider extends DbWebProvider.Fernverkehr {
         }
     }
 
+    public static final class International extends DbMovasProvider.Fernverkehr {
+        public International() {
+            super(NetworkId.DBINTERNATIONAL);
+        }
+    }
+
     public static final class DeutschlandTicket extends DbWebProvider.DeutschlandTicket {
         public DeutschlandTicket() {
             super(NetworkId.DBDEUTSCHLANDTICKET);
