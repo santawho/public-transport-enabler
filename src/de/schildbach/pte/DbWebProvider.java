@@ -73,6 +73,7 @@ import de.schildbach.pte.dto.StationDepartures;
 import de.schildbach.pte.dto.Stop;
 import de.schildbach.pte.dto.SuggestLocationsResult;
 import de.schildbach.pte.dto.SuggestedLocation;
+import de.schildbach.pte.dto.PTDate;
 import de.schildbach.pte.dto.Trip;
 import de.schildbach.pte.dto.TripOptions;
 import de.schildbach.pte.dto.TripRef;
@@ -193,8 +194,6 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
     private final HttpUrl locationsEndpoint;
     private final HttpUrl nearbyEndpoint;
 
-    private static final TimeZone timeZone = TimeZone.getTimeZone("Europe/Berlin");
-
     private static final Pattern P_SPLIT_NAME_FIRST_COMMA = Pattern.compile("([^,]*), (.*)");
     private static final Pattern P_SPLIT_NAME_ONE_COMMA = Pattern.compile("([^,]*), ([^,]*)");
 
@@ -293,7 +292,7 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
     private static final DateFormat ISO_DATE_TIME_UTC_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 
     static {
-        ISO_DATE_TIME_NO_OFFSET_FORMAT.setTimeZone(timeZone);
+        ISO_DATE_TIME_NO_OFFSET_FORMAT.setTimeZone(TimeZone.getTimeZone("Europe/Berlin"));
         ISO_DATE_TIME_UTC_FORMAT.setTimeZone(TimeZone.getTimeZone("UTC"));
     }
 
@@ -303,11 +302,11 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
         return ISO_DATE_TIME_NO_OFFSET_FORMAT.format(time);
     }
 
-    private Date parseIso8601NoOffset(final String time) {
+    private PTDate parseIso8601NoOffset(final String time) {
         if (time == null)
             return null;
         try {
-            return ISO_DATE_TIME_NO_OFFSET_FORMAT.parse(time);
+            return PTDate.withUnknownLocationSpecificOffset(ISO_DATE_TIME_NO_OFFSET_FORMAT.parse(time).getTime());
         } catch (final ParseException x) {
             throw new RuntimeException(x);
         }

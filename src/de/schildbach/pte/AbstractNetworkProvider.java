@@ -53,12 +53,13 @@ public abstract class AbstractNetworkProvider extends AbstractLocationSearchProv
     protected final NetworkId network;
 
     protected Charset requestUrlEncoding = Charsets.ISO_8859_1;
-    protected TimeZone timeZone = TimeZone.getTimeZone("CET");
+    protected TimeZone timeZone;
     protected int numTripsRequested = 6;
     protected @Nullable Map<String, Style> styles = null;
 
     protected AbstractNetworkProvider(final NetworkId network) {
         this.network = network;
+        setTimeZone("Europe/Berlin");
     }
 
     @Override

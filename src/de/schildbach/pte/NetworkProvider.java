@@ -22,6 +22,7 @@ import org.msgpack.core.MessageUnpacker;
 import java.io.IOException;
 import java.util.Date;
 import java.util.Set;
+import java.util.TimeZone;
 
 import javax.annotation.Nullable;
 
@@ -85,6 +86,8 @@ public interface NetworkProvider extends LocationSearchProvider {
     NetworkId id();
 
     boolean hasCapabilities(final Capability... capabilities);
+
+    TimeZone getTimeZone();
 
     /**
      * Find locations near to given location. At least one of lat/lon pair or station id must be present in

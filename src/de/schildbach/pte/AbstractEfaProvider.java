@@ -76,6 +76,7 @@ import de.schildbach.pte.dto.StationDepartures;
 import de.schildbach.pte.dto.Stop;
 import de.schildbach.pte.dto.SuggestLocationsResult;
 import de.schildbach.pte.dto.SuggestedLocation;
+import de.schildbach.pte.dto.PTDate;
 import de.schildbach.pte.dto.Trip;
 import de.schildbach.pte.dto.Trip.Leg;
 import de.schildbach.pte.dto.TripOptions;
@@ -1665,9 +1666,10 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                         XmlPullUtil.skipExit(pp, "itdDeparture");
 
 //                        if (!lineDestinationAndCancelled.cancelled) {
-                            final Departure departure = new Departure(plannedDepartureTime.getTime(),
+                            final Departure departure = new Departure(
+                                    PTDate.fromCalendar(plannedDepartureTime),
                                     predictedDepartureTime.isSet(Calendar.HOUR_OF_DAY)
-                                            ? predictedDepartureTime.getTime() : null,
+                                            ? PTDate.fromCalendar(predictedDepartureTime) : null,
                                     lineDestinationAndCancelled.line, position,
                                     lineDestinationAndCancelled.destination,
                                     lineDestinationAndCancelled.cancelled,
@@ -1762,9 +1764,9 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                         }
 
                         stationDepartures.departures.add(new Departure(
-                                plannedDepartureTime.getTime(),
+                                PTDate.fromCalendar(plannedDepartureTime),
                                 predictedDepartureTime.isSet(Calendar.HOUR_OF_DAY)
-                                        ? predictedDepartureTime.getTime() : null,
+                                        ? PTDate.fromCalendar(predictedDepartureTime) : null,
                                 parseMobileMResult.line,
                                 position,
                                 parseMobileMResult.destination,
@@ -2350,7 +2352,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
 
     private static final Pattern P_STOPSEQ_DATETIME = Pattern.compile("(\\d{4})(\\d{2})(\\d{2}) (\\d{2}):(\\d{2})");
 
-    public static final Date parseStopSeqDateTime(final CharSequence str, final Calendar calendar) {
+    public static PTDate parseStopSeqDateTime(final CharSequence str, final Calendar calendar) {
         if (str == null || str.equals("000-01 00:00")) return null;
         final Matcher mIso = P_STOPSEQ_DATETIME.matcher(str);
         if (mIso.matches()) {
@@ -2361,7 +2363,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
             calendar.set(Calendar.MINUTE, Integer.parseInt(mIso.group(5)));
             calendar.set(Calendar.SECOND, 0);
             calendar.set(Calendar.MILLISECOND, 0);
-            return calendar.getTime();
+            return PTDate.fromCalendar(calendar);
         }
 
         throw new RuntimeException("cannot parse: '" + str + "'");
@@ -2407,14 +2409,15 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
             XmlPullUtil.optValueTag(pp, "divaPl", null);
             XmlPullUtil.optValueTag(pp, "omc", null);
             final Point coord = parseCoord(XmlPullUtil.optValueTag(pp, "c", null));
-            final Date plannedArrival = parseStopSeqDateTime(XmlPullUtil.optValueTag(pp, "arrDateTime", null), calendar);
+            final PTDate plannedArrival = parseStopSeqDateTime(XmlPullUtil.optValueTag(pp, "arrDateTime", null), calendar);
             final int arrivalDelay = Integer.parseInt(XmlPullUtil.optValueTag(pp, "arrDelay", "0"));
-            final Date predictedArrival = plannedArrival == null ? null : new Date(plannedArrival.getTime() + arrivalDelay * 60);
+            final PTDate predictedArrival = plannedArrival == null ? null
+                    : new PTDate(plannedArrival.getTime() + arrivalDelay * 60000L, plannedArrival.getOffset());
             String arrValid = XmlPullUtil.optValueTag(pp, "arrValid", null);
             final boolean arrivalCancelled = false;
             String depDateTime = XmlPullUtil.optValueTag(pp, "depDateTime", null);
-            final Date plannedDeparture;
-            final Date predictedDeparture;
+            final PTDate plannedDeparture;
+            final PTDate predictedDeparture;
             final int departureDelay;
             final boolean departureCancelled;
             if (depDateTime == null) {
@@ -2425,7 +2428,8 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
             } else {
                 plannedDeparture = parseStopSeqDateTime(depDateTime, calendar);
                 departureDelay = Integer.parseInt(XmlPullUtil.optValueTag(pp, "depDelay", "0"));
-                predictedDeparture = plannedDeparture == null ? null : new Date(plannedDeparture.getTime() + departureDelay * 60);
+                predictedDeparture = plannedDeparture == null ? null
+                        : new PTDate(plannedDeparture.getTime() + departureDelay * 60000L, plannedDeparture.getOffset());
                 String depValid = XmlPullUtil.optValueTag(pp, "depValid", null);
                 departureCancelled = false;
             }
@@ -2692,11 +2696,11 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                         XmlPullUtil.optSkip(pp, "itdMapItemList");
                         XmlPullUtil.require(pp, "itdDateTime");
                         processItdDateTime(pp, calendar);
-                        final Date departureTime = calendar.getTime();
-                        final Date departureTargetTime;
+                        final PTDate departureTime = PTDate.fromCalendar(calendar);
+                        final PTDate departureTargetTime;
                         if (XmlPullUtil.test(pp, "itdDateTimeTarget")) {
                             processItdDateTime(pp, calendar);
-                            departureTargetTime = calendar.getTime();
+                            departureTargetTime = PTDate.fromCalendar(calendar);
                         } else {
                             departureTargetTime = null;
                         }
@@ -2712,11 +2716,11 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                         XmlPullUtil.optSkip(pp, "itdMapItemList");
                         XmlPullUtil.require(pp, "itdDateTime");
                         processItdDateTime(pp, calendar);
-                        final Date arrivalTime = calendar.getTime();
-                        final Date arrivalTargetTime;
+                        final PTDate arrivalTime = PTDate.fromCalendar(calendar);
+                        final PTDate arrivalTargetTime;
                         if (XmlPullUtil.test(pp, "itdDateTimeTarget")) {
                             processItdDateTime(pp, calendar);
-                            arrivalTargetTime = calendar.getTime();
+                            arrivalTargetTime = PTDate.fromCalendar(calendar);
                         } else {
                             arrivalTargetTime = null;
                         }
@@ -2827,10 +2831,11 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                 new Context(commandLink((String) context, requestId).toString()), trips);
     }
 
-    private void processIndividualLeg(final XmlPullParser pp, final List<Leg> legs,
-            final Trip.Individual.Type individualType, final int distance, final Date departureTime,
-            final Location departureLocation, final Date arrivalTime, final Location arrivalLocation)
-            throws XmlPullParserException, IOException {
+    private void processIndividualLeg(
+            final XmlPullParser pp, final List<Leg> legs,
+            final Trip.Individual.Type individualType, final int distance, final PTDate departureTime,
+            final Location departureLocation, final PTDate arrivalTime, final Location arrivalLocation
+    ) throws XmlPullParserException, IOException {
         XmlPullUtil.enter(pp, "itdMeansOfTransport");
         XmlPullUtil.skipExit(pp, "itdMeansOfTransport");
 
@@ -2875,29 +2880,35 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
             XmlPullUtil.optSkip(pp, "sPAs");
             XmlPullUtil.require(pp, "itdDateTime");
 
-            Date plannedStopArrivalTime = null;
-            Date predictedStopArrivalTime = null;
+            PTDate plannedStopArrivalTime = null;
+            PTDate predictedStopArrivalTime = null;
             if (processItdDateTime(pp, calendar)) {
-                plannedStopArrivalTime = calendar.getTime();
+                plannedStopArrivalTime = PTDate.fromCalendar(calendar);
                 if (arrivalDelay != null) {
-                    predictedStopArrivalTime = new Date(plannedStopArrivalTime.getTime() + 60000 * arrivalDelay);
+                    predictedStopArrivalTime = new PTDate(
+                            plannedStopArrivalTime.getTime() + 60000L * arrivalDelay,
+                            plannedStopArrivalTime.getOffset());
                 }
             }
 
-            Date plannedStopDepartureTime = null;
-            Date predictedStopDepartureTime = null;
+            PTDate plannedStopDepartureTime = null;
+            PTDate predictedStopDepartureTime = null;
             if (!XmlPullUtil.test(pp, "itdDateTime")) {
                 // there is only one <itdDateTime>, hence departure is same as arrival
                 if (plannedStopArrivalTime != null) {
                     plannedStopDepartureTime = plannedStopArrivalTime;
                     if (departureDelay != null) {
-                        predictedStopDepartureTime = new Date(plannedStopDepartureTime.getTime() + 60000 * departureDelay);
+                        predictedStopDepartureTime = new PTDate(
+                                plannedStopDepartureTime.getTime() + 60000L * departureDelay,
+                                plannedStopDepartureTime.getOffset());
                     }
                 }
             } else if (processItdDateTime(pp, calendar)) {
-                plannedStopDepartureTime = calendar.getTime();
+                plannedStopDepartureTime = PTDate.fromCalendar(calendar);
                 if (departureDelay != null) {
-                    predictedStopDepartureTime = new Date(plannedStopDepartureTime.getTime() + 60000 * departureDelay);
+                    predictedStopDepartureTime = new PTDate(
+                            plannedStopDepartureTime.getTime() + 60000L * departureDelay,
+                            plannedStopDepartureTime.getOffset());
                 }
             }
 
@@ -2920,10 +2931,12 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
         return intermediateStops;
     }
 
-    private boolean processPublicLeg(final XmlPullParser pp, final List<Leg> legs, final Calendar calendar,
-            final Date departureTime, final Date departureTargetTime, final Location departureLocation,
-            final Position departurePosition, final Date arrivalTime, final Date arrivalTargetTime,
-            final Location arrivalLocation, final Position arrivalPosition) throws XmlPullParserException, IOException {
+    private boolean processPublicLeg(
+            final XmlPullParser pp, final List<Leg> legs, final Calendar calendar,
+            final PTDate departureTime, final PTDate departureTargetTime, final Location departureLocation,
+            final Position departurePosition, final PTDate arrivalTime, final PTDate arrivalTargetTime,
+            final Location arrivalLocation, final Position arrivalPosition
+    ) throws XmlPullParserException, IOException {
         final String transportationLineId = XmlPullUtil.optAttr(pp, "stateless", null);
         final String transportationTripCode = XmlPullUtil.optAttr(pp, "tC", null);
         final EfaJourneyRef journeyRef = new EfaJourneyRef(
@@ -3149,10 +3162,10 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
 
                         XmlPullUtil.skipExit(pp, "p");
 
-                        final Date plannedTime = plannedTimeCal.isSet(Calendar.HOUR_OF_DAY) ? plannedTimeCal.getTime()
-                                : null;
-                        final Date predictedTime = predictedTimeCal.isSet(Calendar.HOUR_OF_DAY)
-                                ? predictedTimeCal.getTime() : null;
+                        final PTDate plannedTime = plannedTimeCal.isSet(Calendar.HOUR_OF_DAY)
+                                ? PTDate.fromCalendar(plannedTimeCal) : null;
+                        final PTDate predictedTime = predictedTimeCal.isSet(Calendar.HOUR_OF_DAY)
+                                ? PTDate.fromCalendar(predictedTimeCal) : null;
 
                         if ("departure".equals(usage)) {
                             departure = new Stop(location, true, plannedTime, predictedTime, position, null);
@@ -3230,10 +3243,10 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                                 }
                                 final Location location = new Location(LocationType.STATION, id, coords, null, name);
 
-                                final Date plannedTime = plannedTimeCal.isSet(Calendar.HOUR_OF_DAY)
-                                        ? plannedTimeCal.getTime() : null;
-                                final Date predictedTime = predictedTimeCal.isSet(Calendar.HOUR_OF_DAY)
-                                        ? predictedTimeCal.getTime() : null;
+                                final PTDate plannedTime = plannedTimeCal.isSet(Calendar.HOUR_OF_DAY)
+                                        ? PTDate.fromCalendar(plannedTimeCal) : null;
+                                final PTDate predictedTime = predictedTimeCal.isSet(Calendar.HOUR_OF_DAY)
+                                        ? PTDate.fromCalendar(predictedTimeCal) : null;
                                 final Stop stop = new Stop(location, false, plannedTime, predictedTime, null, null);
 
                                 intermediateStops.add(stop);
@@ -3302,13 +3315,12 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
             XmlPullUtil.skipExit(pp, "ts");
         }
 
-        if (trips.size() > 0) {
-            final String[] context = (String[]) header.context;
-            return new QueryTripsResult(header, url.toString(), from, via, to,
-                    new Context(commandLink(context[0], context[1]).toString()), trips);
-        } else {
+        if (trips.isEmpty())
             return new QueryTripsResult(header, QueryTripsResult.Status.NO_TRIPS);
-        }
+
+        final String[] context = (String[]) header.context;
+        return new QueryTripsResult(header, url.toString(), from, via, to,
+                new Context(commandLink(context[0], context[1]).toString()), trips);
     }
 
     private List<Point> processItdPathCoordinates(final XmlPullParser pp) throws XmlPullParserException, IOException {

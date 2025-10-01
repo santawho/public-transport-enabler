@@ -48,8 +48,8 @@ public class TripTest {
         Location from = new Location(LocationType.ANY, null);
         Location to = new Location(LocationType.ANY, null);
         List<Trip.Leg> legs = new LinkedList<>();
-        Stop departureStop = new Stop(from, null, null, new Date(42), null);
-        Stop arrivalStop = new Stop(to, new Date(43), null, null, null);
+        Stop departureStop = new Stop(from, null, null, PTDate.withNetworkOffset(42), null);
+        Stop arrivalStop = new Stop(to, PTDate.withNetworkOffset(43), null, null, null);
         Line dummyLine = new Line(null, null, null, null);
 
         switch (mode) {
@@ -63,14 +63,14 @@ public class TripTest {
             // only Individual
             for (int i = 0; i < changes + 1; i++) {
                 legs.add(
-                        new Trip.Individual(Trip.Individual.Type.BIKE, from, new Date(42), to, new Date(43), null, 42));
+                        new Trip.Individual(Trip.Individual.Type.BIKE, from, PTDate.withNetworkOffset(42), to, PTDate.withNetworkOffset(43), null, 42));
             }
             break;
         case 2:
             // mixed
             for (int i = 0; i < changes + 1; i++) {
                 if ((i % 2) == 0) {
-                    legs.add(new Trip.Individual(Trip.Individual.Type.BIKE, from, new Date(42), to, new Date(43), null,
+                    legs.add(new Trip.Individual(Trip.Individual.Type.BIKE, from, PTDate.withNetworkOffset(42), to, PTDate.withNetworkOffset(43), null,
                             42));
                 } else {
                     legs.add(new Trip.Public(dummyLine, null, departureStop, arrivalStop, null, null, null));
