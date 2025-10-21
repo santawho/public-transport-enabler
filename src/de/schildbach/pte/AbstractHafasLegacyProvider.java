@@ -1851,8 +1851,10 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
                             else
                                 throw new IllegalStateException("unknown routingType: " + routingType);
 
-                            final PTDate departureTime = timestampFromMillis(predictedDepartureTime);
-                            final PTDate arrivalTime = timestampFromMillis(predictedArrivalTime);
+                            final PTDate departureTime = timestampFromMillis(
+                                    predictedDepartureTime != 0 ? predictedDepartureTime : plannedDepartureTime);
+                            final PTDate arrivalTime = timestampFromMillis(
+                                    predictedArrivalTime != 0 ? predictedArrivalTime : plannedArrivalTime);
 
                             final Trip.Leg lastLeg = legs.size() > 0 ? legs.get(legs.size() - 1) : null;
                             if (lastLeg != null && lastLeg instanceof Trip.Individual
