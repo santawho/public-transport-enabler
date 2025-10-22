@@ -148,7 +148,10 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
             Capability.TRIP_LINKING
         );
 
-    private static final HttpUrl API_BASE = HttpUrl.parse("https://app.vendo.noncd.db.de/mob/");
+    private static final HttpUrl API_BASE = HttpUrl.parse(
+            // "https://app.vendo.noncd.db.de/mob/"
+            "https://app.services-bahn.de/mob/"
+    );
     private final ResultHeader resultHeader;
 
     private static final Map<String, Product> PRODUCTS_MAP = new LinkedHashMap<String, Product>() {
@@ -898,7 +901,7 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
                 + "\"reservierungsKontingenteVorhanden\":false}";
 
         final HttpUrl url = this.tripEndpoint;
-        final String contentType = "application/x.db.vendo.mob.verbindungssuche.v8+json";
+        final String contentType = "application/x.db.vendo.mob.verbindungssuche.v9+json";
 
         String page = null;
         try {
