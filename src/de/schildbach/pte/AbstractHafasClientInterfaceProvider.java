@@ -864,7 +864,8 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                     for (int i = 0; i < ovwTrfRefList.length(); i++) {
                         final JSONObject ovwTrfRef = ovwTrfRefList.getJSONObject(i);
                         final String type = ovwTrfRef.getString("type");
-                        final JSONObject jsonFareSet = fareSetList.getJSONObject(ovwTrfRef.getInt("fareSetX"));
+                        final int fareSetIndex = ovwTrfRef.optInt("fareSetX", -1);
+                        final JSONObject jsonFareSet = fareSetIndex < 0 ? null : fareSetList.getJSONObject(fareSetIndex);
                         if (type.equals("T")) { // ticket
                             final JSONObject jsonFare =
                                     jsonFareSet.getJSONArray("fareL").getJSONObject(ovwTrfRef.getInt("fareX"));
@@ -908,6 +909,9 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                                 if (!hideFare(fare))
                                     fares.add(fare);
                             }
+                        } else if (type.equals("TIBG")) { // ???
+                            // RMV at API version 1.79 returns this.
+                            // not yet implemented
                         } else {
                             throw new IllegalArgumentException("cannot handle type: " + type);
                         }
@@ -916,7 +920,11 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                     fares = null;
                 }
 
-                final String ctxRecon = outCon.getString("ctxRecon");
+                String ctxRecon = outCon.optString("ctxRecon");
+                if (ctxRecon.isEmpty()) {
+                    final JSONObject recon = outCon.getJSONObject("recon");
+                    ctxRecon = recon.getString("ctx");
+                }
                 final Trip trip = new Trip(
                         new Date(),
                         ctxRecon.split("#")[0],
@@ -972,7 +980,8 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                 + "\"gisFltrL\":[{\"mode\":\"FB\",\"profile\":{\"type\":\"F\",\"linDistRouting\":false,\"maxdist\":2000},\"type\":\"M\",\"meta\":\""
                 + meta + "\"}]," //
                 + "\"getPolyline\":true,\"getPasslist\":true," //
-                + "\"getConGroups\":false,\"getIST\":false,\"getEco\":false,\"extChgTime\":-1}", //
+                // + "\"getConGroups\":false,\"getIST\":false,\"getEco\":false,\"extChgTime\":-1}", //
+                + "\"getIST\":false,\"getEco\":false,\"extChgTime\":-1}", //
                 false);
 
         return jsonTripRequest("TripSearch", request, from, via, to, time, dep, products, walkSpeed);
@@ -1094,7 +1103,8 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                 + (apiExt != null ? "\"ext\":\"" + apiExt + "\"," : "") //
                 + "\"ver\":\"" + checkNotNull(apiVersion) + "\",\"lang\":\"" + lang + "\"," //
                 + "\"svcReqL\":[" //
-                + "{\"meth\":\"ServerInfo\",\"req\":{\"getServerDateTime\":true,\"getTimeTablePeriod\":false}}," //
+                // + "{\"meth\":\"ServerInfo\",\"req\":{\"getServerDateTime\":true,\"getTimeTablePeriod\":false}}," //
+                + "{\"meth\":\"ServerInfo\",\"req\":{\"getServerDateTime\":true}}," //
                 + "{\"meth\":\"" + meth + "\",\"cfg\":{\"polyEnc\":\"GPA\"},\"req\":" + req + "}" //
                 + "]," //
                 + "\"formatted\":" + formatted + "}";
@@ -1389,7 +1399,13 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
         } else if ("A".equals(type)) {
             locationType = LocationType.ADDRESS;
             id = loc.getString("lid");
-            placeAndName = splitAddress(loc.getString("name"));
+            final String place = loc.optString("descr");
+            final String name = loc.getString("name");
+            if (!place.isEmpty()) {
+                placeAndName = new String[] { place, name };
+            } else {
+                placeAndName = splitAddress(name);
+            }
             products = null;
         } else {
             throw new RuntimeException("Unknown type " + type + ": " + loc);
