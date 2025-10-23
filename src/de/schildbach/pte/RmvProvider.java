@@ -177,7 +177,7 @@ public class RmvProvider extends AbstractHafasClientInterfaceProvider {
 
     public RmvProvider(final String apiClient, final String apiAuthorization) {
         super(NetworkId.RMV, API_BASE, PRODUCTS_MAP);
-        setApiVersion("1.21");
+        setApiVersion("1.79");
         setApiClient(apiClient);
         setApiAuthorization(apiAuthorization);
         setStyles(STYLES);
