@@ -41,15 +41,7 @@ public class NasaProvider extends AbstractHafasClientInterfaceProvider {
 
     public NasaProvider(final String apiClient, final String apiAuthorization) {
         super(NetworkId.NASA, API_BASE, PRODUCTS_MAP);
-        // santawho:
-        // was 1.15, rejected by NASA's server since 2025-06-16
-        // their web client uses 1.48
-        // our highest used in other providers is 1.21
-        // tested on 2025-06-16 that 1.21 still works with NASA's server
-        // tested on 2025-06-16 with 1.48 which results in parser errors
-        // so stay with 1.21, because we know, that our parser is compatible
-        // future: upgrade our parser to accommodate 1.48
-        setApiVersion("1.21");
+        setApiVersion("1.48");
         setApiClient(apiClient);
         setApiAuthorization(apiAuthorization);
     }
