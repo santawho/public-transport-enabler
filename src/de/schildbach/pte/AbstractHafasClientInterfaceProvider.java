@@ -24,6 +24,7 @@ import static com.google.common.base.Preconditions.checkState;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Currency;
@@ -99,6 +100,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
     private String apiEndpoint = "mgate.exe";
     @Nullable
     private String apiVersion;
+    private boolean apiUseLocationLidOnly;
     @Nullable
     private String apiExt;
     @Nullable
@@ -167,8 +169,18 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
     }
 
     protected AbstractHafasClientInterfaceProvider setApiVersion(final String apiVersion) {
-        checkArgument(apiVersion.compareToIgnoreCase("1.14") >= 0, "apiVersion must be 1.14 or higher");
+        final String[] versionParts = apiVersion.split("\\.");
+        checkArgument(versionParts.length == 2, "bad apiVersion");
+        checkArgument("1".equals(versionParts[0]), "apiVersion major must be 1");
+        final int minorVersion;
+        try {
+            minorVersion = Integer.parseInt(versionParts[1]);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("invalid apiVersion");
+        }
+        checkArgument(minorVersion >= 14, "apiVersion must be 1.14 or higher");
         this.apiVersion = apiVersion;
+        this.apiUseLocationLidOnly = minorVersion >= 40;
         return this;
     }
 
@@ -418,15 +430,15 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
 
         final Calendar c = new GregorianCalendar(timeZone);
         c.setTime(time);
-        final CharSequence jsonDate = jsonDate(c);
-        final CharSequence jsonTime = jsonTime(c);
-        final CharSequence normalizedStationId = normalizeStationId(stationId);
-        final CharSequence maxJny = Integer.toString(maxDepartures);
+        final String jsonDate = jsonDate(c);
+        final String jsonTime = jsonTime(c);
+        final String normalizedStationId = normalizeStationId(stationId);
+        final String maxJny = Integer.toString(maxDepartures);
         final String request = wrapJsonApiRequest("StationBoard", "{\"type\":\"DEP\"," //
                 + "\"date\":\"" + jsonDate + "\"," //
                 + "\"time\":\"" + jsonTime + "\"," //
                 + "\"stbLoc\":{\"type\":\"S\"," + "\"state\":\"F\"," // F/M
-                + "\"extId\":" + JSONObject.quote(normalizedStationId.toString()) + "}," //
+                + "\"" + (isLid(normalizedStationId) ? "lid" : "extId") + "\":" + JSONObject.quote(normalizedStationId.toString()) + "}," //
                 + (canStbFltrEquiv ? "\"stbFltrEquiv\":" + Boolean.toString(!equivs) + "," : "") //
                 + "\"maxJny\":" + maxJny + "}", false);
 
@@ -961,12 +973,12 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
 
         final Calendar c = new GregorianCalendar(timeZone);
         c.setTime(time);
-        final CharSequence outDate = jsonDate(c);
-        final CharSequence outTime = jsonTime(c);
-        final CharSequence outFrwd = Boolean.toString(dep);
-        final CharSequence jnyFltr = products != null ? productsString(products) : null;
+        final String outDate = jsonDate(c);
+        final String outTime = jsonTime(c);
+        final String outFrwd = Boolean.toString(dep);
+        final String jnyFltr = products != null ? productsString(products) : null;
         final String meta = "foot_speed_" + (walkSpeed != null ? walkSpeed : WalkSpeed.NORMAL).name().toLowerCase();
-        final CharSequence jsonContext = moreContext != null ? "\"ctxScr\":" + JSONObject.quote(moreContext) + "," : "";
+        final String jsonContext = moreContext != null ? "\"ctxScr\":" + JSONObject.quote(moreContext) + "," : "";
         final String request = wrapJsonApiRequest("TripSearch", "{" //
                 + jsonContext //
                 + "\"depLocL\":[" + jsonLocation(from) + "]," //
@@ -1127,25 +1139,32 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
         return url.build();
     }
 
+    private boolean isLid(final String id) {
+        return apiUseLocationLidOnly && id != null && id.length() > 10;
+    }
+
     private String jsonLocation(final Location location) {
-        if (location.type == LocationType.STATION && location.hasId())
-            return "{\"type\":\"S\",\"extId\":" + JSONObject.quote(location.id) + "}";
+        final String id = location.id;
+        if (isLid(id))
+            return "{\"lid\":" + JSONObject.quote(id) + "}";
+        else if (location.type == LocationType.STATION && location.hasId())
+            return "{\"type\":\"S\",\"extId\":" + JSONObject.quote(id) + "}";
         else if (location.type == LocationType.ADDRESS && location.hasId())
-            return "{\"type\":\"A\",\"lid\":" + JSONObject.quote(location.id) + "}";
+            return "{\"type\":\"A\",\"lid\":" + JSONObject.quote(id) + "}";
         else if (location.type == LocationType.POI && location.hasId())
-            return "{\"type\":\"P\",\"lid\":" + JSONObject.quote(location.id) + "}";
+            return "{\"type\":\"P\",\"lid\":" + JSONObject.quote(id) + "}";
         else
             throw new IllegalArgumentException("cannot handle: " + location);
     }
 
-    private CharSequence jsonDate(final Calendar time) {
+    private String jsonDate(final Calendar time) {
         final int year = time.get(Calendar.YEAR);
         final int month = time.get(Calendar.MONTH) + 1;
         final int day = time.get(Calendar.DAY_OF_MONTH);
         return String.format(Locale.ENGLISH, "%04d%02d%02d", year, month, day);
     }
 
-    private CharSequence jsonTime(final Calendar time) {
+    private String jsonTime(final Calendar time) {
         final int hour = time.get(Calendar.HOUR_OF_DAY);
         final int minute = time.get(Calendar.MINUTE);
         return String.format(Locale.ENGLISH, "%02d%02d00", hour, minute);
@@ -1378,6 +1397,8 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
 
         final LocationType locationType;
         final String id;
+        String identityId = null;
+        String displayId = null;
         final String[] placeAndName;
         final Set<Product> products;
         if ("S".equals(type)) {
@@ -1387,7 +1408,14 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                 return parseLoc(locList, mMastLocX, previousLocListIndexes, crdSysList);
             }
             locationType = LocationType.STATION;
-            id = normalizeStationId(loc.getString("extId"));
+            final String extId = normalizeStationId(loc.getString("extId"));
+            if (apiUseLocationLidOnly) {
+                id = unifyLid(loc.getString("lid"));
+                identityId = extId;
+                displayId = extId;
+            } else {
+                id = extId;
+            }
             placeAndName = splitStationName(loc.getString("name"));
             final int pCls = loc.optInt("pCls", -1);
             products = pCls != -1 ? intToProducts(pCls) : null;
@@ -1425,7 +1453,26 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
             coord = null;
         }
 
-        return new Location(locationType, id, coord, placeAndName[0], placeAndName[1], products);
+        return new Location(locationType, id, identityId, displayId, coord, placeAndName[0], placeAndName[1], products, null);
+    }
+
+    private static final Set<String> validLidNames = new HashSet<>(Arrays.asList("A", "O", "X", "Y", "U", "L"));
+
+    private static String unifyLid(final String lid) {
+        if (lid == null)
+            return null;
+        final String[] nameValueStrings = lid.split("@");
+        if (nameValueStrings.length == 0)
+            return lid;
+        final StringBuilder validLid = new StringBuilder();
+        for (String nameValueString : nameValueStrings) {
+            final String[] nameAndValue = nameValueString.split("=");
+            if (nameAndValue.length != 2 || validLidNames.contains(nameAndValue[0])) {
+                validLid.append(nameValueString);
+                validLid.append("@");
+            }
+        }
+        return validLid.toString();
     }
 
     private List<String> parseOpList(final JSONArray opList) throws JSONException {

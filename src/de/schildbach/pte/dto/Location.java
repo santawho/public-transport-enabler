@@ -46,16 +46,28 @@ public final class Location implements Serializable, MessagePackUtils.Packable {
 
     public final LocationType type;
     public final @Nullable String id;
+    public final @Nullable String identityId;
+    public final @Nullable String displayId;
     public final @Nullable Point coord;
     public final @Nullable String place;
     public final @Nullable String name;
     public final @Nullable Set<Product> products;
     public final @Nullable String infoUrl;
 
-    public Location(final LocationType type, final String id, final Point coord, final String place, final String name,
-            final Set<Product> products, final String infoUrl) {
+    public Location(
+            final LocationType type,
+            final String id,
+            final String identityId,
+            final String displayId,
+            final Point coord,
+            final String place,
+            final String name,
+            final Set<Product> products,
+            final String infoUrl) {
         this.type = checkNotNull(type);
         this.id = id;
+        this.identityId = identityId == null ? id : identityId;
+        this.displayId = displayId == null ? id : displayId;
         this.coord = coord;
         this.place = place;
         this.name = name;
@@ -70,6 +82,11 @@ public final class Location implements Serializable, MessagePackUtils.Packable {
             checkArgument(hasCoord(), "coordinates missing");
             checkArgument(place == null && name == null, "coordinates cannot have place or name");
         }
+    }
+
+    public Location(final LocationType type, final String id, final Point coord, final String place, final String name,
+                    final Set<Product> products, final String infoUrl) {
+        this(type, id, id, id, coord, place, name, products, infoUrl);
     }
 
     public Location(final LocationType type, final String id, final Point coord, final String place, final String name,
@@ -196,8 +213,10 @@ public final class Location implements Serializable, MessagePackUtils.Packable {
         final Location other = (Location) o;
         if (!Objects.equal(this.type, other.type))
             return false;
+        if (this.identityId != null && other.identityId != null && this.identityId.equals(other.identityId))
+            return true;
         if (this.id != null)
-            return Objects.equal(this.id, other.id);
+            return this.id.equals(other.id);
         if (this.coord != null)
             return Objects.equal(this.coord, other.coord);
 

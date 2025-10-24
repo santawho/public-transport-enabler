@@ -739,7 +739,7 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
         if (options == null)
             options = new TripOptions();
 
-        final CharSequence productsStr;
+        final String productsStr;
         if (options.products != null)
             productsStr = productsString(options.products);
         else

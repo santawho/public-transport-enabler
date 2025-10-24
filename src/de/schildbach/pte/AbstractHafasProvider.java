@@ -69,7 +69,7 @@ public abstract class AbstractHafasProvider extends AbstractNetworkProvider {
         return CAPABILITIES;
     }
 
-    protected final CharSequence productsString(final Set<Product> products) {
+    protected final String productsString(final Set<Product> products) {
         final StringBuilder productsStr = new StringBuilder(productsMap.length);
         for (int i = 0; i < productsMap.length; i++) {
             if (productsMap[i] != null && products.contains(productsMap[i]))
@@ -77,14 +77,14 @@ public abstract class AbstractHafasProvider extends AbstractNetworkProvider {
             else
                 productsStr.append('0');
         }
-        return productsStr;
+        return productsStr.toString();
     }
 
-    protected final CharSequence allProductsString() {
+    protected final String allProductsString() {
         final StringBuilder productsStr = new StringBuilder(productsMap.length);
         for (int i = 0; i < productsMap.length; i++)
             productsStr.append('1');
-        return productsStr;
+        return productsStr.toString();
     }
 
     protected final int allProductsInt() {
