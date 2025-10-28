@@ -529,6 +529,25 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
         return joiner.toString();
     }
 
+    private static Set<String> bicycleAttributes = new HashSet<String>() {
+        private static final long serialVersionUID = 3738440155820969289L;
+
+        {
+            add("FA");
+            add("FB");
+            add("FR");
+            add("FS");
+        }
+    };
+
+    private static Set<String> wheelChairAttributes = new HashSet<String>() {
+        private static final long serialVersionUID = 3738440155820969289L;
+
+        {
+            add("RG");
+        }
+    };
+
     private Line parseLine(final JSONObject jny) throws JSONException {
         // TODO attrs, messages
         Product product = SHORT_PRODUCTS_MAP.get(jny.optString("produktGattung", null));
@@ -540,13 +559,19 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
             shortName = shortName.replaceAll("^[A-Za-z]+ ", "");
         }
         String operator = null;
+        final Set<Line.Attr> lineAttrs = new HashSet<>();
         final JSONArray attributNotizen = jny.optJSONArray("attributNotizen");
         if (attributNotizen != null) {
             for (int iAttr = 0; iAttr < attributNotizen.length(); ++iAttr) {
                 JSONObject attr = attributNotizen.getJSONObject(iAttr);
-                if ("OP".equals(attr.get("key"))) {
+                final String key = attr.getString("key");
+                if ("OP".equals(key)) {
                     operator = attr.getString("text");
                     break;
+                } else if (wheelChairAttributes.contains(key)) {
+                    lineAttrs.add(Line.Attr.WHEEL_CHAIR_ACCESS);
+                } else if (bicycleAttributes.contains(key)) {
+                    lineAttrs.add(Line.Attr.BICYCLE_CARRIAGE);
                 }
             }
         }
@@ -556,7 +581,9 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
                 product,
                 shortName,
                 name,
-                DbProvider.lineStyle(styles, operator, product, name));
+                DbProvider.lineStyle(styles, operator, product, name),
+                lineAttrs,
+                null);
     }
 
     private boolean parseCancelled(JSONObject stop) throws JSONException {

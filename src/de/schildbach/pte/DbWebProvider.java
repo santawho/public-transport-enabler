@@ -514,6 +514,29 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
         return joiner.toString();
     }
 
+    static class x {
+        x(int i) {}
+    }
+
+    private static Set<String> bicycleAttributes = new HashSet<String>() {
+        private static final long serialVersionUID = 3738440155820969289L;
+
+        {
+            add("FA");
+            add("FB");
+            add("FR");
+            add("FS");
+        }
+    };
+
+    private static Set<String> wheelChairAttributes = new HashSet<String>() {
+        private static final long serialVersionUID = 3738440155820969289L;
+
+        {
+            add("RG");
+        }
+    };
+
     private Line parseLine(final JSONObject verkehrsmittel) throws JSONException {
         // TODO attrs, messages
         final Product product = PRODUCTS_MAP.get(verkehrsmittel.optString("produktGattung", null));
@@ -523,13 +546,19 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
             shortName = shortName.replaceAll("^[A-Za-z]+ ", "");
         }
         String operator = null;
+        final Set<Line.Attr> lineAttrs = new HashSet<>();
         final JSONArray attributNotizen = verkehrsmittel.optJSONArray("zugattribute");
         if (attributNotizen != null) {
             for (int iAttr = 0; iAttr < attributNotizen.length(); ++iAttr) {
                 JSONObject attr = attributNotizen.getJSONObject(iAttr);
-                if ("BEF".equals(attr.get("key"))) {
+                final String key = attr.getString("key");
+                if ("BEF".equals(key)) {
                     operator = attr.getString("value");
                     break;
+                } else if (wheelChairAttributes.contains(key)) {
+                    lineAttrs.add(Line.Attr.WHEEL_CHAIR_ACCESS);
+                } else if (bicycleAttributes.contains(key)) {
+                    lineAttrs.add(Line.Attr.BICYCLE_CARRIAGE);
                 }
             }
         }
@@ -539,7 +568,9 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
                 product,
                 shortName,
                 name,
-                DbProvider.lineStyle(styles, operator, product, name));
+                DbProvider.lineStyle(styles, operator, product, name),
+                lineAttrs,
+                null);
     }
 
     private boolean parseCancelled(JSONObject stop) throws JSONException {
@@ -871,25 +902,26 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
             limitToDticket = false;
             useProducts = products;
         }
-        final String productsStr = "\"produktgattungen\":[" + formatProducts(useProducts)
+        final String productsStr = ",\"produktgattungen\":[" + formatProducts(useProducts)
                 + "],\"deutschlandTicketVorhanden\":" + hasDticket
-                + ",\"nurDeutschlandTicketVerbindungen\":" + limitToDticket + ",";
+                + ",\"nurDeutschlandTicketVerbindungen\":" + limitToDticket;
         final String viaLocations = via == null ? ""
-                : "\"zwischenhalte\":[{\"id\": \"" + formatLid(via) + "\"}],";
-        final String bikeStr = bike ? "\"bikeCarriage\":true," : "";
-        final String minUmstiegszeitStr = minUmstiegszeit != null ? "\"minUmstiegszeit\":" + minUmstiegszeit + "," : "";
-        final String ctxStr = context != null ? "\"pagingReference\": \"" + context + "\"," : "";
-        final String request = "{\"sitzplatzOnly\":false,\"klasse\":\"KLASSE_2\"," //
-                + "\"abfahrtsHalt\": \"" + formatLid(from) + "\"," //
+                : ",\"zwischenhalte\":[{\"id\": \"" + formatLid(via) + "\"}]";
+        final String bikeStr = bike ? ",\"bikeCarriage\":true" : "";
+        final String bikeTraveling = bike ? ",{\"typ\":\"FAHRRAD\",\"ermaessigungen\":[{\"art\":\"KEINE_ERMAESSIGUNG\",\"klasse\":\"KLASSENLOS\"}],\"alter\":[],\"anzahl\":1}" : "";
+        final String minUmstiegszeitStr = minUmstiegszeit != null ? ",\"minUmstiegszeit\":" + minUmstiegszeit : "";
+        final String ctxStr = context != null ? ",\"pagingReference\": \"" + context + "\"" : "";
+        final String request = "{\"sitzplatzOnly\":false,\"klasse\":\"KLASSE_2\"" //
+                + ",\"abfahrtsHalt\": \"" + formatLid(from) + "\"" //
                 + productsStr //
                 + viaLocations //
                 + bikeStr //
                 + minUmstiegszeitStr //
                 + ctxStr //
-                + "\"anfrageZeitpunkt\":\"" + formatIso8601NoOffset(time) + "\",\"ankunftSuche\":\"" + deparr + "\"," //
-                + "\"ankunftsHalt\": \"" + formatLid(to) + "\"," //
-                + "\"reisende\":[{\"ermaessigungen\":[{\"art\":\"KEINE_ERMAESSIGUNG\",\"klasse\":\"KLASSENLOS\"}],\"typ\":\"ERWACHSENER\",\"alter\":[],\"anzahl\":1}]," //
-                + "\"reservierungsKontingenteVorhanden\":false,\"schnelleVerbindungen\":false}";
+                + ",\"anfrageZeitpunkt\":\"" + formatIso8601NoOffset(time) + "\",\"ankunftSuche\":\"" + deparr + "\"" //
+                + ",\"ankunftsHalt\": \"" + formatLid(to) + "\"" //
+                + ",\"reisende\":[{\"ermaessigungen\":[{\"art\":\"KEINE_ERMAESSIGUNG\",\"klasse\":\"KLASSENLOS\"}],\"typ\":\"ERWACHSENER\",\"alter\":[],\"anzahl\":1}" + bikeTraveling + "]" //
+                + ",\"reservierungsKontingenteVorhanden\":false,\"schnelleVerbindungen\":false}";
 
         final HttpUrl url = this.tripEndpoint;
 
