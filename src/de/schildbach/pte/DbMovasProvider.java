@@ -567,7 +567,6 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
                 final String key = attr.getString("key");
                 if ("OP".equals(key)) {
                     operator = attr.getString("text");
-                    break;
                 } else if (wheelChairAttributes.contains(key)) {
                     lineAttrs.add(Line.Attr.WHEEL_CHAIR_ACCESS);
                 } else if (bicycleAttributes.contains(key)) {

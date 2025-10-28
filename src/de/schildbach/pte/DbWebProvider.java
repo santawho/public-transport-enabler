@@ -554,7 +554,6 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
                 final String key = attr.getString("key");
                 if ("BEF".equals(key)) {
                     operator = attr.getString("value");
-                    break;
                 } else if (wheelChairAttributes.contains(key)) {
                     lineAttrs.add(Line.Attr.WHEEL_CHAIR_ACCESS);
                 } else if (bicycleAttributes.contains(key)) {
