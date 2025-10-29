@@ -877,26 +877,30 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                         final JSONObject ovwTrfRef = ovwTrfRefList.getJSONObject(i);
                         final String type = ovwTrfRef.getString("type");
                         final int fareSetIndex = ovwTrfRef.optInt("fareSetX", -1);
+                        final int fareX = ovwTrfRef.getInt("fareX");
                         final JSONObject jsonFareSet = fareSetIndex < 0 ? null : fareSetList.getJSONObject(fareSetIndex);
                         if (type.equals("T")) { // ticket
-                            final JSONObject jsonFare =
-                                    jsonFareSet.getJSONArray("fareL").getJSONObject(ovwTrfRef.getInt("fareX"));
+                            final JSONObject jsonFare = jsonFareSet.getJSONArray("fareL").getJSONObject(fareX);
                             final String fareName = jsonFare.getString("name");
                             final int ticketX = ovwTrfRef.getInt("ticketX");
                             final JSONObject jsonTicket = jsonFare.getJSONArray("ticketL").getJSONObject(ticketX);
                             final String ticketName = jsonTicket.getString("name");
+                            final String ticketDesc = jsonTicket.optString("desc");
                             final String currencyStr = jsonTicket.getString("cur");
                             if (!Strings.isNullOrEmpty(currencyStr)) {
                                 final Currency currency = Currency.getInstance(currencyStr);
                                 final float price = jsonTicket.getInt("prc") / 100f;
-                                final Fare fare = new Fare(normalizeFareName(fareName) + '\n' + ticketName,
-                                        normalizeFareType(ticketName), currency, price, null, null);
+                                final Fare fare = new Fare(
+                                        normalizeFareName(fareName) + '\n' + ticketName,
+                                        normalizeFareType(ticketName, ticketDesc),
+                                        currency, price,
+                                        null, null);
                                 if (!hideFare(fare))
                                     fares.add(fare);
                             }
                         } else if (type.equals("F")) { // fare
                             final JSONObject jsonFare =
-                                    jsonFareSet.getJSONArray("fareL").getJSONObject(ovwTrfRef.getInt("fareX"));
+                                    jsonFareSet.getJSONArray("fareL").getJSONObject(fareX);
                             final String fareName = jsonFare.getString("name");
                             final String currencyStr = jsonFare.optString("cur");
                             if (!Strings.isNullOrEmpty(currencyStr)) {
@@ -1082,20 +1086,24 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
         }
     }
 
-    protected Fare.Type normalizeFareType(final String fareName) {
-        final String fareNameLc = fareName.toLowerCase(Locale.US);
-        if (fareNameLc.contains("erwachsene") || fareNameLc.contains("adult"))
-            return Fare.Type.ADULT;
-        if (fareNameLc.contains("kind") || fareNameLc.contains("child") || fareNameLc.contains("kids"))
-            return Fare.Type.CHILD;
-        if (fareNameLc.contains("ermäßigung"))
-            return Fare.Type.CHILD;
-        if (fareNameLc.contains("schüler") || fareNameLc.contains("azubi"))
-            return Fare.Type.STUDENT;
-        if (fareNameLc.contains("fahrrad"))
-            return Fare.Type.BIKE;
-        if (fareNameLc.contains("senior"))
-            return Fare.Type.SENIOR;
+    protected Fare.Type normalizeFareType(final String... fareNames) {
+        for (String fareName : fareNames) {
+            if (fareName == null)
+                continue;
+            final String fareNameLc = fareName.toLowerCase(Locale.US);
+            if (fareNameLc.contains("erwachsene") || fareNameLc.contains("adult"))
+                return Fare.Type.ADULT;
+            if (fareNameLc.contains("kind") || fareNameLc.contains("child") || fareNameLc.contains("kids"))
+                return Fare.Type.CHILD;
+            if (fareNameLc.contains("ermäßigung"))
+                return Fare.Type.CHILD;
+            if (fareNameLc.contains("schüler") || fareNameLc.contains("azubi"))
+                return Fare.Type.STUDENT;
+            if (fareNameLc.contains("fahrrad"))
+                return Fare.Type.BIKE;
+            if (fareNameLc.contains("senior"))
+                return Fare.Type.SENIOR;
+        }
         return Fare.Type.ADULT;
     }
 
