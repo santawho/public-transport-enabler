@@ -877,9 +877,9 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                         final JSONObject ovwTrfRef = ovwTrfRefList.getJSONObject(i);
                         final String type = ovwTrfRef.getString("type");
                         final int fareSetIndex = ovwTrfRef.optInt("fareSetX", -1);
-                        final int fareX = ovwTrfRef.getInt("fareX");
+                        final int fareX = ovwTrfRef.optInt("fareX", -1);
                         final JSONObject jsonFareSet = fareSetIndex < 0 ? null : fareSetList.getJSONObject(fareSetIndex);
-                        if (type.equals("T")) { // ticket
+                        if (type.equals("T") && jsonFareSet != null && fareX >= 0) { // ticket
                             final JSONObject jsonFare = jsonFareSet.getJSONArray("fareL").getJSONObject(fareX);
                             final String fareName = jsonFare.getString("name");
                             final int ticketX = ovwTrfRef.getInt("ticketX");
@@ -898,7 +898,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                                 if (!hideFare(fare))
                                     fares.add(fare);
                             }
-                        } else if (type.equals("F")) { // fare
+                        } else if (type.equals("F") && jsonFareSet != null && fareX >= 0) { // fare
                             final JSONObject jsonFare =
                                     jsonFareSet.getJSONArray("fareL").getJSONObject(fareX);
                             final String fareName = jsonFare.getString("name");
