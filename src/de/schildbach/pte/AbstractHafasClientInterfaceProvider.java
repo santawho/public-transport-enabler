@@ -869,67 +869,108 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
 
                 final List<Fare> fares;
                 final JSONObject trfRes = outCon.optJSONObject("trfRes");
-                final JSONArray ovwTrfRefList = outCon.optJSONArray("ovwTrfRefL");
-                if (trfRes != null && ovwTrfRefList != null) {
+                if (trfRes != null) {
                     fares = new LinkedList<>();
                     final JSONArray fareSetList = trfRes.getJSONArray("fareSetL");
-                    for (int i = 0; i < ovwTrfRefList.length(); i++) {
-                        final JSONObject ovwTrfRef = ovwTrfRefList.getJSONObject(i);
-                        final String type = ovwTrfRef.getString("type");
-                        final int fareSetIndex = ovwTrfRef.optInt("fareSetX", -1);
-                        final int fareX = ovwTrfRef.optInt("fareX", -1);
-                        final JSONObject jsonFareSet = fareSetIndex < 0 ? null : fareSetList.getJSONObject(fareSetIndex);
-                        if (type.equals("T") && jsonFareSet != null && fareX >= 0) { // ticket
-                            final JSONObject jsonFare = jsonFareSet.getJSONArray("fareL").getJSONObject(fareX);
-                            final String fareName = jsonFare.getString("name");
-                            final int ticketX = ovwTrfRef.getInt("ticketX");
-                            final JSONObject jsonTicket = jsonFare.getJSONArray("ticketL").getJSONObject(ticketX);
-                            final String ticketName = jsonTicket.getString("name");
-                            final String ticketDesc = jsonTicket.optString("desc");
-                            final String currencyStr = jsonTicket.getString("cur");
-                            if (!Strings.isNullOrEmpty(currencyStr)) {
-                                final Currency currency = Currency.getInstance(currencyStr);
-                                final float price = jsonTicket.getInt("prc") / 100f;
-                                final Fare fare = new Fare(
-                                        normalizeFareName(fareName) + '\n' + ticketName,
-                                        normalizeFareType(ticketName, ticketDesc),
-                                        currency, price,
-                                        null, null);
-                                if (!hideFare(fare))
-                                    fares.add(fare);
-                            }
-                        } else if (type.equals("F") && jsonFareSet != null && fareX >= 0) { // fare
-                            final JSONObject jsonFare =
-                                    jsonFareSet.getJSONArray("fareL").getJSONObject(fareX);
-                            final String fareName = jsonFare.getString("name");
-                            final String currencyStr = jsonFare.optString("cur");
-                            if (!Strings.isNullOrEmpty(currencyStr)) {
-                                final Currency currency = ParserUtils.getCurrency(currencyStr);
-                                final float price = jsonFare.getInt("prc") / 100f;
-                                final Fare fare = new Fare(normalizeFareName(fareName), normalizeFareType(fareName),
-                                        currency, price, null, null);
-                                if (!hideFare(fare))
-                                    fares.add(fare);
-                            }
-                        } else if (type.equals("FS")) { // fare set
-                            final String fareSetName = jsonFareSet.getString("name");
-                            final JSONArray fareList = jsonFareSet.getJSONArray("fareL");
-                            for (int iFare = 0; iFare < fareList.length(); iFare++) {
-                                final JSONObject jsonFare = fareList.getJSONObject(iFare);
+                    final JSONArray ovwTrfRefList = outCon.optJSONArray("ovwTrfRefL");
+                    if (ovwTrfRefList != null) {
+                        for (int i = 0; i < ovwTrfRefList.length(); i++) {
+                            final JSONObject ovwTrfRef = ovwTrfRefList.getJSONObject(i);
+                            final String type = ovwTrfRef.getString("type");
+                            final int fareSetIndex = ovwTrfRef.optInt("fareSetX", -1);
+                            final int fareX = ovwTrfRef.optInt("fareX", -1);
+                            final JSONObject jsonFareSet = fareSetIndex < 0 ? null : fareSetList.getJSONObject(fareSetIndex);
+                            if (type.equals("T") && jsonFareSet != null && fareX >= 0) { // ticket
+                                final JSONObject jsonFare = jsonFareSet.getJSONArray("fareL").getJSONObject(fareX);
+                                final String fareName = jsonFare.getString("name");
+                                final int ticketX = ovwTrfRef.getInt("ticketX");
+                                final JSONObject jsonTicket = jsonFare.getJSONArray("ticketL").getJSONObject(ticketX);
+                                final String ticketName = jsonTicket.getString("name");
+                                final String ticketDesc = jsonTicket.optString("desc");
+                                final String currencyStr = jsonTicket.getString("cur");
+                                if (!Strings.isNullOrEmpty(currencyStr)) {
+                                    final Currency currency = Currency.getInstance(currencyStr);
+                                    final float price = jsonTicket.getInt("prc") / 100f;
+                                    final Fare fare = new Fare(
+                                            normalizeFareName(fareName) + '\n' + ticketName,
+                                            normalizeFareType(ticketName, ticketDesc),
+                                            currency, price,
+                                            null, null);
+                                    if (!hideFare(fare))
+                                        fares.add(fare);
+                                }
+                            } else if (type.equals("F") && jsonFareSet != null && fareX >= 0) { // fare
+                                final JSONObject jsonFare =
+                                        jsonFareSet.getJSONArray("fareL").getJSONObject(fareX);
                                 final String fareName = jsonFare.getString("name");
                                 final String currencyStr = jsonFare.optString("cur");
-                                final Currency currency = ParserUtils.getCurrency(currencyStr);
-                                final float price = jsonFare.getInt("prc") / 100f;
-                                final Fare fare = new Fare(normalizeFareName(fareSetName), normalizeFareType(fareName),
-                                        currency, price, null, null);
-                                if (!hideFare(fare))
-                                    fares.add(fare);
+                                if (!Strings.isNullOrEmpty(currencyStr)) {
+                                    final Currency currency = ParserUtils.getCurrency(currencyStr);
+                                    final float price = jsonFare.getInt("prc") / 100f;
+                                    final Fare fare = new Fare(
+                                            normalizeFareName(fareName),
+                                            normalizeFareType(fareName),
+                                            currency, price,
+                                            null, null);
+                                    if (!hideFare(fare))
+                                        fares.add(fare);
+                                }
+                            } else if (type.equals("FS")) { // fare set
+                                final String fareSetName = jsonFareSet.getString("name");
+                                final JSONArray fareList = jsonFareSet.getJSONArray("fareL");
+                                for (int iFare = 0; iFare < fareList.length(); iFare++) {
+                                    final JSONObject jsonFare = fareList.getJSONObject(iFare);
+                                    final String fareName = jsonFare.getString("name");
+                                    final String currencyStr = jsonFare.optString("cur");
+                                    final Currency currency = ParserUtils.getCurrency(currencyStr);
+                                    final float price = jsonFare.getInt("prc") / 100f;
+                                    final Fare fare = new Fare(
+                                            normalizeFareName(fareSetName),
+                                            normalizeFareType(fareName),
+                                            currency, price,
+                                            null, null);
+                                    if (!hideFare(fare))
+                                        fares.add(fare);
+                                }
+                            } else if (type.equals("TIBG")) { // ???
+                                // RMV at API version 1.79 returns this.
+                                // not yet implemented --> fall back to "totalPrice" search ...
+                            } else {
+                                throw new IllegalArgumentException("cannot handle type: " + type);
                             }
-                        } else if (type.equals("TIBG")) { // ???
-                            // RMV at API version 1.79 returns this.
-                            // not yet implemented
-                        } else {
-                            throw new IllegalArgumentException("cannot handle type: " + type);
+                        }
+                    }
+                    if (fares.isEmpty()) {
+                        // find the first fare with same price as suggested by total price
+                        final JSONObject totalPrice = trfRes.optJSONObject("totalPrice");
+                        if (totalPrice != null) {
+                            final String totalCurrency = totalPrice.getString("currency");
+                            final int totalAmount = totalPrice.getInt("amount");
+                            FareSetLoop: for (int iFareSet = 0; iFareSet < fareSetList.length(); iFareSet++) {
+                                final JSONObject jsonFareSet = fareSetList.getJSONObject(iFareSet);
+                                final JSONArray fareList = jsonFareSet.getJSONArray("fareL");
+                                for (int iFare = 0; iFare < fareList.length(); iFare++) {
+                                    final JSONObject jsonFare = fareList.getJSONObject(iFare);
+                                    final String fareName = jsonFare.getString("name");
+                                    final JSONObject price = jsonFare.getJSONObject("price");
+                                    final String currency = price.getString("currency");
+                                    final int amount = price.getInt("amount");
+                                    if (amount == totalAmount && currency.equals(totalCurrency)) {
+                                        final Fare.Type fareType = normalizeFareType(fareName);
+                                        if (fareType.equals(Fare.Type.ADULT)) {
+                                            final Fare fare = new Fare(
+                                                    normalizeFareName(fareName),
+                                                    fareType,
+                                                    ParserUtils.getCurrency(currency), amount / 100f,
+                                                    null, null);
+                                            if (!hideFare(fare)) {
+                                                fares.add(fare);
+                                                break FareSetLoop;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 } else {
