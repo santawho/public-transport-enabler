@@ -18,10 +18,11 @@
 package de.schildbach.pte;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
+import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -52,7 +53,6 @@ import org.json.JSONObject;
 import org.msgpack.core.MessagePacker;
 import org.msgpack.core.MessageUnpacker;
 
-import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
 import com.google.common.hash.HashCode;
@@ -138,7 +138,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
     protected AbstractHafasClientInterfaceProvider(final NetworkId network, final HttpUrl apiBase,
             final Product[] productsMap) {
         super(network, productsMap);
-        this.apiBase = checkNotNull(apiBase);
+        this.apiBase = requireNonNull(apiBase);
     }
 
     @Override
@@ -156,7 +156,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
     }
 
     protected AbstractHafasClientInterfaceProvider setApiEndpoint(final String apiEndpoint) {
-        this.apiEndpoint = checkNotNull(apiEndpoint);
+        this.apiEndpoint = requireNonNull(apiEndpoint);
         return this;
     }
 
@@ -189,7 +189,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
     }
 
     protected AbstractHafasClientInterfaceProvider setApiExt(final String apiExt) {
-        this.apiExt = checkNotNull(apiExt);
+        this.apiExt = requireNonNull(apiExt);
         return this;
     }
 
@@ -572,7 +572,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
 
     protected final SuggestLocationsResult jsonLocMatch(final CharSequence constraint,
             final @Nullable Set<LocationType> types, int maxLocations) throws IOException {
-        checkNotNull(constraint);
+        requireNonNull(constraint);
         if (maxLocations == 0)
             maxLocations = DEFAULT_MAX_LOCATIONS;
         final String type;
@@ -1119,9 +1119,9 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
         final String lang = "de".equals(userInterfaceLanguage) ? "deu" : "eng";
         return "{" //
                 + (apiAuthorization != null ? "\"auth\":" + apiAuthorization + "," : "") //
-                + "\"client\":" + checkNotNull(apiClient) + "," //
+                + "\"client\":" + requireNonNull(apiClient) + "," //
                 + (apiExt != null ? "\"ext\":\"" + apiExt + "\"," : "") //
-                + "\"ver\":\"" + checkNotNull(apiVersion) + "\",\"lang\":\"" + lang + "\"," //
+                + "\"ver\":\"" + requireNonNull(apiVersion) + "\",\"lang\":\"" + lang + "\"," //
                 + "\"svcReqL\":[" //
                 // + "{\"meth\":\"ServerInfo\",\"req\":{\"getServerDateTime\":true,\"getTimeTablePeriod\":false}}," //
                 + "{\"meth\":\"ServerInfo\",\"req\":{\"getServerDateTime\":true}}," //
@@ -1133,14 +1133,14 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
     private HttpUrl requestUrl(final String body) {
         final HttpUrl.Builder url = apiBase.newBuilder().addPathSegment(apiEndpoint);
         if (requestChecksumSalt != null) {
-            final HashCode checksum = MD5.newHasher().putString(body, Charsets.UTF_8).putBytes(requestChecksumSalt)
+            final HashCode checksum = MD5.newHasher().putString(body, StandardCharsets.UTF_8).putBytes(requestChecksumSalt)
                     .hash();
             url.addQueryParameter("checksum", checksum.toString());
         }
         if (requestMicMacSalt != null) {
-            final HashCode mic = MD5.newHasher().putString(body, Charsets.UTF_8).hash();
+            final HashCode mic = MD5.newHasher().putString(body, StandardCharsets.UTF_8).hash();
             url.addQueryParameter("mic", HEX.encode(mic.asBytes()));
-            final HashCode mac = MD5.newHasher().putString(HEX.encode(mic.asBytes()), Charsets.UTF_8)
+            final HashCode mac = MD5.newHasher().putString(HEX.encode(mic.asBytes()), StandardCharsets.UTF_8)
                     .putBytes(requestMicMacSalt).hash();
             url.addQueryParameter("mac", HEX.encode(mac.asBytes()));
         }

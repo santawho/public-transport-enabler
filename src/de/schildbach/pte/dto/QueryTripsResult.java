@@ -17,15 +17,12 @@
 
 package de.schildbach.pte.dto;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.io.Serializable;
 import java.util.List;
 
 import javax.annotation.Nullable;
 
-import com.google.common.base.MoreObjects;
-import com.google.common.base.MoreObjects.ToStringHelper;
+import static java.util.Objects.requireNonNull;
 
 /**
  * @author Andreas Schildbach
@@ -60,7 +57,7 @@ public final class QueryTripsResult implements Serializable {
         this.via = via;
         this.to = to;
         this.context = context;
-        this.trips = checkNotNull(trips);
+        this.trips = requireNonNull(trips);
 
         this.ambiguousFrom = null;
         this.ambiguousVia = null;
@@ -85,7 +82,7 @@ public final class QueryTripsResult implements Serializable {
 
     public QueryTripsResult(final ResultHeader header, final Status status) {
         this.header = header;
-        this.status = checkNotNull(status);
+        this.status = requireNonNull(status);
 
         this.ambiguousFrom = null;
         this.ambiguousVia = null;
@@ -100,19 +97,17 @@ public final class QueryTripsResult implements Serializable {
 
     @Override
     public String toString() {
-        final ToStringHelper helper = MoreObjects.toStringHelper(this).addValue(status);
-        if (status == Status.OK) {
-            if (trips != null)
-                helper.add("size", trips.size()).add("trips", trips);
-        } else if (status == Status.AMBIGUOUS) {
-            if (ambiguousFrom != null)
-                helper.add("size", ambiguousFrom.size()).add("ambiguousFrom", ambiguousFrom);
-            if (ambiguousVia != null)
-                helper.add("size", ambiguousVia.size()).add("ambiguousVia", ambiguousVia);
-            if (ambiguousTo != null)
-                helper.add("size", ambiguousTo.size()).add("ambiguousTo", ambiguousTo);
-        }
-        return helper.toString();
+        return getClass().getSimpleName() + "{" +
+                status + "," +
+                (status == Status.OK && trips != null ?
+                        "size=" + trips.size() + ",trips=" + trips : "") +
+                (status == Status.AMBIGUOUS && ambiguousFrom != null ?
+                        "size=" + ambiguousFrom.size() + ",ambiguousFrom=" + ambiguousFrom : "") +
+                (status == Status.AMBIGUOUS && ambiguousVia != null ?
+                        "size=" + ambiguousVia.size() + ",ambiguousVia=" + ambiguousVia : "") +
+                (status == Status.AMBIGUOUS && ambiguousTo != null ?
+                        "size=" + ambiguousTo.size() + ",ambiguousTo=" + ambiguousTo : "") +
+                "}";
     }
 
     public String toShortString() {

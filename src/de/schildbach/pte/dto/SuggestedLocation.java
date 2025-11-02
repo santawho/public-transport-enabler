@@ -17,11 +17,10 @@
 
 package de.schildbach.pte.dto;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.io.Serializable;
+import java.util.Objects;
 
-import com.google.common.base.Objects;
+import static java.util.Objects.requireNonNull;
 
 /**
  * @author Andreas Schildbach
@@ -33,7 +32,7 @@ public final class SuggestedLocation implements Serializable, Comparable<Suggest
     public final int priority;
 
     public SuggestedLocation(final Location location, final int priority) {
-        this.location = checkNotNull(location);
+        this.location = requireNonNull(location);
         this.priority = priority;
     }
 
@@ -64,12 +63,12 @@ public final class SuggestedLocation implements Serializable, Comparable<Suggest
         if (!(o instanceof SuggestedLocation))
             return false;
         final SuggestedLocation other = (SuggestedLocation) o;
-        return Objects.equal(this.location, other.location);
+        return Objects.equals(this.location, other.location);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(location);
+        return Objects.hash(location);
     }
 
     @Override

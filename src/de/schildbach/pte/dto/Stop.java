@@ -17,16 +17,13 @@
 
 package de.schildbach.pte.dto;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.io.Serializable;
 import java.util.Locale;
+import java.util.Objects;
 
 import javax.annotation.Nullable;
 
-import com.google.common.base.MoreObjects;
-import com.google.common.base.MoreObjects.ToStringHelper;
-import com.google.common.base.Objects;
+import static java.util.Objects.requireNonNull;
 
 /**
  * @author Andreas Schildbach
@@ -60,7 +57,7 @@ public final class Stop implements Serializable {
                 final boolean arrivalCancelled, final PTDate plannedDepartureTime, final PTDate predictedDepartureTime,
                 final Position plannedDeparturePosition, final Position predictedDeparturePosition,
                 final boolean departureCancelled) {
-        this.location = checkNotNull(location);
+        this.location = requireNonNull(location);
         this.plannedArrivalTime = plannedArrivalTime;
         this.predictedArrivalTime = predictedArrivalTime;
         this.plannedArrivalPosition = plannedArrivalPosition;
@@ -80,7 +77,7 @@ public final class Stop implements Serializable {
 
     public Stop(final Location location, final boolean departure, final PTDate plannedTime, final PTDate predictedTime,
                 final Position plannedPosition, final Position predictedPosition, final boolean cancelled) {
-        this.location = checkNotNull(location);
+        this.location = requireNonNull(location);
         this.plannedArrivalTime = !departure ? plannedTime : null;
         this.predictedArrivalTime = !departure ? predictedTime : null;
         this.plannedArrivalPosition = !departure ? plannedPosition : null;
@@ -95,7 +92,7 @@ public final class Stop implements Serializable {
 
     public Stop(final Location location, final PTDate plannedArrivalTime, final Position plannedArrivalPosition,
                 final PTDate plannedDepartureTime, final Position plannedDeparturePosition) {
-        this.location = checkNotNull(location);
+        this.location = requireNonNull(location);
         this.plannedArrivalTime = plannedArrivalTime;
         this.predictedArrivalTime = null;
         this.plannedArrivalPosition = plannedArrivalPosition;
@@ -235,25 +232,25 @@ public final class Stop implements Serializable {
         if (!(o instanceof Stop))
             return false;
         final Stop other = (Stop) o;
-        if (!Objects.equal(this.location, other.location))
+        if (!Objects.equals(this.location, other.location))
             return false;
-        if (!Objects.equal(this.plannedArrivalTime, other.plannedArrivalTime))
+        if (!Objects.equals(this.plannedArrivalTime, other.plannedArrivalTime))
             return false;
-        if (!Objects.equal(this.predictedArrivalTime, other.predictedArrivalTime))
+        if (!Objects.equals(this.predictedArrivalTime, other.predictedArrivalTime))
             return false;
-        if (!Objects.equal(this.plannedArrivalPosition, other.plannedArrivalPosition))
+        if (!Objects.equals(this.plannedArrivalPosition, other.plannedArrivalPosition))
             return false;
-        if (!Objects.equal(this.predictedArrivalPosition, other.predictedArrivalPosition))
+        if (!Objects.equals(this.predictedArrivalPosition, other.predictedArrivalPosition))
             return false;
         if (this.arrivalCancelled != other.arrivalCancelled)
             return false;
-        if (!Objects.equal(this.plannedDepartureTime, other.plannedDepartureTime))
+        if (!Objects.equals(this.plannedDepartureTime, other.plannedDepartureTime))
             return false;
-        if (!Objects.equal(this.predictedDepartureTime, other.predictedDepartureTime))
+        if (!Objects.equals(this.predictedDepartureTime, other.predictedDepartureTime))
             return false;
-        if (!Objects.equal(this.plannedDeparturePosition, other.plannedDeparturePosition))
+        if (!Objects.equals(this.plannedDeparturePosition, other.plannedDeparturePosition))
             return false;
-        if (!Objects.equal(this.predictedDeparturePosition, other.predictedDeparturePosition))
+        if (!Objects.equals(this.predictedDeparturePosition, other.predictedDeparturePosition))
             return false;
         if (this.departureCancelled != other.departureCancelled)
             return false;
@@ -262,26 +259,25 @@ public final class Stop implements Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(location, plannedArrivalTime, predictedArrivalTime, plannedArrivalPosition,
+        return Objects.hash(location, plannedArrivalTime, predictedArrivalTime, plannedArrivalPosition,
                 predictedArrivalPosition, arrivalCancelled, plannedDepartureTime, predictedDepartureTime,
                 plannedDeparturePosition, predictedDeparturePosition, departureCancelled);
     }
 
     @Override
     public String toString() {
-        final ToStringHelper helper = MoreObjects.toStringHelper(this).addValue(location);
-        if (plannedArrivalTime != null)
-            helper.add("plannedArrivalTime", String.format(Locale.US, "%ta %<tR", plannedArrivalTime));
-        if (arrivalCancelled)
-            helper.addValue("cancelled");
-        else if (predictedArrivalTime != null)
-            helper.add("predictedArrivalTime", String.format(Locale.US, "%ta %<tR", predictedArrivalTime));
-        if (plannedDepartureTime != null)
-            helper.add("plannedDepartureTime", String.format(Locale.US, "%ta %<tR", plannedDepartureTime));
-        if (departureCancelled)
-            helper.addValue("cancelled");
-        else if (predictedDepartureTime != null)
-            helper.add("predictedDepartureTime", String.format(Locale.US, "%ta %<tR", predictedDepartureTime));
-        return helper.toString();
+        return getClass().getSimpleName() + "{" +
+                location + "," +
+                (plannedArrivalTime != null ?
+                        "plannedArrivalTime=" + String.format(Locale.US, "%ta %<tR", plannedArrivalTime) +
+                                (arrivalCancelled ? " (cancelled)" : "") + "," : "") +
+                (predictedArrivalTime != null ?
+                        "predictedArrivalTime=" + String.format(Locale.US, "%ta %<tR", predictedArrivalTime) + "," : "") +
+                (plannedDepartureTime != null ?
+                        "plannedDepartureTime=" + String.format(Locale.US, "%ta %<tR", plannedDepartureTime) +
+                                (departureCancelled ? " (cancelled)" : "") + "," : "") +
+                (predictedDepartureTime != null ?
+                        "predictedDepartureTime=" + String.format(Locale.US, "%ta %<tR", predictedDepartureTime) + "," : "") +
+                "}";
     }
 }

@@ -17,8 +17,8 @@
 
 package de.schildbach.pte.dto;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
+import static java.util.Objects.requireNonNull;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -27,9 +27,6 @@ import java.util.LinkedList;
 import java.util.List;
 
 import javax.annotation.Nullable;
-
-import com.google.common.base.MoreObjects;
-import com.google.common.base.MoreObjects.ToStringHelper;
 
 /**
  * @author Andreas Schildbach
@@ -54,7 +51,7 @@ public final class SuggestLocationsResult implements Serializable {
 
     public SuggestLocationsResult(final ResultHeader header, final Status status) {
         this.header = header;
-        this.status = checkNotNull(status);
+        this.status = requireNonNull(status);
         this.suggestedLocations = null;
     }
 
@@ -68,10 +65,12 @@ public final class SuggestLocationsResult implements Serializable {
 
     @Override
     public String toString() {
-        final ToStringHelper helper = MoreObjects.toStringHelper(this).addValue(status);
-        if (suggestedLocations != null)
-            helper.add("size", suggestedLocations.size()).add("suggestedLocations", suggestedLocations);
-        return helper.toString();
+        return getClass().getSimpleName() + "{" +
+                status + "," +
+                "size=" +
+                (suggestedLocations != null ?
+                        suggestedLocations.size() + ",suggestedLocations=" + suggestedLocations : "null") +
+                "}";
     }
 
     public String toShortString() {

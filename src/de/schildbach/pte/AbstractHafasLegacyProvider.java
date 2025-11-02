@@ -17,8 +17,8 @@
 
 package de.schildbach.pte;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
+import static java.util.Objects.requireNonNull;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -54,7 +55,6 @@ import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlPullParserFactory;
 
-import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
 
 import de.schildbach.pte.dto.Departure;
@@ -101,7 +101,7 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
     private @Nullable String accessId = null;
     private @Nullable String clientType = "ANDROID";
     private boolean jsonGetStopsUseWeight = true;
-    private Charset jsonNearbyLocationsEncoding = Charsets.ISO_8859_1;
+    private Charset jsonNearbyLocationsEncoding = StandardCharsets.ISO_8859_1;
     private boolean dominantPlanStopTime = false;
     private boolean useIso8601 = false;
     private boolean stationBoardHasStationTable = true;
@@ -300,7 +300,7 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
     public SuggestLocationsResult suggestLocations(final CharSequence constraint,
             final @Nullable Set<LocationType> types, final int maxLocations) throws IOException {
         final HttpUrl.Builder url = getStopEndpoint.newBuilder().addPathSegment(apiLanguage);
-        appendJsonGetStopsParameters(url, checkNotNull(constraint), maxLocations);
+        appendJsonGetStopsParameters(url, requireNonNull(constraint), maxLocations);
         return jsonGetStops(url.build());
     }
 
@@ -392,7 +392,7 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
     @Override
     public QueryDeparturesResult queryDepartures(final String stationId, final @Nullable Date time,
             final int maxDepartures, final boolean equivs) throws IOException {
-        checkNotNull(Strings.emptyToNull(stationId));
+        requireNonNull(Strings.emptyToNull(stationId));
 
         final HttpUrl.Builder url = stationBoardEndpoint.newBuilder().addPathSegment(apiLanguage);
         appendXmlStationBoardParameters(url, time, stationId, maxDepartures, equivs, "vs_java3");
@@ -2079,7 +2079,7 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
     }
 
     private static class StringTable {
-        private Charset encoding = Charsets.US_ASCII;
+        private Charset encoding = StandardCharsets.US_ASCII;
         private final byte[] table;
 
         public StringTable(final DataInputStream is, final int stringTablePtr, final int length) throws IOException {

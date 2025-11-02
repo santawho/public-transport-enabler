@@ -17,8 +17,8 @@
 
 package de.schildbach.pte;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
+import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -52,7 +52,6 @@ import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlPullParserFactory;
 
-import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
 
 import de.schildbach.pte.dto.Departure;
@@ -1496,7 +1495,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
     @Override
     public QueryDeparturesResult queryDepartures(final String stationId, final @Nullable Date time,
             final int maxDepartures, final boolean equivs) throws IOException {
-        checkNotNull(Strings.emptyToNull(stationId));
+        requireNonNull(Strings.emptyToNull(stationId));
 
         return xsltDepartureMonitorRequest(stationId, time, maxDepartures, equivs);
     }
@@ -1606,7 +1605,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                                         new Location(LocationType.STATION, assignedStopId),
                                         new LinkedList<Departure>(), new LinkedList<LineDestination>());
 
-                            final List<LineDestination> assignedStationDeparturesLines = checkNotNull(
+                            final List<LineDestination> assignedStationDeparturesLines = requireNonNull(
                                     assignedStationDepartures.lines);
                             if (!assignedStationDeparturesLines.contains(lineDestination))
                                 assignedStationDeparturesLines.add(lineDestination);
@@ -2756,10 +2755,9 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                             processIndividualLeg(pp, legs, Trip.Individual.Type.CAR, distance, departureTime,
                                     departureLocation, arrivalTime, arrivalLocation);
                         } else {
-                            throw new IllegalStateException(MoreObjects.toStringHelper("")
-                                    .add("itdPartialRoute.type", itdPartialRouteType)
-                                    .add("itdMeansOfTransport.type", itdMeansOfTransportType)
-                                    .add("itdMeansOfTransport.productName", itdMeansOfTransportProductName).toString());
+                            throw new IllegalStateException("itdPartialRoute.type=" + itdPartialRouteType +
+                                            ",itdMeansOfTransport.type=" + itdMeansOfTransportType +
+                                            ",itdMeansOfTransport.productName" + itdMeansOfTransportProductName);
                         }
 
                         XmlPullUtil.skipExit(pp, "itdPartialRoute");

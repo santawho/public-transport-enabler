@@ -19,10 +19,7 @@ package de.schildbach.pte;
 
 import java.util.Set;
 
-import com.google.common.base.Charsets;
-
 import de.schildbach.pte.dto.Product;
-import de.schildbach.pte.util.StringReplaceReader;
 
 import okhttp3.HttpUrl;
 

@@ -18,19 +18,17 @@
 package de.schildbach.pte.dto;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
+import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.Set;
 
 import javax.annotation.Nullable;
 
-import com.google.common.base.MoreObjects;
-import com.google.common.base.MoreObjects.ToStringHelper;
-import com.google.common.base.Objects;
 import com.google.common.base.Strings;
 
 import org.msgpack.core.MessagePacker;
@@ -64,7 +62,7 @@ public final class Location implements Serializable, MessagePackUtils.Packable {
             final String name,
             final Set<Product> products,
             final String infoUrl) {
-        this.type = checkNotNull(type);
+        this.type = requireNonNull(type);
         this.id = id;
         this.identityId = identityId == null ? id : identityId;
         this.displayId = displayId == null ? id : displayId;
@@ -211,19 +209,19 @@ public final class Location implements Serializable, MessagePackUtils.Packable {
         if (!(o instanceof Location))
             return false;
         final Location other = (Location) o;
-        if (!Objects.equal(this.type, other.type))
+        if (!Objects.equals(this.type, other.type))
             return false;
         if (this.identityId != null && other.identityId != null && this.identityId.equals(other.identityId))
             return true;
         if (this.id != null)
             return this.id.equals(other.id);
         if (this.coord != null)
-            return Objects.equal(this.coord, other.coord);
+            return Objects.equals(this.coord, other.coord);
 
         // only discriminate by name/place if no ids are given
-        if (!Objects.equal(this.place, other.place))
+        if (!Objects.equals(this.place, other.place))
             return false;
-        if (!Objects.equal(this.name, other.name))
+        if (!Objects.equals(this.name, other.name))
             return false;
         return true;
     }
@@ -233,17 +231,17 @@ public final class Location implements Serializable, MessagePackUtils.Packable {
             return true;
         if (other == null)
             return false;
-        if (!Objects.equal(this.type, other.type))
+        if (!Objects.equals(this.type, other.type))
             return false;
-        if (!Objects.equal(this.id, other.id))
+        if (!Objects.equals(this.id, other.id))
             return false;
-        if (!Objects.equal(this.coord, other.coord))
+        if (!Objects.equals(this.coord, other.coord))
             return false;
-        if (!Objects.equal(this.place, other.place))
+        if (!Objects.equals(this.place, other.place))
             return false;
-        if (!Objects.equal(this.name, other.name))
+        if (!Objects.equals(this.name, other.name))
             return false;
-        if (!Objects.equal(this.products, other.products))
+        if (!Objects.equals(this.products, other.products))
             return false;
         return true;
     }
@@ -251,16 +249,19 @@ public final class Location implements Serializable, MessagePackUtils.Packable {
     @Override
     public int hashCode() {
         if (id != null)
-            return Objects.hashCode(type.name(), id);
+            return Objects.hash(type.name(), id);
         else
-            return Objects.hashCode(type.name(), coord);
+            return Objects.hash(type.name(), coord);
     }
 
     @Override
     public String toString() {
-        final ToStringHelper helper = MoreObjects.toStringHelper(this).addValue(type).addValue(id);
-        if (hasCoord())
-            helper.addValue(coord);
-        return helper.add("place", place).add("name", name).add("products", products).omitNullValues().toString();
+        return getClass().getSimpleName() + "{" +
+                type + "," +
+                (id != null ? id + "," : "") +
+                (hasCoord() ? coord + "," : "") +
+                (place != null ? "place=" + place + "," : "") +
+                (name != null ? "name=" + name + "," : "") +
+                "products=" + products + "}";
     }
 }

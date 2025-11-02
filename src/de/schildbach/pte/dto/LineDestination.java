@@ -17,14 +17,12 @@
 
 package de.schildbach.pte.dto;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.io.Serializable;
+import java.util.Objects;
 
 import javax.annotation.Nullable;
 
-import com.google.common.base.MoreObjects;
-import com.google.common.base.Objects;
+import static java.util.Objects.requireNonNull;
 
 /**
  * @author Andreas Schildbach
@@ -36,7 +34,7 @@ public final class LineDestination implements Serializable {
     final public @Nullable Location destination;
 
     public LineDestination(final Line line, final Location destination) {
-        this.line = checkNotNull(line);
+        this.line = requireNonNull(line);
         this.destination = destination;
     }
 
@@ -47,12 +45,12 @@ public final class LineDestination implements Serializable {
         if (!(o instanceof LineDestination))
             return false;
         final LineDestination other = (LineDestination) o;
-        if (!Objects.equal(this.line, other.line))
+        if (!Objects.equals(this.line, other.line))
             return false;
         // This workaround is necessary because in rare cases destinations have IDs of other locations.
         final String thisDestinationName = this.destination != null ? this.destination.uniqueShortName() : null;
         final String otherDestinationName = other.destination != null ? other.destination.uniqueShortName() : null;
-        if (!Objects.equal(thisDestinationName, otherDestinationName))
+        if (!Objects.equals(thisDestinationName, otherDestinationName))
             return false;
         return true;
     }
@@ -61,12 +59,14 @@ public final class LineDestination implements Serializable {
     public int hashCode() {
         // This workaround is necessary because in rare cases destinations have IDs of other locations.
         final String destinationName = destination != null ? destination.uniqueShortName() : null;
-        return Objects.hashCode(line, destinationName);
+        return Objects.hash(line, destinationName);
     }
 
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(this).add("line", line).add("destination", destination).omitNullValues()
-                .toString();
+        return getClass().getSimpleName() + "{" +
+                "line=" + line +
+                (destination != null ? ",destination=" + destination : "") +
+                "}";
     }
 }

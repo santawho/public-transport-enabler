@@ -20,8 +20,7 @@ package de.schildbach.pte.dto;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Locale;
-
-import com.google.common.base.Objects;
+import java.util.Objects;
 
 import org.msgpack.core.MessagePacker;
 import org.msgpack.core.MessageUnpacker;
@@ -103,7 +102,7 @@ public final class Point implements Serializable, MessagePackUtils.Packable {
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(lat, lon);
+        return Objects.hash(lat, lon);
     }
 
     @Override

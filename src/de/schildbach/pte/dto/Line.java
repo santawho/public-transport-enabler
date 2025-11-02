@@ -18,12 +18,11 @@
 package de.schildbach.pte.dto;
 
 import java.io.Serializable;
+import java.util.Objects;
 import java.util.Set;
 
 import javax.annotation.Nullable;
 
-import com.google.common.base.MoreObjects;
-import com.google.common.base.Objects;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
 
@@ -112,28 +111,27 @@ public final class Line implements Serializable, Comparable<Line> {
         if (!(o instanceof Line))
             return false;
         final Line other = (Line) o;
-        if (!Objects.equal(this.network, other.network))
+        if (!Objects.equals(this.network, other.network))
             return false;
-        if (!Objects.equal(this.product, other.product))
+        if (!Objects.equals(this.product, other.product))
             return false;
-        if (!Objects.equal(this.label, other.label))
+        if (!Objects.equals(this.label, other.label))
             return false;
         return true;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(network, product == null ? null : product.name(), label);
+        return Objects.hash(network, product == null ? null : product.name(), label);
     }
 
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(this).omitNullValues() //
-                .addValue(network) //
-                .addValue(product) //
-                .addValue(label) //
-                .addValue("'"+ name + "'") //
-                .toString();
+        return getClass().getSimpleName() + "{" +
+                (network != null ? network + "," : "") +
+                (product != null ? product + "," : "") +
+                (label != null ? label + "," : "") +
+                "'" + name + "'}";
     }
 
     @Override

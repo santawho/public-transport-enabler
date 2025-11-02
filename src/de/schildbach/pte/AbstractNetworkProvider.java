@@ -19,8 +19,8 @@ package de.schildbach.pte;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
-import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
@@ -28,8 +28,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.annotation.Nullable;
-
-import com.google.common.base.Charsets;
 
 import org.msgpack.core.MessageUnpacker;
 
@@ -52,7 +50,7 @@ import de.schildbach.pte.dto.TripShare;
 public abstract class AbstractNetworkProvider extends AbstractLocationSearchProvider implements NetworkApiProvider {
     protected final NetworkId network;
 
-    protected Charset requestUrlEncoding = Charsets.ISO_8859_1;
+    protected Charset requestUrlEncoding = StandardCharsets.ISO_8859_1;
     protected TimeZone timeZone;
     protected int numTripsRequested = 6;
     protected @Nullable Map<String, Style> styles = null;

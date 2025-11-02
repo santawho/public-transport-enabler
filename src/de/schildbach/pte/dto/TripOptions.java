@@ -23,9 +23,6 @@ import java.util.Set;
 
 import javax.annotation.Nullable;
 
-import com.google.common.base.MoreObjects;
-import com.google.common.base.MoreObjects.ToStringHelper;
-
 import de.schildbach.pte.NetworkProvider;
 import de.schildbach.pte.NetworkProvider.Accessibility;
 import de.schildbach.pte.NetworkProvider.Optimize;
@@ -82,13 +79,12 @@ public class TripOptions implements Serializable {
 
     @Override
     public String toString() {
-        final ToStringHelper helper = MoreObjects.toStringHelper(this);
-        helper.add("products", products);
-        helper.addValue(optimize);
-        helper.addValue(walkSpeed);
-        helper.addValue(minTransferTimeMinutes);
-        helper.addValue(accessibility);
-        helper.add("flags", flags);
-        return helper.toString();
+        return getClass().getSimpleName() + "{" +
+                "products=" + products + "," +
+                optimize + "," +
+                walkSpeed + "," +
+                minTransferTimeMinutes + "," +
+                accessibility + "," +
+                "flags=" + flags + "}";
     }
 }
