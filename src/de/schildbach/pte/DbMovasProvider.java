@@ -145,7 +145,8 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
             Capability.MIN_TRANSFER_TIMES,
             Capability.BIKE_OPTION,
             Capability.TRIP_SHARING,
-            Capability.TRIP_LINKING
+            Capability.TRIP_LINKING,
+            Capability.TRIP_DETAILS
         );
 
     private static final HttpUrl API_BASE = HttpUrl.parse(
@@ -224,6 +225,7 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
     private final HttpUrl journeyEndpoint;
     private final HttpUrl locationsEndpoint;
     private final HttpUrl nearbyEndpoint;
+    private final BahnvorhersageProvider bahnvorhersageProvider;
 
     private static final Pattern P_SPLIT_NAME_FIRST_COMMA = Pattern.compile("([^,]*), (.*)");
     private static final Pattern P_SPLIT_NAME_ONE_COMMA = Pattern.compile("([^,]*), ([^,]*)");
@@ -259,6 +261,12 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
         this.resultHeader = new ResultHeader(network, "movas");
 
         this.linkSharing = new DbWebProvider.DbWebLinkSharing();
+        this.bahnvorhersageProvider = new BahnvorhersageProvider();
+    }
+
+    @Override
+    public TransferEvaluationProvider getTransferEvaluationProvider() {
+        return bahnvorhersageProvider;
     }
 
     @Override
@@ -652,7 +660,8 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
         return null;
     }
 
-    public static class DbMovasTripRef extends TripRef {
+    public static class DbMovasTripRef extends TripRef
+            implements BahnvorhersageProvider.RefreshTokenTripRef {
         private static final long serialVersionUID = -6844201755459607718L;
 
         public final String kontext;
@@ -681,6 +690,11 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
             this.kontext = MessagePackUtils.unpackNullableString(unpacker);
             this.limitToDticket = unpacker.unpackBoolean();
             this.hasDticket = unpacker.unpackBoolean();
+        }
+
+        @Override
+        public String getBahnvorhersageRefreshToken() {
+            return kontext;
         }
 
         @Override

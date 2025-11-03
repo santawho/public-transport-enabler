@@ -54,6 +54,8 @@ public final class Trip implements Serializable {
     public final int[] capacity;
     public final Integer numChanges;
     private @Nullable String uniqueId;
+    public boolean isDetailsLoaded;
+    public TransferDetails[] transferDetails;
 
     public Trip(
             final Date loadedAt,

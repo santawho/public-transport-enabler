@@ -149,7 +149,8 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
             Capability.MIN_TRANSFER_TIMES,
             Capability.BIKE_OPTION,
             Capability.TRIP_SHARING,
-            Capability.TRIP_LINKING
+            Capability.TRIP_LINKING,
+            Capability.TRIP_DETAILS
         );
 
     private static final HttpUrl WEB_API_BASE = HttpUrl.parse("https://www.bahn.de/web/api/");
@@ -193,6 +194,7 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
     private final HttpUrl journeyEndpoint;
     private final HttpUrl locationsEndpoint;
     private final HttpUrl nearbyEndpoint;
+    private final BahnvorhersageProvider bahnvorhersageProvider;
 
     private static final Pattern P_SPLIT_NAME_FIRST_COMMA = Pattern.compile("([^,]*), (.*)");
     private static final Pattern P_SPLIT_NAME_ONE_COMMA = Pattern.compile("([^,]*), ([^,]*)");
@@ -228,6 +230,12 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
         this.resultHeader = new ResultHeader(network, "dbweb");
 
         this.linkSharing = new DbWebLinkSharing();
+        this.bahnvorhersageProvider = new BahnvorhersageProvider();
+    }
+
+    @Override
+    public TransferEvaluationProvider getTransferEvaluationProvider() {
+        return bahnvorhersageProvider;
     }
 
     @Override
@@ -256,7 +264,7 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
         // DB API requires these headers
         // Content-Type must be exactly as passed below,
         // passing it to httpClient.get would add charset suffix
-        String cType = contentType != null ? contentType : "application/json";
+        final String cType = contentType != null ? contentType : "application/json";
         httpClient.setHeader("X-Correlation-ID", UUID.randomUUID() + "_" + UUID.randomUUID());
         httpClient.setHeader("Accept", cType);
         if (body != null) httpClient.setHeader("Content-Type", cType);
@@ -630,7 +638,8 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
         return null;
     }
 
-    public static class DbWebTripRef extends TripRef {
+    public static class DbWebTripRef extends TripRef
+            implements BahnvorhersageProvider.RefreshTokenTripRef {
         private static final long serialVersionUID = -1951536102104578242L;
 
         public final String ctxRecon;
@@ -659,6 +668,11 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
             this.ctxRecon = MessagePackUtils.unpackNullableString(unpacker);
             this.limitToDticket = unpacker.unpackBoolean();
             this.hasDticket = unpacker.unpackBoolean();
+        }
+
+        @Override
+        public String getBahnvorhersageRefreshToken() {
+            return ctxRecon;
         }
 
         @Override

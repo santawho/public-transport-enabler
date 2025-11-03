@@ -206,4 +206,24 @@ public abstract class AbstractNetworkProvider extends AbstractLocationSearchProv
     public QueryTripsResult loadSharedTrip(final TripShare tripShare) throws IOException {
         throw new UnsupportedOperationException("loadSharedTrip");
     }
+
+    @Override
+    public Trip queryTripDetails(final Trip aTrip) throws IOException {
+        if (aTrip.isDetailsLoaded)
+            return aTrip;
+
+        Trip trip = aTrip;
+
+        final TransferEvaluationProvider transferEvaluationProvider = getTransferEvaluationProvider();
+        if (transferEvaluationProvider != null)
+            trip = transferEvaluationProvider.evaluateTransfersForTrip(trip);
+
+        trip.isDetailsLoaded = true;
+        return trip;
+    }
+
+    @Override
+    public TransferEvaluationProvider getTransferEvaluationProvider() {
+        return null;
+    }
 }

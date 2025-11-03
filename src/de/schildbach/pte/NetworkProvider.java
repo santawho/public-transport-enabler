@@ -65,6 +65,7 @@ public interface NetworkProvider extends LocationSearchProvider {
         BIKE_OPTION,
         TRIP_SHARING,
         TRIP_LINKING,
+        TRIP_DETAILS,
     }
 
     enum Optimize {
@@ -208,4 +209,8 @@ public interface NetworkProvider extends LocationSearchProvider {
     TripShare shareTrip(final Trip trip) throws IOException;
 
     QueryTripsResult loadSharedTrip(final TripShare tripShare) throws IOException;
+
+    Trip queryTripDetails(final Trip trip) throws IOException;
+
+    TransferEvaluationProvider getTransferEvaluationProvider() throws IOException;
 }
