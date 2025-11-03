@@ -100,6 +100,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
     private String apiEndpoint = "mgate.exe";
     @Nullable
     private String apiVersion;
+    private int apiLevel;
     private boolean apiUseLocationLidOnly;
     @Nullable
     private String apiExt;
@@ -180,6 +181,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
         }
         checkArgument(minorVersion >= 14, "apiVersion must be 1.14 or higher");
         this.apiVersion = apiVersion;
+        this.apiLevel = minorVersion;
         this.apiUseLocationLidOnly = minorVersion >= 40;
         return this;
     }
@@ -1046,8 +1048,9 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
 
     private QueryTripsResult jsonTripReload(final HafasTripRef tripRef) throws IOException {
         final String request = wrapJsonApiRequest("Reconstruction", "{" //
-//                        + "\"outReconL\":[{ctx:\"" + tripRef.ctxRecon + "\"}]," //
-                        + "\"ctxRecon\":\"" + tripRef.ctxRecon + "\","
+                        + ((apiLevel >= 40) //
+                            ? "\"outReconL\":[{\"ctx\":\"" + tripRef.ctxRecon + "\"}]," //
+                            : "\"ctxRecon\":\"" + tripRef.ctxRecon + "\",") //
                         + "\"getPolyline\":true,\"getPasslist\":true,\"getIST\":false}", //
                 false);
 
