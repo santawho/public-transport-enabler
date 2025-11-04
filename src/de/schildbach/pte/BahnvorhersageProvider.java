@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import de.schildbach.pte.dto.Product;
 import de.schildbach.pte.dto.TransferDetails;
 import de.schildbach.pte.dto.Trip;
 import de.schildbach.pte.dto.TripRef;
@@ -36,7 +37,7 @@ import okhttp3.HttpUrl;
 public final class BahnvorhersageProvider extends AbstractApiProvider implements TransferEvaluationApiProvider {
     private static final Logger log = LoggerFactory.getLogger(BahnvorhersageProvider.class);
 
-    public interface RefreshTokenTripRef {
+    public interface BahnvorhersageTripRef {
         String getBahnvorhersageRefreshToken();
     }
 
@@ -49,14 +50,44 @@ public final class BahnvorhersageProvider extends AbstractApiProvider implements
     }
 
     @Override
-    public Trip evaluateTransfersForTrip(final Trip trip) throws IOException {
+    public List<TransferDetails> evaluateTransfersForTrip(final Trip trip) throws IOException {
         final TripRef tripRef = trip.tripRef;
         if (tripRef == null)
-            throw new RuntimeException("trip has null tripRef");
-        if (!(tripRef instanceof RefreshTokenTripRef))
-            throw new RuntimeException("trip is not compatible with Bahnvorhersage: tripRef=" + tripRef.getClass().getName());
-        final String refreshToken = ((RefreshTokenTripRef) tripRef).getBahnvorhersageRefreshToken();
+            return null;
 
+        if (!(tripRef instanceof BahnvorhersageTripRef))
+            throw new RuntimeException("trip is not compatible with Bahnvorhersage: tripRef=" + tripRef.getClass().getName());
+        final String refreshToken = ((BahnvorhersageTripRef) tripRef).getBahnvorhersageRefreshToken();
+
+        // if (!checkPreconditions(trip))
+        //     return null;
+
+        return queryTransferDetailsForRefreshToken(refreshToken);
+    }
+
+    private boolean checkPreconditions(final Trip trip) {
+        // at least one transfer must be train to train.
+        // otherwise the result would contain no transfer evaluation at all,
+        // because Bahnvorhersage supports trains only.
+        // They say so! Is it true? Because there are evaluations for U-Bahn to Bus for example...
+        boolean previousIsTrain = false;
+        for (final Trip.Leg leg : trip.legs) {
+            if (!(leg instanceof Trip.Public))
+                continue;
+            final Trip.Public publicLeg = (Trip.Public) leg;
+            final Product product = publicLeg.line.product;
+            if (product != null && product.isTrain()) {
+                if (previousIsTrain)
+                    return true;
+                previousIsTrain = true;
+            } else {
+                previousIsTrain = false;
+            }
+        }
+        return false;
+    }
+
+    private List<TransferDetails> queryTransferDetailsForRefreshToken(final String refreshToken) throws IOException {
         final String request = "{\"refresh_token\":\"" + refreshToken + "\"}";
         final HttpUrl url = refreshJourneyEndpoint;
 
@@ -81,26 +112,15 @@ public final class BahnvorhersageProvider extends AbstractApiProvider implements
                     transferDetailsList.add(transferDetails);
                 }
             }
-            final int numTransfers = transferDetailsList.size();
-            int numPublicLegs = 0;
-            for (final Trip.Leg tripLeg : trip.legs) {
-                if (tripLeg instanceof Trip.Public)
-                    numPublicLegs += 1;
-            }
-            if (numTransfers == numPublicLegs - 1) {
-                trip.transferDetails = transferDetailsList.toArray(new TransferDetails[0]);
-            } else {
-                log.warn("unexpected {} transfers for {} public legs", numTransfers, numPublicLegs);
-            }
+            return transferDetailsList;
         } catch (IOException | RuntimeException e) {
             log.error("service is down");
         } catch (final JSONException x) {
             throw new ParserException("cannot parse json: '" + page + "' on " + url, x);
         }
 
-        return trip;
+        return null;
     }
-
 
     private String doRequest(final HttpUrl url, final String body) throws IOException {
         final String cType = "application/json";
@@ -108,7 +128,6 @@ public final class BahnvorhersageProvider extends AbstractApiProvider implements
         if (body != null) httpClient.setHeader("Content-Type", cType);
         if (userInterfaceLanguage != null)
             httpClient.setHeader("Accept-Language", userInterfaceLanguage);
-        final String page = httpClient.get(url, body, null).toString();
-        return page;
+        return httpClient.get(url, body, null).toString();
     }
 }

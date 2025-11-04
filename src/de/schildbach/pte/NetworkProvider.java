@@ -21,6 +21,7 @@ import org.msgpack.core.MessageUnpacker;
 
 import java.io.IOException;
 import java.util.Date;
+import java.util.List;
 import java.util.Set;
 import java.util.TimeZone;
 
@@ -82,6 +83,10 @@ public interface NetworkProvider extends LocationSearchProvider {
 
     enum TripFlag {
         BIKE
+    }
+
+    enum TripDetails {
+        TRANSFERS
     }
 
     NetworkId id();
@@ -210,7 +215,7 @@ public interface NetworkProvider extends LocationSearchProvider {
 
     QueryTripsResult loadSharedTrip(final TripShare tripShare) throws IOException;
 
-    Trip queryTripDetails(final Trip trip) throws IOException;
+    Trip queryTripDetails(final Trip trip, final List<TripDetails> whichDetails) throws IOException;
 
     TransferEvaluationProvider getTransferEvaluationProvider() throws IOException;
 }

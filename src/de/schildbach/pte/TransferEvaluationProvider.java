@@ -18,9 +18,11 @@
 package de.schildbach.pte;
 
 import java.io.IOException;
+import java.util.List;
 
+import de.schildbach.pte.dto.TransferDetails;
 import de.schildbach.pte.dto.Trip;
 
 public interface TransferEvaluationProvider {
-    Trip evaluateTransfersForTrip(final Trip trip) throws IOException;
+    List<TransferDetails> evaluateTransfersForTrip(final Trip trip) throws IOException;
 }

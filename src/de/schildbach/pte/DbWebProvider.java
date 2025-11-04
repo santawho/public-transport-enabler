@@ -639,7 +639,7 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
     }
 
     public static class DbWebTripRef extends TripRef
-            implements BahnvorhersageProvider.RefreshTokenTripRef {
+            implements BahnvorhersageProvider.BahnvorhersageTripRef {
         private static final long serialVersionUID = -1951536102104578242L;
 
         public final String ctxRecon;

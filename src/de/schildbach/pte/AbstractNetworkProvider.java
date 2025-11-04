@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
@@ -39,6 +40,7 @@ import de.schildbach.pte.dto.Product;
 import de.schildbach.pte.dto.QueryJourneyResult;
 import de.schildbach.pte.dto.QueryTripsResult;
 import de.schildbach.pte.dto.Style;
+import de.schildbach.pte.dto.TransferDetails;
 import de.schildbach.pte.dto.Trip;
 import de.schildbach.pte.dto.TripOptions;
 import de.schildbach.pte.dto.TripRef;
@@ -208,17 +210,28 @@ public abstract class AbstractNetworkProvider extends AbstractLocationSearchProv
     }
 
     @Override
-    public Trip queryTripDetails(final Trip aTrip) throws IOException {
-        if (aTrip.isDetailsLoaded)
-            return aTrip;
+    public Trip queryTripDetails(final Trip trip, final List<TripDetails> whichDetails) throws IOException {
+        if ((whichDetails == null || whichDetails.contains(TripDetails.TRANSFERS))
+                && trip.transferDetails == null) {
+            final TransferEvaluationProvider transferEvaluationProvider = getTransferEvaluationProvider();
+            if (transferEvaluationProvider != null) {
+                final List<TransferDetails> transferDetails = transferEvaluationProvider.evaluateTransfersForTrip(trip);
+                if (transferDetails != null) {
+                    final int numTransfers = transferDetails.size();
+                    int numPublicLegs = 0;
+                    for (final Trip.Leg tripLeg : trip.legs) {
+                        if (tripLeg instanceof Trip.Public)
+                            numPublicLegs += 1;
+                    }
+                    if (numTransfers == numPublicLegs - 1) {
+                        trip.transferDetails = transferDetails.toArray(new TransferDetails[0]);
+                    } else {
+                        log.warn("unexpected {} transfers for {} public legs", numTransfers, numPublicLegs);
+                    }
+                }
+            }
+        }
 
-        Trip trip = aTrip;
-
-        final TransferEvaluationProvider transferEvaluationProvider = getTransferEvaluationProvider();
-        if (transferEvaluationProvider != null)
-            trip = transferEvaluationProvider.evaluateTransfersForTrip(trip);
-
-        trip.isDetailsLoaded = true;
         return trip;
     }
 

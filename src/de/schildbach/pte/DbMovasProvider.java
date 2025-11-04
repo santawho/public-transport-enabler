@@ -661,7 +661,7 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
     }
 
     public static class DbMovasTripRef extends TripRef
-            implements BahnvorhersageProvider.RefreshTokenTripRef {
+            implements BahnvorhersageProvider.BahnvorhersageTripRef {
         private static final long serialVersionUID = -6844201755459607718L;
 
         public final String kontext;
