@@ -42,6 +42,7 @@ public final class BahnvorhersageProvider extends AbstractApiProvider implements
     }
 
     private static final HttpUrl API_BASE = HttpUrl.parse("https://bahnvorhersage.de/api/");
+    private static final boolean TRAINS_ONLY = false;
 
     private final HttpUrl refreshJourneyEndpoint;
 
@@ -59,8 +60,8 @@ public final class BahnvorhersageProvider extends AbstractApiProvider implements
             throw new RuntimeException("trip is not compatible with Bahnvorhersage: tripRef=" + tripRef.getClass().getName());
         final String refreshToken = ((BahnvorhersageTripRef) tripRef).getBahnvorhersageRefreshToken();
 
-        // if (!checkPreconditions(trip))
-        //     return null;
+        if (!checkPreconditions(trip))
+            return null;
 
         return queryTransferDetailsForRefreshToken(refreshToken);
     }
@@ -71,9 +72,11 @@ public final class BahnvorhersageProvider extends AbstractApiProvider implements
         // because Bahnvorhersage supports trains only.
         // They say so! Is it true? Because there are evaluations for U-Bahn to Bus for example...
         boolean previousIsTrain = false;
+        int numPublic = 0;
         for (final Trip.Leg leg : trip.legs) {
             if (!(leg instanceof Trip.Public))
                 continue;
+            ++numPublic;
             final Trip.Public publicLeg = (Trip.Public) leg;
             final Product product = publicLeg.line.product;
             if (product != null && product.isTrain()) {
@@ -84,7 +87,10 @@ public final class BahnvorhersageProvider extends AbstractApiProvider implements
                 previousIsTrain = false;
             }
         }
-        return false;
+        if (numPublic < 2)
+            return false;
+
+        return !TRAINS_ONLY;
     }
 
     private List<TransferDetails> queryTransferDetailsForRefreshToken(final String refreshToken) throws IOException {
