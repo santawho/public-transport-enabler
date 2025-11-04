@@ -104,10 +104,13 @@ public final class BahnvorhersageProvider extends AbstractApiProvider implements
 
             final List<TransferDetails> transferDetailsList = new ArrayList<>();
             final JSONArray legs = res.getJSONArray("legs");
-            for (int index = 0; index < legs.length(); ++index) {
+            final int lastIndex = legs.length() - 1;
+            for (int index = 0; index <= lastIndex; ++index) {
                 final JSONObject leg = legs.getJSONObject(index);
                 final String type = leg.getString("type");
                 if ("transfer".equals(type)) {
+                    if (index == 0 || index >= lastIndex)
+                        continue;
                     final double transferScore = leg.optDouble("transferScore");
                     final TransferDetails transferDetails;
                     if (Double.isNaN(transferScore)) {
