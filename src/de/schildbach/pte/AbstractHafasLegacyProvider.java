@@ -1189,7 +1189,7 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
             } catch (final XmlPullParserException x) {
                 throw new ParserException("cannot parse xml: " + bodyPeek, x);
             }
-        }, endpoint, request, "application/xml", null);
+        }, endpoint, request, "application/xml");
 
         return result.get();
     }
