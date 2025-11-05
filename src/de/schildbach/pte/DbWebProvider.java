@@ -1492,4 +1492,9 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
             return null;
         return Arrays.asList(value.split(separator));
     }
+
+    @Override
+    public Description getDescription() {
+        return DbProvider.getDbDescription();
+    }
 }

@@ -25,7 +25,7 @@ import javax.annotation.Nullable;
 import de.schildbach.pte.dto.LocationType;
 import de.schildbach.pte.dto.SuggestLocationsResult;
 
-public interface LocationSearchProvider {
+public interface LocationSearchProvider extends Provider {
     /**
      * Meant for auto-completion of location names, like in an Android AutoCompleteTextView.
      *

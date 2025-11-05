@@ -144,4 +144,24 @@ public class NominatimLocationSearchProvider extends AbstractLocationSearchProvi
     private String doRequest(final HttpUrl url) throws IOException {
         return doRequest(url, null);
     }
+
+    @Override
+    public Description getDescription() {
+        return new Description.Base() {
+            @Override
+            public String getName() {
+                return "Nominatim";
+            }
+
+            @Override
+            public String getDescriptionText() {
+                return "Location search by OpenStreetMap";
+            }
+
+            @Override
+            public String getUrl() {
+                return "https://nominatim.org/";
+            }
+        };
+    }
 }

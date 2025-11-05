@@ -48,7 +48,7 @@ import de.schildbach.pte.dto.TripShare;
  * 
  * @author Andreas Schildbach
  */
-public interface NetworkProvider extends LocationSearchProvider {
+public interface NetworkProvider extends Provider, LocationSearchProvider {
     enum Capability {
         /* can suggest locations */
         SUGGEST_LOCATIONS,

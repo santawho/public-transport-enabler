@@ -139,4 +139,24 @@ public final class BahnvorhersageProvider extends AbstractApiProvider implements
             httpClient.setHeader("Accept-Language", userInterfaceLanguage);
         return httpClient.get(url, body, null).toString();
     }
+
+    @Override
+    public Description getDescription() {
+        return new Description.Base() {
+            @Override
+            public String getName() {
+                return "Bahnvorhersage";
+            }
+
+            @Override
+            public String getDescriptionText() {
+                return "Bahnvorhersage provides transfer probabilities.";
+            }
+
+            @Override
+            public String getUrl() {
+                return "https://bahnvorhersage.de";
+            }
+        };
+    }
 }

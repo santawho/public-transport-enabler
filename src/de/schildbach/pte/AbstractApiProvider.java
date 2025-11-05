@@ -24,7 +24,7 @@ import java.net.Proxy;
 
 import de.schildbach.pte.util.HttpClient;
 
-public class AbstractApiProvider implements ApiProvider {
+public abstract class AbstractApiProvider implements ApiProvider {
     protected final Logger log;
 
     protected final HttpClient httpClient = new HttpClient();

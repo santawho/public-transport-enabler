@@ -1283,4 +1283,9 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
         final DbMovasTripRef tripRef = new DbMovasTripRef((DbWebProvider.DbWebTripRef) tripShare.simplifiedTripRef, recon);
         return queryReloadTrip(tripRef);
     }
+
+    @Override
+    public Description getDescription() {
+        return DbProvider.getDbDescription();
+    }
 }

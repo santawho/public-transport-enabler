@@ -239,4 +239,22 @@ public abstract class AbstractNetworkProvider extends AbstractLocationSearchProv
     public TransferEvaluationProvider getTransferEvaluationProvider() {
         return null;
     }
+
+    @Override
+    public Description getDescription() {
+        return new Description.Base() {
+            @Override
+            public String getName() {
+                final String simpleClassName = AbstractNetworkProvider.this.getClass().getSimpleName();
+                if (simpleClassName.endsWith("Provider"))
+                    return simpleClassName.substring(0, simpleClassName.length() - 8);
+                return simpleClassName;
+            }
+
+            @Override
+            public String getDescriptionText() {
+                return "provides timetable information";
+            }
+        };
+    }
 }

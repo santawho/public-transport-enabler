@@ -81,4 +81,22 @@ public final class DbProvider extends DbWebProvider.Fernverkehr {
         return Standard.defaultLineStyle(network, product, label);
     }
 
+    public static Description getDbDescription() {
+        return new Description.Base() {
+            @Override
+            public String getName() {
+                return "Deutsche Bahn AG";
+            }
+
+            @Override
+            public String getDescriptionText() {
+                return "Federal German railways operator";
+            }
+
+            @Override
+            public String getUrl() {
+                return "https://bahn.de";
+            }
+        };
+    }
 }

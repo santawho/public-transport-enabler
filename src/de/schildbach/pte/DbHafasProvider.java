@@ -109,4 +109,9 @@ public abstract class DbHafasProvider extends AbstractHafasClientInterfaceProvid
             return new String[] { m.group(1), m.group(2) };
         return super.splitStationName(address);
     }
+
+    @Override
+    public Description getDescription() {
+        return DbProvider.getDbDescription();
+    }
 }

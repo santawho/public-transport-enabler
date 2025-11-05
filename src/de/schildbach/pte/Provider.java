@@ -17,12 +17,30 @@
 
 package de.schildbach.pte;
 
-import java.io.IOException;
-import java.util.List;
+public interface Provider {
+    interface Description {
+        String getName();
+        String getDescriptionText();
+        String getLicense();
+        String getUrl();
 
-import de.schildbach.pte.dto.TransferDetails;
-import de.schildbach.pte.dto.Trip;
+        abstract class Base implements Description {
+            @Override
+            public String getDescriptionText() {
+                return null;
+            }
 
-public interface TransferEvaluationProvider extends Provider {
-    List<TransferDetails> evaluateTransfersForTrip(final Trip trip) throws IOException;
+            @Override
+            public String getLicense() {
+                return null;
+            }
+
+            @Override
+            public String getUrl() {
+                return null;
+            }
+        }
+    }
+
+    Description getDescription();
 }
