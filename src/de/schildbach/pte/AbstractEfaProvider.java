@@ -270,7 +270,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
         return CAPABILITIES;
     }
 
-    private final void appendCommonRequestParams(final HttpUrl.Builder url, final String outputFormat) {
+    private void appendCommonRequestParams(final HttpUrl.Builder url, final String outputFormat) {
         url.addEncodedQueryParameter("outputFormat", outputFormat);
         url.addEncodedQueryParameter("language", language != null ? language : userInterfaceLanguage);
         url.addEncodedQueryParameter("stateless", "1");
@@ -925,8 +925,9 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
     private static final Pattern P_LINE_S_DB = Pattern.compile("(S\\d+) \\((?:DB Regio AG)\\)");
     private static final Pattern P_LINE_NUMBER = Pattern.compile("\\d+");
 
-    protected Line parseLine(final @Nullable String id, final @Nullable String network, final @Nullable String mot,
-            @Nullable String symbol, final @Nullable String name, final @Nullable String longName,
+    protected Line parseLine(
+            final @Nullable String id, final @Nullable String network, final @Nullable String mot,
+            @Nullable final String symbol, final @Nullable String name, final @Nullable String longName,
             final @Nullable String trainType, final @Nullable String trainNum, final @Nullable String trainName) {
         if (mot == null) {
             if (trainName != null) {
@@ -1545,15 +1546,15 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
 
         final HttpClient.Callback callback = (bodyPeek, body) -> {
             try {
-//                BufferedReader bufferedReader = new BufferedReader(body.charStream());
-//                bufferedReader.mark(1000000);
-//                String s;
-//                StringBuilder b = new StringBuilder();
-//                while ((s = bufferedReader.readLine()) != null) b.append(s);
-//                s = b.toString();
-//                bufferedReader.reset();
+// java.io.BufferedReader bufferedReader = new java.io.BufferedReader(body.charStream());
+// bufferedReader.mark(1000000);
+// String s;
+// StringBuilder b = new StringBuilder();
+// while ((s = bufferedReader.readLine()) != null) b.append(s);
+// s = b.toString();
+// bufferedReader.reset();
                 final XmlPullParser pp = parserFactory.newPullParser();
-//                pp.setInput(bufferedReader);
+// pp.setInput(bufferedReader);
                 pp.setInput(body.charStream());
                 final ResultHeader header = enterItdRequest(pp);
 
@@ -1565,7 +1566,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                 final String nameState = processItdOdv(pp, "dm", (nameState1, location, matchQuality) -> {
                     if (location.type == LocationType.STATION)
                         if (findStationDepartures(r.stationDepartures, location.id) == null)
-                            r.stationDepartures.add(new StationDepartures(location, new LinkedList<Departure>(), new LinkedList<LineDestination>()));
+                            r.stationDepartures.add(new StationDepartures(location, new LinkedList<>(), new LinkedList<>()));
                 });
 
                 if (!"identified".equals(nameState)) {
@@ -1603,7 +1604,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                             if (assignedStationDepartures == null)
                                 assignedStationDepartures = new StationDepartures(
                                         new Location(LocationType.STATION, assignedStopId),
-                                        new LinkedList<Departure>(), new LinkedList<LineDestination>());
+                                        new LinkedList<>(), new LinkedList<>());
 
                             final List<LineDestination> assignedStationDeparturesLines = requireNonNull(
                                     assignedStationDepartures.lines);
@@ -1636,7 +1637,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
 
                             assignedStationDepartures = new StationDepartures(
                                     new Location(LocationType.STATION, assignedStopId, coord),
-                                    new LinkedList<Departure>(), new LinkedList<LineDestination>());
+                                    new LinkedList<>(), new LinkedList<>());
                         }
 
                         final Position position = parsePosition(XmlPullUtil.optAttr(pp, "platformName", null));
@@ -1758,7 +1759,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                         if (stationDepartures == null) {
                             stationDepartures = new StationDepartures(
                                     new Location(LocationType.STATION, assignedId),
-                                    new ArrayList<Departure>(maxDepartures), null);
+                                    new ArrayList<>(maxDepartures), null);
                             r.stationDepartures.add(stationDepartures);
                         }
 
@@ -2198,7 +2199,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
         public boolean equals(Object o) {
             if (this == o) return true;
             if (!(o instanceof EfaJourneyRef)) return false;
-            EfaJourneyRef that = (EfaJourneyRef) o;
+            final EfaJourneyRef that = (EfaJourneyRef) o;
             return Objects.equals(transportationID, that.transportationID)
                     && Objects.equals(stopID, that.stopID)
                     && Objects.equals(tripCode, that.tripCode)
@@ -2212,7 +2213,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
     }
 
     @Override
-    public QueryJourneyResult queryJourney(JourneyRef aJourneyRef) throws IOException {
+    public QueryJourneyResult queryJourney(final JourneyRef aJourneyRef) throws IOException {
         return queryJourneyUsingTripStopTimes(aJourneyRef);
     }
 
@@ -2225,7 +2226,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
         appendDateTimeParameters(url, journeyRef.targetTime, "date", "time");
     }
 
-    public QueryJourneyResult queryJourneyUsingTripStopTimes(JourneyRef aJourneyRef) throws IOException {
+    public QueryJourneyResult queryJourneyUsingTripStopTimes(final JourneyRef aJourneyRef) throws IOException {
         final HttpUrl.Builder url = tripStopTimesEndpoint.newBuilder();
         appendTripStopTimesRequestParameters(url, (EfaJourneyRef) aJourneyRef);
         final AtomicReference<QueryJourneyResult> result = new AtomicReference<>();
@@ -2249,15 +2250,15 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
             final HttpUrl url, final Reader reader,
             final EfaJourneyRef journeyRef)
             throws XmlPullParserException, IOException {
-//        BufferedReader bufferedReader = new BufferedReader(reader);
-//        bufferedReader.mark(1000000);
-//        String s;
-//        StringBuilder b = new StringBuilder();
-//        while ((s = bufferedReader.readLine()) != null) b.append(s);
-//        s = b.toString();
-//        bufferedReader.reset();
+// java.io.BufferedReader bufferedReader = new java.io.BufferedReader(reader);
+// bufferedReader.mark(1000000);
+// String s;
+// StringBuilder b = new StringBuilder();
+// while ((s = bufferedReader.readLine()) != null) b.append(s);
+// s = b.toString();
+// bufferedReader.reset();
         final XmlPullParser pp = parserFactory.newPullParser();
-//        pp.setInput(bufferedReader);
+// pp.setInput(bufferedReader);
         pp.setInput(reader);
         final ResultHeader header = enterItdRequest(pp);
 
@@ -2311,7 +2312,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
         final Line styledLine = new Line(line.id, line.network, line.product, line.label,
                 lineStyle(line.network, line.product, line.label), lineAttrs);
 
-        List<Stop> intermediateStops = processItdPoints(pp, calendar, null, null);
+        final List<Stop> intermediateStops = processItdPoints(pp, calendar, null, null);
 
         final int size = intermediateStops.size();
         final Stop departureStop = intermediateStops.get(0);
@@ -2325,11 +2326,11 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
         return new QueryJourneyResult(header, url.toString(), journeyRef, journeyLeg);
     }
 
-    protected QueryJourneyResult queryJourneyMobile(EfaJourneyRef journeyRef) throws IOException {
+    protected QueryJourneyResult queryJourneyMobile(final EfaJourneyRef journeyRef) throws IOException {
         return queryJourneyMobileUsingStopSeqCoord(journeyRef);
     }
 
-    protected QueryJourneyResult queryJourneyMobileUsingStopSeqCoord(EfaJourneyRef journeyRef) throws IOException {
+    protected QueryJourneyResult queryJourneyMobileUsingStopSeqCoord(final EfaJourneyRef journeyRef) throws IOException {
         final HttpUrl.Builder url = stopSeqCoordEndpoint.newBuilder();
         appendTripStopTimesRequestParameters(url, journeyRef);
         final AtomicReference<QueryJourneyResult> result = new AtomicReference<>();
@@ -2369,17 +2370,17 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
     }
 
     private QueryJourneyResult queryJourneyMobileUsingStopSeqCoord(
-            HttpUrl url, Reader reader, EfaJourneyRef journeyRef
+            final HttpUrl url, final Reader reader, final EfaJourneyRef journeyRef
     ) throws IOException, XmlPullParserException {
-//        BufferedReader bufferedReader = new BufferedReader(reader);
-//        bufferedReader.mark(1000000);
-//        String sx;
-//        StringBuilder b = new StringBuilder();
-//        while ((sx = bufferedReader.readLine()) != null) b.append(sx);
-//        sx = b.toString();
-//        bufferedReader.reset();
+// java.io.BufferedReader bufferedReader = new java.io.BufferedReader(reader);
+// bufferedReader.mark(1000000);
+// String sx;
+// StringBuilder b = new StringBuilder();
+// while ((sx = bufferedReader.readLine()) != null) b.append(sx);
+// sx = b.toString();
+// bufferedReader.reset();
         final XmlPullParser pp = parserFactory.newPullParser();
-//        pp.setInput(bufferedReader);
+// pp.setInput(bufferedReader);
         pp.setInput(reader);
         final ResultHeader header = enterEfa(pp);
         XmlPullUtil.optSkip(pp, "msgs");
@@ -2390,7 +2391,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
         XmlPullUtil.enter(pp, "stopSeqCoords");
         XmlPullUtil.enter(pp, "params");
 
-        List<Stop> intermediateStops = new LinkedList<>();
+        final List<Stop> intermediateStops = new LinkedList<>();
 
         XmlPullUtil.enter(pp, "stopSeq");
         while (XmlPullUtil.optEnter(pp, "p")) {
@@ -2412,9 +2413,9 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
             final int arrivalDelay = Integer.parseInt(XmlPullUtil.optValueTag(pp, "arrDelay", "0"));
             final PTDate predictedArrival = plannedArrival == null ? null
                     : new PTDate(plannedArrival.getTime() + arrivalDelay * 60000L, plannedArrival.getOffset());
-            String arrValid = XmlPullUtil.optValueTag(pp, "arrValid", null);
+            final String arrValid = XmlPullUtil.optValueTag(pp, "arrValid", null);
             final boolean arrivalCancelled = false;
-            String depDateTime = XmlPullUtil.optValueTag(pp, "depDateTime", null);
+            final String depDateTime = XmlPullUtil.optValueTag(pp, "depDateTime", null);
             final PTDate plannedDeparture;
             final PTDate predictedDeparture;
             final int departureDelay;
@@ -2429,7 +2430,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                 departureDelay = Integer.parseInt(XmlPullUtil.optValueTag(pp, "depDelay", "0"));
                 predictedDeparture = plannedDeparture == null ? null
                         : new PTDate(plannedDeparture.getTime() + departureDelay * 60000L, plannedDeparture.getOffset());
-                String depValid = XmlPullUtil.optValueTag(pp, "depValid", null);
+                final String depValid = XmlPullUtil.optValueTag(pp, "depValid", null);
                 departureCancelled = false;
             }
 
@@ -2558,15 +2559,15 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
 
     private QueryTripsResult queryTrips(final HttpUrl url, final Reader reader)
             throws XmlPullParserException, IOException {
-//        BufferedReader bufferedReader = new BufferedReader(reader);
-//        bufferedReader.mark(1000000);
-//        String s;
-//        StringBuilder b = new StringBuilder();
-//        while ((s = bufferedReader.readLine()) != null) b.append(s);
-//        s = b.toString();
-//        bufferedReader.reset();
+// java.io.BufferedReader bufferedReader = new java.io.BufferedReader(reader);
+// bufferedReader.mark(1000000);
+// String s;
+// StringBuilder b = new StringBuilder();
+// while ((s = bufferedReader.readLine()) != null) b.append(s);
+// s = b.toString();
+// bufferedReader.reset();
         final XmlPullParser pp = parserFactory.newPullParser();
-//        pp.setInput(bufferedReader);
+// pp.setInput(bufferedReader);
         pp.setInput(reader);
         final ResultHeader header = enterItdRequest(pp);
         final Object context = header.context;
@@ -2859,7 +2860,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
     }
 
     private List<Stop> processItdPoints(
-            XmlPullParser pp, final Calendar calendar,
+            final XmlPullParser pp, final Calendar calendar,
             final Integer defDepartureDelay, final Integer defArrivalDelay
     ) throws XmlPullParserException, IOException {
         final List<Stop> intermediateStops = new LinkedList<>();
@@ -3087,15 +3088,15 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
 
     private QueryTripsResult queryTripsMobile(final HttpUrl url, final Location from, final @Nullable Location via,
             final Location to, final Reader reader) throws XmlPullParserException, IOException {
-//        BufferedReader bufferedReader = new BufferedReader(reader);
-//        bufferedReader.mark(1000000);
-//        String sx;
-//        StringBuilder b = new StringBuilder();
-//        while ((sx = bufferedReader.readLine()) != null) b.append(sx);
-//        sx = b.toString();
-//        bufferedReader.reset();
+// final java.io.BufferedReader bufferedReader = new java.io.BufferedReader(reader);
+// bufferedReader.mark(10000000);
+// String sx;
+// StringBuilder b = new StringBuilder();
+// while ((sx = bufferedReader.readLine()) != null) b.append(sx);
+// sx = b.toString();
+// bufferedReader.reset();
         final XmlPullParser pp = parserFactory.newPullParser();
-//        pp.setInput(bufferedReader);
+// pp.setInput(bufferedReader);
         pp.setInput(reader);
         final ResultHeader header = enterEfa(pp);
         XmlPullUtil.optSkip(pp, "msgs");
@@ -3258,12 +3259,16 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
 
                     XmlPullUtil.optSkip(pp, "interchange");
 
-                    StringBuilder message = new StringBuilder();
+                    final StringBuilder message = new StringBuilder();
                     if (XmlPullUtil.optEnter(pp, "ns")) {
                         while (XmlPullUtil.optEnter(pp, "no")) {
-                            String text = XmlPullUtil.valueTag(pp, "tx");
+                            final String heading = XmlPullUtil.optValueTag(pp, "he", null);
+                            if (heading != null && messagesAsSimpleHtml) {
+                                message.append("<b><u>").append(heading).append("</u></b><br>");
+                            }
+                            final String text = XmlPullUtil.valueTag(pp, "tx");
                             if (text != null)
-                                message.append(text).append('\n');
+                                message.append(text).append(messagesAsSimpleHtml ? "<br>" : "\n");
                             XmlPullUtil.skipExit(pp, "no");
                         }
                         XmlPullUtil.skipExit(pp, "ns");
