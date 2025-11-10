@@ -41,7 +41,7 @@ public class RmvProvider extends AbstractHafasClientInterfaceProvider {
             Product.BUS,
             Product.FERRY,
             Product.ON_DEMAND,
-            Product.TRAM,
+            Product.SUBURBAN_TRAIN,
     };
     private static final String DEFAULT_API_CLIENT = "{\"id\":\"RMV\",\"type\":\"WEB\",\"name\":\"webapp\",\"l\":\"vs_webapp\"}";
 
