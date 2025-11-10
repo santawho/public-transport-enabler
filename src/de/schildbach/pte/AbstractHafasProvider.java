@@ -80,6 +80,15 @@ public abstract class AbstractHafasProvider extends AbstractNetworkProvider {
         return productsStr.toString();
     }
 
+    protected final int productsInt(final Set<Product> products) {
+        int productsInt = 0;
+        for (int i = 0; i < productsMap.length; i++) {
+            if (productsMap[i] != null && products.contains(productsMap[i]))
+                productsInt |= 1 << i;
+        }
+        return productsInt;
+    }
+
     protected final String allProductsString() {
         final StringBuilder productsStr = new StringBuilder(productsMap.length);
         for (int i = 0; i < productsMap.length; i++)

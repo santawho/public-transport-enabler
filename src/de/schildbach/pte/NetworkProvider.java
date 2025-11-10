@@ -110,8 +110,31 @@ public interface NetworkProvider extends Provider, LocationSearchProvider {
      * @return nearby stations
      * @throws IOException
      */
-    NearbyLocationsResult queryNearbyLocations(Set<LocationType> types, Location location, int maxDistance,
-            int maxLocations) throws IOException;
+    NearbyLocationsResult queryNearbyLocations(
+            Set<LocationType> types, Location location,
+            int maxDistance, int maxLocations) throws IOException;
+
+    /**
+     * Find locations near to given location. At least one of lat/lon pair or station id must be present in
+     * that location.
+     *
+     * @param types
+     *            types of locations to find
+     * @param location
+     *            location to determine nearby stations
+     * @param maxDistance
+     *            maximum distance in meters, or {@code 0}
+     * @param maxLocations
+     *            maximum number of locations, or {@code 0}
+     * @param products
+     *            filter to stations serving listed products, or {@code null}
+     * @return nearby stations
+     * @throws IOException
+     */
+    NearbyLocationsResult queryNearbyLocations(
+            Set<LocationType> types, Location location,
+            int maxDistance, int maxLocations,
+            Set<Product> products) throws IOException;
 
     /**
      * Get departures at a given station, probably live
@@ -127,8 +150,30 @@ public interface NetworkProvider extends Provider, LocationSearchProvider {
      * @return result object containing the departures
      * @throws IOException
      */
-    QueryDeparturesResult queryDepartures(String stationId, @Nullable Date time, int maxDepartures, boolean equivs)
-            throws IOException;
+    QueryDeparturesResult queryDepartures(
+            String stationId, @Nullable Date time,
+            int maxDepartures, boolean equivs) throws IOException;
+
+    /**
+     * Get departures at a given station, probably live
+     *
+     * @param stationId
+     *            id of the station
+     * @param time
+     *            desired time for departing, or {@code null} for the provider default
+     * @param maxDepartures
+     *            maximum number of departures to get or {@code 0}
+     * @param equivs
+     *            also query equivalent stations?
+     * @param products
+     *            filter to stations serving listed products, or {@code null}
+     * @return result object containing the departures
+     * @throws IOException
+     */
+    QueryDeparturesResult queryDepartures(
+            String stationId, @Nullable Date time,
+            int maxDepartures, boolean equivs,
+            Set<Product> products) throws IOException;
 
     /**
      * Typical products for a network

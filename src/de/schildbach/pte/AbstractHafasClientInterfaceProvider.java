@@ -236,10 +236,12 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
     }
 
     @Override
-    public NearbyLocationsResult queryNearbyLocations(final Set<LocationType> types, final Location location,
-            final int maxDistance, final int maxLocations) throws IOException {
+    public NearbyLocationsResult queryNearbyLocations(
+            final Set<LocationType> types, final Location location,
+            final int maxDistance, final int maxLocations,
+            final Set<Product> products) throws IOException {
         if (location.hasCoord())
-            return jsonLocGeoPos(types, location.coord, maxDistance, maxLocations);
+            return jsonLocGeoPos(types, location.coord, maxDistance, maxLocations, products);
         else
             throw new IllegalArgumentException("cannot handle: " + location);
     }
@@ -344,19 +346,24 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
 
     protected final NearbyLocationsResult jsonLocGeoPos(
             final Set<LocationType> types, final Point coord,
-            int maxDistance, int maxLocations) throws IOException {
+            int maxDistance, int maxLocations,
+            final Set<Product> products) throws IOException {
         if (maxDistance == 0)
             maxDistance = DEFAULT_MAX_DISTANCE;
         if (maxLocations == 0)
             maxLocations = DEFAULT_MAX_LOCATIONS;
         final boolean getStations = types.contains(LocationType.STATION);
         final boolean getPOIs = types.contains(LocationType.POI);
-        final String request = wrapJsonApiRequest("LocGeoPos", "{\"ring\":" //
-                + "{\"cCrd\":{\"x\":" + coord.getLonAs1E6() + ",\"y\":" + coord.getLatAs1E6() + "}," //
-                + "\"maxDist\":" + maxDistance + "}," //
+        final String request = wrapJsonApiRequest("LocGeoPos", "{" //
+                + "\"ring\":{" //
+                  + "\"cCrd\":{\"x\":" + coord.getLonAs1E6() + ",\"y\":" + coord.getLatAs1E6() + "}," //
+                  + "\"maxDist\":" + maxDistance + "}," //
                 + "\"getStops\":" + getStations + "," //
                 + "\"getPOIs\":" + getPOIs + "," //
-                + "\"maxLoc\":" + maxLocations + "}", //
+                + (products == null ? ""
+                    : "\"locFltrL\":[{\"value\":\"" + productsInt(products) + "\",\"mode\":\"INC\",\"type\":\"PROD\"}],") //
+                + (maxLocations > 0 ? "\"maxLoc\":" + maxLocations : "") //
+                + "}", //
                 false);
 
         final HttpUrl url = requestUrl(request);
@@ -653,7 +660,9 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
             }
         }
         if (location.hasCoord()) {
-            final NearbyLocationsResult result = jsonLocGeoPos(EnumSet.allOf(LocationType.class), location.coord, 0, 1);
+            final NearbyLocationsResult result = jsonLocGeoPos(
+                    EnumSet.allOf(LocationType.class), location.coord,
+                    0, 1, null);
             if (result.status == NearbyLocationsResult.Status.OK) {
                 final List<Location> locations = result.locations;
                 if (!locations.isEmpty())

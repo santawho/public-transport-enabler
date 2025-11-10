@@ -30,6 +30,7 @@ import de.schildbach.pte.util.MessagePackUtils;
  * @author Andreas Schildbach
  */
 public enum Product {
+    UNKNOWN('?'),
     HIGH_SPEED_TRAIN('I'),
     REGIONAL_TRAIN('R'),
     SUBURBAN_TRAIN('S'),
@@ -41,30 +42,28 @@ public enum Product {
     ON_DEMAND('P'),
     REPLACEMENT_SERVICE('E');
 
-
-    public static final char UNKNOWN = '?';
     public static final Set<Product> ALL_SELECTABLE = EnumSet
-            .complementOf(EnumSet.of(Product.REPLACEMENT_SERVICE));
+            .complementOf(EnumSet.of(REPLACEMENT_SERVICE, UNKNOWN));
     public static final Set<Product> ALL_INCLUDING_HIGHSPEED = EnumSet
-            .complementOf(EnumSet.of(Product.REPLACEMENT_SERVICE));
+            .complementOf(EnumSet.of(REPLACEMENT_SERVICE, UNKNOWN));
     public static final Set<Product> ALL_EXCEPT_HIGHSPEED = EnumSet
-            .complementOf(EnumSet.of(Product.HIGH_SPEED_TRAIN, Product.REPLACEMENT_SERVICE));
+            .complementOf(EnumSet.of(HIGH_SPEED_TRAIN, REPLACEMENT_SERVICE, UNKNOWN));
     public static final Set<Product> ALL_EXCEPT_HIGHSPEED_AND_ONDEMAND = EnumSet
-            .complementOf(EnumSet.of(Product.HIGH_SPEED_TRAIN, Product.ON_DEMAND, Product.REPLACEMENT_SERVICE));
+            .complementOf(EnumSet.of(HIGH_SPEED_TRAIN, ON_DEMAND, REPLACEMENT_SERVICE, UNKNOWN));
 
     public static final EnumSet<Product> TRAIN_PRODUCTS = EnumSet.of(
-            Product.HIGH_SPEED_TRAIN,
-            Product.REGIONAL_TRAIN,
-            Product.SUBURBAN_TRAIN,
-            Product.SUBWAY);
+            HIGH_SPEED_TRAIN,
+            REGIONAL_TRAIN,
+            SUBURBAN_TRAIN,
+            SUBWAY);
 
     public static final EnumSet<Product> LOCAL_PRODUCTS = EnumSet.of(
-            Product.REGIONAL_TRAIN,
-            Product.SUBURBAN_TRAIN,
-            Product.SUBWAY,
-            Product.TRAM,
-            Product.BUS,
-            Product.ON_DEMAND);
+            REGIONAL_TRAIN,
+            SUBURBAN_TRAIN,
+            SUBWAY,
+            TRAM,
+            BUS,
+            ON_DEMAND);
 
     public final char code;
 
@@ -107,7 +106,7 @@ public enum Product {
 
         final Set<Product> products = EnumSet.noneOf(Product.class);
         for (int i = 0; i < codes.length; i++)
-            products.add(Product.fromCode(codes[i]));
+            products.add(fromCode(codes[i]));
         return products;
     }
 

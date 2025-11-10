@@ -92,7 +92,7 @@ public final class Line implements Serializable, Comparable<Line> {
 
     public char productCode() {
         final Product product = this.product;
-        return product != null ? product.code : Product.UNKNOWN;
+        return (product != null ? product : Product.UNKNOWN).code;
     }
 
     public boolean hasAttr(final Attr attr) {

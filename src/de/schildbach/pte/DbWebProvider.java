@@ -171,6 +171,7 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
             put("TRAM", Product.TRAM);
             put("ANRUFPFLICHTIG", Product.ON_DEMAND);
             put("ERSATZVERKEHR", Product.REPLACEMENT_SERVICE);
+            put("UNKNOWN", Product.UNKNOWN);
         }
     };
 
@@ -993,8 +994,10 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
     }
 
     @Override
-    public NearbyLocationsResult queryNearbyLocations(Set<LocationType> types, Location location, int maxDistance,
-            int maxLocations) throws IOException {
+    public NearbyLocationsResult queryNearbyLocations(
+            final Set<LocationType> types, final Location location,
+            int maxDistance, int maxLocations,
+            Set<Product> products) throws IOException {
         // TODO POIs not supported (?)
         if (maxDistance == 0)
             maxDistance = DEFAULT_MAX_DISTANCE;
@@ -1004,12 +1007,15 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
             return new NearbyLocationsResult(this.resultHeader, NearbyLocationsResult.Status.INVALID_ID);
         }
 
-        HttpUrl.Builder builder = this.nearbyEndpoint.newBuilder()
+        final HttpUrl.Builder builder = this.nearbyEndpoint.newBuilder()
                 .addQueryParameter("lat", Double.toString(location.coord.getLatAsDouble()))
                 .addQueryParameter("long", Double.toString(location.coord.getLonAsDouble()))
                 .addQueryParameter("radius", Integer.toString(maxDistance))
                 .addQueryParameter("maxNo", Integer.toString(maxLocations));
-        PRODUCTS_MAP.forEach((key, product) -> builder.addQueryParameter("product[]", key));
+        PRODUCTS_MAP.forEach((key, product) -> {
+            if (products == null || products.contains(product))
+                builder.addQueryParameter("product[]", key);
+        });
         final HttpUrl url = builder.build();
         String page = null;
         try {
@@ -1027,8 +1033,10 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
     }
 
     @Override
-    public QueryDeparturesResult queryDepartures(String stationId, @Nullable Date time, int maxDepartures,
-            boolean equivs)
+    public QueryDeparturesResult queryDepartures(
+            final String stationId, @Nullable final Date time,
+            int maxDepartures, final boolean equivs,
+            Set<Product> products)
             throws IOException {
         // TODO only 1 hour of results returned, find secret parameter?
         if (maxDepartures == 0)
@@ -1036,14 +1044,17 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
         final Calendar c = new GregorianCalendar(timeZone);
         c.setTime(time);
 
-        HttpUrl.Builder builder = this.departureEndpoint.newBuilder()
+        final HttpUrl.Builder builder = this.departureEndpoint.newBuilder()
                 .addQueryParameter("datum", formatDate(c).toString())
                 .addQueryParameter("zeit", formatTime(c).toString())
                 .addQueryParameter("ortExtId", stationId)
                 .addQueryParameter("ortId", formatLid(stationId))
                 .addQueryParameter("mitVias", "true")
                 .addQueryParameter("maxVias", "2");
-        PRODUCTS_MAP.forEach((key, product) -> builder.addQueryParameter("verkehrsmittel[]", key));
+        PRODUCTS_MAP.forEach((key, product) -> {
+            if (products == null || products.contains(product))
+                builder.addQueryParameter("verkehrsmittel[]", key);
+        });
         final HttpUrl url = builder.build();
 
         String page = null;

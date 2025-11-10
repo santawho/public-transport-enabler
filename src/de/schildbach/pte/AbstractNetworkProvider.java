@@ -34,9 +34,12 @@ import org.msgpack.core.MessageUnpacker;
 
 import de.schildbach.pte.dto.JourneyRef;
 import de.schildbach.pte.dto.Location;
+import de.schildbach.pte.dto.LocationType;
+import de.schildbach.pte.dto.NearbyLocationsResult;
 import de.schildbach.pte.dto.Point;
 import de.schildbach.pte.dto.Position;
 import de.schildbach.pte.dto.Product;
+import de.schildbach.pte.dto.QueryDeparturesResult;
 import de.schildbach.pte.dto.QueryJourneyResult;
 import de.schildbach.pte.dto.QueryTripsResult;
 import de.schildbach.pte.dto.Style;
@@ -207,6 +210,36 @@ public abstract class AbstractNetworkProvider extends AbstractLocationSearchProv
     @Override
     public QueryTripsResult loadSharedTrip(final TripShare tripShare) throws IOException {
         throw new UnsupportedOperationException("loadSharedTrip");
+    }
+
+    @Override
+    public NearbyLocationsResult queryNearbyLocations(
+            final Set<LocationType> types, final Location location,
+            final int maxDistance, final int maxLocations) throws IOException {
+        return queryNearbyLocations(types, location, maxDistance, maxLocations, null);
+    }
+
+    @Override
+    public NearbyLocationsResult queryNearbyLocations(
+            final Set<LocationType> types, final Location location,
+            final int maxDistance, final int maxLocations,
+            final Set<Product> products) throws IOException {
+        return queryNearbyLocations(types, location, maxDistance, maxLocations);
+    }
+
+    @Override
+    public QueryDeparturesResult queryDepartures(
+            final String stationId, final Date time,
+            final int maxDepartures, final boolean equivs) throws IOException {
+        return queryDepartures(stationId, time, maxDepartures, equivs, null);
+    }
+
+    @Override
+    public QueryDeparturesResult queryDepartures(
+            final String stationId, final Date time,
+            final int maxDepartures, final boolean equivs,
+            final Set<Product> products) throws IOException {
+        return queryDepartures(stationId, time, maxDepartures, equivs);
     }
 
     @Override
