@@ -225,6 +225,13 @@ public final class Stop implements Serializable {
                 : plannedArrivalTime;
     }
 
+    public static boolean isSamePlatform(final Stop arrivalStop, final Stop departureStop) {
+        return arrivalStop != null && departureStop != null
+                && Position.isSamePlatformAs(
+                        arrivalStop.location, arrivalStop.getArrivalPosition(),
+                        departureStop.location, departureStop.getDeparturePosition());
+    }
+
     @Override
     public boolean equals(final Object o) {
         if (o == this)

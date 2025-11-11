@@ -863,9 +863,27 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
         Location tripFrom = null;
         Location tripTo = null;
 
+        Trip.Public prevPublicLegWithArrivalSamePlatform = null;
         for (int iLeg = 0; iLeg < abschnitte.length(); iLeg++) {
-            final Trip.Leg leg = parseLeg(abschnitte.getJSONObject(iLeg));
+            final JSONObject abschnitt = abschnitte.getJSONObject(iLeg);
+            final Trip.Leg leg = parseLeg(abschnitt);
             if (leg == null) continue;
+            if (leg instanceof Trip.Public) {
+                final Trip.Public publicLeg = (Trip.Public) leg;
+                if (prevPublicLegWithArrivalSamePlatform != null) {
+                    final Position arrivalPosition = prevPublicLegWithArrivalSamePlatform.arrivalStop.getArrivalPosition();
+                    final Position departurePosition = publicLeg.departureStop.getArrivalPosition();
+                    if (arrivalPosition != null && departurePosition != null) {
+                        arrivalPosition.setSamePlatformAs(departurePosition);
+                        departurePosition.setSamePlatformAs(arrivalPosition);
+                    }
+                }
+                if (abschnitt.optBoolean("weiterfahrtAmGleichenBahnsteig")) {
+                    prevPublicLegWithArrivalSamePlatform = publicLeg;
+                } else {
+                    prevPublicLegWithArrivalSamePlatform = null;
+                }
+            }
             legs.add(leg);
             if (iLeg == 0) {
                 tripFrom = leg.departure;

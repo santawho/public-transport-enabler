@@ -606,6 +606,11 @@ public final class Trip implements Serializable {
             return arrivalStop.getMaxTime();
         }
 
+        public static boolean isSamePlatform(final Public arrivalLeg, final Public departureLeg) {
+            return arrivalLeg != null && departureLeg != null
+                    && Stop.isSamePlatform(arrivalLeg.arrivalStop, departureLeg.departureStop);
+        }
+
         @Override
         public String toString() {
             return getClass().getSimpleName() + "{" +

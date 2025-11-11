@@ -33,6 +33,7 @@ public final class Position implements Serializable {
 
     public final String name;
     public final @Nullable String section;
+    private String samePlatformPositionName;
 
     public Position(final String name) {
         this(name, null);
@@ -43,6 +44,34 @@ public final class Position implements Serializable {
         // checkArgument(name.length() <= 5, "name too long: %s", name);
         this.section = section;
         checkArgument(section == null || section.length() <= 3, "section too long: %s", section);
+    }
+
+    public void setSamePlatformAs(final Position otherPosition) {
+        samePlatformPositionName = (otherPosition == null) ? null : otherPosition.name;
+    }
+
+    public static boolean isSamePlatformAs(
+            final Location locationA, final Position positionA,
+            final Location locationB, final Position positionB) {
+        if (!(positionA != null && positionB != null
+                && locationA != null && locationA.type == LocationType.STATION
+                && locationB != null && locationB.type == LocationType.STATION
+                && locationA.equals(locationB))) {
+            return false;
+        }
+        final String nameA = positionA.name;
+        final String samePlatformPositionNameA = positionA.samePlatformPositionName;
+        final String nameB = positionB.name;
+        final String samePlatformPositionNameB = positionB.samePlatformPositionName;
+        if (nameA != null) {
+            if (nameA.equals(nameB) || nameA.equals(samePlatformPositionNameB))
+                return true;
+        }
+        if (nameB != null) {
+            if (nameB.equals(samePlatformPositionNameA))
+                return true;
+        }
+        return false;
     }
 
     @Override

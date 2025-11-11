@@ -836,6 +836,7 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
             Location tripFrom = null;
             Location tripTo = null;
 
+            Trip.Public prevPublicLegWithArrivalSamePlatform = null;
             for (int iLeg = 0; iLeg < abschnitte.length(); iLeg++) {
                 final JSONObject abschnitt = abschnitte.getJSONObject(iLeg);
                 final Location fallbackDeparture = Optional.ofNullable(abschnitte.optJSONObject(iLeg - 1))
@@ -855,6 +856,22 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
 //                                createLocation(LocationType.ADDRESS, null, null, abschnitt.getString("ankunftsOrt"), null, null)
                         );
                 final Trip.Leg leg = parseLeg(abschnitt, fallbackDeparture, fallbackArrival);
+                if (leg instanceof Trip.Public) {
+                    final Trip.Public publicLeg = (Trip.Public) leg;
+                    if (prevPublicLegWithArrivalSamePlatform != null) {
+                        final Position arrivalPosition = prevPublicLegWithArrivalSamePlatform.arrivalStop.getArrivalPosition();
+                        final Position departurePosition = publicLeg.departureStop.getArrivalPosition();
+                        if (arrivalPosition != null && departurePosition != null) {
+                            arrivalPosition.setSamePlatformAs(departurePosition);
+                            departurePosition.setSamePlatformAs(arrivalPosition);
+                        }
+                    }
+                    if (abschnitt.optBoolean("samePlatform")) {
+                        prevPublicLegWithArrivalSamePlatform = publicLeg;
+                    } else {
+                        prevPublicLegWithArrivalSamePlatform = null;
+                    }
+                }
                 legs.add(leg);
                 if (iLeg == 0) {
                     tripFrom = leg.departure;
