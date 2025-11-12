@@ -680,7 +680,8 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
     protected final Trip.Public jsonPublicLeg(
             final JSONObject jny,
             final Stop aDepartureStop, final Stop aArrivalStop,
-            final List<Line> lines, final JSONArray locList, final JSONArray crdSysList, final List<String> encodedPolylines,
+            final List<Line> lines, final JSONArray locList, final JSONArray crdSysList,
+            final List<String> encodedPolylines,
             final List<Remark> remarks, final List<Remark> hims,
             final Calendar cal, final Date baseDate) throws JSONException {
         Stop departureStop = aDepartureStop;
@@ -717,7 +718,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
 
         final List<Point> path;
         final JSONObject polyG = jny.optJSONObject("polyG");
-        if (polyG != null) {
+        if (polyG != null && encodedPolylines != null) {
             final int crdSysX = polyG.optInt("crdSysX", -1);
             if (crdSysX != -1) {
                 final String crdSysType = crdSysList.getJSONObject(crdSysX).getString("type");
@@ -820,7 +821,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
             final JSONArray locList = common.getJSONArray("locL");
             final List<String> operators = parseOpList(common.getJSONArray("opL"));
             final List<Line> lines = parseProdList(common.getJSONArray("prodL"), operators, styles);
-            final List<String> encodedPolylines = parsePolyList(common.getJSONArray("polyL"));
+            final List<String> encodedPolylines = parsePolyList(common.optJSONArray("polyL"));
 
             final JSONArray outConList = res.optJSONArray("outConL");
             final List<Trip> trips = new ArrayList<>(outConList.length());
@@ -1128,7 +1129,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
             final JSONArray locList = common.getJSONArray("locL");
             final List<String> operators = parseOpList(common.getJSONArray("opL"));
             final List<Line> lines = parseProdList(common.getJSONArray("prodL"), operators, styles);
-            final List<String> encodedPolylines = parsePolyList(common.getJSONArray("polyL"));
+            final List<String> encodedPolylines = parsePolyList(common.optJSONArray("polyL"));
 
             final JSONObject journey = res.optJSONObject("journey");
 
@@ -1579,6 +1580,8 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
     }
 
     private List<String> parsePolyList(final JSONArray polyList) throws JSONException {
+        if (polyList == null)
+            return null;
         final int len = polyList.length();
         final List<String> polylines = new ArrayList<>(len);
 
