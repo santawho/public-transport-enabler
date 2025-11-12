@@ -700,8 +700,11 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
 
         final JSONArray stopList = jny.optJSONArray("stopL");
         final List<Stop> intermediateStops;
-        if (stopList != null) {
-            checkState(stopList.length() >= 2);
+        if (stopList != null && stopList.length() >= 2) {
+            // just treat stop-list of size 0 or 1 as not existing
+            // Hafas sometimes happens to produce this bullshit
+            // at least we don't understand the meaning yet
+            // checkState(stopList.length() >= 2);
             if (departureStop == null)
                 departureStop = parseJsonStop(stopList.getJSONObject(0), locList, crdSysList, cal, baseDate);
             if (arrivalStop == null)
