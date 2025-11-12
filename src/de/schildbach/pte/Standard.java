@@ -21,6 +21,7 @@ import com.google.common.base.Strings;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import javax.annotation.Nullable;
 
@@ -75,7 +76,7 @@ public class Standard {
         if (styles != null && product != null) {
             if (network != null) {
                 // check for line match
-                final Style lineStyle = styles.get(network + STYLES_SEP + product.code + Strings.nullToEmpty(label));
+                final Style lineStyle = styles.get(network + STYLES_SEP + product.code + Objects.toString(label, ""));
                 if (lineStyle != null)
                     return lineStyle;
 
@@ -93,7 +94,7 @@ public class Standard {
             }
 
             // check for line match
-            final String string = product.code + Strings.nullToEmpty(label);
+            final String string = product.code + Objects.toString(label, "");
             final Style lineStyle = styles.get(string);
             if (lineStyle != null)
                 return lineStyle;
