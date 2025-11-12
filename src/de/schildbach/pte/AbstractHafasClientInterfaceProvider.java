@@ -1041,7 +1041,17 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
         final String outDate = jsonDate(c);
         final String outTime = jsonTime(c);
         final String outFrwd = Boolean.toString(dep);
-        final String jnyFltr = products != null ? productsString(products) : null;
+        final String jnyFltr;
+        if (products == null) {
+            jnyFltr = "";
+        } else if (apiLevel >= 70) {
+            jnyFltr = "\"jnyFltrL\":[{\"value\": " + productsInt(products) + ",\"mode\":\"INC\",\"type\":\"PROD\"}"
+                + ",{\"value\": \"GROUP_PT\",\"mode\":\"INC\",\"type\":\"GROUP\"}],";
+        } else if (apiLevel >= 40) {
+            jnyFltr = "\"jnyFltrL\":[{\"value\": " + productsInt(products) + ",\"mode\":\"INC\",\"type\":\"PROD\"}],";
+        } else {
+            jnyFltr = "\"jnyFltrL\":[{\"value\":\"" + productsString(products) + "\",\"mode\":\"BIT\",\"type\":\"PROD\"}],";
+        }
         final String meta = "foot_speed_" + (walkSpeed != null ? walkSpeed : WalkSpeed.NORMAL).name().toLowerCase();
         final String jsonContext = moreContext != null ? "\"ctxScr\":" + JSONObject.quote(moreContext) + "," : "";
         final String request = wrapJsonApiRequest("TripSearch", "{" //
@@ -1052,13 +1062,12 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                 + "\"outDate\":\"" + outDate + "\"," //
                 + "\"outTime\":\"" + outTime + "\"," //
                 + "\"outFrwd\":" + outFrwd + "," //
-                + (jnyFltr != null
-                        ? "\"jnyFltrL\":[{\"value\":\"" + jnyFltr + "\",\"mode\":\"BIT\",\"type\":\"PROD\"}]," : "") //
+                + jnyFltr
                 + "\"gisFltrL\":[{\"mode\":\"FB\",\"profile\":{\"type\":\"F\",\"linDistRouting\":false,\"maxdist\":2000},\"type\":\"M\",\"meta\":\""
                 + meta + "\"}]," //
                 + "\"getPolyline\":true,\"getPasslist\":true," //
                 // + "\"getConGroups\":false,\"getIST\":false,\"getEco\":false,\"extChgTime\":-1}", //
-                + "\"getIST\":false,\"getEco\":false,\"extChgTime\":-1}", //
+                + "\"getIST\":false,\"getEco\":false,\"minChgTime\":-1,\"extChgTime\":-1}", //
                 false);
 
         return jsonTripRequest("TripSearch", request, from, via, to, time, dep, products, walkSpeed);
