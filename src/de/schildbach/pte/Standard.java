@@ -61,6 +61,12 @@ public class Standard {
 
     private static final char STYLES_SEP = '|';
 
+    private static boolean doNotUseSpecialLineStyles = false;
+
+    public static void setDoNotUseSpecialLineStyles(final boolean doNotUseSpecialLineStyles) {
+        Standard.doNotUseSpecialLineStyles = doNotUseSpecialLineStyles;
+    }
+
     protected static Style defaultLineStyle(
             final @Nullable String network,
             final @Nullable Product product,
@@ -73,7 +79,7 @@ public class Standard {
             final @Nullable String network,
             final @Nullable Product product,
             final @Nullable String label) {
-        if (styles != null && product != null) {
+        if (!doNotUseSpecialLineStyles && styles != null && product != null) {
             if (network != null) {
                 // check for line match
                 final Style lineStyle = styles.get(network + STYLES_SEP + product.code + Objects.toString(label, ""));
