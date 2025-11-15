@@ -24,6 +24,8 @@ import static java.util.Objects.requireNonNull;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -49,6 +51,7 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import de.schildbach.pte.util.Encodings;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -56,10 +59,6 @@ import org.msgpack.core.MessagePacker;
 import org.msgpack.core.MessageUnpacker;
 
 import com.google.common.base.Strings;
-import com.google.common.hash.HashCode;
-import com.google.common.hash.HashFunction;
-import com.google.common.hash.Hashing;
-import com.google.common.io.BaseEncoding;
 
 import de.schildbach.pte.dto.Departure;
 import de.schildbach.pte.dto.Fare;
@@ -123,9 +122,6 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
     private static final String SECTION_TYPE_DEVI = "DEVI";
     private static final String SECTION_TYPE_CHECK_IN = "CHKI";
     private static final String SECTION_TYPE_CHECK_OUT = "CHKO";
-    @SuppressWarnings("deprecation")
-    private static final HashFunction MD5 = Hashing.md5();
-    private static final BaseEncoding HEX = BaseEncoding.base16().lowerCase();
 
     private static class Remark {
         String code;
@@ -1201,19 +1197,35 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                 + "\"formatted\":" + formatted + "}";
     }
 
+    private MessageDigest md5instance() {
+        try {
+            // instance not thread safe!
+            return MessageDigest.getInstance("MD5");
+        } catch (final NoSuchAlgorithmException x) {
+            // should not happen
+            throw new RuntimeException(x);
+        }
+    }
+
     private HttpUrl requestUrl(final String body) {
         final HttpUrl.Builder url = apiBase.newBuilder().addPathSegment(apiEndpoint);
+        MessageDigest md5 = md5instance();
         if (requestChecksumSalt != null) {
-            final HashCode checksum = MD5.newHasher().putString(body, StandardCharsets.UTF_8).putBytes(requestChecksumSalt)
-                    .hash();
-            url.addQueryParameter("checksum", checksum.toString());
+            md5.reset();
+            md5.update(body.getBytes(StandardCharsets.UTF_8));
+            md5.update(requestChecksumSalt);
+            url.addQueryParameter("checksum", Encodings.HEX.encode(md5.digest()));
         }
         if (requestMicMacSalt != null) {
-            final HashCode mic = MD5.newHasher().putString(body, StandardCharsets.UTF_8).hash();
-            url.addQueryParameter("mic", HEX.encode(mic.asBytes()));
-            final HashCode mac = MD5.newHasher().putString(HEX.encode(mic.asBytes()), StandardCharsets.UTF_8)
-                    .putBytes(requestMicMacSalt).hash();
-            url.addQueryParameter("mac", HEX.encode(mac.asBytes()));
+            md5.reset();
+            md5.update(body.getBytes(StandardCharsets.UTF_8));
+            byte[] mic = md5.digest();
+            url.addQueryParameter("mic", Encodings.HEX.encode(mic));
+            md5.reset();
+            md5.update(Encodings.HEX.encode(mic).getBytes(StandardCharsets.UTF_8));
+            md5.update(requestMicMacSalt);
+            byte[] mac = md5.digest();
+            url.addQueryParameter("mac", Encodings.HEX.encode(mac));
         }
         return url.build();
     }
@@ -1672,13 +1684,13 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
 
     public static final byte[] decryptSalt(final String encryptedSalt, final String saltEncryptionKey) {
         try {
-            final byte[] key = BaseEncoding.base16().lowerCase().decode(saltEncryptionKey);
+            final byte[] key = Encodings.HEX.decode(saltEncryptionKey);
             checkState(key.length * 8 == 128, "encryption key must be 128 bits");
             final SecretKeySpec secretKey = new SecretKeySpec(key, "AES");
             final IvParameterSpec ivParameterSpec = new IvParameterSpec(new byte[16]);
             final Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
             cipher.init(Cipher.DECRYPT_MODE, secretKey, ivParameterSpec);
-            return cipher.doFinal(BaseEncoding.base64().decode(encryptedSalt));
+            return cipher.doFinal(Encodings.BASE64.decode(encryptedSalt));
         } catch (final GeneralSecurityException x) {
             // should not happen
             throw new RuntimeException(x);
