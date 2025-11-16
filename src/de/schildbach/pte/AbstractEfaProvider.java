@@ -2286,7 +2286,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
         final String motSymbol = XmlPullUtil.optAttr(pp, "symbol", null);
         final String motType = XmlPullUtil.optAttr(pp, "motType", null);
         final String motShortName = XmlPullUtil.optAttr(pp, "shortname", null);
-        final String motName = XmlPullUtil.attr(pp, "name");
+        final String motName = XmlPullUtil.optAttr(pp, "name", null);
         final String motTrainName = XmlPullUtil.optAttr(pp, "trainName", null);
         final String motTrainType = XmlPullUtil.optAttr(pp, "trainType", null);
 
