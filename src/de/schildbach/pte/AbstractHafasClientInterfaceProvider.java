@@ -854,10 +854,14 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                                 lines, locList, crdSysList, encodedPolylines, remarks, hims, c, baseDate);
                     } else if (SECTION_TYPE_WALK.equals(secType)) {
                         final JSONObject gis = sec.getJSONObject("gis");
-                        final int distance = gis.optInt("dist", 0);
-                        leg = new Trip.Individual(Trip.Individual.Type.WALK, departureStop.location,
-                                departureStop.getDepartureTime(), arrivalStop.location, arrivalStop.getArrivalTime(),
-                                null, distance);
+                        final int distance = gis.optInt("dist", -1);
+                        if (distance < 0) {
+                            leg = null;
+                        } else {
+                            leg = new Trip.Individual(Trip.Individual.Type.WALK, departureStop.location,
+                                    departureStop.getDepartureTime(), arrivalStop.location, arrivalStop.getArrivalTime(),
+                                    null, distance);
+                        }
                     } else if (SECTION_TYPE_TRANSFER.equals(secType) || SECTION_TYPE_DEVI.equals(secType)) {
                         final JSONObject gis = sec.optJSONObject("gis");
                         final int distance = gis != null ? gis.optInt("dist", 0) : 0;
@@ -880,7 +884,8 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                         throw new IllegalStateException("cannot handle type: " + secType);
                     }
 
-                    legs.add(leg);
+                    if (leg != null)
+                        legs.add(leg);
                 }
 
                 final List<Fare> fares;
