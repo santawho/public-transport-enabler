@@ -38,13 +38,13 @@ public class LuProvider extends AbstractHafasClientInterfaceProvider {
 
     public LuProvider(final String apiAuthorization) {
         this(DEFAULT_API_CLIENT, apiAuthorization);
-        setApiEndpoint("gate");
     }
 
     public LuProvider(final String apiClient, final String apiAuthorization) {
         super(NetworkId.LU, API_BASE, PRODUCTS_MAP);
         setApiVersion("1.18");
         setApiClient(apiClient);
+        setApiEndpoint("gate");
         setApiAuthorization(apiAuthorization);
     }
 

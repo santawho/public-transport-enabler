@@ -727,7 +727,6 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
             final JSONArray polyXList = polyG.getJSONArray("polyXL");
             path = new LinkedList<>();
             final int polyXListLen = polyXList.length();
-            checkState(polyXListLen <= 1);
             for (int i = 0; i < polyXListLen; i++) {
                 final String encodedPolyline = encodedPolylines.get(polyXList.getInt(i));
                 path.addAll(PolylineFormat.decode(encodedPolyline));
@@ -892,9 +891,9 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                 final JSONObject trfRes = outCon.optJSONObject("trfRes");
                 if (trfRes != null) {
                     fares = new LinkedList<>();
-                    final JSONArray fareSetList = trfRes.getJSONArray("fareSetL");
+                    final JSONArray fareSetList = trfRes.optJSONArray("fareSetL");
                     final JSONArray ovwTrfRefList = outCon.optJSONArray("ovwTrfRefL");
-                    if (ovwTrfRefList != null) {
+                    if (fareSetList != null && ovwTrfRefList != null) {
                         for (int i = 0; i < ovwTrfRefList.length(); i++) {
                             final JSONObject ovwTrfRef = ovwTrfRefList.getJSONObject(i);
                             final String type = ovwTrfRef.getString("type");
@@ -1020,6 +1019,10 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
         }
     }
 
+    protected String additionalJnyFltrL() {
+        return "";
+    }
+
     protected final QueryTripsResult jsonTripSearch(Location from, @Nullable Location via, Location to, final Date time,
             final boolean dep, final @Nullable Set<Product> products, final @Nullable WalkSpeed walkSpeed,
             final @Nullable String moreContext) throws IOException {
@@ -1045,11 +1048,9 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
         final String jnyFltr;
         if (products == null) {
             jnyFltr = "";
-        } else if (apiLevel >= 70) {
-            jnyFltr = "\"jnyFltrL\":[{\"value\": " + productsInt(products) + ",\"mode\":\"INC\",\"type\":\"PROD\"}"
-                + ",{\"value\": \"GROUP_PT\",\"mode\":\"INC\",\"type\":\"GROUP\"}],";
         } else if (apiLevel >= 40) {
-            jnyFltr = "\"jnyFltrL\":[{\"value\": " + productsInt(products) + ",\"mode\":\"INC\",\"type\":\"PROD\"}],";
+            jnyFltr = "\"jnyFltrL\":[{\"value\": " + productsInt(products) + ",\"mode\":\"INC\",\"type\":\"PROD\"}"
+                + additionalJnyFltrL() + "],";
         } else {
             jnyFltr = "\"jnyFltrL\":[{\"value\":\"" + productsString(products) + "\",\"mode\":\"BIT\",\"type\":\"PROD\"}],";
         }

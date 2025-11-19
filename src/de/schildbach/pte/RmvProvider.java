@@ -184,6 +184,11 @@ public class RmvProvider extends AbstractHafasClientInterfaceProvider {
     }
 
     @Override
+    protected String additionalJnyFltrL() {
+        return ",{\"value\": \"GROUP_PT\",\"mode\":\"INC\",\"type\":\"GROUP\"}";
+    }
+
+    @Override
     protected String[] splitStationName(final String name) {
         if (name.startsWith("F "))
             return new String[] {"Frankfurt", name.substring(2)};
