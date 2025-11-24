@@ -2223,6 +2223,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
         url.addEncodedQueryParameter("line", journeyRef.transportationID);
         url.addEncodedQueryParameter("tripCode", journeyRef.tripCode);
         url.addEncodedQueryParameter("stopID", journeyRef.stopID);
+        url.addEncodedQueryParameter("tStOTType", "ALL");
         appendDateTimeParameters(url, journeyRef.targetTime, "date", "time");
     }
 
