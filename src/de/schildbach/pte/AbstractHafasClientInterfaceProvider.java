@@ -491,8 +491,8 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
             final List<Remark> remarks = parseRemList(common.optJSONArray("remL"));
             final List<Remark> hims = parseHimList(common.optJSONArray("himL"));
             final List<Style> styles = parseIcoList(common.getJSONArray("icoL"));
-            final List<String> operators = parseOpList(common.getJSONArray("opL"));
-            final List<Line> lines = parseProdList(common.getJSONArray("prodL"), operators, styles);
+            final List<String> operators = parseOpList(common.optJSONArray("opL"));
+            final List<Line> lines = parseProdList(common.optJSONArray("prodL"), operators, styles);
             final JSONArray crdSysList = common.optJSONArray("crdSysL");
             final JSONArray locList = common.getJSONArray("locL");
 
@@ -817,8 +817,8 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
             final List<Style> styles = parseIcoList(common.getJSONArray("icoL"));
             final JSONArray crdSysList = common.optJSONArray("crdSysL");
             final JSONArray locList = common.getJSONArray("locL");
-            final List<String> operators = parseOpList(common.getJSONArray("opL"));
-            final List<Line> lines = parseProdList(common.getJSONArray("prodL"), operators, styles);
+            final List<String> operators = parseOpList(common.optJSONArray("opL"));
+            final List<Line> lines = parseProdList(common.optJSONArray("prodL"), operators, styles);
             final List<String> encodedPolylines = parsePolyList(common.optJSONArray("polyL"));
 
             final JSONArray outConList = res.optJSONArray("outConL");
@@ -907,14 +907,12 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                                 final JSONObject jsonTicket = jsonFare.getJSONArray("ticketL").getJSONObject(ticketX);
                                 final String ticketName = jsonTicket.getString("name");
                                 final String ticketDesc = jsonTicket.optString("desc");
-                                final String currencyStr = jsonTicket.getString("cur");
-                                if (!Strings.isNullOrEmpty(currencyStr)) {
-                                    final Currency currency = Currency.getInstance(currencyStr);
-                                    final float price = jsonTicket.getInt("prc") / 100f;
+                                final Price price = parsePriceFromObject(jsonTicket);
+                                if (price != null) {
                                     final Fare fare = new Fare(
                                             normalizeFareName(fareName) + '\n' + ticketName,
                                             normalizeFareType(ticketName, ticketDesc),
-                                            currency, price,
+                                            price.currency, price.amount,
                                             null, null);
                                     if (!hideFare(fare))
                                         fares.add(fare);
@@ -923,14 +921,12 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                                 final JSONObject jsonFare =
                                         jsonFareSet.getJSONArray("fareL").getJSONObject(fareX);
                                 final String fareName = jsonFare.getString("name");
-                                final String currencyStr = jsonFare.optString("cur");
-                                if (!Strings.isNullOrEmpty(currencyStr)) {
-                                    final Currency currency = ParserUtils.getCurrency(currencyStr);
-                                    final float price = jsonFare.getInt("prc") / 100f;
+                                final Price price = parsePriceFromObject(jsonFare);
+                                if (price != null) {
                                     final Fare fare = new Fare(
                                             normalizeFareName(fareName),
                                             normalizeFareType(fareName),
-                                            currency, price,
+                                            price.currency, price.amount,
                                             null, null);
                                     if (!hideFare(fare))
                                         fares.add(fare);
@@ -941,13 +937,11 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                                 for (int iFare = 0; iFare < fareList.length(); iFare++) {
                                     final JSONObject jsonFare = fareList.getJSONObject(iFare);
                                     final String fareName = jsonFare.getString("name");
-                                    final String currencyStr = jsonFare.optString("cur");
-                                    final Currency currency = ParserUtils.getCurrency(currencyStr);
-                                    final float price = jsonFare.getInt("prc") / 100f;
+                                    final Price price = parsePriceFromObject(jsonFare);
                                     final Fare fare = new Fare(
                                             normalizeFareName(fareSetName),
                                             normalizeFareType(fareName),
-                                            currency, price,
+                                            price.currency, price.amount,
                                             null, null);
                                     if (!hideFare(fare))
                                         fares.add(fare);
@@ -1068,7 +1062,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                 + "\"gisFltrL\":[{\"mode\":\"FB\",\"profile\":{\"type\":\"F\",\"linDistRouting\":false,\"maxdist\":2000},\"type\":\"M\",\"meta\":\""
                 + meta + "\"}]," //
                 + "\"getPolyline\":true,\"getPasslist\":true," //
-                // + "\"getConGroups\":false,\"getIST\":false,\"getEco\":false,\"extChgTime\":-1}", //
+                + (apiLevel <= 24 ? "\"getConGroups\":false," : "") //
                 + "\"getIST\":false,\"getEco\":false,\"minChgTime\":-1,\"extChgTime\":-1}", //
                 false);
 
@@ -1196,8 +1190,9 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                 + (apiExt != null ? "\"ext\":\"" + apiExt + "\"," : "") //
                 + "\"ver\":\"" + requireNonNull(apiVersion) + "\",\"lang\":\"" + lang + "\"," //
                 + "\"svcReqL\":[" //
-                // + "{\"meth\":\"ServerInfo\",\"req\":{\"getServerDateTime\":true,\"getTimeTablePeriod\":false}}," //
-                + "{\"meth\":\"ServerInfo\",\"req\":{\"getServerDateTime\":true}}," //
+                + "{\"meth\":\"ServerInfo\",\"req\":{\"getServerDateTime\":true" //
+                + (apiLevel <= 75 ? ",\"getTimeTablePeriod\":false" : "") //
+                + "}}," //
                 + "{\"meth\":\"" + meth + "\",\"cfg\":{\"polyEnc\":\"GPA\"},\"req\":" + req + "}" //
                 + "]," //
                 + "\"formatted\":" + formatted + "}";
@@ -1338,7 +1333,9 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
     }
 
     private List<Remark> parseRemList(final JSONArray remList) throws JSONException {
-        if (remList == null) return null;
+        if (remList == null)
+            return null;
+
         final List<Remark> remarks = new ArrayList<>(remList.length());
 
         for (int i = 0; i < remList.length(); i++) {
@@ -1351,7 +1348,6 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
             remark.url = rem.optString("url", null);
             remarks.add(remark);
         }
-
         return remarks;
     }
 
@@ -1573,19 +1569,23 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
     }
 
     private List<String> parseOpList(final JSONArray opList) throws JSONException {
-        final List<String> operators = new ArrayList<>(opList.length());
+        if (opList == null)
+            return null;
 
+        final List<String> operators = new ArrayList<>(opList.length());
         for (int i = 0; i < opList.length(); i++) {
             final JSONObject op = opList.getJSONObject(i);
             final String operator = op.getString("name");
             operators.add(operator);
         }
-
         return operators;
     }
 
     private List<Line> parseProdList(final JSONArray prodList, final List<String> operators, final List<Style> styles)
             throws JSONException {
+        if (prodList == null)
+            return null;
+
         final int prodListLen = prodList.length();
         final List<Line> lines = new ArrayList<>(prodListLen);
 
@@ -1607,6 +1607,32 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
         }
 
         return lines;
+    }
+
+    private static class Price {
+        public final Currency currency;
+        public final float amount;
+
+        public Price(final Currency currency, final float amount) {
+            this.currency = currency;
+            this.amount = amount;
+        }
+    }
+
+    private Price parsePriceFromObject(final JSONObject jsonObject) throws JSONException {
+        final boolean hasPriceObject = apiVersion.compareToIgnoreCase("1.27") >= 0;
+        if (hasPriceObject) {
+            final JSONObject jsonPrice = jsonObject.optJSONObject("price");
+            if (jsonPrice == null)
+                return null;
+            final Currency currency = ParserUtils.getCurrency(jsonPrice.getString("currency"));
+            final float amount = jsonPrice.getInt("amount") / 100f;
+            return new Price(currency, amount);
+        } else {
+            final Currency currency = ParserUtils.getCurrency(jsonObject.optString("cur"));
+            final float amount = jsonObject.getInt("prc") / 100f;
+            return new Price(currency, amount);
+        }
     }
 
     private List<String> parsePolyList(final JSONArray polyList) throws JSONException {
