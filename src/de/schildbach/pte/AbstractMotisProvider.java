@@ -1,5 +1,6 @@
 package de.schildbach.pte;
 
+import de.schildbach.pte.exception.InternalErrorException;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -8,15 +9,7 @@ import org.json.JSONException;
 
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
+import java.util.*;
 
 import javax.annotation.Nullable;
 
@@ -56,7 +49,7 @@ public abstract class AbstractMotisProvider extends AbstractNetworkProvider {
         public Date date;
 
         Context(String url,
-                String previousCursor, String nextCursor,
+                @Nullable String previousCursor, @Nullable String nextCursor,
                 Location from, Location via, Location to, Date date) {
             this.url = url;
             this.previousCursor = previousCursor;
@@ -88,6 +81,24 @@ public abstract class AbstractMotisProvider extends AbstractNetworkProvider {
         }
     }
 
+    public static class MotisQueryDeparturesResult extends QueryDeparturesResult {
+        private Location from;
+
+        public MotisQueryDeparturesResult(ResultHeader header) {
+            super(header);
+        }
+
+        public MotisQueryDeparturesResult(ResultHeader header, Status status) {
+            super(header, status);
+        }
+
+        public MotisQueryDeparturesResult(ResultHeader header, Location from) {
+            super(header);
+            this.from = from;
+        }
+    }
+
+
     private final List<Capability> CAPABILITIES = Arrays.asList(
             Capability.SUGGEST_LOCATIONS,
             Capability.TRIPS,
@@ -101,6 +112,7 @@ public abstract class AbstractMotisProvider extends AbstractNetworkProvider {
     public AbstractMotisProvider(NetworkId networkId, String apiUrl) {
         super(networkId);
         api = HttpUrl.parse(apiUrl).newBuilder().addPathSegment("api").build();
+        httpClient.setUserAgent("oeffi-ng test implementation https://github.com/jendrikw/public-transport-enabler");
     }
 
     @Override
@@ -137,6 +149,24 @@ public abstract class AbstractMotisProvider extends AbstractNetworkProvider {
                 return LocationType.ADDRESS;
             default:
                 return LocationType.ANY;
+        }
+    }
+
+    private String locationTypeToString(LocationType type) {
+        switch (type) {
+            case ADDRESS:
+                return "ADDRESS";
+            case STATION:
+                return "STOP";
+            case POI:
+                return "PLACE";
+            case ANY:
+            case COORD:
+            default:
+                //string (LocationType)
+                //Enum: "ADDRESS" "PLACE" "STOP"
+                //Optional. Default is all types.
+                return null;
         }
     }
 
@@ -266,7 +296,7 @@ public abstract class AbstractMotisProvider extends AbstractNetworkProvider {
                 throw new IllegalArgumentException();
             }
         } else {
-            throw new IllegalArgumentException();
+            return loc.id;
         }
     }
 
@@ -291,8 +321,10 @@ public abstract class AbstractMotisProvider extends AbstractNetworkProvider {
 
         String startName = legFrom.getString("name");
         if (startName.equals("START")) startName = ctx.from.name;
+        if (startName == null && ctx.from.coord != null) startName = ctx.from.coord.toString();
         String destName = legTo.getString("name");
         if (destName.equals("END")) destName = ctx.to.name;
+        if (destName == null && ctx.to.coord != null) destName = ctx.to.coord.toString();
 
         Location fromLocation = parseLocation(legFrom, startName);
         Location toLocation = parseLocation(legTo, destName);
@@ -420,14 +452,18 @@ public abstract class AbstractMotisProvider extends AbstractNetworkProvider {
                     .addQueryParameter("transitModes", transitModes);
 
         HttpUrl url = builder.build();
-        CharSequence response = httpClient.get(url);
-
         try {
-            Context contextObj = new Context(url.toString(), null, null, from, via, to, date);
-            return parseQueryTripsResult(response, contextObj, true);
-        } catch (JSONException e) {
-            throw new RuntimeException(e);
+            CharSequence response = httpClient.get(url);
+            try {
+                Context contextObj = new Context(url.toString(), null, null, from, via, to, date);
+                return parseQueryTripsResult(response, contextObj, true);
+            } catch (JSONException e) {
+                throw new RuntimeException(e);
+            }
+        } catch (InternalErrorException e) {
+            return new QueryTripsResult(new ResultHeader(network, SERVER_PRODUCT), QueryTripsResult.Status.UNKNOWN_LOCATION);
         }
+
     }
 
     @Override
@@ -458,8 +494,9 @@ public abstract class AbstractMotisProvider extends AbstractNetworkProvider {
     }
 
     @Override
-    public QueryDeparturesResult queryDepartures(String stationId, @Nullable Date time, int maxDepartures, boolean equivs)
+    public MotisQueryDeparturesResult queryDepartures(String stationId, @Nullable Date time, int maxDepartures, boolean equivs)
             throws IOException {
+        ResultHeader header = new ResultHeader(network, SERVER_PRODUCT);
 
         try {
             HttpUrl url = api.newBuilder()
@@ -472,9 +509,10 @@ public abstract class AbstractMotisProvider extends AbstractNetworkProvider {
                     .build();
             CharSequence response = httpClient.get(url);
             JSONObject json = new JSONObject(response.toString());
+            JSONObject from = json.getJSONObject("place");
 
-            ResultHeader header = new ResultHeader(network, SERVER_PRODUCT);
-            QueryDeparturesResult result = new QueryDeparturesResult(header);
+            Location fromLocation = new Location(LocationType.STATION, from.getString("stopId"), Point.fromDouble(from.getDouble("lat"), from.getDouble("lon")));
+            MotisQueryDeparturesResult result = new MotisQueryDeparturesResult(header, fromLocation);
 
             // departures by stop id
             HashMap<String, ArrayList<Departure>> departures = new HashMap<>();
@@ -533,6 +571,8 @@ public abstract class AbstractMotisProvider extends AbstractNetworkProvider {
             }
 
             return result;
+        } catch (InternalErrorException e) {
+            return new MotisQueryDeparturesResult(header, QueryDeparturesResult.Status.INVALID_STATION);
         } catch (JSONException e) {
             throw new RuntimeException(e);
         }
@@ -540,9 +580,44 @@ public abstract class AbstractMotisProvider extends AbstractNetworkProvider {
     }
 
     @Override
-    public NearbyLocationsResult queryNearbyLocations(Set<LocationType> ls, Location l, int i, int j) throws IOException {
-        // TODO: implement via reverse-geocode API
-        throw new IOException("Unimplemented");
+    public NearbyLocationsResult queryNearbyLocations(Set<LocationType> ls, Location queryLocation, int maxDistance, int maxLocations) throws IOException {
+        Point coord = queryLocation.coord;
+        if (coord == null) {
+            MotisQueryDeparturesResult departures = queryDepartures(queryLocation.id, new Date(), 0, false);
+            coord = departures.from.coord;
+        }
+        String locationType = locationTypeToString(queryLocation.type);
+        HttpUrl.Builder builder = api
+                .newBuilder()
+                .addPathSegment("v1")
+                .addPathSegment("reverse-geocode")
+                .addEncodedQueryParameter("place", coord.getLatAsDouble() + "," + coord.getLonAsDouble());
+        if (locationType != null) {
+            builder.addQueryParameter("type", locationTypeToString(queryLocation.type));
+        }
+        HttpUrl url = builder.build();
+        String response = httpClient.get(url).toString();
+        ResultHeader header = new ResultHeader(network, SERVER_PRODUCT);
+        if (!response.startsWith("[")) {
+            return new NearbyLocationsResult(header, NearbyLocationsResult.Status.SERVICE_DOWN);
+        }
+        JSONArray json = new JSONArray(response);
+        int length = Math.min(maxLocations, json.length());
+        List<Location> result = new ArrayList<>(length);
+        for (int i = 0; i < length; i++) {
+            JSONObject loc = json.getJSONObject(i);
+            String type = loc.getString("type");
+            String id = loc.getString("id");
+            if (id.isEmpty()) {
+                id = null;
+            }
+            double lat = loc.getDouble("lat");
+            double lon = loc.getDouble("lon");
+            String name = loc.getString("name");
+            Location l = new Location(parseLocationType(type), id, Point.fromDouble(lat, lon), null, name);
+            result.add(l);
+        }
+        return new NearbyLocationsResult(header, result);
     }
 
 }
