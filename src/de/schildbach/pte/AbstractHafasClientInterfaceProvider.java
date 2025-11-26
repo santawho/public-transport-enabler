@@ -807,6 +807,8 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                     return new QueryTripsResult(header, QueryTripsResult.Status.SERVICE_DOWN);
                 if ("H_UNKNOWN".equals(err))
                     return new QueryTripsResult(header, QueryTripsResult.Status.SERVICE_DOWN);
+                if ("HAMM".equals(err)) // ???
+                    return new QueryTripsResult(header, QueryTripsResult.Status.SERVICE_DOWN);
                 throw new RuntimeException(msg);
             }
             final JSONObject res = svcRes.getJSONObject("res");
