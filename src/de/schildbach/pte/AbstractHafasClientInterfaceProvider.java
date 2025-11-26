@@ -1600,10 +1600,23 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
             final int oprIndex = prod.optInt("oprX", -1);
             final String operator = oprIndex != -1 ? operators.get(oprIndex) : null;
             final int cls = prod.optInt("cls", -1);
+            final String id;
+            final String ctxNum;
             final JSONObject prodCtx = prod.optJSONObject("prodCtx");
-            final String id = prodCtx != null ? prodCtx.optString("lineId", null) : null;
+            if (prodCtx != null) {
+                id = prodCtx.optString("lineId", null);
+                ctxNum = prodCtx.optString("num", null);
+            } else {
+                id = null;
+                ctxNum = null;
+            }
             final Product product = cls != -1 ? intToProduct(cls) : null;
-            lines.add(newLine(id, operator, product, name, nameS, number, addName, style));
+            lines.add(newLine(
+                    id, operator, product,
+                    name, nameS,
+                    ctxNum != null ? ctxNum : number,
+                    addName,
+                    style));
         }
 
         return lines;
@@ -1649,34 +1662,35 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
         return polylines;
     }
 
-    protected Line newLine(final String id, final String operator, final Product product, final @Nullable String name,
-            final @Nullable String shortName, final @Nullable String number, final @Nullable String addName,
+    protected Line newLine(
+            final String id, final String operator, final Product product,
+            final @Nullable String name, final @Nullable String shortName,
+            final @Nullable String number, final @Nullable String addName,
             final Style style) {
         final String longName;
         if (addName != null)
             longName = addName + (number != null && !addName.endsWith(number) ? " (" + number + ")" : "");
-        else if (name != null)
-            longName = name + (number != null && !name.endsWith(number) ? " (" + number + ")" : "");
         else if (shortName != null)
             longName = shortName + (number != null && !shortName.endsWith(number) ? " (" + number + ")" : "");
+        else if (name != null)
+            longName = name + (number != null && !name.endsWith(number) ? " (" + number + ")" : "");
         else
             longName = number;
 
+        final String label;
         if (product == Product.BUS || product == Product.TRAM) {
             // For bus and tram, prefer a slightly shorter label without the product prefix
-            final String label;
             if (shortName != null)
                 label = shortName;
             else if (number != null && name != null && name.endsWith(number))
                 label = number;
             else
                 label = name;
-            return new Line(id, operator, product, label, longName, lineStyle(operator, product, label));
         } else {
             // Otherwise the longer label is fine
-            final String label = addName != null ? addName : name;
-            return new Line(id, operator, product, label, longName, lineStyle(operator, product, name));
+            label = addName != null ? addName : shortName != null ? shortName : name;
         }
+        return new Line(id, operator, product, label, longName, lineStyle(operator, product, label, style));
     }
 
     public static class JsonContext implements QueryTripsContext {

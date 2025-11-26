@@ -62,12 +62,35 @@ public class Standard {
     private static final char STYLES_SEP = '|';
 
     private static boolean doNotUseSpecialLineStyles = false;
+    private static boolean doPreferPredefinedLineStyles = false;
 
     public static void setDoNotUseSpecialLineStyles(final boolean doNotUseSpecialLineStyles) {
         Standard.doNotUseSpecialLineStyles = doNotUseSpecialLineStyles;
     }
 
-    protected static Style defaultLineStyle(
+    public static void setPreferPredefinedLineStyles(final boolean doPreferPredefinedLineStyles) {
+        Standard.doPreferPredefinedLineStyles = doPreferPredefinedLineStyles;
+    }
+
+    public static Style resolveLineStyle(
+            final @Nullable Map<String, Style> styles,
+            final @Nullable String network,
+            final @Nullable Product product,
+            final @Nullable String label,
+            final @Nullable Style styleFromNetwork) {
+        if (!doNotUseSpecialLineStyles) {
+            if (styleFromNetwork != null && !doPreferPredefinedLineStyles)
+                return styleFromNetwork;
+            final Style specialStyle = specialLineStyle(styles, network, product, label);
+            if (specialStyle != null)
+                return specialStyle;
+            if (styleFromNetwork != null)
+                return styleFromNetwork;
+        }
+        return defaultLineStyle(network, product, label);
+    }
+
+    public static Style defaultLineStyle(
             final @Nullable String network,
             final @Nullable Product product,
             final @Nullable String label) {

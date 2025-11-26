@@ -235,9 +235,15 @@ public interface NetworkProvider extends Provider, LocationSearchProvider {
      *            line product to get style of, may be {@code null}
      * @param label
      *            line label to get style of, may be {@code null}
+     * @param styleFromNetwork
+     *            style delivered by network, may be {@code null}
      * @return object containing background, foreground and optional border colors
      */
-    Style lineStyle(@Nullable String network, @Nullable Product product, @Nullable String label);
+    Style lineStyle(
+            @Nullable String network,
+            @Nullable Product product,
+            @Nullable String label,
+            final @Nullable Style styleFromNetwork);
 
     /**
      * Gets the primary covered area of the network

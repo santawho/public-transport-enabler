@@ -129,12 +129,20 @@ public abstract class AbstractNetworkProvider extends AbstractLocationSearchProv
         return this;
     }
 
+    public Style lineStyle(
+            final @Nullable String network,
+            final @Nullable Product product,
+            final @Nullable String label) {
+        return lineStyle(network, product, label, null);
+    }
+
     @Override
-    public Style lineStyle(final @Nullable String network, final @Nullable Product product,
-                           final @Nullable String label) {
-        final Style specialStyle = Standard.specialLineStyle(styles, network, product, label);
-        if (specialStyle != null) return specialStyle;
-        return Standard.defaultLineStyle(network, product, label);
+    public Style lineStyle(
+            final @Nullable String network,
+            final @Nullable Product product,
+            final @Nullable String label,
+            final @Nullable Style styleFromNetwork) {
+        return Standard.resolveLineStyle(styles, network, product, label, styleFromNetwork);
     }
 
     @Override
