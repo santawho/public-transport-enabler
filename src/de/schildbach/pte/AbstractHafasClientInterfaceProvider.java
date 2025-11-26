@@ -84,7 +84,7 @@ import okhttp3.HttpUrl;
 
 /**
  * This is an implementation of the HCI (HAFAS Client Interface).
- *
+ * 
  * @author Andreas Schildbach
  */
 public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafasProvider {

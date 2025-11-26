@@ -29,15 +29,3 @@ and use this command to only execute a test for a single provider:
 
 This uses the `BvgProvider` as an example.
 Just replace it with the provider you want to test.
-
----
-
-**THIS IS AN UNOFFICIAL FORK**: It is kept in sync with the origin from
-[github.com/schildbach/public-transport-enabler](https://github.com/schildbach/public-transport-enabler) and applies selected pull requests until they are merged into upstream:
-
-* [Switzerland](https://github.com/schildbach/public-transport-enabler/pull/383)
-  * `NetworkId.SEARCHCH`
-  * [CHSearchProvider.java](src/de/schildbach/pte/CHSearchProvider.java)
-  * [CHSearchProviderLiveTest.java](test/de/schildbach/pte/live/CHSearchProviderLiveTest.java)
-
-There is a [mirror on github](https://github.com/opentransitmap/public-transport-enabler/), but for merge request please refer to our [Gitlab repository](https://gitlab.com/opentransitmap/public-transport-enabler).

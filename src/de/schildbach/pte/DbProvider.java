@@ -608,10 +608,10 @@ public final class DbProvider extends AbstractNetworkProvider {
                 return new QueryTripsResult(this.resultHeader, QueryTripsResult.Status.NO_TRIPS);
             }
             return new QueryTripsResult(this.resultHeader, QueryTripsResult.Status.SERVICE_DOWN);
-        } catch (final JSONException x) {
-            throw new ParserException("cannot parse json: '" + page + "' on " + url, x);
         } catch (IOException | RuntimeException e) {
             return new QueryTripsResult(this.resultHeader, QueryTripsResult.Status.SERVICE_DOWN);
+        } catch (final JSONException x) {
+            throw new ParserException("cannot parse json: '" + page + "' on " + url, x);
         }
     }
 
@@ -643,10 +643,10 @@ public final class DbProvider extends AbstractNetworkProvider {
             return new NearbyLocationsResult(this.resultHeader, locations);
         } catch (InternalErrorException | BlockedException e) {
             return new NearbyLocationsResult(this.resultHeader, NearbyLocationsResult.Status.INVALID_ID);
-        } catch (final JSONException x) {
-            throw new ParserException("cannot parse json: '" + page + "' on " + url, x);
         } catch (IOException | RuntimeException e) {
             return new NearbyLocationsResult(this.resultHeader, NearbyLocationsResult.Status.SERVICE_DOWN);
+        } catch (final JSONException x) {
+            throw new ParserException("cannot parse json: '" + page + "' on " + url, x);
         }
     }
 
@@ -712,10 +712,10 @@ public final class DbProvider extends AbstractNetworkProvider {
             return result;
         } catch (InternalErrorException | BlockedException e) {
             return new QueryDeparturesResult(this.resultHeader, QueryDeparturesResult.Status.INVALID_STATION);
-        } catch (final JSONException x) {
-            throw new ParserException("cannot parse json: '" + page + "' on " + url, x);
         } catch (IOException | RuntimeException e) {
             return new QueryDeparturesResult(this.resultHeader, QueryDeparturesResult.Status.SERVICE_DOWN);
+        } catch (final JSONException x) {
+            throw new ParserException("cannot parse json: '" + page + "' on " + url, x);
         }
     }
 
@@ -746,11 +746,11 @@ public final class DbProvider extends AbstractNetworkProvider {
                 }
             }
             return new SuggestLocationsResult(this.resultHeader, locations);
-        } catch (final JSONException x) {
-            throw new ParserException("cannot parse json: '" + page + "' on " + url, x);
         } catch (IOException | RuntimeException e) {
             e.printStackTrace();
             return new SuggestLocationsResult(this.resultHeader, SuggestLocationsResult.Status.SERVICE_DOWN);
+        } catch (final JSONException x) {
+            throw new ParserException("cannot parse json: '" + page + "' on " + url, x);
         }
     }
 
