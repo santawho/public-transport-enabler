@@ -17,8 +17,6 @@
 
 package de.schildbach.pte;
 
-import com.google.common.base.Strings;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -105,26 +103,29 @@ public class Standard {
         if (!doNotUseSpecialLineStyles && styles != null && product != null) {
             if (network != null) {
                 // check for line match
-                final Style lineStyle = styles.get(network + STYLES_SEP + product.code + Objects.toString(label, ""));
+                final String lineString = network + STYLES_SEP + product.code + Objects.toString(label, "");
+                final Style lineStyle = styles.get(lineString);
                 if (lineStyle != null)
                     return lineStyle;
 
                 // check for product match
-                final Style productStyle = styles.get(network + STYLES_SEP + product.code);
+                final String productString = network + STYLES_SEP + product.code;
+                final Style productStyle = styles.get(productString);
                 if (productStyle != null)
                     return productStyle;
 
                 // check for night bus, as that's a common special case
                 if (product == Product.BUS && label != null && label.startsWith("N")) {
-                    final Style nightStyle = styles.get(network + STYLES_SEP + "BN");
+                    final String nightBusString = network + STYLES_SEP + "BN";
+                    final Style nightStyle = styles.get(nightBusString);
                     if (nightStyle != null)
                         return nightStyle;
                 }
             }
 
             // check for line match
-            final String string = product.code + Objects.toString(label, "");
-            final Style lineStyle = styles.get(string);
+            final String lineString = product.code + Objects.toString(label, "");
+            final Style lineStyle = styles.get(lineString);
             if (lineStyle != null)
                 return lineStyle;
 

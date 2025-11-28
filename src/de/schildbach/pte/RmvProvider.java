@@ -153,6 +153,21 @@ public class RmvProvider extends AbstractHafasClientInterfaceProvider {
         STYLES.put("RRE85", new Style(Style.Shape.RECT, Style.rgb(216, 154, 47), Style.WHITE));
         STYLES.put("RRE98", new Style(Style.Shape.RECT, Style.rgb(216, 154, 47), Style.WHITE));
         STYLES.put("RRE99", new Style(Style.Shape.RECT, Style.rgb(216, 154, 47), Style.WHITE));
+
+        // busses Hanau
+        STYLES.put("Hanauer Straßenbahn GmbH|B1", new Style(Style.Shape.RECT, Style.rgb(139, 198, 62), Style.WHITE));
+        STYLES.put("Hanauer Straßenbahn GmbH|B2", new Style(Style.Shape.RECT, Style.rgb(255, 220, 1), Style.WHITE));
+        STYLES.put("Hanauer Straßenbahn GmbH|B4", new Style(Style.Shape.RECT, Style.rgb(135, 84, 0), Style.WHITE));
+        STYLES.put("Hanauer Straßenbahn GmbH|B5", new Style(Style.Shape.RECT, Style.rgb(244, 130, 51), Style.WHITE));
+        STYLES.put("Hanauer Straßenbahn GmbH|B6", new Style(Style.Shape.RECT, Style.rgb(135, 62, 151), Style.WHITE));
+        STYLES.put("Hanauer Straßenbahn GmbH|B6S", new Style(Style.Shape.RECT, Style.rgb(135, 62, 151), Style.WHITE));
+        STYLES.put("Hanauer Straßenbahn GmbH|B7", new Style(Style.Shape.RECT, Style.rgb(0, 140, 208), Style.WHITE));
+        STYLES.put("Hanauer Straßenbahn GmbH|B8", new Style(Style.Shape.RECT, Style.rgb(215, 12, 140), Style.WHITE));
+        STYLES.put("Hanauer Straßenbahn GmbH|B9", new Style(Style.Shape.RECT, Style.rgb(239, 64, 34), Style.WHITE));
+        STYLES.put("Hanauer Straßenbahn GmbH|B10", new Style(Style.Shape.RECT, Style.rgb(1, 90, 170), Style.WHITE));
+        STYLES.put("Hanauer Straßenbahn GmbH|B11", new Style(Style.Shape.RECT, Style.rgb(119, 182, 228), Style.WHITE));
+        STYLES.put("Hanauer Straßenbahn GmbH|B12", new Style(Style.Shape.RECT, Style.rgb(243, 144, 179), Style.WHITE));
+        STYLES.put("Hanauer Straßenbahn GmbH|B20", new Style(Style.Shape.RECT, Style.rgb(176, 13, 29), Style.WHITE));
     }
 
     private static final String[] PLACES = new String[]{
