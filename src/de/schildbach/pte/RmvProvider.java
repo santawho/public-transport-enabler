@@ -20,6 +20,7 @@ package de.schildbach.pte;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import de.schildbach.pte.dto.Product;
 import de.schildbach.pte.dto.Style;
@@ -170,19 +171,23 @@ public class RmvProvider extends AbstractHafasClientInterfaceProvider {
         STYLES.put("Hanauer Straßenbahn GmbH|B20", new Style(Style.Shape.RECT, Style.rgb(176, 13, 29), Style.WHITE));
     }
 
+    private static final Pattern P_SPLIT_NAME_RMV = Pattern.compile("((?:Bad )?[^ ]*(?: ?\\([^ ]*)?) (.*)");
+
     private static final String[] PLACES = new String[]{
-            "Frankfurt (Main)",
-            "Offenbach (Main)",
-            "Mainz",
-            "Wiesbaden",
-            "Marburg",
-            "Kassel",
-            "Hanau",
-            "Göttingen",
-            "Darmstadt",
-            "Aschaffenburg",
-            "Berlin",
-            "Fulda"
+// we now split using a complex Regex, so the following do not need an exception
+//            "Frankfurt (Main)",
+//            "Offenbach (Main)",
+// we now split at first space, so the following do not need an exception
+//            "Mainz",
+//            "Wiesbaden",
+//            "Marburg",
+//            "Kassel",
+//            "Hanau",
+//            "Göttingen",
+//            "Darmstadt",
+//            "Aschaffenburg",
+//            "Berlin",
+//            "Fulda"
     };
 
 
@@ -214,7 +219,7 @@ public class RmvProvider extends AbstractHafasClientInterfaceProvider {
         if (name.startsWith("MZ "))
             return new String[] {"Mainz", name.substring(3)};
 
-        for (String place: PLACES) {
+        for (final String place: PLACES) {
             if (name.startsWith(place + " - "))
                 return new String[] { place, name.substring(place.length() + 3) };
 
@@ -222,7 +227,7 @@ public class RmvProvider extends AbstractHafasClientInterfaceProvider {
                 return new String[] { place, name.substring(place.length() + 1) };
         }
 
-        final Matcher m = P_SPLIT_NAME_FIRST_COMMA.matcher(name);
+        final Matcher m = P_SPLIT_NAME_RMV.matcher(name);
         if (m.matches())
             return new String[] { m.group(1), m.group(2) };
 
