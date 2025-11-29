@@ -203,7 +203,8 @@ public class RmvProvider extends AbstractHafasClientInterfaceProvider {
     private static final String[] SPECIAL_PLACES = new String[]{
 // the following contain spaces and must be listed here
             "Groß Gerau",
-            "Hofheim am Taunus"
+            "Hofheim am Taunus",
+            "Bad Homburg v.d.H."
 // we now split using a complex Regex, so the following do not need an exception
 //            "Frankfurt (Main)",
 //            "Offenbach (Main)",
