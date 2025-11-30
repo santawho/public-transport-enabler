@@ -50,10 +50,10 @@ public class Standard {
         STYLES.put(Product.SUBURBAN_TRAIN, new Style(Shape.CIRCLE, COLOR_BACKGROUND_SUBURBAN_TRAIN, Style.WHITE));
         STYLES.put(Product.SUBWAY, new Style(Shape.RECT, COLOR_BACKGROUND_SUBWAY, Style.WHITE));
         STYLES.put(Product.TRAM, new Style(Shape.RECT, COLOR_BACKGROUND_TRAM, Style.WHITE));
-        STYLES.put(Product.BUS, new Style(COLOR_BACKGROUND_BUS, Style.WHITE));
-        STYLES.put(Product.ON_DEMAND, new Style(COLOR_BACKGROUND_ON_DEMAND, Style.WHITE));
+        STYLES.put(Product.BUS, new Style(Shape.ROUNDED, COLOR_BACKGROUND_BUS, Style.WHITE));
+        STYLES.put(Product.ON_DEMAND, new Style(Shape.ROUNDED, COLOR_BACKGROUND_ON_DEMAND, Style.WHITE));
         STYLES.put(Product.FERRY, new Style(Shape.CIRCLE, COLOR_BACKGROUND_FERRY, Style.WHITE));
-        STYLES.put(Product.REPLACEMENT_SERVICE, new Style(COLOR_BACKGROUND_REPLACEMENT_SERVICE, Style.WHITE));
+        STYLES.put(Product.REPLACEMENT_SERVICE, new Style(Shape.ROUNDED, COLOR_BACKGROUND_REPLACEMENT_SERVICE, Style.WHITE));
         STYLES.put(null, new Style(Style.DKGRAY, Style.WHITE));
     }
 
@@ -108,12 +108,6 @@ public class Standard {
                 if (lineStyle != null)
                     return lineStyle;
 
-                // check for product match
-                final String productString = network + STYLES_SEP + product.code;
-                final Style productStyle = styles.get(productString);
-                if (productStyle != null)
-                    return productStyle;
-
                 // check for night bus, as that's a common special case
                 if (product == Product.BUS && label != null && label.startsWith("N")) {
                     final String nightBusString = network + STYLES_SEP + "BN";
@@ -121,6 +115,12 @@ public class Standard {
                     if (nightStyle != null)
                         return nightStyle;
                 }
+
+                // check for product match
+                final String productString = network + STYLES_SEP + product.code;
+                final Style productStyle = styles.get(productString);
+                if (productStyle != null)
+                    return productStyle;
             }
 
             // check for line match
@@ -129,17 +129,17 @@ public class Standard {
             if (lineStyle != null)
                 return lineStyle;
 
-            // check for product match
-            final Style productStyle = styles.get(Character.toString(product.code));
-            if (productStyle != null)
-                return productStyle;
-
             // check for night bus, as that's a common special case
             if (product == Product.BUS && label != null && label.startsWith("N")) {
                 final Style nightStyle = styles.get("BN");
                 if (nightStyle != null)
                     return nightStyle;
             }
+
+            // check for product match
+            final Style productStyle = styles.get(Character.toString(product.code));
+            if (productStyle != null)
+                return productStyle;
         }
         return null;
     }
