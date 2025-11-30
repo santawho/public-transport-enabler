@@ -172,6 +172,40 @@ public class RmvProvider extends AbstractHafasClientInterfaceProvider {
         STYLES.put("RRE98", new Style(Style.Shape.RECT, Style.rgb(216, 154, 47), Style.WHITE));
         STYLES.put("RRE99", new Style(Style.Shape.RECT, Style.rgb(216, 154, 47), Style.WHITE));
 
+        STYLES.put("BX11", new Style(Style.Shape.RECT, Style.rgb(167, 22, 128), Style.WHITE));
+        STYLES.put("BX14", new Style(Style.Shape.RECT, Style.rgb(0, 103, 148), Style.WHITE));
+        STYLES.put("BX15", new Style(Style.Shape.RECT, Style.rgb(168, 138, 91), Style.WHITE));
+        STYLES.put("BX17", new Style(Style.Shape.RECT, Style.rgb(229, 167, 18), Style.WHITE));
+        STYLES.put("BX18", new Style(Style.Shape.RECT, Style.rgb(100, 133, 146), Style.WHITE));
+        STYLES.put("BX19", new Style(Style.Shape.RECT, Style.rgb(11, 45, 114), Style.WHITE));
+        STYLES.put("BX26", new Style(Style.Shape.RECT, Style.rgb(0, 111, 69), Style.WHITE));
+        STYLES.put("BX27", new Style(Style.Shape.RECT, Style.rgb(206, 123, 45), Style.WHITE));
+        STYLES.put("BX33", new Style(Style.Shape.RECT, Style.rgb(46, 48, 146), Style.WHITE));
+        STYLES.put("BX35", new Style(Style.Shape.RECT, Style.rgb(0, 70, 89), Style.WHITE));
+        STYLES.put("BX37", new Style(Style.Shape.RECT, Style.rgb(61, 123, 147), Style.WHITE));
+        STYLES.put("BX38", new Style(Style.Shape.RECT, Style.rgb(241, 91, 91), Style.WHITE));
+        STYLES.put("BX39", new Style(Style.Shape.RECT, Style.rgb(186, 119, 61), Style.WHITE));
+        STYLES.put("BX40", new Style(Style.Shape.RECT, Style.rgb(68, 185, 123), Style.WHITE));
+        STYLES.put("BX41", new Style(Style.Shape.RECT, Style.rgb(175, 170, 31), Style.WHITE));
+        STYLES.put("BX53", new Style(Style.Shape.RECT, Style.rgb(167, 22, 128), Style.WHITE));
+        STYLES.put("BX57", new Style(Style.Shape.RECT, Style.rgb(0, 153, 218), Style.WHITE));
+        STYLES.put("BX58", new Style(Style.Shape.RECT, Style.rgb(167, 22, 128), Style.WHITE));
+        STYLES.put("BX61", new Style(Style.Shape.RECT, Style.rgb(167, 22, 128), Style.WHITE));
+        STYLES.put("BX64", new Style(Style.Shape.RECT, Style.rgb(245, 130, 31), Style.WHITE));
+        STYLES.put("BX69", new Style(Style.Shape.RECT, Style.rgb(229, 168, 46), Style.WHITE));
+        STYLES.put("BX71", new Style(Style.Shape.RECT, Style.rgb(0, 165, 139), Style.WHITE));
+        STYLES.put("BX72", new Style(Style.Shape.RECT, Style.rgb(237, 20, 90), Style.WHITE));
+        STYLES.put("BX74", new Style(Style.Shape.RECT, Style.rgb(237, 28, 36), Style.WHITE));
+        STYLES.put("BX76", new Style(Style.Shape.RECT, Style.rgb(79, 75, 114), Style.WHITE));
+        STYLES.put("BX77", new Style(Style.Shape.RECT, Style.rgb(167, 22, 128), Style.WHITE));
+        STYLES.put("BX78", new Style(Style.Shape.RECT, Style.rgb(0, 185, 242), Style.WHITE));
+        STYLES.put("BX79", new Style(Style.Shape.RECT, Style.rgb(140, 198, 63), Style.WHITE));
+        STYLES.put("BX83", new Style(Style.Shape.RECT, Style.rgb(196, 8, 117), Style.WHITE));
+        STYLES.put("BX89", new Style(Style.Shape.RECT, Style.rgb(135, 129, 189), Style.WHITE));
+        STYLES.put("BX93", new Style(Style.Shape.RECT, Style.rgb(143, 88, 115), Style.WHITE));
+        STYLES.put("BX94", new Style(Style.Shape.RECT, Style.rgb(112, 153, 165), Style.WHITE));
+        STYLES.put("BX95", new Style(Style.Shape.RECT, Style.rgb(91, 196, 190), Style.WHITE));
+
         // busses Hanau
         STYLES.put("Hanauer Straßenbahn GmbH|B1", new Style(Style.Shape.RECT, Style.rgb(139, 198, 62), Style.WHITE));
         STYLES.put("Hanauer Straßenbahn GmbH|B2", new Style(Style.Shape.RECT, Style.rgb(255, 220, 1), Style.WHITE));
@@ -196,13 +230,14 @@ public class RmvProvider extends AbstractHafasClientInterfaceProvider {
     // - be suffixed by " (...)" (like "Frankfurt (Main)")
     // other spaces are not permitted in a place.
     // all places containing spaces must be listed in the SPECIAL_PLACES
-    private static final Pattern P_SPLIT_NAME_RMV = Pattern.compile("((?:Bad )?[^ ]*(?: ?\\([^ ]*\\))?)[ ,\\-] *(.*)");
+    private static final Pattern P_SPLIT_NAME_RMV = Pattern.compile("((?:Bad )?[^ ]*(?: ?\\([^)]*\\))?)[ ,\\-]? *(.*)");
 
     // list all places, which contain at least one space
     // except: places with "Bad "-prefix and no further spaces
     private static final String[] SPECIAL_PLACES = new String[]{
 // the following contain spaces and must be listed here
             "Groß Gerau",
+            "Bad Soden-Salmünster-Bad Soden", // special, because "Bad Soden-Salmünster-Bad Soden Schweizerhaus", but "Bad Soden-Salmünster-Salmünster Am Palmusacker" and "Bad Soden-Salmünster-Kath.-Willenroth Waldschule"
             "Hofheim am Taunus",
             "Bad Homburg v.d.H."
 // we now split using a complex Regex, so the following do not need an exception
@@ -252,10 +287,11 @@ public class RmvProvider extends AbstractHafasClientInterfaceProvider {
         if (m.matches()) {
             final String place = m.group(1);
             final String name = m.group(2);
-            return new String[]{place, name};
+            if (name != null && !name.isEmpty())
+                return new String[]{place, name};
         }
 
-        return super.splitStationName(placeAndName);
+        return new String[] { null, placeAndName };
     }
 
     @Override
