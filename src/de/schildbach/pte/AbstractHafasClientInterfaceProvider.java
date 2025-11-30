@@ -1137,8 +1137,8 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
             final List<Style> styles = parseIcoList(common.getJSONArray("icoL"));
             final JSONArray crdSysList = common.optJSONArray("crdSysL");
             final JSONArray locList = common.getJSONArray("locL");
-            final List<String> operators = parseOpList(common.getJSONArray("opL"));
-            final List<Line> lines = parseProdList(common.getJSONArray("prodL"), operators, styles);
+            final List<String> operators = parseOpList(common.optJSONArray("opL"));
+            final List<Line> lines = parseProdList(common.optJSONArray("prodL"), operators, styles);
             final List<String> encodedPolylines = parsePolyList(common.optJSONArray("polyL"));
 
             final JSONObject journey = res.optJSONObject("journey");
@@ -1600,7 +1600,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
             final int icoIndex = prod.getInt("icoX");
             final Style style = styles.get(icoIndex);
             final int oprIndex = prod.optInt("oprX", -1);
-            final String operator = oprIndex != -1 ? operators.get(oprIndex) : null;
+            final String operator = (oprIndex != -1 && operators != null) ? operators.get(oprIndex) : null;
             final int cls = prod.optInt("cls", -1);
             final String id;
             final String ctxNum;
