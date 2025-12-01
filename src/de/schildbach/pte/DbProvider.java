@@ -73,11 +73,15 @@ public final class DbProvider extends DbWebProvider.Fernverkehr {
             @Nullable final String network,
             @Nullable final Product product,
             @Nullable final String label) {
-        final Style styleFromNetwork;
-        if (product != null && product.equals(Product.HIGH_SPEED_TRAIN) && !OPERATOR_DB_FERNVERKEHR.equals(network)) {
-            styleFromNetwork = STYLE_NON_DB_HIGH_SPEED_TRAIN;
-        } else {
-            styleFromNetwork = null;
+        Style styleFromNetwork = null;
+        if (product != null && product.equals(Product.HIGH_SPEED_TRAIN)) {
+            if (network != null) {
+                if (!OPERATOR_DB_FERNVERKEHR.equals(network))
+                    styleFromNetwork = STYLE_NON_DB_HIGH_SPEED_TRAIN;
+            } else {
+                if (label == null || !(label.startsWith("ICE ") || label.startsWith("IC ")))
+                    styleFromNetwork = STYLE_NON_DB_HIGH_SPEED_TRAIN;
+            }
         }
         return Standard.resolveLineStyle(styles, network, product, label, styleFromNetwork);
     }
