@@ -17,31 +17,39 @@
 
 package de.schildbach.pte.dto;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import javax.annotation.Nullable;
 
-import com.google.common.base.MoreObjects;
-import com.google.common.base.MoreObjects.ToStringHelper;
-import com.google.common.base.Objects;
+import static java.util.Objects.requireNonNull;
 
 /**
  * @author Andreas Schildbach
  */
-@SuppressWarnings("serial")
 public final class StationDepartures implements Serializable {
+    private static final long serialVersionUID = -1709149432543580295L;
+
     public final Location location;
     public final List<Departure> departures;
     public final @Nullable List<LineDestination> lines;
 
     public StationDepartures(final Location location, final List<Departure> departures,
             final List<LineDestination> lines) {
-        this.location = checkNotNull(location);
-        this.departures = checkNotNull(departures);
+        this.location = requireNonNull(location);
+        this.departures = requireNonNull(departures);
         this.lines = lines;
+    }
+
+    public List<Departure> getNonCancelledDepartures() {
+        final List<Departure> deps = new ArrayList<>();
+        for (final Departure departure : departures) {
+            if (!departure.cancelled)
+                deps.add(departure);
+        }
+        return deps;
     }
 
     @Override
@@ -51,25 +59,27 @@ public final class StationDepartures implements Serializable {
         if (!(o instanceof StationDepartures))
             return false;
         final StationDepartures other = (StationDepartures) o;
-        if (!Objects.equal(this.location, other.location))
+        if (!Objects.equals(this.location, other.location))
             return false;
-        if (!Objects.equal(this.departures, other.departures))
+        if (!Objects.equals(this.departures, other.departures))
             return false;
-        if (!Objects.equal(this.lines, other.lines))
+        if (!Objects.equals(this.lines, other.lines))
             return false;
         return true;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(location, departures, lines);
+        return Objects.hash(location, departures, lines);
     }
 
     @Override
     public String toString() {
-        final ToStringHelper helper = MoreObjects.toStringHelper(this).addValue(location);
-        if (departures != null)
-            helper.add("size", departures.size()).add("departures", departures);
-        return helper.toString();
+        return getClass().getSimpleName() + "{" +
+                location + "," +
+                "size=" +
+                (departures != null ?
+                        departures.size() + ",departures=" + departures : "null") +
+                "}";
     }
 }

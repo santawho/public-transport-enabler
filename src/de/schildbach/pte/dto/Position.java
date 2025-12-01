@@ -18,13 +18,12 @@
 package de.schildbach.pte.dto;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 import javax.annotation.Nullable;
-
-import com.google.common.base.Objects;
 
 /**
  * @author Andreas Schildbach
@@ -34,16 +33,45 @@ public final class Position implements Serializable {
 
     public final String name;
     public final @Nullable String section;
+    private String samePlatformPositionName;
 
     public Position(final String name) {
         this(name, null);
     }
 
     public Position(final String name, final String section) {
-        this.name = checkNotNull(name);
+        this.name = requireNonNull(name);
         // checkArgument(name.length() <= 5, "name too long: %s", name);
         this.section = section;
         checkArgument(section == null || section.length() <= 3, "section too long: %s", section);
+    }
+
+    public void setSamePlatformAs(final Position otherPosition) {
+        samePlatformPositionName = (otherPosition == null) ? null : otherPosition.name;
+    }
+
+    public static boolean isSamePlatformAs(
+            final Location locationA, final Position positionA,
+            final Location locationB, final Position positionB) {
+        if (!(positionA != null && positionB != null
+                && locationA != null && locationA.type == LocationType.STATION
+                && locationB != null && locationB.type == LocationType.STATION
+                && locationA.equals(locationB))) {
+            return false;
+        }
+        final String nameA = positionA.name;
+        final String samePlatformPositionNameA = positionA.samePlatformPositionName;
+        final String nameB = positionB.name;
+        final String samePlatformPositionNameB = positionB.samePlatformPositionName;
+        if (nameA != null) {
+            if (nameA.equals(nameB) || nameA.equals(samePlatformPositionNameB))
+                return true;
+        }
+        if (nameB != null) {
+            if (nameB.equals(samePlatformPositionNameA))
+                return true;
+        }
+        return false;
     }
 
     @Override
@@ -53,16 +81,16 @@ public final class Position implements Serializable {
         if (!(o instanceof Position))
             return false;
         final Position other = (Position) o;
-        if (!Objects.equal(this.name, other.name))
+        if (!Objects.equals(this.name, other.name))
             return false;
-        if (!Objects.equal(this.section, other.section))
+        if (!Objects.equals(this.section, other.section))
             return false;
         return true;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(name, section);
+        return Objects.hash(name, section);
     }
 
     @Override

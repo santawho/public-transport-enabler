@@ -28,15 +28,14 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
 
-import com.google.common.io.BaseEncoding;
+import de.schildbach.pte.util.Encodings;
 import org.junit.Ignore;
 import org.junit.Test;
-
-import com.google.common.collect.ComparisonChain;
 
 import de.schildbach.pte.NetworkProvider.Accessibility;
 import de.schildbach.pte.NetworkProvider.WalkSpeed;
@@ -59,10 +58,8 @@ import de.schildbach.pte.dto.TripOptions;
  * @author Michael Dyrna
  */
 public class VrsProviderLiveTest extends AbstractProviderLiveTest {
-    private static final BaseEncoding BASE64 = BaseEncoding.base64();
-
     public VrsProviderLiveTest() {
-        super(new VrsProvider(BASE64.decode(secretProperty("vrs.client_certificate"))));
+        super(new VrsProvider(Encodings.BASE64.decode(secretProperty("vrs.client_certificate"))));
     }
 
     @Test
@@ -338,7 +335,7 @@ public class VrsProviderLiveTest extends AbstractProviderLiveTest {
     @Test
     public void testTripWithProductFilter() throws Exception {
         final TripOptions options = new TripOptions(EnumSet.of(Product.ON_DEMAND, Product.SUBWAY, Product.FERRY,
-                Product.TRAM, Product.CABLECAR, Product.BUS), null, WalkSpeed.NORMAL, Accessibility.NEUTRAL, null);
+                Product.TRAM, Product.CABLECAR, Product.BUS), null, WalkSpeed.NORMAL, null, Accessibility.NEUTRAL, null);
         final QueryTripsResult result = queryTrips(new Location(LocationType.STATION, "1504"), null,
                 new Location(LocationType.STATION, "1"), new Date(), true, options);
         assertEquals(QueryTripsResult.Status.OK, result.status);
@@ -404,7 +401,7 @@ public class VrsProviderLiveTest extends AbstractProviderLiveTest {
     public void testTripCologneWickede() throws Exception {
         final TripOptions options = new TripOptions(
                 EnumSet.of(Product.REGIONAL_TRAIN, Product.SUBURBAN_TRAIN, Product.SUBWAY, Product.TRAM), null,
-                WalkSpeed.NORMAL, Accessibility.NEUTRAL, null);
+                WalkSpeed.NORMAL, null, Accessibility.NEUTRAL, null);
         final QueryTripsResult result = queryTrips(new Location(LocationType.STATION, "8"), null,
                 new Location(LocationType.STATION, "10781"), new Date(), true, options);
         print(result);
@@ -444,7 +441,7 @@ public class VrsProviderLiveTest extends AbstractProviderLiveTest {
 
     @Test
     public void testTripAachenEschweilerBus() throws Exception {
-        final TripOptions options = new TripOptions(EnumSet.of(Product.BUS), null, WalkSpeed.NORMAL,
+        final TripOptions options = new TripOptions(EnumSet.of(Product.BUS), null, WalkSpeed.NORMAL, null,
                 Accessibility.NEUTRAL, null);
         final QueryTripsResult result = queryTrips(new Location(LocationType.STATION, "10004"), null,
                 new Location(LocationType.STATION, "10003"), new Date(), true, options);
@@ -510,7 +507,7 @@ public class VrsProviderLiveTest extends AbstractProviderLiveTest {
     private static class LocationComparator implements Comparator<Location> {
         @Override
         public int compare(Location o1, Location o2) {
-            return ComparisonChain.start().compare(o1.name, o2.name).result();
+            return Objects.compare(o1.name, o2.name, Comparator.nullsFirst(String::compareTo));
         }
     }
 

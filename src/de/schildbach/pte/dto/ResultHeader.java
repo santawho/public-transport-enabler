@@ -17,21 +17,20 @@
 
 package de.schildbach.pte.dto;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.io.Serializable;
 
 import javax.annotation.Nullable;
 
-import com.google.common.base.MoreObjects;
-
 import de.schildbach.pte.NetworkId;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * @author Andreas Schildbach
  */
-@SuppressWarnings("serial")
 public final class ResultHeader implements Serializable {
+    private static final long serialVersionUID = -6692011253193787470L;
+
     public final NetworkId network;
     public final String serverProduct;
     public final @Nullable String serverVersion;
@@ -45,8 +44,8 @@ public final class ResultHeader implements Serializable {
 
     public ResultHeader(final NetworkId network, final String serverProduct, final String serverVersion,
             final String serverName, final long serverTime, final Object context) {
-        this.network = checkNotNull(network);
-        this.serverProduct = checkNotNull(serverProduct);
+        this.network = requireNonNull(network);
+        this.serverProduct = requireNonNull(serverProduct);
         this.serverVersion = serverVersion;
         this.serverName = serverName;
         this.serverTime = serverTime;
@@ -55,8 +54,11 @@ public final class ResultHeader implements Serializable {
 
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(this).add("serverProduct", serverProduct).add("serverVersion", serverVersion)
-                .add("serverName", serverName).add("serverTime", serverTime).add("context", context).omitNullValues()
-                .toString();
+        return getClass().getSimpleName() + "{" +
+                "serverProduct=" + serverProduct + "," +
+                (serverVersion != null ? "serverVersion=" + serverVersion + "," : "") +
+                (serverName != null ? "serverName=" + serverName + "," : "") +
+                "serverTime=" + serverTime + "," +
+                "context=" + context + "}";
     }
 }

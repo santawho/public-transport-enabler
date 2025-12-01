@@ -17,15 +17,13 @@
 
 package de.schildbach.pte.dto;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.io.Serializable;
 import java.util.Currency;
+import java.util.Objects;
 
 import javax.annotation.Nullable;
 
-import com.google.common.base.MoreObjects;
-import com.google.common.base.Objects;
+import static java.util.Objects.requireNonNull;
 
 /**
  * @author Andreas Schildbach
@@ -46,9 +44,9 @@ public final class Fare implements Serializable {
 
     public Fare(final String name, final Type type, final Currency currency, final float fare, final String unitName,
             final String units) {
-        this.name = checkNotNull(name);
-        this.type = checkNotNull(type);
-        this.currency = checkNotNull(currency);
+        this.name = requireNonNull(name);
+        this.type = requireNonNull(type);
+        this.currency = requireNonNull(currency);
         this.fare = fare;
         this.unitName = unitName;
         this.units = units;
@@ -61,29 +59,34 @@ public final class Fare implements Serializable {
         if (!(o instanceof Fare))
             return false;
         final Fare other = (Fare) o;
-        if (!Objects.equal(this.name, other.name))
+        if (!Objects.equals(this.name, other.name))
             return false;
-        if (!Objects.equal(this.type, other.type))
+        if (!Objects.equals(this.type, other.type))
             return false;
-        if (!Objects.equal(this.currency, other.currency))
+        if (!Objects.equals(this.currency, other.currency))
             return false;
         if (this.fare != other.fare)
             return false;
-        if (!Objects.equal(this.unitName, other.unitName))
+        if (!Objects.equals(this.unitName, other.unitName))
             return false;
-        if (!Objects.equal(this.units, other.units))
+        if (!Objects.equals(this.units, other.units))
             return false;
         return true;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(name, type, currency, fare, unitName, units);
+        return Objects.hash(name, type.name(), currency, fare, unitName, units);
     }
 
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(this).addValue(name).addValue(type).addValue(currency).addValue(fare)
-                .addValue(unitName).addValue(units).toString();
+        return getClass().getSimpleName() + "{" +
+                name + "," +
+                type + "," +
+                currency + "," +
+                fare + "," +
+                unitName + "," +
+                units + "}";
     }
 }

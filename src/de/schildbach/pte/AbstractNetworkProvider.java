@@ -18,10 +18,10 @@
 package de.schildbach.pte;
 
 import java.io.IOException;
-import java.net.Proxy;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
-import java.util.EnumSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
@@ -30,36 +30,39 @@ import java.util.regex.Pattern;
 
 import javax.annotation.Nullable;
 
-import com.google.common.base.Charsets;
-import com.google.common.base.Strings;
+import org.msgpack.core.MessageUnpacker;
 
+import de.schildbach.pte.dto.JourneyRef;
 import de.schildbach.pte.dto.Location;
+import de.schildbach.pte.dto.LocationType;
+import de.schildbach.pte.dto.NearbyLocationsResult;
 import de.schildbach.pte.dto.Point;
 import de.schildbach.pte.dto.Position;
 import de.schildbach.pte.dto.Product;
+import de.schildbach.pte.dto.QueryDeparturesResult;
+import de.schildbach.pte.dto.QueryJourneyResult;
 import de.schildbach.pte.dto.QueryTripsResult;
 import de.schildbach.pte.dto.Style;
-import de.schildbach.pte.dto.SuggestLocationsResult;
+import de.schildbach.pte.dto.TransferDetails;
+import de.schildbach.pte.dto.Trip;
 import de.schildbach.pte.dto.TripOptions;
-import de.schildbach.pte.util.HttpClient;
+import de.schildbach.pte.dto.TripRef;
+import de.schildbach.pte.dto.TripShare;
 
 /**
  * @author Andreas Schildbach
  */
-public abstract class AbstractNetworkProvider implements NetworkProvider {
+public abstract class AbstractNetworkProvider extends AbstractLocationSearchProvider implements NetworkApiProvider {
     protected final NetworkId network;
-    protected final HttpClient httpClient = new HttpClient();
 
-    protected Charset requestUrlEncoding = Charsets.ISO_8859_1;
-    protected TimeZone timeZone = TimeZone.getTimeZone("CET");
+    protected Charset requestUrlEncoding = StandardCharsets.ISO_8859_1;
+    protected TimeZone timeZone;
     protected int numTripsRequested = 6;
-    private @Nullable Map<String, Style> styles = null;
-
-    protected static final Set<Product> ALL_EXCEPT_HIGHSPEED = EnumSet
-            .complementOf(EnumSet.of(Product.HIGH_SPEED_TRAIN));
+    protected @Nullable Map<String, Style> styles = null;
 
     protected AbstractNetworkProvider(final NetworkId network) {
         this.network = network;
+        setTimeZone("Europe/Berlin");
     }
 
     @Override
@@ -69,19 +72,13 @@ public abstract class AbstractNetworkProvider implements NetworkProvider {
 
     @Override
     public final boolean hasCapabilities(final Capability... capabilities) {
-        for (final Capability capability : capabilities)
-            if (!hasCapability(capability))
-                return false;
-
-        return true;
+        return getCapabilities().containsAll(Set.of(capabilities));
     }
 
-    protected abstract boolean hasCapability(Capability capability);
+    protected abstract Set<Capability> getCapabilities();
 
-    @Deprecated
-    @Override
-    public final SuggestLocationsResult suggestLocations(final CharSequence constraint) throws IOException {
-        return suggestLocations(constraint, null, 0);
+    protected boolean hasCapability(Capability capability) {
+        return getCapabilities().contains(capability);
     }
 
     @Deprecated
@@ -90,27 +87,22 @@ public abstract class AbstractNetworkProvider implements NetworkProvider {
             @Nullable Set<Product> products, @Nullable Optimize optimize, @Nullable WalkSpeed walkSpeed,
             @Nullable Accessibility accessibility, @Nullable Set<TripFlag> flags) throws IOException {
         return queryTrips(from, via, to, date, dep,
-                new TripOptions(products, optimize, walkSpeed, accessibility, flags));
+                new TripOptions(products, optimize, walkSpeed, null, accessibility, flags));
+    }
+
+    @Override
+    public QueryTripsResult queryReloadTrip(final TripRef tripRef) throws IOException {
+        throw new UnsupportedOperationException("queryReloadTrip(\"" + tripRef + "\")");
+    }
+
+    @Override
+    public QueryJourneyResult queryJourney(final JourneyRef journeyRef) throws IOException {
+        throw new UnsupportedOperationException("queryJourney(\"" + journeyRef + "\")");
     }
 
     @Override
     public Set<Product> defaultProducts() {
-        return ALL_EXCEPT_HIGHSPEED;
-    }
-
-    public AbstractNetworkProvider setUserAgent(final String userAgent) {
-        httpClient.setUserAgent(userAgent);
-        return this;
-    }
-
-    public AbstractNetworkProvider setProxy(final Proxy proxy) {
-        httpClient.setProxy(proxy);
-        return this;
-    }
-
-    public AbstractNetworkProvider setTrustAllCertificates(final boolean trustAllCertificates) {
-        httpClient.setTrustAllCertificates(trustAllCertificates);
-        return this;
+        return Product.ALL_EXCEPT_HIGHSPEED;
     }
 
     protected AbstractNetworkProvider setRequestUrlEncoding(final Charset requestUrlEncoding) {
@@ -137,58 +129,20 @@ public abstract class AbstractNetworkProvider implements NetworkProvider {
         return this;
     }
 
-    protected AbstractNetworkProvider setSessionCookieName(final String sessionCookieName) {
-        httpClient.setSessionCookieName(sessionCookieName);
-        return this;
+    public Style lineStyle(
+            final @Nullable String network,
+            final @Nullable Product product,
+            final @Nullable String label) {
+        return lineStyle(network, product, label, null);
     }
 
-    private static final char STYLES_SEP = '|';
-
     @Override
-    public Style lineStyle(final @Nullable String network, final @Nullable Product product,
-            final @Nullable String label) {
-        final Map<String, Style> styles = this.styles;
-        if (styles != null && product != null) {
-            if (network != null) {
-                // check for line match
-                final Style lineStyle = styles.get(network + STYLES_SEP + product.code + Strings.nullToEmpty(label));
-                if (lineStyle != null)
-                    return lineStyle;
-
-                // check for product match
-                final Style productStyle = styles.get(network + STYLES_SEP + product.code);
-                if (productStyle != null)
-                    return productStyle;
-
-                // check for night bus, as that's a common special case
-                if (product == Product.BUS && label != null && label.startsWith("N")) {
-                    final Style nightStyle = styles.get(network + STYLES_SEP + "BN");
-                    if (nightStyle != null)
-                        return nightStyle;
-                }
-            }
-
-            // check for line match
-            final String string = product.code + Strings.nullToEmpty(label);
-            final Style lineStyle = styles.get(string);
-            if (lineStyle != null)
-                return lineStyle;
-
-            // check for product match
-            final Style productStyle = styles.get(Character.toString(product.code));
-            if (productStyle != null)
-                return productStyle;
-
-            // check for night bus, as that's a common special case
-            if (product == Product.BUS && label != null && label.startsWith("N")) {
-                final Style nightStyle = styles.get("BN");
-                if (nightStyle != null)
-                    return nightStyle;
-            }
-        }
-
-        // standard colors
-        return Standard.STYLES.get(product);
+    public Style lineStyle(
+            final @Nullable String network,
+            final @Nullable Product product,
+            final @Nullable String label,
+            final @Nullable Style styleFromNetwork) {
+        return Standard.resolveLineStyle(styles, network, product, label, styleFromNetwork);
     }
 
     @Override
@@ -234,5 +188,114 @@ public abstract class AbstractNetworkProvider implements NetworkProvider {
             return new Position(Integer.toString(Integer.parseInt(mNosw.group(1))), mNosw.group(2).substring(0, 1));
 
         return new Position(position);
+    }
+
+    @Override
+    public TripRef unpackTripRefFromMessage(final MessageUnpacker unpacker) throws IOException {
+        throw new UnsupportedOperationException("unpackTripRefFromMessage");
+    }
+
+    @Override
+    public TripShare unpackTripShareFromMessage(final MessageUnpacker unpacker) throws IOException {
+        throw new UnsupportedOperationException("unpackTripRefFromMessage");
+    }
+
+    @Override
+    public String getOpenLink(final Trip trip) throws IOException {
+        throw new UnsupportedOperationException("getOpenLink");
+    }
+
+    @Override
+    public String getShareLink(final Trip trip) throws IOException {
+        throw new UnsupportedOperationException("getShareLink");
+    }
+
+    @Override
+    public TripShare shareTrip(final Trip trip) throws IOException {
+        throw new UnsupportedOperationException("shareTrip");
+    }
+
+    @Override
+    public QueryTripsResult loadSharedTrip(final TripShare tripShare) throws IOException {
+        throw new UnsupportedOperationException("loadSharedTrip");
+    }
+
+    @Override
+    public NearbyLocationsResult queryNearbyLocations(
+            final Set<LocationType> types, final Location location,
+            final int maxDistance, final int maxLocations) throws IOException {
+        return queryNearbyLocations(types, location, maxDistance, maxLocations, null);
+    }
+
+    @Override
+    public NearbyLocationsResult queryNearbyLocations(
+            final Set<LocationType> types, final Location location,
+            final int maxDistance, final int maxLocations,
+            final Set<Product> products) throws IOException {
+        return queryNearbyLocations(types, location, maxDistance, maxLocations);
+    }
+
+    @Override
+    public QueryDeparturesResult queryDepartures(
+            final String stationId, final Date time,
+            final int maxDepartures, final boolean equivs) throws IOException {
+        return queryDepartures(stationId, time, maxDepartures, equivs, null);
+    }
+
+    @Override
+    public QueryDeparturesResult queryDepartures(
+            final String stationId, final Date time,
+            final int maxDepartures, final boolean equivs,
+            final Set<Product> products) throws IOException {
+        return queryDepartures(stationId, time, maxDepartures, equivs);
+    }
+
+    @Override
+    public Trip queryTripDetails(final Trip trip, final List<TripDetails> whichDetails) throws IOException {
+        if ((whichDetails == null || whichDetails.contains(TripDetails.TRANSFERS))
+                && trip.transferDetails == null) {
+            final TransferEvaluationProvider transferEvaluationProvider = getTransferEvaluationProvider();
+            if (transferEvaluationProvider != null) {
+                final List<TransferDetails> transferDetails = transferEvaluationProvider.evaluateTransfersForTrip(trip);
+                if (transferDetails != null) {
+                    final int numTransfers = transferDetails.size();
+                    int numPublicLegs = 0;
+                    for (final Trip.Leg tripLeg : trip.legs) {
+                        if (tripLeg instanceof Trip.Public)
+                            numPublicLegs += 1;
+                    }
+                    if (numTransfers == numPublicLegs - 1) {
+                        trip.transferDetails = transferDetails.toArray(new TransferDetails[0]);
+                    } else {
+                        log.warn("unexpected {} transfers for {} public legs", numTransfers, numPublicLegs);
+                    }
+                }
+            }
+        }
+
+        return trip;
+    }
+
+    @Override
+    public TransferEvaluationProvider getTransferEvaluationProvider() {
+        return null;
+    }
+
+    @Override
+    public Description getDescription() {
+        return new Description.Base() {
+            @Override
+            public String getName() {
+                final String simpleClassName = AbstractNetworkProvider.this.getClass().getSimpleName();
+                if (simpleClassName.endsWith("Provider"))
+                    return simpleClassName.substring(0, simpleClassName.length() - 8);
+                return simpleClassName;
+            }
+
+            @Override
+            public String getDescriptionText() {
+                return "provides timetable information";
+            }
+        };
     }
 }

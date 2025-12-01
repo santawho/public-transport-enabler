@@ -18,7 +18,7 @@
 package de.schildbach.pte.dto;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.io.Serializable;
 
@@ -46,7 +46,7 @@ public class Style implements Serializable {
     }
 
     public Style(final Shape shape, final int backgroundColor, final int foregroundColor) {
-        this.shape = checkNotNull(shape);
+        this.shape = requireNonNull(shape);
         this.backgroundColor = backgroundColor;
         this.backgroundColor2 = 0;
         this.foregroundColor = foregroundColor;
@@ -54,7 +54,7 @@ public class Style implements Serializable {
     }
 
     public Style(final Shape shape, final int backgroundColor, final int foregroundColor, final int borderColor) {
-        this.shape = checkNotNull(shape);
+        this.shape = requireNonNull(shape);
         this.backgroundColor = backgroundColor;
         this.backgroundColor2 = 0;
         this.foregroundColor = foregroundColor;
@@ -63,7 +63,7 @@ public class Style implements Serializable {
 
     public Style(final Shape shape, final int backgroundColor, final int backgroundColor2, final int foregroundColor,
             final int borderColor) {
-        this.shape = checkNotNull(shape);
+        this.shape = requireNonNull(shape);
         this.backgroundColor = backgroundColor;
         this.backgroundColor2 = backgroundColor2;
         this.foregroundColor = foregroundColor;
@@ -92,9 +92,10 @@ public class Style implements Serializable {
     }
 
     public static final int BLACK = 0xFF000000;
-    public static final int DKGRAY = 0xFF444444;
-    public static final int GRAY = 0xFF888888;
-    public static final int LTGRAY = 0xFFCCCCCC;
+    public static final int DKGRAY = 0xFF404040;
+    public static final int GRAY = 0xFF808080;
+    public static final int LTGRAY = 0xFFC0C0C0;
+
     public static final int WHITE = 0xFFFFFFFF;
     public static final int RED = 0xFFFF0000;
     public static final int GREEN = 0xFF00FF00;
@@ -105,7 +106,7 @@ public class Style implements Serializable {
     public static final int TRANSPARENT = 0;
 
     public static int parseColor(final String colorStr) {
-        checkNotNull(colorStr);
+        requireNonNull(colorStr);
         checkArgument((colorStr.length() == 7 || colorStr.length() == 9) && colorStr.charAt(0) == '#',
                 "Unknown color: %s", colorStr);
         try {

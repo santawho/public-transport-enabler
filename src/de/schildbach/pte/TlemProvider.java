@@ -23,8 +23,6 @@ import java.util.Set;
 
 import javax.annotation.Nullable;
 
-import com.google.common.base.Strings;
-
 import de.schildbach.pte.dto.Line;
 import de.schildbach.pte.dto.Product;
 import de.schildbach.pte.dto.Style;
@@ -35,12 +33,7 @@ import okhttp3.HttpUrl;
  * @author Andreas Schildbach
  */
 public class TlemProvider extends AbstractEfaProvider {
-    private static final HttpUrl API_BASE = HttpUrl.parse("https://nationaljourneyplanner.travelinesw.com/swe/");
-    // http://www.travelineeastmidlands.co.uk/em/
-    // http://www.travelinesoutheast.org.uk/se/
-    // http://www.travelineeastanglia.org.uk/ea/
-    // http://www.travelinemidlands.co.uk/wmtis/
-    // http://jp.networkwestmidlands.com/centro/
+    private static final HttpUrl API_BASE = HttpUrl.parse("https://nationaljourneyplanner.travelinesw.com/sl3p-efa/");
 
     public TlemProvider() {
         super(NetworkId.TLEM, API_BASE);
@@ -61,7 +54,7 @@ public class TlemProvider extends AbstractEfaProvider {
 
     @Override
     public Set<Product> defaultProducts() {
-        return Product.ALL;
+        return Product.ALL_INCLUDING_HIGHSPEED;
     }
 
     @Override

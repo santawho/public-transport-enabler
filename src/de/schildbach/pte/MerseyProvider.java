@@ -21,11 +21,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.annotation.Nullable;
-
-import com.google.common.base.Strings;
-
-import de.schildbach.pte.dto.Line;
 import de.schildbach.pte.dto.Position;
 import de.schildbach.pte.dto.Product;
 
@@ -46,7 +41,7 @@ public class MerseyProvider extends AbstractEfaProvider {
 
     @Override
     public Set<Product> defaultProducts() {
-        return Product.ALL;
+        return Product.ALL_INCLUDING_HIGHSPEED;
     }
 
     private static final Pattern P_POSITION_BOUND = Pattern.compile("([NESW]+)-bound", Pattern.CASE_INSENSITIVE);

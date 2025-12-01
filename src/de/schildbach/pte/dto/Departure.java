@@ -18,18 +18,14 @@
 package de.schildbach.pte.dto;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.io.Serializable;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.Locale;
+import java.util.Objects;
 
 import javax.annotation.Nullable;
-
-import com.google.common.base.MoreObjects;
-import com.google.common.base.MoreObjects.ToStringHelper;
-import com.google.common.base.Objects;
 
 /**
  * @author Andreas Schildbach
@@ -37,41 +33,64 @@ import com.google.common.base.Objects;
 public final class Departure implements Serializable {
     private static final long serialVersionUID = -9104517779537062795L;
 
-    final public @Nullable Date plannedTime;
-    final public @Nullable Date predictedTime;
-    final public Line line;
-    final public @Nullable Position position;
-    final public @Nullable Location destination;
-    final public @Nullable int[] capacity;
-    final public @Nullable String message;
+    public final @Nullable PTDate plannedTime;
+    public final @Nullable PTDate predictedTime;
+    public final Line line;
+    public final @Nullable Position plannedPosition;
+    public final @Nullable Position predictedPosition;
+    public final @Nullable Location destination;
+    public final boolean cancelled;
+    public final @Nullable int[] capacity;
+    public final @Nullable String message;
+    public final @Nullable JourneyRef journeyRef;
 
-    public Departure(final Date plannedTime, final Date predictedTime, final Line line, final Position position,
-            final Location destination, final int[] capacity, final String message) {
+    public Departure(
+            final PTDate plannedTime,
+            final PTDate predictedTime,
+            final Line line,
+            final Position plannedPosition,
+            final Position predictedPosition,
+            final Location destination,
+            final boolean cancelled,
+            final int[] capacity,
+            final String message,
+            final JourneyRef journeyRef) {
         this.plannedTime = plannedTime;
         this.predictedTime = predictedTime;
         checkArgument(plannedTime != null || predictedTime != null);
-        this.line = checkNotNull(line);
-        this.position = position;
+        this.line = requireNonNull(line);
+        this.plannedPosition = plannedPosition;
+        this.predictedPosition = predictedPosition;
         this.destination = destination;
+        this.cancelled = cancelled;
         this.capacity = capacity;
         this.message = message;
+        this.journeyRef = journeyRef;
     }
 
-    public Date getTime() {
+    public PTDate getTime() {
         if (predictedTime != null)
             return predictedTime;
-        else
-            return plannedTime;
+        return plannedTime;
+    }
+
+    public Position getPosition() {
+        if (predictedPosition != null)
+            return predictedPosition;
+        return plannedPosition;
     }
 
     @Override
     public String toString() {
-        final ToStringHelper helper = MoreObjects.toStringHelper(this);
-        if (plannedTime != null)
-            helper.add("planned", String.format(Locale.US, "%ta %<tR", plannedTime));
-        if (predictedTime != null)
-            helper.add("predicted", String.format(Locale.US, "%ta %<tR", predictedTime));
-        return helper.addValue(line).addValue(position).add("destination", destination).omitNullValues().toString();
+        return getClass().getSimpleName() + "{" +
+                (plannedTime != null ?
+                        "planned=" + String.format(Locale.US, "%ta %<tR", plannedTime) + "," : "") +
+                (predictedTime != null ?
+                        "predicted=" + String.format(Locale.US, "%ta %<tR", predictedTime) + "," : "") +
+                (plannedPosition != null ? "plannedPosition=" + plannedPosition + "," : "") +
+                (predictedPosition != null ? "predictedPosition=" + predictedPosition + "," : "") +
+                (destination != null ? "destination=" + destination + "," : "") +
+                line + "}";
     }
 
     @Override
@@ -81,20 +100,20 @@ public final class Departure implements Serializable {
         if (!(o instanceof Departure))
             return false;
         final Departure other = (Departure) o;
-        if (!Objects.equal(this.plannedTime, other.plannedTime))
+        if (!Objects.equals(this.plannedTime, other.plannedTime))
             return false;
-        if (!Objects.equal(this.predictedTime, other.predictedTime))
+        if (!Objects.equals(this.predictedTime, other.predictedTime))
             return false;
-        if (!Objects.equal(this.line, other.line))
+        if (!Objects.equals(this.line, other.line))
             return false;
-        if (!Objects.equal(this.destination, other.destination))
+        if (!Objects.equals(this.destination, other.destination))
             return false;
         return true;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(plannedTime, predictedTime, line, destination);
+        return Objects.hash(plannedTime, predictedTime, line, destination);
     }
 
     public static final Comparator<Departure> TIME_COMPARATOR = (departure0, departure1) -> departure0.getTime().compareTo(departure1.getTime());

@@ -19,6 +19,9 @@ package de.schildbach.pte;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
+
+import javax.annotation.Nullable;
 
 import de.schildbach.pte.dto.Product;
 import de.schildbach.pte.dto.Style;
@@ -28,14 +31,15 @@ import de.schildbach.pte.dto.Style.Shape;
  * @author Andreas Schildbach
  */
 public class Standard {
-    public static final int COLOR_BACKGROUND_HIGH_SPEED_TRAIN = Style.WHITE;
-    public static final int COLOR_BACKGROUND_REGIONAL_TRAIN = Style.GRAY;
+    public static final int COLOR_BACKGROUND_HIGH_SPEED_TRAIN = Style.parseColor("#ffffff");
+    public static final int COLOR_BACKGROUND_REGIONAL_TRAIN = Style.parseColor("#808080");
     public static final int COLOR_BACKGROUND_SUBURBAN_TRAIN = Style.parseColor("#006e34");
     public static final int COLOR_BACKGROUND_SUBWAY = Style.parseColor("#003090");
     public static final int COLOR_BACKGROUND_TRAM = Style.parseColor("#cc0000");
     public static final int COLOR_BACKGROUND_BUS = Style.parseColor("#993399");
     public static final int COLOR_BACKGROUND_ON_DEMAND = Style.parseColor("#00695c");
-    public static final int COLOR_BACKGROUND_FERRY = Style.BLUE;
+    public static final int COLOR_BACKGROUND_FERRY = Style.parseColor("#0000ff");
+    public static final int COLOR_BACKGROUND_REPLACEMENT_SERVICE = Style.parseColor("#805080");
 
     public static final Map<Product, Style> STYLES = new HashMap<>();
 
@@ -46,9 +50,97 @@ public class Standard {
         STYLES.put(Product.SUBURBAN_TRAIN, new Style(Shape.CIRCLE, COLOR_BACKGROUND_SUBURBAN_TRAIN, Style.WHITE));
         STYLES.put(Product.SUBWAY, new Style(Shape.RECT, COLOR_BACKGROUND_SUBWAY, Style.WHITE));
         STYLES.put(Product.TRAM, new Style(Shape.RECT, COLOR_BACKGROUND_TRAM, Style.WHITE));
-        STYLES.put(Product.BUS, new Style(COLOR_BACKGROUND_BUS, Style.WHITE));
-        STYLES.put(Product.ON_DEMAND, new Style(COLOR_BACKGROUND_ON_DEMAND, Style.WHITE));
+        STYLES.put(Product.BUS, new Style(Shape.ROUNDED, COLOR_BACKGROUND_BUS, Style.WHITE));
+        STYLES.put(Product.ON_DEMAND, new Style(Shape.ROUNDED, COLOR_BACKGROUND_ON_DEMAND, Style.WHITE));
         STYLES.put(Product.FERRY, new Style(Shape.CIRCLE, COLOR_BACKGROUND_FERRY, Style.WHITE));
+        STYLES.put(Product.REPLACEMENT_SERVICE, new Style(Shape.ROUNDED, COLOR_BACKGROUND_REPLACEMENT_SERVICE, Style.WHITE));
         STYLES.put(null, new Style(Style.DKGRAY, Style.WHITE));
+    }
+
+    private static final char STYLES_SEP = '|';
+
+    private static boolean doNotUseSpecialLineStyles = false;
+    private static boolean doPreferPredefinedLineStyles = false;
+
+    public static void setDoNotUseSpecialLineStyles(final boolean doNotUseSpecialLineStyles) {
+        Standard.doNotUseSpecialLineStyles = doNotUseSpecialLineStyles;
+    }
+
+    public static void setPreferPredefinedLineStyles(final boolean doPreferPredefinedLineStyles) {
+        Standard.doPreferPredefinedLineStyles = doPreferPredefinedLineStyles;
+    }
+
+    public static Style resolveLineStyle(
+            final @Nullable Map<String, Style> styles,
+            final @Nullable String network,
+            final @Nullable Product product,
+            final @Nullable String label,
+            final @Nullable Style styleFromNetwork) {
+        if (!doNotUseSpecialLineStyles) {
+            if (styleFromNetwork != null && !doPreferPredefinedLineStyles)
+                return styleFromNetwork;
+            final Style specialStyle = specialLineStyle(styles, network, product, label);
+            if (specialStyle != null)
+                return specialStyle;
+            if (styleFromNetwork != null)
+                return styleFromNetwork;
+        }
+        return defaultLineStyle(network, product, label);
+    }
+
+    public static Style defaultLineStyle(
+            final @Nullable String network,
+            final @Nullable Product product,
+            final @Nullable String label) {
+        return STYLES.get(product);
+    }
+
+    public static Style specialLineStyle(
+            final @Nullable Map<String, Style> styles,
+            final @Nullable String network,
+            final @Nullable Product product,
+            final @Nullable String label) {
+        if (!doNotUseSpecialLineStyles && styles != null && product != null) {
+            if (network != null) {
+                // check for line match
+                final String lineString = network + STYLES_SEP + product.code + Objects.toString(label, "");
+                final Style lineStyle = styles.get(lineString);
+                if (lineStyle != null)
+                    return lineStyle;
+
+                // check for night bus, as that's a common special case
+                if (product == Product.BUS && label != null && label.startsWith("N")) {
+                    final String nightBusString = network + STYLES_SEP + "BN";
+                    final Style nightStyle = styles.get(nightBusString);
+                    if (nightStyle != null)
+                        return nightStyle;
+                }
+
+                // check for product match
+                final String productString = network + STYLES_SEP + product.code;
+                final Style productStyle = styles.get(productString);
+                if (productStyle != null)
+                    return productStyle;
+            }
+
+            // check for line match
+            final String lineString = product.code + Objects.toString(label, "");
+            final Style lineStyle = styles.get(lineString);
+            if (lineStyle != null)
+                return lineStyle;
+
+            // check for night bus, as that's a common special case
+            if (product == Product.BUS && label != null && label.startsWith("N")) {
+                final Style nightStyle = styles.get("BN");
+                if (nightStyle != null)
+                    return nightStyle;
+            }
+
+            // check for product match
+            final Style productStyle = styles.get(Character.toString(product.code));
+            if (productStyle != null)
+                return productStyle;
+        }
+        return null;
     }
 }

@@ -18,41 +18,59 @@
 package de.schildbach.pte.dto;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
+import static java.util.Objects.requireNonNull;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.Set;
 
 import javax.annotation.Nullable;
 
-import com.google.common.base.MoreObjects;
-import com.google.common.base.MoreObjects.ToStringHelper;
-import com.google.common.base.Objects;
 import com.google.common.base.Strings;
+
+import org.msgpack.core.MessagePacker;
+import org.msgpack.core.MessageUnpacker;
+
+import de.schildbach.pte.util.MessagePackUtils;
 
 /**
  * @author Andreas Schildbach
  */
-public final class Location implements Serializable {
+public final class Location implements Serializable, MessagePackUtils.Packable {
     private static final long serialVersionUID = -2124775933106309127L;
 
     public final LocationType type;
     public final @Nullable String id;
+    public final @Nullable String identityId;
+    public final @Nullable String displayId;
     public final @Nullable Point coord;
     public final @Nullable String place;
     public final @Nullable String name;
     public final @Nullable Set<Product> products;
+    public final @Nullable String infoUrl;
 
-    public Location(final LocationType type, final String id, final Point coord, final String place, final String name,
-            final Set<Product> products) {
-        this.type = checkNotNull(type);
+    public Location(
+            final LocationType type,
+            final String id,
+            final String identityId,
+            final String displayId,
+            final Point coord,
+            final String place,
+            final String name,
+            final Set<Product> products,
+            final String infoUrl) {
+        this.type = requireNonNull(type);
         this.id = id;
+        this.identityId = identityId == null ? id : identityId;
+        this.displayId = displayId == null ? id : displayId;
         this.coord = coord;
         this.place = place;
         this.name = name;
         this.products = products;
+        this.infoUrl = infoUrl;
 
         checkArgument(id == null || id.length() > 0, "ID cannot be the empty string");
         checkArgument(place == null || name != null, "place '%s' without name cannot exist", place);
@@ -62,6 +80,16 @@ public final class Location implements Serializable {
             checkArgument(hasCoord(), "coordinates missing");
             checkArgument(place == null && name == null, "coordinates cannot have place or name");
         }
+    }
+
+    public Location(final LocationType type, final String id, final Point coord, final String place, final String name,
+                    final Set<Product> products, final String infoUrl) {
+        this(type, id, id, id, coord, place, name, products, infoUrl);
+    }
+
+    public Location(final LocationType type, final String id, final Point coord, final String place, final String name,
+                    final Set<Product> products) {
+        this(type, id, coord, place, name, products, null);
     }
 
     public Location(final LocationType type, final String id, final Point coord, final String place,
@@ -79,6 +107,28 @@ public final class Location implements Serializable {
 
     public Location(final LocationType type, final String id) {
         this(type, id, null, null);
+    }
+
+    public static Location unpackFromMessage(final MessageUnpacker unpacker) throws IOException {
+        return new Location(
+                LocationType.valueOf(unpacker.unpackString()),
+                MessagePackUtils.unpackNullableString(unpacker),
+                MessagePackUtils.unpackNullable(unpacker, Point::unpackFromMessage),
+                MessagePackUtils.unpackNullableString(unpacker),
+                MessagePackUtils.unpackNullableString(unpacker),
+                Product.unpackFromMessage(unpacker),
+                MessagePackUtils.unpackNullableString(unpacker));
+    }
+
+    @Override
+    public void packToMessage(final MessagePacker packer) throws IOException {
+        packer.packString(type.name());
+        MessagePackUtils.packNullableString(packer, id);
+        MessagePackUtils.packNullable(packer, coord);
+        MessagePackUtils.packNullableString(packer, place);
+        MessagePackUtils.packNullableString(packer, name);
+        Product.packToMessage(packer, products);
+        MessagePackUtils.packNullableString(packer, infoUrl);
     }
 
     public static Location coord(final int lat, final int lon) {
@@ -159,17 +209,19 @@ public final class Location implements Serializable {
         if (!(o instanceof Location))
             return false;
         final Location other = (Location) o;
-        if (!Objects.equal(this.type, other.type))
+        if (!Objects.equals(this.type, other.type))
             return false;
+        if (this.identityId != null && other.identityId != null && this.identityId.equals(other.identityId))
+            return true;
         if (this.id != null)
-            return Objects.equal(this.id, other.id);
+            return this.id.equals(other.id);
         if (this.coord != null)
-            return Objects.equal(this.coord, other.coord);
+            return Objects.equals(this.coord, other.coord);
 
         // only discriminate by name/place if no ids are given
-        if (!Objects.equal(this.place, other.place))
+        if (!Objects.equals(this.place, other.place))
             return false;
-        if (!Objects.equal(this.name, other.name))
+        if (!Objects.equals(this.name, other.name))
             return false;
         return true;
     }
@@ -179,17 +231,17 @@ public final class Location implements Serializable {
             return true;
         if (other == null)
             return false;
-        if (!Objects.equal(this.type, other.type))
+        if (!Objects.equals(this.type, other.type))
             return false;
-        if (!Objects.equal(this.id, other.id))
+        if (!Objects.equals(this.id, other.id))
             return false;
-        if (!Objects.equal(this.coord, other.coord))
+        if (!Objects.equals(this.coord, other.coord))
             return false;
-        if (!Objects.equal(this.place, other.place))
+        if (!Objects.equals(this.place, other.place))
             return false;
-        if (!Objects.equal(this.name, other.name))
+        if (!Objects.equals(this.name, other.name))
             return false;
-        if (!Objects.equal(this.products, other.products))
+        if (!Objects.equals(this.products, other.products))
             return false;
         return true;
     }
@@ -197,16 +249,19 @@ public final class Location implements Serializable {
     @Override
     public int hashCode() {
         if (id != null)
-            return Objects.hashCode(type, id);
+            return Objects.hash(type.name(), id);
         else
-            return Objects.hashCode(type, coord);
+            return Objects.hash(type.name(), coord);
     }
 
     @Override
     public String toString() {
-        final ToStringHelper helper = MoreObjects.toStringHelper(this).addValue(type).addValue(id);
-        if (hasCoord())
-            helper.addValue(coord);
-        return helper.add("place", place).add("name", name).add("products", products).omitNullValues().toString();
+        return getClass().getSimpleName() + "{" +
+                type + "," +
+                (id != null ? id + "," : "") +
+                (hasCoord() ? coord + "," : "") +
+                (place != null ? "place=" + place + "," : "") +
+                (name != null ? "name=" + name + "," : "") +
+                "products=" + products + "}";
     }
 }

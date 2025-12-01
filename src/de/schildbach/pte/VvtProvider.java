@@ -43,7 +43,7 @@ public class VvtProvider extends AbstractHafasClientInterfaceProvider {
 
     public VvtProvider(final String apiClient, final String apiAuthorization) {
         super(NetworkId.VVT, API_BASE, PRODUCTS_MAP);
-        setApiVersion("1.18");
+        setApiVersion("1.59");
         setApiExt("VAO.6");
         setApiClient(apiClient);
         setApiAuthorization(apiAuthorization);
@@ -51,7 +51,7 @@ public class VvtProvider extends AbstractHafasClientInterfaceProvider {
 
     @Override
     public Set<Product> defaultProducts() {
-        return Product.ALL;
+        return Product.ALL_INCLUDING_HIGHSPEED;
     }
 
     private static final Pattern P_SPLIT_NAME_ONE_COMMA = Pattern.compile("([^,]*), ([^,]{3,64})");

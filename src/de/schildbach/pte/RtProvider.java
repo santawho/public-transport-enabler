@@ -41,7 +41,7 @@ public class RtProvider extends AbstractHafasLegacyProvider {
 
     @Override
     public Set<Product> defaultProducts() {
-        return Product.ALL;
+        return Product.ALL_INCLUDING_HIGHSPEED;
     }
 
     private static final Pattern P_NUMBER = Pattern.compile("\\d{4,5}");

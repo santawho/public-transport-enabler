@@ -43,7 +43,7 @@ public class NvvProvider extends AbstractHafasClientInterfaceProvider {
 
     public NvvProvider(final String apiClient, final String apiAuthorization) {
         super(NetworkId.NVV, API_BASE, PRODUCTS_MAP);
-        setApiVersion("1.18");
+        setApiVersion("1.68");
         setApiExt("NVV.6.0");
         setApiClient(apiClient);
         setApiAuthorization(apiAuthorization);
@@ -76,7 +76,7 @@ public class NvvProvider extends AbstractHafasClientInterfaceProvider {
     protected String[] splitAddress(final String address) {
         final Matcher m = P_SPLIT_NAME_FIRST_COMMA.matcher(address);
         if (m.matches())
-            return new String[] { m.group(1), m.group(2) };
+            return new String[] { m.group(2), m.group(1) };
         return super.splitStationName(address);
     }
 

@@ -17,13 +17,12 @@
 
 package de.schildbach.pte;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
+import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Currency;
 import java.util.Date;
@@ -35,14 +34,16 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.annotation.Nullable;
 
-import com.google.common.base.Joiner;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -52,12 +53,12 @@ import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlPullParserFactory;
 
-import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
 
 import de.schildbach.pte.dto.Departure;
 import de.schildbach.pte.dto.Fare;
 import de.schildbach.pte.dto.Fare.Type;
+import de.schildbach.pte.dto.JourneyRef;
 import de.schildbach.pte.dto.Line;
 import de.schildbach.pte.dto.LineDestination;
 import de.schildbach.pte.dto.Location;
@@ -67,6 +68,7 @@ import de.schildbach.pte.dto.Point;
 import de.schildbach.pte.dto.Position;
 import de.schildbach.pte.dto.Product;
 import de.schildbach.pte.dto.QueryDeparturesResult;
+import de.schildbach.pte.dto.QueryJourneyResult;
 import de.schildbach.pte.dto.QueryTripsContext;
 import de.schildbach.pte.dto.QueryTripsResult;
 import de.schildbach.pte.dto.ResultHeader;
@@ -74,6 +76,7 @@ import de.schildbach.pte.dto.StationDepartures;
 import de.schildbach.pte.dto.Stop;
 import de.schildbach.pte.dto.SuggestLocationsResult;
 import de.schildbach.pte.dto.SuggestedLocation;
+import de.schildbach.pte.dto.PTDate;
 import de.schildbach.pte.dto.Trip;
 import de.schildbach.pte.dto.Trip.Leg;
 import de.schildbach.pte.dto.TripOptions;
@@ -84,7 +87,6 @@ import de.schildbach.pte.util.ParserUtils;
 import de.schildbach.pte.util.XmlPullUtil;
 
 import okhttp3.HttpUrl;
-import okhttp3.ResponseBody;
 
 /**
  * @author Andreas Schildbach
@@ -94,27 +96,34 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
     protected static final String DEFAULT_TRIP_ENDPOINT = "XSLT_TRIP_REQUEST2";
     protected static final String DEFAULT_STOPFINDER_ENDPOINT = "XML_STOPFINDER_REQUEST";
     protected static final String DEFAULT_COORD_ENDPOINT = "XML_COORD_REQUEST";
+    protected static final String DEFAULT_TRIPSTOPTIMES_ENDPOINT = "XML_TRIPSTOPTIMES_REQUEST"; // journey default
+    protected static final String DEFAULT_STOPSEQCOORD_ENDPOINT = "XML_STOPSEQCOORD_REQUEST"; // may use as alternative for journey
 
     protected static final String SERVER_PRODUCT = "efa";
     protected static final String COORD_FORMAT = "WGS84[DD.ddddd]";
     protected static final int COORD_FORMAT_TAIL = 7;
 
-    private final List CAPABILITIES = Arrays.asList(
+    private static final Set<Capability> CAPABILITIES = Set.of(
             Capability.SUGGEST_LOCATIONS,
             Capability.NEARBY_LOCATIONS,
             Capability.DEPARTURES,
             Capability.TRIPS,
-            Capability.TRIPS_VIA
+            Capability.TRIPS_VIA,
+            Capability.JOURNEY,
+            Capability.BIKE_OPTION
     );
 
     private final HttpUrl departureMonitorEndpoint;
     private final HttpUrl tripEndpoint;
     private final HttpUrl stopFinderEndpoint;
     private final HttpUrl coordEndpoint;
+    private final HttpUrl tripStopTimesEndpoint;
+    private final HttpUrl stopSeqCoordEndpoint;
 
     private String language = "de";
     private boolean needsSpEncId = false;
     private boolean includeRegionId = true;
+    private int reducedAnyTooManyObjFilter = 2;
     private boolean useProxFootSearch = true;
     private @Nullable String httpReferer = null;
     private @Nullable String httpRefererTrip = null;
@@ -127,8 +136,9 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractEfaProvider.class);
 
-    @SuppressWarnings("serial")
     private static class Context implements QueryTripsContext {
+        private static final long serialVersionUID = 5683979131609096441L;
+
         private final String context;
 
         private Context(final String context) {
@@ -151,12 +161,14 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
         }
     }
 
-    public AbstractEfaProvider(final NetworkId network, final HttpUrl apiBase) {
-        this(network, apiBase, null, null, null, null);
+    protected AbstractEfaProvider(final NetworkId network, final HttpUrl apiBase) {
+        this(network, apiBase, null, null, null, null, null, null);
     }
 
-    public AbstractEfaProvider(final NetworkId network, final HttpUrl apiBase, final String departureMonitorEndpoint,
-            final String tripEndpoint, final String stopFinderEndpoint, final String coordEndpoint) {
+    protected AbstractEfaProvider(
+            final NetworkId network, final HttpUrl apiBase, final String departureMonitorEndpoint,
+            final String tripEndpoint, final String stopFinderEndpoint, final String coordEndpoint,
+            final String tripStopTimesEndpoint, final String stopSeqCoordEndpoint) {
         this(network,
                 apiBase.newBuilder()
                         .addPathSegment(departureMonitorEndpoint != null ? departureMonitorEndpoint
@@ -168,11 +180,19 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                         .addPathSegment(stopFinderEndpoint != null ? stopFinderEndpoint : DEFAULT_STOPFINDER_ENDPOINT)
                         .build(),
                 apiBase.newBuilder().addPathSegment(coordEndpoint != null ? coordEndpoint : DEFAULT_COORD_ENDPOINT)
+                        .build(),
+                apiBase.newBuilder()
+                        .addPathSegment(tripStopTimesEndpoint != null ? tripStopTimesEndpoint : DEFAULT_TRIPSTOPTIMES_ENDPOINT)
+                        .build(),
+                apiBase.newBuilder()
+                        .addPathSegment(stopSeqCoordEndpoint != null ? stopSeqCoordEndpoint : DEFAULT_STOPSEQCOORD_ENDPOINT)
                         .build());
     }
 
-    public AbstractEfaProvider(final NetworkId network, final HttpUrl departureMonitorEndpoint,
-            final HttpUrl tripEndpoint, final HttpUrl stopFinderEndpoint, final HttpUrl coordEndpoint) {
+    private AbstractEfaProvider(
+            final NetworkId network, final HttpUrl departureMonitorEndpoint,
+            final HttpUrl tripEndpoint, final HttpUrl stopFinderEndpoint, final HttpUrl coordEndpoint,
+            final HttpUrl tripStopTimesEndpoint, final HttpUrl stopSeqCoordEndpoint) {
         super(network);
 
         try {
@@ -186,6 +206,8 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
         this.tripEndpoint = tripEndpoint;
         this.stopFinderEndpoint = stopFinderEndpoint;
         this.coordEndpoint = coordEndpoint;
+        this.tripStopTimesEndpoint = tripStopTimesEndpoint;
+        this.stopSeqCoordEndpoint = stopSeqCoordEndpoint;
     }
 
     protected AbstractEfaProvider setLanguage(final String language) {
@@ -206,6 +228,11 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
 
     protected AbstractEfaProvider setIncludeRegionId(final boolean includeRegionId) {
         this.includeRegionId = includeRegionId;
+        return this;
+    }
+
+    public AbstractEfaProvider setReducedAnyTooManyObjFilter(final int reducedAnyTooManyObjFilter) {
+        this.reducedAnyTooManyObjFilter = reducedAnyTooManyObjFilter;
         return this;
     }
 
@@ -239,15 +266,14 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
         return this;
     }
 
-    // this should be overridden by networks not providing one of the default capabilities
     @Override
-    protected boolean hasCapability(final Capability capability) {
-        return CAPABILITIES.contains(capability);
+    protected Set<Capability> getCapabilities() {
+        return CAPABILITIES;
     }
 
-    private final void appendCommonRequestParams(final HttpUrl.Builder url, final String outputFormat) {
+    private void appendCommonRequestParams(final HttpUrl.Builder url, final String outputFormat) {
         url.addEncodedQueryParameter("outputFormat", outputFormat);
-        url.addEncodedQueryParameter("language", language);
+        url.addEncodedQueryParameter("language", language != null ? language : userInterfaceLanguage);
         url.addEncodedQueryParameter("stateless", "1");
         url.addEncodedQueryParameter("coordOutputFormat", COORD_FORMAT);
         url.addEncodedQueryParameter("coordOutputFormatTail", Integer.toString(COORD_FORMAT_TAIL));
@@ -362,7 +388,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
         return new SuggestedLocation(location, quality);
     }
 
-    private void appendStopfinderRequestParameters(final HttpUrl.Builder url, final CharSequence constraint,
+    protected void appendStopfinderRequestParameters(final HttpUrl.Builder url, final CharSequence constraint,
             final String outputFormat, final @Nullable Set<LocationType> types, final int maxLocations) {
         appendCommonRequestParams(url, outputFormat);
         url.addEncodedQueryParameter("locationServerActive", "1");
@@ -381,7 +407,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
             filter += 4 + 8 + 16 + 64; // street + address + crossing + postcode
         url.addEncodedQueryParameter("anyObjFilter_sf", Integer.toString(filter));
         url.addEncodedQueryParameter("reducedAnyPostcodeObjFilter_sf", "64");
-        url.addEncodedQueryParameter("reducedAnyTooManyObjFilter_sf", "2");
+        url.addEncodedQueryParameter("reducedAnyTooManyObjFilter_sf", Integer.toString(reducedAnyTooManyObjFilter));
         url.addEncodedQueryParameter("useHouseNumberList", "true");
         if (maxLocations > 0)
             url.addEncodedQueryParameter("anyMaxSizeHitList", Integer.toString(maxLocations));
@@ -900,12 +926,14 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
     private static final Pattern P_LINE_S_DB = Pattern.compile("(S\\d+) \\((?:DB Regio AG)\\)");
     private static final Pattern P_LINE_NUMBER = Pattern.compile("\\d+");
 
-    protected Line parseLine(final @Nullable String id, final @Nullable String network, final @Nullable String mot,
-            @Nullable String symbol, final @Nullable String name, final @Nullable String longName,
+    protected Line parseLine(
+            final @Nullable String id, final @Nullable String network, final @Nullable String mot,
+            @Nullable final String symbol, final @Nullable String name, final @Nullable String longName,
             final @Nullable String trainType, final @Nullable String trainNum, final @Nullable String trainName) {
+        final String trainNumStr = Objects.toString(trainNum, "");
         if (mot == null) {
             if (trainName != null) {
-                final String str = Strings.nullToEmpty(name);
+                final String str = Objects.toString(name, "");
                 if (trainName.equals("S-Bahn"))
                     return new Line(id, network, Product.SUBURBAN_TRAIN, str);
                 if (trainName.equals("U-Bahn"))
@@ -936,83 +964,81 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                     return new Line(id, network, Product.BUS, str);
             }
         } else if ("0".equals(mot)) {
-            final String trainNumStr = Strings.nullToEmpty(trainNum);
-
             if (("EC".equals(trainType) || "EuroCity".equals(trainName) || "Eurocity".equals(trainName))
                     && trainNum != null)
-                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "EC" + trainNum);
+                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "EC" + trainNumStr);
             if (("ECE".equals(trainType) || "Eurocity-Express".equals(trainName)) && trainNum != null)
-                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "ECE" + trainNum);
+                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "ECE" + trainNumStr);
             if (("EN".equals(trainType) || "EuroNight".equals(trainName)) && trainNum != null)
-                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "EN" + trainNum);
+                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "EN" + trainNumStr);
             if (("IC".equals(trainType) || "IC".equals(trainName) || "InterCity".equals(trainName)) && trainNum != null)
-                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "IC" + trainNum);
+                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "IC" + trainNumStr);
             if ("IC21".equals(trainNum) && trainName == null)
                 return new Line(id, network, Product.HIGH_SPEED_TRAIN, trainNum);
             if ("IC40".equals(trainNum) && trainName == null)
                 return new Line(id, network, Product.HIGH_SPEED_TRAIN, trainNum);
             if (("ICE".equals(trainType) || "ICE".equals(trainName) || "Intercity-Express".equals(trainName))
                     && trainNum != null)
-                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "ICE" + trainNum);
+                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "ICE" + trainNumStr);
             if (("ICN".equals(trainType) || "InterCityNight".equals(trainName)) && trainNum != null)
-                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "ICN" + trainNum);
+                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "ICN" + trainNumStr);
             if (("X".equals(trainType) || "InterConnex".equals(trainName)) && trainNum != null)
-                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "X" + trainNum);
+                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "X" + trainNumStr);
             if (("CNL".equals(trainType) || "CityNightLine".equals(trainName)) && trainNum != null)
-                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "CNL" + trainNum);
+                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "CNL" + trainNumStr);
             if (("THA".equals(trainType) || "Thalys".equals(trainName)) && trainNum != null)
-                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "THA" + trainNum);
+                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "THA" + trainNumStr);
             if ("RHI".equals(trainType) && trainNum != null)
-                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "RHI" + trainNum);
+                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "RHI" + trainNumStr);
             if (("TGV".equals(trainType) || "TGV".equals(trainName)) && trainNum != null)
-                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "TGV" + trainNum);
+                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "TGV" + trainNumStr);
             if ("TGD".equals(trainType) && trainNum != null)
-                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "TGD" + trainNum);
+                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "TGD" + trainNumStr);
             if ("INZ".equals(trainType) && trainNum != null)
-                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "INZ" + trainNum);
+                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "INZ" + trainNumStr);
             if (("RJ".equals(trainType) || "railjet".equals(trainName)))
-                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "RJ" + Strings.nullToEmpty(trainNum));
+                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "RJ" + trainNumStr);
             if (("RJX".equals(trainType) || "railjet xpress".equals(trainName)))
-                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "RJX" + Strings.nullToEmpty(trainNum));
+                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "RJX" + trainNumStr);
             if (("WB".equals(trainType) || "WESTbahn".equals(trainName)) && trainNum != null)
-                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "WB" + trainNum);
+                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "WB" + trainNumStr);
             if (("HKX".equals(trainType) || "Hamburg-Köln-Express".equals(trainName)) && trainNum != null)
-                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "HKX" + trainNum);
+                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "HKX" + trainNumStr);
             if ("INT".equals(trainType) && trainNum != null) // SVV, VAGFR
-                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "INT" + trainNum);
+                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "INT" + trainNumStr);
             if (("SC".equals(trainType) || "SC Pendolino".equals(trainName)) && trainNum != null) // SuperCity
-                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "SC" + trainNum);
+                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "SC" + trainNumStr);
             if ("ECB".equals(trainType) && trainNum != null) // EC, Verona-München
-                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "ECB" + trainNum);
+                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "ECB" + trainNumStr);
             if ("ES".equals(trainType) && trainNum != null) // Eurostar Italia
-                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "ES" + trainNum);
+                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "ES" + trainNumStr);
             if (("EST".equals(trainType) || "EUROSTAR".equals(trainName)) && trainNum != null)
-                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "EST" + trainNum);
+                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "EST" + trainNumStr);
             if ("EIC".equals(trainType) && trainNum != null) // Ekspres InterCity, Polen
-                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "EIC" + trainNum);
+                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "EIC" + trainNumStr);
             if ("MT".equals(trainType) && "Schnee-Express".equals(trainName) && trainNum != null)
-                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "MT" + trainNum);
+                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "MT" + trainNumStr);
             if (("TLK".equals(trainType) || "Tanie Linie Kolejowe".equals(trainName)) && trainNum != null)
-                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "TLK" + trainNum);
+                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "TLK" + trainNumStr);
             if ("DNZ".equals(trainType) && trainNum != null) // Nacht-Schnellzug
-                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "DNZ" + trainNum);
+                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "DNZ" + trainNumStr);
             if ("AVE".equals(trainType) && trainNum != null) // klimatisierter Hochgeschwindigkeitszug
-                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "DNZ" + trainNum);
+                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "DNZ" + trainNumStr);
             if ("ARC".equals(trainType) && trainNum != null) // Arco/Alvia/Avant (Renfe), Spanien
-                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "ARC" + trainNum);
+                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "ARC" + trainNumStr);
             if ("HOT".equals(trainType) && trainNum != null) // Spanien, Nacht
-                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "HOT" + trainNum);
+                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "HOT" + trainNumStr);
             if ("LCM".equals(trainType) && "Locomore".equals(trainName) && trainNum != null)
-                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "LCM" + trainNum);
+                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "LCM" + trainNumStr);
             if ("Locomore".equals(longName))
-                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "LOC" + Strings.nullToEmpty(trainNum));
+                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "LOC" + trainNumStr);
             if ("NJ".equals(trainType) && trainNum != null) // NightJet
-                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "NJ" + trainNum);
+                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "NJ" + trainNumStr);
             if ("FLX".equals(trainType) && "FlixTrain".equals(trainName) && trainNum != null)
-                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "FLX" + trainNum);
+                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "FLX" + trainNumStr);
 
             if ("IR".equals(trainType) || "Interregio".equals(trainName) || "InterRegio".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "IR" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "IR" + trainNumStr);
             if ("IR13".equals(trainNum) && trainName == null)
                 return new Line(id, network, Product.REGIONAL_TRAIN, trainNum);
             if ("IR36".equals(trainNum) && trainName == null)
@@ -1022,15 +1048,15 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
             if ("IR75".equals(trainNum) && trainName == null)
                 return new Line(id, network, Product.REGIONAL_TRAIN, trainNum);
             if ("IRE".equals(trainType) || "Interregio-Express".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "IRE" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "IRE" + trainNumStr);
             if (trainType == null && trainNum != null && P_LINE_IRE.matcher(trainNum).matches())
                 return new Line(id, network, Product.REGIONAL_TRAIN, trainNum);
             if ("RE".equals(trainType) || "Regional-Express".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "RE" + Strings.nullToEmpty(trainNum));
+                return new Line(id, network, Product.REGIONAL_TRAIN, "RE" + trainNumStr);
             if ("RE".equals(trainNum) && trainName == null)
                 return new Line(id, network, Product.REGIONAL_TRAIN, "RE");
             if (trainType == null && trainNum != null && P_LINE_RE.matcher(trainNum).matches())
-                return new Line(id, network, Product.REGIONAL_TRAIN, trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, trainNumStr);
             if ("RE3 / RB30".equals(trainNum) && trainType == null && trainName == null)
                 return new Line(id, network, Product.REGIONAL_TRAIN, "RE3/RB30");
             if ("Regionalexpress".equals(trainName))
@@ -1054,9 +1080,9 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
             if ("RE-Bahn".equals(trainName))
                 return new Line(id, network, Product.REGIONAL_TRAIN, symbol);
             if ("REX".equals(trainType)) // RegionalExpress, Österreich
-                return new Line(id, network, Product.REGIONAL_TRAIN, "REX" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "REX" + trainNumStr);
             if (("RB".equals(trainType) || "Regionalbahn".equals(trainName)) && trainNum != null)
-                return new Line(id, network, Product.REGIONAL_TRAIN, "RB" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "RB" + trainNumStr);
             if ("RB".equals(trainNum) && trainName == null)
                 return new Line(id, network, Product.REGIONAL_TRAIN, "RB");
             if (trainType == null && trainNum != null && P_LINE_RB.matcher(trainNum).matches())
@@ -1068,177 +1094,177 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
             if ("Chiemseebahn".equals(trainName))
                 return new Line(id, network, Product.REGIONAL_TRAIN, symbol);
             if ("R".equals(trainType) || "Regionalzug".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "R" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "R" + trainNumStr);
             if (trainType == null && trainNum != null && P_LINE_R.matcher(trainNum).matches())
                 return new Line(id, network, Product.REGIONAL_TRAIN, trainNum);
             if ("D".equals(trainType) || "Schnellzug".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "D" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "D" + trainNumStr);
             if ("E".equals(trainType) || "Eilzug".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "E" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "E" + trainNumStr);
             if ("WFB".equals(trainType) || "WestfalenBahn".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "WFB" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "WFB" + trainNumStr);
             if (("NWB".equals(trainType) || "NordWestBahn".equals(trainName)) && trainNum != null)
-                return new Line(id, network, Product.REGIONAL_TRAIN, "NWB" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "NWB" + trainNumStr);
             if ("WES".equals(trainType) || "Westbahn".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "WES" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "WES" + trainNumStr);
             if ("ERB".equals(trainType) || "eurobahn".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "ERB" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "ERB" + trainNumStr);
             if ("CAN".equals(trainType) || "cantus Verkehrsgesellschaft".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "CAN" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "CAN" + trainNumStr);
             if ("HEX".equals(trainType) || "Veolia Verkehr Sachsen-Anhalt".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "HEX" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "HEX" + trainNumStr);
             if ("EB".equals(trainType) || "Erfurter Bahn".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "EB" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "EB" + trainNumStr);
             if ("Erfurter Bahn".equals(longName))
                 return new Line(id, network, Product.REGIONAL_TRAIN, "EB");
             if ("EBx".equals(trainType) || "Erfurter Bahn Express".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "EBx" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "EBx" + trainNumStr);
             if ("Erfurter Bahn Express".equals(longName) && symbol == null)
                 return new Line(id, network, Product.REGIONAL_TRAIN, "EBx");
             if ("MR".equals(trainType) && "Märkische Regiobahn".equals(trainName) && trainNum != null)
-                return new Line(id, network, Product.REGIONAL_TRAIN, "MR" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "MR" + trainNumStr);
             if ("MRB".equals(trainType) || "Mitteldeutsche Regiobahn".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "MRB" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "MRB" + trainNumStr);
             if ("MRB26".equals(trainNum) && trainType == null)
                 return new Line(id, network, Product.REGIONAL_TRAIN, trainNum);
             if ("ABR".equals(trainType) || "ABELLIO Rail NRW GmbH".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "ABR" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "ABR" + trainNumStr);
             if ("NEB".equals(trainType) || "NEB Niederbarnimer Eisenbahn".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "NEB" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "NEB" + trainNumStr);
             if ("OE".equals(trainType) || "Ostdeutsche Eisenbahn GmbH".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "OE" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "OE" + trainNumStr);
             if ("Ostdeutsche Eisenbahn GmbH".equals(longName) && symbol == null)
                 return new Line(id, network, Product.REGIONAL_TRAIN, "OE");
             if ("ODE".equals(trainType) && symbol != null)
                 return new Line(id, network, Product.REGIONAL_TRAIN, symbol);
             if ("OLA".equals(trainType) || "Ostseeland Verkehr GmbH".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "OLA" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "OLA" + trainNumStr);
             if ("UBB".equals(trainType) || "Usedomer Bäderbahn".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "UBB" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "UBB" + trainNumStr);
             if ("EVB".equals(trainType) || "ELBE-WESER GmbH".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "EVB" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "EVB" + trainNumStr);
             if ("RTB".equals(trainType) || "Rurtalbahn GmbH".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "RTB" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "RTB" + trainNumStr);
             if ("STB".equals(trainType) || "Süd-Thüringen-Bahn".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "STB" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "STB" + trainNumStr);
             if ("HTB".equals(trainType) || "Hellertalbahn".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "HTB" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "HTB" + trainNumStr);
             if ("VBG".equals(trainType) || "Vogtlandbahn".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "VBG" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "VBG" + trainNumStr);
             if ("CB".equals(trainType) || "City-Bahn Chemnitz".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "CB" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "CB" + trainNumStr);
             if (trainType == null && ("C11".equals(trainNum) || "C13".equals(trainNum) || "C14".equals(trainNum)
                     || "C15".equals(trainNum)))
                 return new Line(id, network, Product.REGIONAL_TRAIN, trainNum);
             if ("CB523".equals(trainNum))
                 return new Line(id, network, Product.REGIONAL_TRAIN, trainNum);
             if ("VEC".equals(trainType) || "vectus Verkehrsgesellschaft".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "VEC" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "VEC" + trainNumStr);
             if ("HzL".equals(trainType) || "Hohenzollerische Landesbahn AG".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "HzL" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "HzL" + trainNumStr);
             if ("SBB".equals(trainType) || "SBB GmbH".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "SBB" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "SBB" + trainNumStr);
             if ("MBB".equals(trainType) || "Mecklenburgische Bäderbahn Molli".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "MBB" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "MBB" + trainNumStr);
             if ("OS".equals(trainType)) // Osobní vlak
-                return new Line(id, network, Product.REGIONAL_TRAIN, "OS" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "OS" + trainNumStr);
             if ("SP".equals(trainType) || "Sp".equals(trainType)) // Spěšný vlak
-                return new Line(id, network, Product.REGIONAL_TRAIN, "SP" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "SP" + trainNumStr);
             if ("Dab".equals(trainType) || "Daadetalbahn".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "Dab" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "Dab" + trainNumStr);
             if ("FEG".equals(trainType) || "Freiberger Eisenbahngesellschaft".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "FEG" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "FEG" + trainNumStr);
             if ("ARR".equals(trainType) || "ARRIVA".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "ARR" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "ARR" + trainNumStr);
             if ("HSB".equals(trainType) || "Harzer Schmalspurbahn".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "HSB" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "HSB" + trainNumStr);
             if ("ALX".equals(trainType) || "alex - Länderbahn und Vogtlandbahn GmbH".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "ALX" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "ALX" + trainNumStr);
             if ("EX".equals(trainType) || "Fatra".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "EX" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "EX" + trainNumStr);
             if ("ME".equals(trainType) || "metronom".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "ME" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "ME" + trainNumStr);
             if ("metronom".equals(longName))
                 return new Line(id, network, Product.REGIONAL_TRAIN, "ME");
             if ("MEr".equals(trainType))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "MEr" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "MEr" + trainNumStr);
             if ("AKN".equals(trainType) || "AKN Eisenbahn AG".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "AKN" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "AKN" + trainNumStr);
             if ("SOE".equals(trainType) || "Sächsisch-Oberlausitzer Eisenbahngesellschaft".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "SOE" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "SOE" + trainNumStr);
             if ("VIA".equals(trainType) || "VIAS GmbH".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "VIA" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "VIA" + trainNumStr);
             if ("BRB".equals(trainType) || "Bayerische Regiobahn".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "BRB" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "BRB" + trainNumStr);
             if ("BLB".equals(trainType) || "Berchtesgadener Land Bahn".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "BLB" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "BLB" + trainNumStr);
             if ("HLB".equals(trainType) || "Hessische Landesbahn".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "HLB" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "HLB" + trainNumStr);
             if ("NOB".equals(trainType) || "NordOstseeBahn".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "NOB" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "NOB" + trainNumStr);
             if ("NBE".equals(trainType) || "Nordbahn Eisenbahngesellschaft".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "NBE" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "NBE" + trainNumStr);
             if ("VEN".equals(trainType) || "Rhenus Veniro".equals(trainName))
                 return new Line(id, network, Product.REGIONAL_TRAIN, "VEN" + trainType);
             if ("DPN".equals(trainType) || "Nahreisezug".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "DPN" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "DPN" + trainNumStr);
             if ("RBG".equals(trainType) || "Regental Bahnbetriebs GmbH".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "RBG" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "RBG" + trainNumStr);
             if ("BOB".equals(trainType) || "Bodensee-Oberschwaben-Bahn".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "BOB" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "BOB" + trainNumStr);
             if ("VE".equals(trainType) || "Vetter".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "VE" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "VE" + trainNumStr);
             if ("SDG".equals(trainType) || "SDG Sächsische Dampfeisenbahngesellschaft mbH".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "SDG" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "SDG" + trainNumStr);
             if ("PRE".equals(trainType) || "Pressnitztalbahn".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "PRE" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "PRE" + trainNumStr);
             if ("VEB".equals(trainType) || "Vulkan-Eifel-Bahn".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "VEB" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "VEB" + trainNumStr);
             if ("neg".equals(trainType) || "Norddeutsche Eisenbahn Gesellschaft".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "neg" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "neg" + trainNumStr);
             if ("AVG".equals(trainType) || "Felsenland-Express".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "AVG" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "AVG" + trainNumStr);
             if ("P".equals(trainType) || "BayernBahn Betriebs-GmbH".equals(trainName)
                     || "Brohltalbahn".equals(trainName) || "Kasbachtalbahn".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "P" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "P" + trainNumStr);
             if ("SBS".equals(trainType) || "Städtebahn Sachsen".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "SBS" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "SBS" + trainNumStr);
             if ("SES".equals(trainType) || "Städteexpress Sachsen".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "SES" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "SES" + trainNumStr);
             if ("SB-".equals(trainType)) // Städtebahn Sachsen
-                return new Line(id, network, Product.REGIONAL_TRAIN, "SB" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "SB" + trainNumStr);
             if ("ag".equals(trainType)) // agilis
-                return new Line(id, network, Product.REGIONAL_TRAIN, "ag" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "ag" + trainNumStr);
             if ("agi".equals(trainType) || "agilis".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "agi" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "agi" + trainNumStr);
             if ("as".equals(trainType) || "agilis-Schnellzug".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "as" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "as" + trainNumStr);
             if ("TLX".equals(trainType) || "TRILEX".equals(trainName)) // Trilex (Vogtlandbahn)
-                return new Line(id, network, Product.REGIONAL_TRAIN, "TLX" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "TLX" + trainNumStr);
             if ("MSB".equals(trainType) || "Mainschleifenbahn".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "MSB" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "MSB" + trainNumStr);
             if ("BE".equals(trainType) || "Bentheimer Eisenbahn".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "BE" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "BE" + trainNumStr);
             if ("erx".equals(trainType) || "erixx - Der Heidesprinter".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "erx" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "erx" + trainNumStr);
             if (("ERX".equals(trainType) || "Erixx".equals(trainName)) && trainNum != null)
-                return new Line(id, network, Product.REGIONAL_TRAIN, "ERX" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "ERX" + trainNumStr);
             if ("SWE".equals(trainType) || "Südwestdeutsche Verkehrs-AG".equals(trainName) || "Südwestdeutsche Landesverkehrs-AG".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "SWE" + Strings.nullToEmpty(trainNum));
+                return new Line(id, network, Product.REGIONAL_TRAIN, "SWE" + trainNumStr);
             if ("SWEG-Zug".equals(trainName)) // Südwestdeutschen Verkehrs-Aktiengesellschaft
-                return new Line(id, network, Product.REGIONAL_TRAIN, "SWEG" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "SWEG" + trainNumStr);
             if (longName != null && longName.startsWith("SWEG-Zug"))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "SWEG" + Strings.nullToEmpty(trainNum));
+                return new Line(id, network, Product.REGIONAL_TRAIN, "SWEG" + trainNumStr);
             if ("EGP Eisenbahngesellschaft Potsdam".equals(trainName))
                 return new Line(id, network, Product.REGIONAL_TRAIN, "EGP" + trainNumStr);
             if ("ÖBB".equals(trainType) || "ÖBB".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "ÖBB" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "ÖBB" + trainNumStr);
             if ("CAT".equals(trainType)) // City Airport Train Wien
-                return new Line(id, network, Product.REGIONAL_TRAIN, "CAT" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "CAT" + trainNumStr);
             if ("DZ".equals(trainType) || "Dampfzug".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "DZ" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "DZ" + trainNumStr);
             if ("CD".equals(trainType)) // Tschechien
-                return new Line(id, network, Product.REGIONAL_TRAIN, "CD" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "CD" + trainNumStr);
             if ("VR".equals(trainType)) // Polen
                 return new Line(id, network, Product.REGIONAL_TRAIN, symbol);
             if ("PR".equals(trainType)) // Polen
@@ -1248,89 +1274,89 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
             if ("Koleje Dolnoslaskie".equals(trainName) && symbol != null) // Koleje Dolnośląskie
                 return new Line(id, network, Product.REGIONAL_TRAIN, symbol);
             if ("OO".equals(trainType) || "Ordinary passenger (o.pas.)".equals(trainName)) // GB
-                return new Line(id, network, Product.REGIONAL_TRAIN, "OO" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "OO" + trainNumStr);
             if ("XX".equals(trainType) || "Express passenger    (ex.pas.)".equals(trainName)) // GB
-                return new Line(id, network, Product.REGIONAL_TRAIN, "XX" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "XX" + trainNumStr);
             if ("XZ".equals(trainType) || "Express passenger sleeper".equals(trainName)) // GB
-                return new Line(id, network, Product.REGIONAL_TRAIN, "XZ" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "XZ" + trainNumStr);
             if ("ATB".equals(trainType)) // Autoschleuse Tauernbahn
-                return new Line(id, network, Product.REGIONAL_TRAIN, "ATB" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "ATB" + trainNumStr);
             if ("ATZ".equals(trainType)) // Autozug
-                return new Line(id, network, Product.REGIONAL_TRAIN, "ATZ" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "ATZ" + trainNumStr);
             if ("AZ".equals(trainType) || "Auto-Zug".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "AZ" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "AZ" + trainNumStr);
             if ("AZS".equals(trainType) && trainNum != null)
-                return new Line(id, network, Product.REGIONAL_TRAIN, "AZS" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "AZS" + trainNumStr);
             if ("DWE".equals(trainType) || "Dessau-Wörlitzer Eisenbahn".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "DWE" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "DWE" + trainNumStr);
             if ("KTB".equals(trainType) || "Kandertalbahn".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "KTB" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "KTB" + trainNumStr);
             if ("CBC".equals(trainType) || "CBC".equals(trainName)) // City-Bahn Chemnitz
-                return new Line(id, network, Product.REGIONAL_TRAIN, "CBC" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "CBC" + trainNumStr);
             if ("Bernina Express".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, trainNumStr);
             if ("STR".equals(trainType)) // Harzquerbahn, Nordhausen
-                return new Line(id, network, Product.REGIONAL_TRAIN, "STR" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "STR" + trainNumStr);
             if ("EXT".equals(trainType) || "Extrazug".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "EXT" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "EXT" + trainNumStr);
             if ("Heritage Railway".equals(trainName)) // GB
                 return new Line(id, network, Product.REGIONAL_TRAIN, symbol);
             if ("WTB".equals(trainType) || "Wutachtalbahn".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "WTB" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "WTB" + trainNumStr);
             if ("DB".equals(trainType) || "DB Regio".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "DB" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "DB" + trainNumStr);
             if ("M".equals(trainType) && "Meridian".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "M" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "M" + trainNumStr);
             if ("M".equals(trainType) && "Messezug".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "M" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "M" + trainNumStr);
             if ("EZ".equals(trainType)) // ÖBB Erlebniszug
-                return new Line(id, network, Product.REGIONAL_TRAIN, "EZ" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "EZ" + trainNumStr);
             if ("DPF".equals(trainType))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "DPF" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "DPF" + trainNumStr);
             if ("WBA".equals(trainType) || "Waldbahn".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "WBA" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "WBA" + trainNumStr);
             if ("ÖB".equals(trainType) && "Öchsle-Bahn-Betriebsgesellschaft mbH".equals(trainName) && trainNum != null)
-                return new Line(id, network, Product.REGIONAL_TRAIN, "ÖB" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "ÖB" + trainNumStr);
             if ("ÖBA".equals(trainType) && trainNum != null) // Eisenbahn-Betriebsgesellschaft Ochsenhausen
-                return new Line(id, network, Product.REGIONAL_TRAIN, "ÖBA" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "ÖBA" + trainNumStr);
             if (("UEF".equals(trainType) || "Ulmer Eisenbahnfreunde".equals(trainName)) && trainNum != null)
-                return new Line(id, network, Product.REGIONAL_TRAIN, "UEF" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "UEF" + trainNumStr);
             if (("DBG".equals(trainType) || "Döllnitzbahn".equals(trainName)) && trainNum != null)
-                return new Line(id, network, Product.REGIONAL_TRAIN, "DBG" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "DBG" + trainNumStr);
             if (("TL".equals(trainType) || "TL".equals(trainName) || "Trilex".equals(trainName)) && trainNum != null)
-                return new Line(id, network, Product.REGIONAL_TRAIN, "TL" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "TL" + trainNumStr);
             if (("OPB".equals(trainType) || "oberpfalzbahn".equals(trainName)) && trainNum != null)
-                return new Line(id, network, Product.REGIONAL_TRAIN, "OPB" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "OPB" + trainNumStr);
             if (("OPX".equals(trainType) || "oberpfalz-express".equals(trainName)) && trainNum != null)
-                return new Line(id, network, Product.REGIONAL_TRAIN, "OPX" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "OPX" + trainNumStr);
             if (("LEO".equals(trainType) || "Chiemgauer Lokalbahn".equals(trainName)) && trainNum != null)
-                return new Line(id, network, Product.REGIONAL_TRAIN, "LEO" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "LEO" + trainNumStr);
             if (("VAE".equals(trainType) || "Voralpen-Express".equals(trainName)) && trainNum != null)
-                return new Line(id, network, Product.REGIONAL_TRAIN, "VAE" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "VAE" + trainNumStr);
             if (("V6".equals(trainType) || "vlexx".equals(trainName)) && trainNum != null)
-                return new Line(id, network, Product.REGIONAL_TRAIN, "vlexx" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "vlexx" + trainNumStr);
             if (("ARZ".equals(trainType) || "Autoreisezug".equals(trainName)) && trainNum != null)
-                return new Line(id, network, Product.REGIONAL_TRAIN, "ARZ" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "ARZ" + trainNumStr);
             if ("RR".equals(trainType))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "RR" + Strings.nullToEmpty(trainNum));
+                return new Line(id, network, Product.REGIONAL_TRAIN, "RR" + trainNumStr);
             if (("TER".equals(trainType) || "Train Express Regional".equals(trainName)) && trainNum != null)
-                return new Line(id, network, Product.REGIONAL_TRAIN, "TER" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "TER" + trainNumStr);
             if (("ENO".equals(trainType) || "enno".equals(trainName)) && trainNum != null)
-                return new Line(id, network, Product.REGIONAL_TRAIN, "ENO" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "ENO" + trainNumStr);
             if ("enno".equals(longName) && symbol == null)
                 return new Line(id, network, Product.REGIONAL_TRAIN, "enno");
             if (("PLB".equals(trainType) || "Pinzgauer Lokalbahn".equals(trainName)) && trainNum != null)
-                return new Line(id, network, Product.REGIONAL_TRAIN, "PLB" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "PLB" + trainNumStr);
             if (("NX".equals(trainType) || "National Express".equals(trainName)) && trainNum != null)
-                return new Line(id, network, Product.REGIONAL_TRAIN, "NX" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "NX" + trainNumStr);
             if (("SE".equals(trainType) || "ABELLIO Rail Mitteldeutschland GmbH".equals(trainName)) && trainNum != null)
-                return new Line(id, network, Product.REGIONAL_TRAIN, "SE" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "SE" + trainNumStr);
             if (("DNA".equals(trainType) && trainNum != null)) // Dieselnetz Augsburg
-                return new Line(id, network, Product.REGIONAL_TRAIN, "DNA" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "DNA" + trainNumStr);
             if ("Dieselnetz".equals(trainType) && "Augsburg".equals(trainNum))
                 return new Line(id, network, Product.REGIONAL_TRAIN, "DNA");
             if (("SAB".equals(trainType) || "Schwäbische Alb-Bahn".equals(trainName)) && trainNum != null)
-                return new Line(id, network, Product.REGIONAL_TRAIN, "SAB" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "SAB" + trainNumStr);
             if (symbol != null && P_LINE_MEX.matcher(symbol).matches()) // Metropolexpress
                 return new Line(id, network, Product.REGIONAL_TRAIN, symbol);
             if (trainType == null && trainNum != null && P_LINE_MEX.matcher(trainNum).matches()) // Metropolexpress
@@ -1338,31 +1364,31 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
             if ("FEX".equals(trainNum))
                 return new Line(id, network, Product.REGIONAL_TRAIN, "FEX");
             if (("FEX".equals(trainType) || "Flughafen-Express".equals(trainName)) && trainNum != null)
-                return new Line(id, network, Product.REGIONAL_TRAIN, "FEX" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "FEX" + trainNumStr);
 
             if (("BSB".equals(trainType) || "Breisgau-S-Bahn Gmbh".equals(trainName)) && trainNum != null)
-                return new Line(id, network, Product.REGIONAL_TRAIN, "BSB" + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, "BSB" + trainNumStr);
             if ("BSB-Zug".equals(trainName) && trainNum != null) // Breisgau-S-Bahn
                 return new Line(id, network, Product.SUBURBAN_TRAIN, trainNum);
             if ("BSB-Zug".equals(trainName) && trainNum == null)
                 return new Line(id, network, Product.SUBURBAN_TRAIN, "BSB");
             if (longName != null && longName.startsWith("BSB-Zug"))
-                return new Line(id, network, Product.SUBURBAN_TRAIN, "BSB" + Strings.nullToEmpty(trainNum));
+                return new Line(id, network, Product.SUBURBAN_TRAIN, "BSB" + trainNumStr);
             if ("RSB".equals(trainType)) // Regionalschnellbahn, Wien
-                return new Line(id, network, Product.SUBURBAN_TRAIN, "RSB" + trainNum);
+                return new Line(id, network, Product.SUBURBAN_TRAIN, "RSB" + trainNumStr);
             if ("RS18".equals(trainNum) && trainType == null) // Nahverkehrszug Maastricht - Valkenburg - Heerlen
                 return new Line(id, network, Product.SUBURBAN_TRAIN, "RS18");
             if ("RER".equals(trainName) && symbol != null && symbol.length() == 1) // Réseau Express Régional
                 return new Line(id, network, Product.SUBURBAN_TRAIN, symbol);
             if ("S".equals(trainType))
-                return new Line(id, network, Product.SUBURBAN_TRAIN, "S" + trainNum);
+                return new Line(id, network, Product.SUBURBAN_TRAIN, "S" + trainNumStr);
             if ("S-Bahn".equals(trainName))
                 return new Line(id, network, Product.SUBURBAN_TRAIN, "S" + trainNumStr);
             if ("RS".equals(trainType) && trainNum != null) // Regio S-Bahn
-                return new Line(id, network, Product.SUBURBAN_TRAIN, "RS" + trainNum);
+                return new Line(id, network, Product.SUBURBAN_TRAIN, "RS" + trainNumStr);
 
             if ("RT".equals(trainType) || "RegioTram".equals(trainName))
-                return new Line(id, network, Product.TRAM, "RT" + trainNum);
+                return new Line(id, network, Product.TRAM, "RT" + trainNumStr);
 
             if ("Bus".equals(trainType) && trainNum != null)
                 return new Line(id, network, Product.BUS, trainNum);
@@ -1375,14 +1401,14 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
             if ("Bus replacement".equals(trainName)) // GB
                 return new Line(id, network, Product.BUS, "BR");
             if ("BR".equals(trainType) && trainName != null && trainName.startsWith("Bus")) // GB
-                return new Line(id, network, Product.BUS, "BR" + trainNum);
+                return new Line(id, network, Product.BUS, "BR" + trainNumStr);
             if ("EXB".equals(trainType) && trainNum != null)
-                return new Line(id, network, Product.BUS, "EXB" + trainNum);
+                return new Line(id, network, Product.BUS, "EXB" + trainNumStr);
 
             if ("GB".equals(trainType)) // Gondelbahn
-                return new Line(id, network, Product.CABLECAR, "GB" + trainNum);
+                return new Line(id, network, Product.CABLECAR, "GB" + trainNumStr);
             if ("SB".equals(trainType)) // Seilbahn
-                return new Line(id, network, Product.SUBURBAN_TRAIN, "SB" + trainNum);
+                return new Line(id, network, Product.SUBURBAN_TRAIN, "SB" + trainNumStr);
 
             if ("Zug".equals(trainName) && symbol != null)
                 return new Line(id, network, null, symbol);
@@ -1395,29 +1421,31 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
             if (symbol != null && P_LINE_NUMBER.matcher(symbol).matches() && trainType == null && trainName == null)
                 return new Line(id, network, null, symbol);
             if ("N".equals(trainType) && trainName == null && symbol == null)
-                return new Line(id, network, null, "N" + trainNum);
+                return new Line(id, network, null, "N" + trainNumStr);
             if ("Train".equals(trainName))
                 return new Line(id, network, null, null);
             if ("PPN".equals(trainType) && "Osobowy".equals(trainName) && trainNum != null)
-                return new Line(id, network, null, "PPN" + trainNum);
+                return new Line(id, network, null, "PPN" + trainNumStr);
 
             // generic
             if (trainName != null && trainType == null && trainNum == null)
                 return new Line(id, network, null, trainName);
+            if (trainName == null && trainType == null && trainNum != null)
+                return new Line(id, network, null, trainNum);
         } else if ("1".equals(mot)) {
             if (symbol != null)
                 return new Line(id, network, Product.SUBURBAN_TRAIN, symbol);
             if (name != null && P_LINE_S.matcher(name).matches())
                 return new Line(id, network, Product.SUBURBAN_TRAIN, name);
             if ("S-Bahn".equals(trainName))
-                return new Line(id, network, Product.SUBURBAN_TRAIN, "S" + Strings.nullToEmpty(trainNum));
+                return new Line(id, network, Product.SUBURBAN_TRAIN, "S" + trainNumStr);
             if (symbol != null && symbol.equals(name)) {
                 final Matcher m = P_LINE_S_DB.matcher(symbol);
                 if (m.matches())
                     return new Line(id, network, Product.SUBURBAN_TRAIN, m.group(1));
             }
             if ("REX".equals(trainType))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "REX" + Strings.nullToEmpty(trainNum));
+                return new Line(id, network, Product.REGIONAL_TRAIN, "REX" + trainNumStr);
             return new Line(id, network, Product.SUBURBAN_TRAIN, ParserUtils.firstNotEmpty(symbol, name));
         } else if ("2".equals(mot)) {
             return new Line(id, network, Product.SUBWAY, name);
@@ -1442,11 +1470,11 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
             if (("SEV".equals(trainName) || "Ersatzverkehr".equals(trainName)) && trainType == null)
                 return new Line(id, network, Product.BUS, "SEV");
             if (trainNum != null)
-                return new Line(id, network, Product.REGIONAL_TRAIN, Strings.nullToEmpty(trainType) + trainNum);
+                return new Line(id, network, Product.REGIONAL_TRAIN, Objects.toString(trainType, "") + trainNumStr);
             return new Line(id, network, Product.REGIONAL_TRAIN, name);
         } else if ("14".equals(mot) || "15".equals(mot) || "16".equals(mot)) {
             if (trainType != null || trainNum != null)
-                return new Line(id, network, Product.HIGH_SPEED_TRAIN, Strings.nullToEmpty(trainType) + Strings.nullToEmpty(trainNum));
+                return new Line(id, network, Product.HIGH_SPEED_TRAIN, Objects.toString(trainType, "") + trainNumStr);
             return new Line(id, network, Product.HIGH_SPEED_TRAIN, name);
         } else if ("17".equals(mot)) { // Schienenersatzverkehr
             if (trainNum == null && trainName != null && trainName.startsWith("Schienenersatz"))
@@ -1468,7 +1496,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
     @Override
     public QueryDeparturesResult queryDepartures(final String stationId, final @Nullable Date time,
             final int maxDepartures, final boolean equivs) throws IOException {
-        checkNotNull(Strings.emptyToNull(stationId));
+        requireNonNull(Strings.emptyToNull(stationId));
 
         return xsltDepartureMonitorRequest(stationId, time, maxDepartures, equivs);
     }
@@ -1492,7 +1520,13 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
             url.addEncodedQueryParameter("limit", Integer.toString(maxDepartures));
     }
 
-    private final void appendItdDateTimeParameters(final HttpUrl.Builder url, final Date time) {
+    private void appendItdDateTimeParameters(final HttpUrl.Builder url, final Date time) {
+        appendDateTimeParameters(url, time, "itdDate", "itdTime");
+    }
+
+    private void appendDateTimeParameters(
+            final HttpUrl.Builder url, final Date time,
+            final String dateParamName, final String timeParamName) {
         final Calendar c = new GregorianCalendar(timeZone);
         c.setTime(time);
         final int year = c.get(Calendar.YEAR);
@@ -1500,8 +1534,8 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
         final int day = c.get(Calendar.DAY_OF_MONTH);
         final int hour = c.get(Calendar.HOUR_OF_DAY);
         final int minute = c.get(Calendar.MINUTE);
-        url.addEncodedQueryParameter("itdDate", String.format(Locale.ENGLISH, "%04d%02d%02d", year, month, day));
-        url.addEncodedQueryParameter("itdTime", String.format(Locale.ENGLISH, "%02d%02d", hour, minute));
+        url.addEncodedQueryParameter(dateParamName, String.format(Locale.ENGLISH, "%04d%02d%02d", year, month, day));
+        url.addEncodedQueryParameter(timeParamName, String.format(Locale.ENGLISH, "%02d%02d", hour, minute));
     }
 
     private QueryDeparturesResult xsltDepartureMonitorRequest(final String stationId, final @Nullable Date time,
@@ -1512,7 +1546,15 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
 
         final HttpClient.Callback callback = (bodyPeek, body) -> {
             try {
+// java.io.BufferedReader bufferedReader = new java.io.BufferedReader(body.charStream());
+// bufferedReader.mark(1000000);
+// String s;
+// StringBuilder b = new StringBuilder();
+// while ((s = bufferedReader.readLine()) != null) b.append(s);
+// s = b.toString();
+// bufferedReader.reset();
                 final XmlPullParser pp = parserFactory.newPullParser();
+// pp.setInput(bufferedReader);
                 pp.setInput(body.charStream());
                 final ResultHeader header = enterItdRequest(pp);
 
@@ -1524,7 +1566,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                 final String nameState = processItdOdv(pp, "dm", (nameState1, location, matchQuality) -> {
                     if (location.type == LocationType.STATION)
                         if (findStationDepartures(r.stationDepartures, location.id) == null)
-                            r.stationDepartures.add(new StationDepartures(location, new LinkedList<Departure>(), new LinkedList<LineDestination>()));
+                            r.stationDepartures.add(new StationDepartures(location, new LinkedList<>(), new LinkedList<>()));
                 });
 
                 if (!"identified".equals(nameState)) {
@@ -1562,9 +1604,9 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                             if (assignedStationDepartures == null)
                                 assignedStationDepartures = new StationDepartures(
                                         new Location(LocationType.STATION, assignedStopId),
-                                        new LinkedList<Departure>(), new LinkedList<LineDestination>());
+                                        new LinkedList<>(), new LinkedList<>());
 
-                            final List<LineDestination> assignedStationDeparturesLines = checkNotNull(
+                            final List<LineDestination> assignedStationDeparturesLines = requireNonNull(
                                     assignedStationDepartures.lines);
                             if (!assignedStationDeparturesLines.contains(lineDestination))
                                 assignedStationDeparturesLines.add(lineDestination);
@@ -1595,7 +1637,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
 
                             assignedStationDepartures = new StationDepartures(
                                     new Location(LocationType.STATION, assignedStopId, coord),
-                                    new LinkedList<Departure>(), new LinkedList<LineDestination>());
+                                    new LinkedList<>(), new LinkedList<>());
                         }
 
                         final Position position = parsePosition(XmlPullUtil.optAttr(pp, "platformName", null));
@@ -1623,14 +1665,22 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
 
                         XmlPullUtil.skipExit(pp, "itdDeparture");
 
-                        if (!lineDestinationAndCancelled.cancelled) {
-                            final Departure departure = new Departure(plannedDepartureTime.getTime(),
+//                        if (!lineDestinationAndCancelled.cancelled) {
+                            final Departure departure = new Departure(
+                                    PTDate.fromCalendar(plannedDepartureTime),
                                     predictedDepartureTime.isSet(Calendar.HOUR_OF_DAY)
-                                            ? predictedDepartureTime.getTime() : null,
-                                    lineDestinationAndCancelled.line, position,
-                                    lineDestinationAndCancelled.destination, null, null);
+                                            ? PTDate.fromCalendar(predictedDepartureTime) : null,
+                                    lineDestinationAndCancelled.line,
+                                    position, null,
+                                    lineDestinationAndCancelled.destination,
+                                    lineDestinationAndCancelled.cancelled,
+                                    null,
+                                    null,
+                                    new EfaJourneyRef(
+                                            lineDestinationAndCancelled.transportationId, stationId,
+                                            lineDestinationAndCancelled.tripCode, plannedDepartureTime.getTime()));
                             assignedStationDepartures.departures.add(departure);
-                        }
+//                        }
                     }
 
                     XmlPullUtil.skipExit(pp, "itdDepartureList");
@@ -1693,7 +1743,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                         // time
                         parseMobileSt(pp, plannedDepartureTime, predictedDepartureTime);
 
-                        final LineDestination lineDestination = parseMobileM(pp, true);
+                        final LineDestinationAndCancelled parseMobileMResult = parseMobileM(pp, true);
 
                         XmlPullUtil.enter(pp, "r");
                         final String assignedId = XmlPullUtil.valueTag(pp, "id");
@@ -1710,14 +1760,23 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                         if (stationDepartures == null) {
                             stationDepartures = new StationDepartures(
                                     new Location(LocationType.STATION, assignedId),
-                                    new ArrayList<Departure>(maxDepartures), null);
+                                    new ArrayList<>(maxDepartures), null);
                             r.stationDepartures.add(stationDepartures);
                         }
 
-                        stationDepartures.departures.add(new Departure(plannedDepartureTime.getTime(),
+                        stationDepartures.departures.add(new Departure(
+                                PTDate.fromCalendar(plannedDepartureTime),
                                 predictedDepartureTime.isSet(Calendar.HOUR_OF_DAY)
-                                        ? predictedDepartureTime.getTime() : null,
-                                lineDestination.line, position, lineDestination.destination, null, null));
+                                        ? PTDate.fromCalendar(predictedDepartureTime) : null,
+                                parseMobileMResult.line,
+                                position, null,
+                                parseMobileMResult.destination,
+                                false,
+                                null,
+                                null,
+                                new EfaJourneyRef(
+                                        parseMobileMResult.transportationId, stationId,
+                                        parseMobileMResult.tripCode, plannedDepartureTime.getTime())));
 
                         XmlPullUtil.skipExit(pp, "dp");
                     }
@@ -1740,16 +1799,19 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
 
     private static final Pattern P_MOBILE_M_SYMBOL = Pattern.compile("([^\\s]*)\\s+([^\\s]*)");
 
-    private LineDestination parseMobileM(final XmlPullParser pp, final boolean tyOrCo)
+    private LineDestinationAndCancelled parseMobileM(final XmlPullParser pp, final boolean tyOrCo)
             throws XmlPullParserException, IOException {
         XmlPullUtil.enter(pp, "m");
 
         final String n = XmlPullUtil.optValueTag(pp, "n", null);
         final String productNu = XmlPullUtil.optValueTag(pp, "nu", null);
+        XmlPullUtil.optValueTag(pp, "prid", null);
         final String ty = XmlPullUtil.valueTag(pp, "ty");
 
         final Line line;
         final Location destination;
+        String tripCode = null;
+        String transportationId = null;
         if ("100".equals(ty) || "99".equals(ty)) {
             destination = null;
             line = Line.FOOTWAY;
@@ -1768,13 +1830,27 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
             XmlPullUtil.optValueTag(pp, "prid", null);
             XmlPullUtil.optValueTag(pp, "trainType", null);
             final String destinationName = normalizeLocationName(XmlPullUtil.optValueTag(pp, "des", null));
+            final String destID = XmlPullUtil.optValueTag(pp, "destID", null);
             destination = destinationName != null ? new Location(LocationType.ANY, null, null, destinationName) : null;
             XmlPullUtil.optValueTag(pp, "dy", null);
             final String de = XmlPullUtil.optValueTag(pp, "de", null);
             final String productName = n != null ? n : de;
             XmlPullUtil.optValueTag(pp, "routeDesc", null);
-            XmlPullUtil.optValueTag(pp, "tco", null);
-            final String lineId = parseMobileDv(pp);
+            tripCode = XmlPullUtil.optValueTag(pp, "tco", null);
+            final String timetablePeriod = XmlPullUtil.optValueTag(pp, "timetablePeriod", null);
+            final String realtime = XmlPullUtil.optValueTag(pp, "realtime", null);
+            XmlPullUtil.enter(pp, "dv");
+            XmlPullUtil.optValueTag(pp, "branch", null);
+            final String lineIdLi = XmlPullUtil.valueTag(pp, "li");
+            final String lineIdSu = XmlPullUtil.valueTag(pp, "su");
+            final String lineIdPr = XmlPullUtil.valueTag(pp, "pr");
+            final String lineIdDct = XmlPullUtil.valueTag(pp, "dct");
+            final String lineIdNe = XmlPullUtil.valueTag(pp, "ne");
+            final String tk = XmlPullUtil.optValueTag(pp, "tk", null);
+            if (tk != null) tripCode = tk;
+            transportationId = XmlPullUtil.valueTag(pp, "stateless");
+            XmlPullUtil.skipExit(pp, "dv");
+            final String lineId =  lineIdNe + ":" + lineIdLi + ":" + lineIdSu + ":" + lineIdDct + ":" + lineIdPr;
 
             final String symbol;
             if (productName != null && productNu == null)
@@ -1795,7 +1871,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                 trainNum = null;
             }
 
-            final String network = lineId.substring(0, lineId.indexOf(':'));
+            final String network = lineIdNe; // lineId.substring(0, lineId.indexOf(':'));
             final Line parsedLine = parseLine(lineId, network, productType, symbol, symbol, null, trainType, trainNum,
                     productName);
             line = new Line(parsedLine.id, parsedLine.network, parsedLine.product, parsedLine.label,
@@ -1804,20 +1880,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
 
         XmlPullUtil.skipExit(pp, "m");
 
-        return new LineDestination(line, destination);
-    }
-
-    private String parseMobileDv(final XmlPullParser pp) throws XmlPullParserException, IOException {
-        XmlPullUtil.enter(pp, "dv");
-        XmlPullUtil.optValueTag(pp, "branch", null);
-        final String lineIdLi = XmlPullUtil.valueTag(pp, "li");
-        final String lineIdSu = XmlPullUtil.valueTag(pp, "su");
-        final String lineIdPr = XmlPullUtil.valueTag(pp, "pr");
-        final String lineIdDct = XmlPullUtil.valueTag(pp, "dct");
-        final String lineIdNe = XmlPullUtil.valueTag(pp, "ne");
-        XmlPullUtil.skipExit(pp, "dv");
-
-        return lineIdNe + ":" + lineIdLi + ":" + lineIdSu + ":" + lineIdDct + ":" + lineIdPr;
+        return new LineDestinationAndCancelled(line, destination, false, transportationId, tripCode);
     }
 
     private void parseMobileSt(final XmlPullParser pp, final Calendar plannedDepartureTime,
@@ -1911,11 +1974,17 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
         public final Line line;
         public final Location destination;
         public final boolean cancelled;
+        public final String transportationId;
+        public final String tripCode;
 
-        public LineDestinationAndCancelled(final Line line, final Location destination, final boolean cancelled) {
+        public LineDestinationAndCancelled(
+                final Line line, final Location destination, final boolean cancelled,
+                final String transportationId, final String tripCode) {
             this.line = line;
             this.destination = destination;
             this.cancelled = cancelled;
+            this.transportationId = transportationId;
+            this.tripCode = tripCode;
         }
     }
 
@@ -1937,6 +2006,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
         final String slMotType = XmlPullUtil.attr(pp, "motType");
         final String slSymbol = XmlPullUtil.optAttr(pp, "symbol", null);
         final String slNumber = XmlPullUtil.optAttr(pp, "number", null);
+        final String slKey = XmlPullUtil.optAttr(pp, "key", null);
         final String slStateless = XmlPullUtil.optAttr(pp, "stateless", null);
         final String slTrainType = XmlPullUtil.optAttr(pp, "trainType", null);
         final String slTrainName = XmlPullUtil.optAttr(pp, "trainName", null);
@@ -1981,7 +2051,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
         final Line line = new Line(slLine.id, slLine.network, slLine.product, slLine.label,
                 lineStyle(slLine.network, slLine.product, slLine.label), itdMessage);
         final boolean cancelled = "-9999".equals(itdDelay);
-        return new LineDestinationAndCancelled(line, destination, cancelled);
+        return new LineDestinationAndCancelled(line, destination, cancelled, slStateless, slKey);
     }
 
     private static final Pattern P_STATION_NAME_WHITESPACE = Pattern.compile("\\s+");
@@ -2107,7 +2177,294 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
         return url.build();
     }
 
-    private final void appendCommonTripRequestParams(final HttpUrl.Builder url) {
+    public static class EfaJourneyRef extends JourneyRef {
+        private static final long serialVersionUID = -368229817892222104L;
+
+        public final String transportationID;
+        public final String stopID;
+        public final String tripCode;
+        public final Date targetTime;
+
+        public EfaJourneyRef(
+                final String transportationID,
+                final String stopID,
+                final String tripCode,
+                final Date targetTime) {
+            this.transportationID = transportationID;
+            this.stopID = stopID;
+            this.tripCode = tripCode;
+            this.targetTime = targetTime;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof EfaJourneyRef)) return false;
+            final EfaJourneyRef that = (EfaJourneyRef) o;
+            return Objects.equals(transportationID, that.transportationID)
+                    && Objects.equals(stopID, that.stopID)
+                    && Objects.equals(tripCode, that.tripCode)
+                    && Objects.equals(targetTime, that.targetTime);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(transportationID, stopID, tripCode, targetTime);
+        }
+    }
+
+    @Override
+    public QueryJourneyResult queryJourney(final JourneyRef aJourneyRef) throws IOException {
+        return queryJourneyUsingTripStopTimes(aJourneyRef);
+    }
+
+    private void appendTripStopTimesRequestParameters(
+            final HttpUrl.Builder url, final EfaJourneyRef journeyRef) {
+        appendCommonRequestParams(url, "XML");
+        url.addEncodedQueryParameter("line", journeyRef.transportationID);
+        url.addEncodedQueryParameter("tripCode", journeyRef.tripCode);
+        url.addEncodedQueryParameter("stopID", journeyRef.stopID);
+        url.addEncodedQueryParameter("tStOTType", "ALL");
+        appendDateTimeParameters(url, journeyRef.targetTime, "date", "time");
+    }
+
+    public QueryJourneyResult queryJourneyUsingTripStopTimes(final JourneyRef aJourneyRef) throws IOException {
+        final HttpUrl.Builder url = tripStopTimesEndpoint.newBuilder();
+        appendTripStopTimesRequestParameters(url, (EfaJourneyRef) aJourneyRef);
+        final AtomicReference<QueryJourneyResult> result = new AtomicReference<>();
+
+        final HttpClient.Callback callback = (bodyPeek, body) -> {
+            try {
+                result.set(queryJourneyUsingTripStopTimes(url.build(), body.charStream(), (EfaJourneyRef) aJourneyRef));
+            } catch (final XmlPullParserException | ParserException x) {
+                throw new ParserException("cannot parse xml: " + bodyPeek, x);
+            } catch (final RuntimeException x) {
+                throw new RuntimeException("uncategorized problem while processing " + url, x);
+            }
+        };
+
+        httpClient.getInputStream(callback, url.build(), httpRefererTrip);
+
+        return result.get();
+    }
+
+    protected QueryJourneyResult queryJourneyUsingTripStopTimes(
+            final HttpUrl url, final Reader reader,
+            final EfaJourneyRef journeyRef)
+            throws XmlPullParserException, IOException {
+// java.io.BufferedReader bufferedReader = new java.io.BufferedReader(reader);
+// bufferedReader.mark(1000000);
+// String s;
+// StringBuilder b = new StringBuilder();
+// while ((s = bufferedReader.readLine()) != null) b.append(s);
+// s = b.toString();
+// bufferedReader.reset();
+        final XmlPullParser pp = parserFactory.newPullParser();
+// pp.setInput(bufferedReader);
+        pp.setInput(reader);
+        final ResultHeader header = enterItdRequest(pp);
+
+        XmlPullUtil.require(pp, "itdTripStopTimesRequest");
+        final String requestId = XmlPullUtil.attr(pp, "requestID");
+        XmlPullUtil.enter(pp, "itdTripStopTimesRequest");
+
+        final Calendar calendar = new GregorianCalendar(timeZone);
+
+        XmlPullUtil.optSkip(pp, "itdVehicleCallAtStop");
+
+        XmlPullUtil.test(pp, "itdMeansOfTransport");
+        final String itdMeansOfTransportProductName = XmlPullUtil.optAttr(pp, "productName", null);
+        final int itdMeansOfTransportType = XmlPullUtil.intAttr(pp, "type");
+        final String destinationName = normalizeLocationName(XmlPullUtil.optAttr(pp, "destination", null));
+        final String destinationId = XmlPullUtil.optAttr(pp, "destID", null);
+        final Location destination;
+        if (destinationId != null)
+            destination = new Location(LocationType.STATION, destinationId, null, destinationName);
+        else if (destinationId == null && destinationName != null)
+            destination = new Location(LocationType.ANY, null, null, destinationName);
+        else
+            destination = null;
+
+        final String motSymbol = XmlPullUtil.optAttr(pp, "symbol", null);
+        final String motType = XmlPullUtil.optAttr(pp, "motType", null);
+        final String motShortName = XmlPullUtil.optAttr(pp, "shortname", null);
+        final String motName = XmlPullUtil.optAttr(pp, "name", null);
+        final String motTrainName = XmlPullUtil.optAttr(pp, "trainName", null);
+        final String motTrainType = XmlPullUtil.optAttr(pp, "trainType", null);
+
+        XmlPullUtil.enter(pp, "itdMeansOfTransport");
+
+        XmlPullUtil.require(pp, "motDivaParams");
+        final String divaNetwork = XmlPullUtil.attr(pp, "network");
+        final String divaLine = XmlPullUtil.attr(pp, "line");
+        final String divaSupplement = XmlPullUtil.optAttr(pp, "supplement", "");
+        final String divaDirection = XmlPullUtil.attr(pp, "direction");
+        final String divaProject = XmlPullUtil.optAttr(pp, "project", "");
+        final String lineId = divaNetwork + ':' + divaLine + ':' + divaSupplement + ':' + divaDirection + ':'
+                + divaProject;
+        XmlPullUtil.skipExit(pp, "itdMeansOfTransport");
+
+        final Line line;
+        if ("AST".equals(motSymbol))
+            line = new Line(null, divaNetwork, Product.BUS, "AST");
+        else
+            line = parseLine(lineId, divaNetwork, motType, motSymbol, motShortName, motName, motTrainType, motShortName,
+                    motTrainName);
+        final Set<Line.Attr> lineAttrs = new HashSet<>();
+        final Line styledLine = new Line(line.id, line.network, line.product, line.label,
+                lineStyle(line.network, line.product, line.label), lineAttrs);
+
+        final List<Stop> intermediateStops = processItdPoints(pp, calendar, null, null);
+
+        final int size = intermediateStops.size();
+        final Stop departureStop = intermediateStops.get(0);
+        final Stop arrivalStop = intermediateStops.get(size - 1);
+        intermediateStops.remove(size - 1);
+        intermediateStops.remove(0);
+
+        final String message = null;
+        final Trip.Public journeyLeg = new Trip.Public(styledLine, arrivalStop.location,
+                departureStop, arrivalStop, intermediateStops, null, message, journeyRef);
+        return new QueryJourneyResult(header, url.toString(), journeyRef, journeyLeg);
+    }
+
+    protected QueryJourneyResult queryJourneyMobile(final EfaJourneyRef journeyRef) throws IOException {
+        return queryJourneyMobileUsingStopSeqCoord(journeyRef);
+    }
+
+    protected QueryJourneyResult queryJourneyMobileUsingStopSeqCoord(final EfaJourneyRef journeyRef) throws IOException {
+        final HttpUrl.Builder url = stopSeqCoordEndpoint.newBuilder();
+        appendTripStopTimesRequestParameters(url, journeyRef);
+        final AtomicReference<QueryJourneyResult> result = new AtomicReference<>();
+
+        final HttpClient.Callback callback = (bodyPeek, body) -> {
+            try {
+                result.set(queryJourneyMobileUsingStopSeqCoord(url.build(), body.charStream(), journeyRef));
+            } catch (final XmlPullParserException | ParserException x) {
+                throw new ParserException("cannot parse xml: " + bodyPeek, x);
+            } catch (final RuntimeException x) {
+                throw new RuntimeException("uncategorized problem while processing " + url, x);
+            }
+        };
+
+        httpClient.getInputStream(callback, url.build(), httpRefererTrip);
+
+        return result.get();
+    }
+
+    private static final Pattern P_STOPSEQ_DATETIME = Pattern.compile("(\\d{4})(\\d{2})(\\d{2}) (\\d{2}):(\\d{2})");
+
+    public static PTDate parseStopSeqDateTime(final CharSequence str, final Calendar calendar) {
+        if (str == null || str.equals("000-01 00:00")) return null;
+        final Matcher mIso = P_STOPSEQ_DATETIME.matcher(str);
+        if (mIso.matches()) {
+            calendar.set(Calendar.YEAR, Integer.parseInt(mIso.group(1)));
+            calendar.set(Calendar.MONTH, Integer.parseInt(mIso.group(2)) - 1);
+            calendar.set(Calendar.DAY_OF_MONTH, Integer.parseInt(mIso.group(3)));
+            calendar.set(Calendar.HOUR_OF_DAY, Integer.parseInt(mIso.group(4)));
+            calendar.set(Calendar.MINUTE, Integer.parseInt(mIso.group(5)));
+            calendar.set(Calendar.SECOND, 0);
+            calendar.set(Calendar.MILLISECOND, 0);
+            return PTDate.fromCalendar(calendar);
+        }
+
+        throw new RuntimeException("cannot parse: '" + str + "'");
+    }
+
+    private QueryJourneyResult queryJourneyMobileUsingStopSeqCoord(
+            final HttpUrl url, final Reader reader, final EfaJourneyRef journeyRef
+    ) throws IOException, XmlPullParserException {
+// java.io.BufferedReader bufferedReader = new java.io.BufferedReader(reader);
+// bufferedReader.mark(1000000);
+// String sx;
+// StringBuilder b = new StringBuilder();
+// while ((sx = bufferedReader.readLine()) != null) b.append(sx);
+// sx = b.toString();
+// bufferedReader.reset();
+        final XmlPullParser pp = parserFactory.newPullParser();
+// pp.setInput(bufferedReader);
+        pp.setInput(reader);
+        final ResultHeader header = enterEfa(pp);
+        XmlPullUtil.optSkip(pp, "msgs");
+
+        final Calendar calendar = new GregorianCalendar(timeZone);
+
+        XmlPullUtil.require(pp, "stopSeqCoords");
+        XmlPullUtil.enter(pp, "stopSeqCoords");
+        XmlPullUtil.enter(pp, "params");
+
+        final List<Stop> intermediateStops = new LinkedList<>();
+
+        XmlPullUtil.enter(pp, "stopSeq");
+        while (XmlPullUtil.optEnter(pp, "p")) {
+            final String name = XmlPullUtil.valueTag(pp, "n");
+            XmlPullUtil.optValueTag(pp, "nameWO", null);
+
+            XmlPullUtil.enter(pp, "r");
+            final String id = XmlPullUtil.valueTag(pp, "id");
+            XmlPullUtil.optValueTag(pp, "gid", null);
+            XmlPullUtil.optValueTag(pp, "pgid", null);
+            XmlPullUtil.optValueTag(pp, "a", null);
+            final String place = normalizeLocationName(XmlPullUtil.optValueTag(pp, "pc", null));
+            XmlPullUtil.optValueTag(pp, "pid", null);
+            final Position position = parsePosition(XmlPullUtil.optValueTag(pp, "pl", null));
+            XmlPullUtil.optValueTag(pp, "divaPl", null);
+            XmlPullUtil.optValueTag(pp, "omc", null);
+            final Point coord = parseCoord(XmlPullUtil.optValueTag(pp, "c", null));
+            final PTDate plannedArrival = parseStopSeqDateTime(XmlPullUtil.optValueTag(pp, "arrDateTime", null), calendar);
+            final int arrivalDelay = Integer.parseInt(XmlPullUtil.optValueTag(pp, "arrDelay", "0"));
+            final PTDate predictedArrival = plannedArrival == null ? null
+                    : new PTDate(plannedArrival.getTime() + arrivalDelay * 60000L, plannedArrival.getOffset());
+            final String arrValid = XmlPullUtil.optValueTag(pp, "arrValid", null);
+            final boolean arrivalCancelled = false;
+            final String depDateTime = XmlPullUtil.optValueTag(pp, "depDateTime", null);
+            final PTDate plannedDeparture;
+            final PTDate predictedDeparture;
+            final int departureDelay;
+            final boolean departureCancelled;
+            if (depDateTime == null) {
+                plannedDeparture = plannedArrival;
+                predictedDeparture = predictedArrival;
+                departureDelay = arrivalDelay;
+                departureCancelled = arrivalCancelled;
+            } else {
+                plannedDeparture = parseStopSeqDateTime(depDateTime, calendar);
+                departureDelay = Integer.parseInt(XmlPullUtil.optValueTag(pp, "depDelay", "0"));
+                predictedDeparture = plannedDeparture == null ? null
+                        : new PTDate(plannedDeparture.getTime() + departureDelay * 60000L, plannedDeparture.getOffset());
+                final String depValid = XmlPullUtil.optValueTag(pp, "depValid", null);
+                departureCancelled = false;
+            }
+
+            XmlPullUtil.skipExit(pp, "r");
+
+            final Location location = new Location(LocationType.STATION, id, coord, place, name);
+
+            final Stop stop = new Stop(location,
+                    plannedArrival, predictedArrival, position, null, arrivalCancelled,
+                    plannedDeparture, predictedDeparture, position, null, departureCancelled);
+
+            intermediateStops.add(stop);
+
+            XmlPullUtil.skipExit(pp, "p");
+        }
+        XmlPullUtil.skipExit(pp, "stopSeq");
+
+        final int size = intermediateStops.size();
+        final Stop departureStop = intermediateStops.get(0);
+        final Stop arrivalStop = intermediateStops.get(size - 1);
+        intermediateStops.remove(size - 1);
+        intermediateStops.remove(0);
+
+        final LineDestinationAndCancelled parseMobileMResult = parseMobileM(pp, false);
+
+        final String message = null;
+        final Trip.Public journeyLeg = new Trip.Public(parseMobileMResult.line, arrivalStop.location,
+                departureStop, arrivalStop, intermediateStops, null, message, journeyRef);
+        return new QueryJourneyResult(header, url.toString(), journeyRef, journeyLeg);
+    }
+
+    private void appendCommonTripRequestParams(final HttpUrl.Builder url) {
         url.addEncodedQueryParameter("coordListOutputFormat", useStringCoordListOutputFormat ? "string" : "list");
     }
 
@@ -2204,7 +2561,15 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
 
     private QueryTripsResult queryTrips(final HttpUrl url, final Reader reader)
             throws XmlPullParserException, IOException {
+// java.io.BufferedReader bufferedReader = new java.io.BufferedReader(reader);
+// bufferedReader.mark(1000000);
+// String s;
+// StringBuilder b = new StringBuilder();
+// while ((s = bufferedReader.readLine()) != null) b.append(s);
+// s = b.toString();
+// bufferedReader.reset();
         final XmlPullParser pp = parserFactory.newPullParser();
+// pp.setInput(bufferedReader);
         pp.setInput(reader);
         final ResultHeader header = enterItdRequest(pp);
         final Object context = header.context;
@@ -2286,7 +2651,6 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
         XmlPullUtil.optSkipMultiple(pp, "omcTaxi");
 
         final List<Trip> trips = new ArrayList<>();
-        final Joiner idJoiner = Joiner.on('-').skipNulls();
 
         XmlPullUtil.require(pp, "itdItinerary");
         if (XmlPullUtil.optEnter(pp, "itdItinerary")) {
@@ -2300,7 +2664,11 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                     if (useRouteIndexAsTripId) {
                         final String routeIndex = XmlPullUtil.optAttr(pp, "routeIndex", null);
                         final String routeTripIndex = XmlPullUtil.optAttr(pp, "routeTripIndex", null);
-                        tripId = Strings.emptyToNull(idJoiner.join(routeIndex, routeTripIndex));
+                        tripId = Strings.emptyToNull(
+                                Stream.of(routeIndex, routeTripIndex)
+                                        .filter(Objects::nonNull)
+                                        .map(Object::toString)
+                                        .collect(Collectors.joining("-")));
                     } else {
                         tripId = null;
                     }
@@ -2333,11 +2701,11 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                         XmlPullUtil.optSkip(pp, "itdMapItemList");
                         XmlPullUtil.require(pp, "itdDateTime");
                         processItdDateTime(pp, calendar);
-                        final Date departureTime = calendar.getTime();
-                        final Date departureTargetTime;
+                        final PTDate departureTime = PTDate.fromCalendar(calendar);
+                        final PTDate departureTargetTime;
                         if (XmlPullUtil.test(pp, "itdDateTimeTarget")) {
                             processItdDateTime(pp, calendar);
-                            departureTargetTime = calendar.getTime();
+                            departureTargetTime = PTDate.fromCalendar(calendar);
                         } else {
                             departureTargetTime = null;
                         }
@@ -2353,11 +2721,11 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                         XmlPullUtil.optSkip(pp, "itdMapItemList");
                         XmlPullUtil.require(pp, "itdDateTime");
                         processItdDateTime(pp, calendar);
-                        final Date arrivalTime = calendar.getTime();
-                        final Date arrivalTargetTime;
+                        final PTDate arrivalTime = PTDate.fromCalendar(calendar);
+                        final PTDate arrivalTargetTime;
                         if (XmlPullUtil.test(pp, "itdDateTimeTarget")) {
                             processItdDateTime(pp, calendar);
-                            arrivalTargetTime = calendar.getTime();
+                            arrivalTargetTime = PTDate.fromCalendar(calendar);
                         } else {
                             arrivalTargetTime = null;
                         }
@@ -2393,10 +2761,9 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                             processIndividualLeg(pp, legs, Trip.Individual.Type.CAR, distance, departureTime,
                                     departureLocation, arrivalTime, arrivalLocation);
                         } else {
-                            throw new IllegalStateException(MoreObjects.toStringHelper("")
-                                    .add("itdPartialRoute.type", itdPartialRouteType)
-                                    .add("itdMeansOfTransport.type", itdMeansOfTransportType)
-                                    .add("itdMeansOfTransport.productName", itdMeansOfTransportProductName).toString());
+                            throw new IllegalStateException("itdPartialRoute.type=" + itdPartialRouteType +
+                                            ",itdMeansOfTransport.type=" + itdMeansOfTransportType +
+                                            ",itdMeansOfTransport.productName" + itdMeansOfTransportProductName);
                         }
 
                         XmlPullUtil.skipExit(pp, "itdPartialRoute");
@@ -2450,7 +2817,9 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
 
                     XmlPullUtil.skipExit(pp, "itdRoute");
 
-                    final Trip trip = new Trip(tripId, firstDepartureLocation, lastArrivalLocation, legs,
+                    final Trip trip = new Trip(
+                            new Date(),
+                            tripId, null, firstDepartureLocation, lastArrivalLocation, legs,
                             fares.isEmpty() ? null : fares, null, numChanges);
 
                     if (!cancelled)
@@ -2466,10 +2835,11 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                 new Context(commandLink((String) context, requestId).toString()), trips);
     }
 
-    private void processIndividualLeg(final XmlPullParser pp, final List<Leg> legs,
-            final Trip.Individual.Type individualType, final int distance, final Date departureTime,
-            final Location departureLocation, final Date arrivalTime, final Location arrivalLocation)
-            throws XmlPullParserException, IOException {
+    private void processIndividualLeg(
+            final XmlPullParser pp, final List<Leg> legs,
+            final Trip.Individual.Type individualType, final int distance, final PTDate departureTime,
+            final Location departureLocation, final PTDate arrivalTime, final Location arrivalLocation
+    ) throws XmlPullParserException, IOException {
         XmlPullUtil.enter(pp, "itdMeansOfTransport");
         XmlPullUtil.skipExit(pp, "itdMeansOfTransport");
 
@@ -2494,10 +2864,88 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
         }
     }
 
-    private boolean processPublicLeg(final XmlPullParser pp, final List<Leg> legs, final Calendar calendar,
-            final Date departureTime, final Date departureTargetTime, final Location departureLocation,
-            final Position departurePosition, final Date arrivalTime, final Date arrivalTargetTime,
-            final Location arrivalLocation, final Position arrivalPosition) throws XmlPullParserException, IOException {
+    private List<Stop> processItdPoints(
+            final XmlPullParser pp, final Calendar calendar,
+            final Integer defDepartureDelay, final Integer defArrivalDelay
+    ) throws XmlPullParserException, IOException {
+        final List<Stop> intermediateStops = new LinkedList<>();
+        while (XmlPullUtil.test(pp, "itdPoint")) {
+            Integer departureDelay = XmlPullUtil.optIntAttr(pp, "depDelay", -8888);
+            Integer arrivalDelay = XmlPullUtil.optIntAttr(pp, "arrDelay", -8888);
+            if (departureDelay == -8888) departureDelay = defDepartureDelay;
+            if (arrivalDelay == -8888) arrivalDelay = defArrivalDelay;
+
+            final Location stopLocation = processItdPointAttributes(pp);
+
+            final Position stopPosition = parsePosition(XmlPullUtil.optAttr(pp, "platformName", null));
+
+            XmlPullUtil.enter(pp, "itdPoint");
+            XmlPullUtil.optSkip(pp, "genAttrList");
+            XmlPullUtil.optSkip(pp, "sPAs");
+            XmlPullUtil.require(pp, "itdDateTime");
+
+            PTDate plannedStopArrivalTime = null;
+            PTDate predictedStopArrivalTime = null;
+            if (processItdDateTime(pp, calendar)) {
+                plannedStopArrivalTime = PTDate.fromCalendar(calendar);
+                if (arrivalDelay != null) {
+                    predictedStopArrivalTime = new PTDate(
+                            plannedStopArrivalTime.getTime() + 60000L * arrivalDelay,
+                            plannedStopArrivalTime.getOffset());
+                }
+            }
+
+            PTDate plannedStopDepartureTime = null;
+            PTDate predictedStopDepartureTime = null;
+            if (!XmlPullUtil.test(pp, "itdDateTime")) {
+                // there is only one <itdDateTime>, hence departure is same as arrival
+                if (plannedStopArrivalTime != null) {
+                    plannedStopDepartureTime = plannedStopArrivalTime;
+                    if (departureDelay != null) {
+                        predictedStopDepartureTime = new PTDate(
+                                plannedStopDepartureTime.getTime() + 60000L * departureDelay,
+                                plannedStopDepartureTime.getOffset());
+                    }
+                }
+            } else if (processItdDateTime(pp, calendar)) {
+                plannedStopDepartureTime = PTDate.fromCalendar(calendar);
+                if (departureDelay != null) {
+                    predictedStopDepartureTime = new PTDate(
+                            plannedStopDepartureTime.getTime() + 60000L * departureDelay,
+                            plannedStopDepartureTime.getOffset());
+                }
+            }
+
+            if (intermediateStops.isEmpty()) {
+                // first stop is departure only, remove arrival
+                // note that on the last stop they provide an explicit dummy departure time, so it does not have to be removed here
+                plannedStopArrivalTime = null;
+                predictedStopArrivalTime = null;
+            }
+
+            final Stop stop = new Stop(stopLocation,
+                    plannedStopArrivalTime, predictedStopArrivalTime, stopPosition, null, arrivalDelay == -9999,
+                    plannedStopDepartureTime, predictedStopDepartureTime, stopPosition, null, departureDelay == -9999);
+
+            intermediateStops.add(stop);
+
+            XmlPullUtil.skipExit(pp, "itdPoint");
+        }
+
+        return intermediateStops;
+    }
+
+    private boolean processPublicLeg(
+            final XmlPullParser pp, final List<Leg> legs, final Calendar calendar,
+            final PTDate departureTime, final PTDate departureTargetTime, final Location departureLocation,
+            final Position departurePosition, final PTDate arrivalTime, final PTDate arrivalTargetTime,
+            final Location arrivalLocation, final Position arrivalPosition
+    ) throws XmlPullParserException, IOException {
+        final String transportationLineId = XmlPullUtil.optAttr(pp, "stateless", null);
+        final String transportationTripCode = XmlPullUtil.optAttr(pp, "tC", null);
+        final EfaJourneyRef journeyRef = new EfaJourneyRef(
+                transportationLineId, departureLocation.id, transportationTripCode, departureTargetTime);
+
         final String destinationName = normalizeLocationName(XmlPullUtil.optAttr(pp, "destination", null));
         final String destinationId = XmlPullUtil.optAttr(pp, "destID", null);
         final Location destination;
@@ -2516,6 +2964,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
         final String motTrainType = XmlPullUtil.optAttr(pp, "trainType", null);
 
         XmlPullUtil.enter(pp, "itdMeansOfTransport");
+
         XmlPullUtil.require(pp, "motDivaParams");
         final String divaNetwork = XmlPullUtil.attr(pp, "network");
         final String divaLine = XmlPullUtil.attr(pp, "line");
@@ -2576,54 +3025,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
 
         List<Stop> intermediateStops = null;
         if (XmlPullUtil.optEnter(pp, "itdStopSeq")) {
-            intermediateStops = new LinkedList<>();
-            while (XmlPullUtil.test(pp, "itdPoint")) {
-                final Location stopLocation = processItdPointAttributes(pp);
-
-                final Position stopPosition = parsePosition(XmlPullUtil.optAttr(pp, "platformName", null));
-
-                XmlPullUtil.enter(pp, "itdPoint");
-                XmlPullUtil.optSkip(pp, "genAttrList");
-                XmlPullUtil.optSkip(pp, "sPAs");
-                XmlPullUtil.require(pp, "itdDateTime");
-
-                final Date plannedStopArrivalTime;
-                final Date predictedStopArrivalTime;
-                if (processItdDateTime(pp, calendar)) {
-                    plannedStopArrivalTime = calendar.getTime();
-                    if (arrivalDelay != null) {
-                        calendar.add(Calendar.MINUTE, arrivalDelay);
-                        predictedStopArrivalTime = calendar.getTime();
-                    } else {
-                        predictedStopArrivalTime = null;
-                    }
-                } else {
-                    plannedStopArrivalTime = null;
-                    predictedStopArrivalTime = null;
-                }
-
-                final Date plannedStopDepartureTime;
-                final Date predictedStopDepartureTime;
-                if (XmlPullUtil.test(pp, "itdDateTime") && processItdDateTime(pp, calendar)) {
-                    plannedStopDepartureTime = calendar.getTime();
-                    if (departureDelay != null) {
-                        calendar.add(Calendar.MINUTE, departureDelay);
-                        predictedStopDepartureTime = calendar.getTime();
-                    } else {
-                        predictedStopDepartureTime = null;
-                    }
-                } else {
-                    plannedStopDepartureTime = null;
-                    predictedStopDepartureTime = null;
-                }
-
-                final Stop stop = new Stop(stopLocation, plannedStopArrivalTime, predictedStopArrivalTime, stopPosition,
-                        null, plannedStopDepartureTime, predictedStopDepartureTime, stopPosition, null);
-
-                intermediateStops.add(stop);
-
-                XmlPullUtil.skipExit(pp, "itdPoint");
-            }
+            intermediateStops = processItdPoints(pp, calendar, departureDelay, arrivalDelay);
             XmlPullUtil.skipExit(pp, "itdStopSeq");
 
             // remove first and last, because they are not intermediate
@@ -2684,14 +3086,22 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                 arrivalTargetTime != null ? arrivalTargetTime : arrivalTime, arrivalTime != null ? arrivalTime : null,
                 arrivalPosition, null);
 
-        legs.add(new Trip.Public(styledLine, destination, departure, arrival, intermediateStops, path, message));
+        legs.add(new Trip.Public(styledLine, destination, departure, arrival, intermediateStops, path, message, journeyRef));
 
         return cancelled;
     }
 
     private QueryTripsResult queryTripsMobile(final HttpUrl url, final Location from, final @Nullable Location via,
             final Location to, final Reader reader) throws XmlPullParserException, IOException {
+// final java.io.BufferedReader bufferedReader = new java.io.BufferedReader(reader);
+// bufferedReader.mark(10000000);
+// String sx;
+// StringBuilder b = new StringBuilder();
+// while ((sx = bufferedReader.readLine()) != null) b.append(sx);
+// sx = b.toString();
+// bufferedReader.reset();
         final XmlPullParser pp = parserFactory.newPullParser();
+// pp.setInput(bufferedReader);
         pp.setInput(reader);
         final ResultHeader header = enterEfa(pp);
         XmlPullUtil.optSkip(pp, "msgs");
@@ -2756,10 +3166,10 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
 
                         XmlPullUtil.skipExit(pp, "p");
 
-                        final Date plannedTime = plannedTimeCal.isSet(Calendar.HOUR_OF_DAY) ? plannedTimeCal.getTime()
-                                : null;
-                        final Date predictedTime = predictedTimeCal.isSet(Calendar.HOUR_OF_DAY)
-                                ? predictedTimeCal.getTime() : null;
+                        final PTDate plannedTime = plannedTimeCal.isSet(Calendar.HOUR_OF_DAY)
+                                ? PTDate.fromCalendar(plannedTimeCal) : null;
+                        final PTDate predictedTime = predictedTimeCal.isSet(Calendar.HOUR_OF_DAY)
+                                ? PTDate.fromCalendar(predictedTimeCal) : null;
 
                         if ("departure".equals(usage)) {
                             departure = new Stop(location, true, plannedTime, predictedTime, position, null);
@@ -2780,7 +3190,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
 
                     final boolean isRealtime = XmlPullUtil.valueTag(pp, "realtime").equals("1");
 
-                    final LineDestination lineDestination = parseMobileM(pp, false);
+                    final LineDestinationAndCancelled parseMobileMResult = parseMobileM(pp, false);
 
                     final List<Point> path;
                     if (XmlPullUtil.test(pp, "pt"))
@@ -2837,10 +3247,10 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                                 }
                                 final Location location = new Location(LocationType.STATION, id, coords, null, name);
 
-                                final Date plannedTime = plannedTimeCal.isSet(Calendar.HOUR_OF_DAY)
-                                        ? plannedTimeCal.getTime() : null;
-                                final Date predictedTime = predictedTimeCal.isSet(Calendar.HOUR_OF_DAY)
-                                        ? predictedTimeCal.getTime() : null;
+                                final PTDate plannedTime = plannedTimeCal.isSet(Calendar.HOUR_OF_DAY)
+                                        ? PTDate.fromCalendar(plannedTimeCal) : null;
+                                final PTDate predictedTime = predictedTimeCal.isSet(Calendar.HOUR_OF_DAY)
+                                        ? PTDate.fromCalendar(predictedTimeCal) : null;
                                 final Stop stop = new Stop(location, false, plannedTime, predictedTime, null, null);
 
                                 intermediateStops.add(stop);
@@ -2854,12 +3264,19 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
 
                     XmlPullUtil.optSkip(pp, "interchange");
 
-                    StringBuilder message = new StringBuilder();
+                    final StringBuilder message = new StringBuilder();
                     if (XmlPullUtil.optEnter(pp, "ns")) {
                         while (XmlPullUtil.optEnter(pp, "no")) {
-                            String text = XmlPullUtil.valueTag(pp, "tx");
+                            final String heading = XmlPullUtil.optValueTag(pp, "he", null);
+                            if (heading != null) {
+                                if (messagesAsSimpleHtml)
+                                    message.append("<b><u>").append(heading).append("</u></b><br>");
+                                else
+                                    message.append(heading).append("\n");
+                            }
+                            final String text = XmlPullUtil.valueTag(pp, "tx");
                             if (text != null)
-                                message.append(text).append('\n');
+                                message.append(text).append(messagesAsSimpleHtml ? "<br>" : "\n");
                             XmlPullUtil.skipExit(pp, "no");
                         }
                         XmlPullUtil.skipExit(pp, "ns");
@@ -2867,18 +3284,20 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
 
                     XmlPullUtil.skipExit(pp, "l");
 
-                    if (lineDestination.line == Line.FOOTWAY) {
+                    if (parseMobileMResult.line == Line.FOOTWAY) {
                         legs.add(new Trip.Individual(Trip.Individual.Type.WALK, departure.location,
                                 departure.getDepartureTime(), arrival.location, arrival.getArrivalTime(), path, 0));
-                    } else if (lineDestination.line == Line.TRANSFER) {
+                    } else if (parseMobileMResult.line == Line.TRANSFER) {
                         legs.add(new Trip.Individual(Trip.Individual.Type.TRANSFER, departure.location,
                                 departure.getDepartureTime(), arrival.location, arrival.getArrivalTime(), path, 0));
-                    } else if (lineDestination.line == Line.SECURE_CONNECTION
-                            || lineDestination.line == Line.DO_NOT_CHANGE) {
+                    } else if (parseMobileMResult.line == Line.SECURE_CONNECTION
+                            || parseMobileMResult.line == Line.DO_NOT_CHANGE) {
                         // ignore
                     } else {
-                        legs.add(new Trip.Public(lineDestination.line, lineDestination.destination, departure, arrival,
-                                intermediateStops, path, Strings.emptyToNull(message.toString())));
+                        legs.add(new Trip.Public(parseMobileMResult.line, parseMobileMResult.destination, departure, arrival,
+                                intermediateStops, path, Strings.emptyToNull(message.toString()),
+                                new EfaJourneyRef(parseMobileMResult.transportationId, departure.location.id,
+                                        parseMobileMResult.tripCode, departure.plannedDepartureTime)));
                     }
                 }
 
@@ -2895,7 +3314,9 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                     fares = null;
                 }
 
-                final Trip trip = new Trip(tripId, firstDepartureLocation, lastArrivalLocation, legs, fares, null,
+                final Trip trip = new Trip(
+                        new Date(),
+                        tripId, null, firstDepartureLocation, lastArrivalLocation, legs, fares, null,
                         numChanges);
                 trips.add(trip);
 
@@ -2905,13 +3326,12 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
             XmlPullUtil.skipExit(pp, "ts");
         }
 
-        if (trips.size() > 0) {
-            final String[] context = (String[]) header.context;
-            return new QueryTripsResult(header, url.toString(), from, via, to,
-                    new Context(commandLink(context[0], context[1]).toString()), trips);
-        } else {
+        if (trips.isEmpty())
             return new QueryTripsResult(header, QueryTripsResult.Status.NO_TRIPS);
-        }
+
+        final String[] context = (String[]) header.context;
+        return new QueryTripsResult(header, url.toString(), from, via, to,
+                new Context(commandLink(context[0], context[1]).toString()), trips);
     }
 
     private List<Point> processItdPathCoordinates(final XmlPullParser pp) throws XmlPullParserException, IOException {
@@ -3188,7 +3608,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
 
         while (XmlPullUtil.optEnter(pp, "pa")) {
             final String name = XmlPullUtil.valueTag(pp, "n");
-            final String value = XmlPullUtil.valueTag(pp, "v");
+            final String value = XmlPullUtil.optValueTag(pp, "v", "");
             params.put(name, value);
             XmlPullUtil.skipExit(pp, "pa");
         }

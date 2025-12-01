@@ -17,8 +17,6 @@
 
 package de.schildbach.pte.util;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.io.ByteArrayInputStream;
 import java.io.EOFException;
 import java.io.IOException;
@@ -31,9 +29,12 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.annotation.Nullable;
 import javax.net.ssl.KeyManager;
@@ -47,7 +48,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Throwables;
-import com.google.common.primitives.Ints;
 
 import de.schildbach.pte.exception.BlockedException;
 import de.schildbach.pte.exception.InternalErrorException;
@@ -70,6 +70,8 @@ import okhttp3.Response.Builder;
 import okhttp3.ResponseBody;
 import okhttp3.logging.HttpLoggingInterceptor;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * @author Andreas Schildbach
  */
@@ -84,19 +86,28 @@ public final class HttpClient {
     @Nullable
     private Proxy proxy = null;
     private boolean trustAllCertificates = false;
+    private boolean useClientCertificate = false;
     @Nullable
-    private byte[] clientCertificate = null;
+    private KeyManager[] clientCertificateKeyManagers = null;
+
     @Nullable
     private CertificatePinner certificatePinner = null;
+    private String defaultReferer = null;
 
-    private static final List<Integer> RESPONSE_CODES_BLOCKED = Ints.asList(HttpURLConnection.HTTP_BAD_REQUEST,
-            HttpURLConnection.HTTP_UNAUTHORIZED, HttpURLConnection.HTTP_FORBIDDEN,
-            HttpURLConnection.HTTP_NOT_ACCEPTABLE, HttpURLConnection.HTTP_UNAVAILABLE);
-    private static final List<Integer> RESPONSE_CODES_NOT_FOUND = Ints.asList(HttpURLConnection.HTTP_NOT_FOUND);
-    private static final List<Integer> RESPONSE_CODES_REDIRECT = Ints.asList(HttpURLConnection.HTTP_MOVED_PERM,
-            HttpURLConnection.HTTP_MOVED_TEMP, 307, 308);
-    private static final List<Integer> RESPONSE_CODES_INTERNAL_ERROR = Ints
-            .asList(HttpURLConnection.HTTP_INTERNAL_ERROR, HttpURLConnection.HTTP_BAD_GATEWAY);
+    private static final Set<Integer> RESPONSE_CODES_BLOCKED =
+            Stream.of(HttpURLConnection.HTTP_BAD_REQUEST, HttpURLConnection.HTTP_UNAUTHORIZED,
+                            HttpURLConnection.HTTP_FORBIDDEN, HttpURLConnection.HTTP_NOT_ACCEPTABLE,
+                            HttpURLConnection.HTTP_UNAVAILABLE)
+                    .collect(Collectors.toSet());
+    private static final Set<Integer> RESPONSE_CODES_NOT_FOUND =
+            Stream.of(HttpURLConnection.HTTP_NOT_FOUND)
+                    .collect(Collectors.toSet());
+    private static final Set<Integer> RESPONSE_CODES_REDIRECT =
+            Stream.of(HttpURLConnection.HTTP_MOVED_PERM, HttpURLConnection.HTTP_MOVED_TEMP, 307, 308)
+                    .collect(Collectors.toSet());
+    private static final Set<Integer> RESPONSE_CODES_INTERNAL_ERROR =
+            Stream.of(HttpURLConnection.HTTP_INTERNAL_ERROR, HttpURLConnection.HTTP_BAD_GATEWAY)
+                    .collect(Collectors.toSet());
 
     private static final OkHttpClient OKHTTP_CLIENT;
     static {
@@ -160,8 +171,8 @@ public final class HttpClient {
         };
 
         final OkHttpClient.Builder builder = new OkHttpClient.Builder();
-        builder.followRedirects(false);
-        builder.followSslRedirects(true);
+        builder.followRedirects(true);
+        builder.followSslRedirects(false);
         builder.connectTimeout(15, TimeUnit.SECONDS);
         builder.writeTimeout(30, TimeUnit.SECONDS);
         builder.readTimeout(30, TimeUnit.SECONDS);
@@ -201,22 +212,49 @@ public final class HttpClient {
     }
 
     public void setClientCertificate(final byte[] clientCertificate) {
-        this.clientCertificate = clientCertificate;
+        setClientCertificate(clientCertificate, null);
+    }
+
+    public void setClientCertificate(final byte[] clientCertificate, final String clientCertificatePassword) {
+        useClientCertificate = clientCertificate != null;
+        if (useClientCertificate) {
+            try {
+                final char[] keyStorePassword = (clientCertificatePassword == null ? "" : clientCertificatePassword).toCharArray();
+                final KeyStore keyStore = KeyStore.getInstance("PKCS12");
+                keyStore.load(new ByteArrayInputStream(clientCertificate), keyStorePassword);
+                final KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+                keyManagerFactory.init(keyStore, keyStorePassword);
+                clientCertificateKeyManagers = keyManagerFactory.getKeyManagers();
+            } catch (final Exception x) {
+                throw new RuntimeException(x);
+            }
+        }
     }
 
     public void setCertificatePin(final String host, final String... hashes) {
         this.certificatePinner = new CertificatePinner.Builder().add(host, hashes).build();
     }
 
+    public void setReferer(final String referer) {
+        this.defaultReferer = referer;
+    }
+
     public CharSequence get(final HttpUrl url) throws IOException {
-        return get(url, null, null);
+        return get(url, null, null, defaultReferer);
     }
 
     public CharSequence get(final HttpUrl url, final String postRequest, final String requestContentType)
             throws IOException {
+        return get(url, postRequest, requestContentType, defaultReferer);
+    }
+
+    public CharSequence get(
+            final HttpUrl url, final String postRequest,
+            final String requestContentType, final String referer)
+            throws IOException {
         final StringBuilder buffer = new StringBuilder();
         final Callback callback = (bodyPeek, body) -> buffer.append(body.string());
-        getInputStream(callback, url, postRequest, requestContentType, null);
+        getInputStream(callback, url, postRequest, requestContentType, referer);
         return buffer;
     }
 
@@ -224,18 +262,27 @@ public final class HttpClient {
         void onSuccessful(CharSequence bodyPeek, ResponseBody body) throws IOException;
     }
 
-    public void getInputStream(final Callback callback, final HttpUrl url) throws IOException {
-        getInputStream(callback, url, null);
+    public void getInputStream(
+            final Callback callback, final HttpUrl url) throws IOException {
+        getInputStream(callback, url, null, null, defaultReferer);
     }
 
-    public void getInputStream(final Callback callback, final HttpUrl url, final String referer) throws IOException {
+    public void getInputStream(
+            final Callback callback, final HttpUrl url, final String referer) throws IOException {
         getInputStream(callback, url, null, null, referer);
     }
 
-    public void getInputStream(final Callback callback, final HttpUrl url, final String postRequest,
+    public void getInputStream(
+            final Callback callback, final HttpUrl url, final String postRequest,
+            final String requestContentType) throws IOException {
+        getInputStream(callback, url, postRequest, requestContentType, defaultReferer);
+    }
+
+    public void getInputStream(
+            final Callback callback, final HttpUrl url, final String postRequest,
             final String requestContentType, final String referer) throws IOException {
-        checkNotNull(callback);
-        checkNotNull(url);
+        requireNonNull(callback);
+        requireNonNull(url);
 
         final Request.Builder request = new Request.Builder();
         request.url(url);
@@ -253,11 +300,11 @@ public final class HttpClient {
             request.header("Cookie", sessionCookie.toString());
 
         final OkHttpClient okHttpClient;
-        if (proxy != null || trustAllCertificates || certificatePinner != null || clientCertificate != null) {
+        if (proxy != null || trustAllCertificates || certificatePinner != null || useClientCertificate) {
             final OkHttpClient.Builder builder = OKHTTP_CLIENT.newBuilder();
             if (proxy != null)
                 builder.proxy(proxy);
-            if (trustAllCertificates || clientCertificate != null)
+            if (trustAllCertificates || useClientCertificate)
                 configureSSL(builder);
             if (certificatePinner != null)
                 builder.certificatePinner(certificatePinner);
@@ -270,7 +317,7 @@ public final class HttpClient {
         try (final Response response = call.execute()) {
             final int responseCode = response.code();
             final String bodyPeek = response.peekBody(SCRAPE_PEEK_SIZE).string().replaceAll("\\p{C}", "");
-            if (responseCode == HttpURLConnection.HTTP_OK) {
+            if (responseCode == HttpURLConnection.HTTP_OK || responseCode == HttpURLConnection.HTTP_CREATED) {
 
                 final HttpUrl redirectUrl = testRedirect(url, bodyPeek);
                 if (redirectUrl != null)
@@ -358,16 +405,7 @@ public final class HttpClient {
     private void configureSSL(final OkHttpClient.Builder okHttpClientBuilder) {
         try {
             final SSLContext sslContext = SSLContext.getInstance("SSL");
-            KeyManager[] keyManagers = null;
-            if (clientCertificate != null) {
-                final char[] keyStorePassword = "".toCharArray();
-                KeyStore keyStore = KeyStore.getInstance("PKCS12");
-                keyStore.load(new ByteArrayInputStream(clientCertificate), keyStorePassword);
-                KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-                keyManagerFactory.init(keyStore, keyStorePassword);
-                keyManagers = keyManagerFactory.getKeyManagers();
-            }
-            sslContext.init(keyManagers, new TrustManager[] { TRUST_ALL_CERTIFICATES }, null);
+            sslContext.init(clientCertificateKeyManagers, new TrustManager[] { TRUST_ALL_CERTIFICATES }, null);
             final SSLSocketFactory sslSocketFactory = sslContext.getSocketFactory();
             okHttpClientBuilder.sslSocketFactory(sslSocketFactory, TRUST_ALL_CERTIFICATES);
         } catch (final Exception x) {

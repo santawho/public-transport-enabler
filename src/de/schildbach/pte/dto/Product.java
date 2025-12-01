@@ -17,23 +17,62 @@
 
 package de.schildbach.pte.dto;
 
+import org.msgpack.core.MessagePacker;
+import org.msgpack.core.MessageUnpacker;
+
+import java.io.IOException;
 import java.util.EnumSet;
 import java.util.Set;
+
+import de.schildbach.pte.util.MessagePackUtils;
 
 /**
  * @author Andreas Schildbach
  */
 public enum Product {
-    HIGH_SPEED_TRAIN('I'), REGIONAL_TRAIN('R'), SUBURBAN_TRAIN('S'), SUBWAY('U'), TRAM('T'), BUS('B'), FERRY(
-            'F'), CABLECAR('C'), ON_DEMAND('P');
+    UNKNOWN('?'),
+    HIGH_SPEED_TRAIN('I'),
+    REGIONAL_TRAIN('R'),
+    SUBURBAN_TRAIN('S'),
+    SUBWAY('U'),
+    TRAM('T'),
+    BUS('B'),
+    FERRY('F'),
+    CABLECAR('C'),
+    ON_DEMAND('P'),
+    REPLACEMENT_SERVICE('E');
 
-    public static final char UNKNOWN = '?';
-    public static final Set<Product> ALL = EnumSet.allOf(Product.class);
+    public static final Set<Product> ALL_SELECTABLE = EnumSet
+            .complementOf(EnumSet.of(REPLACEMENT_SERVICE, UNKNOWN));
+    public static final Set<Product> ALL_INCLUDING_HIGHSPEED = EnumSet
+            .complementOf(EnumSet.of(REPLACEMENT_SERVICE, UNKNOWN));
+    public static final Set<Product> ALL_EXCEPT_HIGHSPEED = EnumSet
+            .complementOf(EnumSet.of(HIGH_SPEED_TRAIN, REPLACEMENT_SERVICE, UNKNOWN));
+    public static final Set<Product> ALL_EXCEPT_HIGHSPEED_AND_ONDEMAND = EnumSet
+            .complementOf(EnumSet.of(HIGH_SPEED_TRAIN, ON_DEMAND, REPLACEMENT_SERVICE, UNKNOWN));
+
+    public static final EnumSet<Product> TRAIN_PRODUCTS = EnumSet.of(
+            HIGH_SPEED_TRAIN,
+            REGIONAL_TRAIN,
+            SUBURBAN_TRAIN,
+            SUBWAY);
+
+    public static final EnumSet<Product> LOCAL_PRODUCTS = EnumSet.of(
+            REGIONAL_TRAIN,
+            SUBURBAN_TRAIN,
+            SUBWAY,
+            TRAM,
+            BUS,
+            ON_DEMAND);
 
     public final char code;
 
     private Product(final char code) {
         this.code = code;
+    }
+
+    public boolean isTrain() {
+        return TRAIN_PRODUCTS.contains(this);
     }
 
     public static Product fromCode(final char code) {
@@ -55,6 +94,8 @@ public enum Product {
             return CABLECAR;
         else if (code == ON_DEMAND.code)
             return ON_DEMAND;
+        else if (code == REPLACEMENT_SERVICE.code)
+            return REPLACEMENT_SERVICE;
         else
             throw new IllegalArgumentException("unknown code: '" + code + "'");
     }
@@ -65,7 +106,7 @@ public enum Product {
 
         final Set<Product> products = EnumSet.noneOf(Product.class);
         for (int i = 0; i < codes.length; i++)
-            products.add(Product.fromCode(codes[i]));
+            products.add(fromCode(codes[i]));
         return products;
     }
 
@@ -78,5 +119,16 @@ public enum Product {
         for (final Product product : products)
             codes[i++] = product.code;
         return codes;
+    }
+
+    public static void packToMessage(final MessagePacker packer, final Set<Product> products) throws IOException {
+        MessagePackUtils.packNullableString(packer, products == null ? null : new String(toCodes(products)));
+    }
+
+    public static Set<Product> unpackFromMessage(final MessageUnpacker unpacker) throws IOException {
+        final String s = MessagePackUtils.unpackNullableString(unpacker);
+        if (s == null)
+            return null;
+        return fromCodes(s.toCharArray());
     }
 }

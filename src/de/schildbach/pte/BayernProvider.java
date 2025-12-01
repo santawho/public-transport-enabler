@@ -17,25 +17,26 @@
 
 package de.schildbach.pte;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import javax.annotation.Nullable;
 
-import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
 
+import de.schildbach.pte.dto.JourneyRef;
 import de.schildbach.pte.dto.Line;
 import de.schildbach.pte.dto.Location;
 import de.schildbach.pte.dto.LocationType;
 import de.schildbach.pte.dto.NearbyLocationsResult;
 import de.schildbach.pte.dto.Product;
 import de.schildbach.pte.dto.QueryDeparturesResult;
+import de.schildbach.pte.dto.QueryJourneyResult;
 import de.schildbach.pte.dto.QueryTripsContext;
 import de.schildbach.pte.dto.QueryTripsResult;
 import de.schildbach.pte.dto.Style;
@@ -44,6 +45,8 @@ import de.schildbach.pte.dto.SuggestLocationsResult;
 import de.schildbach.pte.dto.TripOptions;
 
 import okhttp3.HttpUrl;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * @author Andreas Schildbach
@@ -57,9 +60,9 @@ public class BayernProvider extends AbstractEfaProvider {
     private static final String STOP_FINDER_ENDPOINT = "XML_STOPFINDER_REQUEST";
 
     public BayernProvider() {
-        super(NetworkId.BAYERN, API_BASE, DEPARTURE_MONITOR_ENDPOINT, TRIP_ENDPOINT, STOP_FINDER_ENDPOINT, null);
+        super(NetworkId.BAYERN, API_BASE, DEPARTURE_MONITOR_ENDPOINT, TRIP_ENDPOINT, STOP_FINDER_ENDPOINT, null, null, null);
 
-        setRequestUrlEncoding(Charsets.UTF_8);
+        setRequestUrlEncoding(StandardCharsets.UTF_8);
         setIncludeRegionId(false);
         setNumTripsRequested(12);
         setStyles(STYLES);
@@ -78,7 +81,7 @@ public class BayernProvider extends AbstractEfaProvider {
             if ("ABR".equals(trainType) || "ABELLIO Rail NRW GmbH".equals(trainName))
                 return new Line(id, network, Product.SUBURBAN_TRAIN, "ABR" + trainNum);
             if ("SBB".equals(trainType) || "SBB GmbH".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "SBB" + Strings.nullToEmpty(trainNum));
+                return new Line(id, network, Product.REGIONAL_TRAIN, "SBB" + Objects.toString(trainNum, ""));
         } else if ("5".equals(mot)) {
             if (name != null && name.startsWith("Stadtbus Linie ")) // Lindau
                 return super.parseLine(id, network, mot, symbol, name.substring(15), longName, trainType, trainNum,
@@ -129,7 +132,7 @@ public class BayernProvider extends AbstractEfaProvider {
     @Override
     public QueryDeparturesResult queryDepartures(final String stationId, final @Nullable Date time,
             final int maxDepartures, final boolean equivs) throws IOException {
-        checkNotNull(Strings.emptyToNull(stationId));
+        requireNonNull(Strings.emptyToNull(stationId));
 
         return queryDeparturesMobile(stationId, time, maxDepartures, equivs);
     }
@@ -147,6 +150,11 @@ public class BayernProvider extends AbstractEfaProvider {
         super.appendTripRequestParameters(url, from, via, to, time, dep, options);
         url.addEncodedQueryParameter("inclMOT_11", "on");
         url.addEncodedQueryParameter("calcOneDirection", "1");
+    }
+
+    @Override
+    public QueryJourneyResult queryJourney(JourneyRef aJourneyRef) throws IOException {
+        return queryJourneyMobile((EfaJourneyRef) aJourneyRef);
     }
 
     @Override

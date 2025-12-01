@@ -18,14 +18,11 @@
 package de.schildbach.pte.dto;
 
 import java.io.Serializable;
+import java.util.Comparator;
+import java.util.Objects;
 import java.util.Set;
 
 import javax.annotation.Nullable;
-
-import com.google.common.base.MoreObjects;
-import com.google.common.base.Objects;
-import com.google.common.collect.ComparisonChain;
-import com.google.common.collect.Ordering;
 
 /**
  * @author Andreas Schildbach
@@ -91,14 +88,30 @@ public final class Line implements Serializable, Comparable<Line> {
         this.message = message;
     }
 
+    private String network() {
+        return network;
+    }
+
+    private Product product() {
+        return product;
+    }
+
     public char productCode() {
         final Product product = this.product;
-        return product != null ? product.code : Product.UNKNOWN;
+        return (product != null ? product : Product.UNKNOWN).code;
+    }
+
+    private String label() {
+        return label;
     }
 
     public boolean hasAttr(final Attr attr) {
         final Set<Attr> attrs = this.attrs;
         return attrs != null && attrs.contains(attr);
+    }
+
+    public boolean isTrain() {
+        return product != null && product.isTrain();
     }
 
     @Override
@@ -108,36 +121,34 @@ public final class Line implements Serializable, Comparable<Line> {
         if (!(o instanceof Line))
             return false;
         final Line other = (Line) o;
-        if (!Objects.equal(this.network, other.network))
+        if (!Objects.equals(this.network, other.network))
             return false;
-        if (!Objects.equal(this.product, other.product))
+        if (!Objects.equals(this.product, other.product))
             return false;
-        if (!Objects.equal(this.label, other.label))
+        if (!Objects.equals(this.label, other.label))
             return false;
         return true;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(network, product, label);
+        return Objects.hash(network, product == null ? null : product.name(), label);
     }
 
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(this).omitNullValues() //
-                .addValue(network) //
-                .addValue(product) //
-                .addValue(label) //
-                .addValue("'"+ name + "'") //
-                .toString();
+        return getClass().getSimpleName() + "{" +
+                (network != null ? network + "," : "") +
+                (product != null ? product + "," : "") +
+                (label != null ? label + "," : "") +
+                "'" + name + "'}";
     }
 
     @Override
     public int compareTo(final Line other) {
-        return ComparisonChain.start() //
-                .compare(this.network, other.network, Ordering.natural().nullsLast()) //
-                .compare(this.product, other.product, Ordering.natural().nullsLast()) //
-                .compare(this.label, other.label, Ordering.natural().nullsLast()) //
-                .result();
+        return Comparator.comparing(Line::network, Comparator.nullsLast(String::compareTo))
+                .thenComparing(Line::product, Comparator.nullsLast(Enum::compareTo))
+                .thenComparing(Line::label, Comparator.nullsLast(String::compareTo))
+                .compare(this, other);
     }
 }

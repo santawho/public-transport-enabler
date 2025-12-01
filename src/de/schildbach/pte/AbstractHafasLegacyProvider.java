@@ -17,8 +17,8 @@
 
 package de.schildbach.pte;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
+import static java.util.Objects.requireNonNull;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -54,7 +55,6 @@ import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlPullParserFactory;
 
-import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
 
 import de.schildbach.pte.dto.Departure;
@@ -74,6 +74,7 @@ import de.schildbach.pte.dto.StationDepartures;
 import de.schildbach.pte.dto.Stop;
 import de.schildbach.pte.dto.SuggestLocationsResult;
 import de.schildbach.pte.dto.SuggestedLocation;
+import de.schildbach.pte.dto.PTDate;
 import de.schildbach.pte.dto.Trip;
 import de.schildbach.pte.dto.TripOptions;
 import de.schildbach.pte.exception.ParserException;
@@ -85,7 +86,6 @@ import de.schildbach.pte.util.StringReplaceReader;
 import de.schildbach.pte.util.XmlPullUtil;
 
 import okhttp3.HttpUrl;
-import okhttp3.ResponseBody;
 
 /**
  * @author Andreas Schildbach
@@ -101,7 +101,7 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
     private @Nullable String accessId = null;
     private @Nullable String clientType = "ANDROID";
     private boolean jsonGetStopsUseWeight = true;
-    private Charset jsonNearbyLocationsEncoding = Charsets.ISO_8859_1;
+    private Charset jsonNearbyLocationsEncoding = StandardCharsets.ISO_8859_1;
     private boolean dominantPlanStopTime = false;
     private boolean useIso8601 = false;
     private boolean stationBoardHasStationTable = true;
@@ -131,8 +131,9 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
         }
     }
 
-    @SuppressWarnings("serial")
     public static class QueryTripsBinaryContext implements QueryTripsContext {
+        private static final long serialVersionUID = 4199617766367274951L;
+
         public final String ident;
         public final int seqNr;
         public final String ld;
@@ -233,7 +234,7 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
         return this;
     }
 
-    private final String wrapReqC(final CharSequence request, final Charset encoding) {
+    private String wrapReqC(final CharSequence request, final Charset encoding) {
         return "<?xml version=\"1.0\" encoding=\"" + (encoding != null ? encoding.name() : "iso-8859-1") + "\"?>" //
                 + "<ReqC ver=\"1.1\" prod=\"" + REQC_PROD + "\" lang=\"DE\""
                 + (accessId != null ? " accessId=\"" + accessId + "\"" : "") + ">" //
@@ -241,7 +242,7 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
                 + "</ReqC>";
     }
 
-    private final Location parseStation(final XmlPullParser pp) {
+    private Location parseStation(final XmlPullParser pp) {
         final String type = pp.getName();
         if ("Station".equals(type)) {
             final String name = XmlPullUtil.attr(pp, "name");
@@ -255,7 +256,7 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
         throw new IllegalStateException("cannot handle: " + type);
     }
 
-    private static final Location parsePoi(final XmlPullParser pp) {
+    private static Location parsePoi(final XmlPullParser pp) {
         final String type = pp.getName();
         if ("Poi".equals(type)) {
             String name = XmlPullUtil.attr(pp, "name");
@@ -269,7 +270,7 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
         throw new IllegalStateException("cannot handle: " + type);
     }
 
-    private final Location parseAddress(final XmlPullParser pp) {
+    private Location parseAddress(final XmlPullParser pp) {
         final String type = pp.getName();
         if ("Address".equals(type)) {
             String name = XmlPullUtil.attr(pp, "name");
@@ -284,7 +285,7 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
         throw new IllegalStateException("cannot handle: " + type);
     }
 
-    private final Position parsePlatform(final XmlPullParser pp) throws XmlPullParserException, IOException {
+    private Position parsePlatform(final XmlPullParser pp) throws XmlPullParserException, IOException {
         XmlPullUtil.enter(pp, "Platform");
         final String platformText = XmlPullUtil.valueTag(pp, "Text");
         XmlPullUtil.skipExit(pp, "Platform");
@@ -299,7 +300,7 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
     public SuggestLocationsResult suggestLocations(final CharSequence constraint,
             final @Nullable Set<LocationType> types, final int maxLocations) throws IOException {
         final HttpUrl.Builder url = getStopEndpoint.newBuilder().addPathSegment(apiLanguage);
-        appendJsonGetStopsParameters(url, checkNotNull(constraint), maxLocations);
+        appendJsonGetStopsParameters(url, requireNonNull(constraint), maxLocations);
         return jsonGetStops(url.build());
     }
 
@@ -391,7 +392,7 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
     @Override
     public QueryDeparturesResult queryDepartures(final String stationId, final @Nullable Date time,
             final int maxDepartures, final boolean equivs) throws IOException {
-        checkNotNull(Strings.emptyToNull(stationId));
+        requireNonNull(Strings.emptyToNull(stationId));
 
         final HttpUrl.Builder url = stationBoardEndpoint.newBuilder().addPathSegment(apiLanguage);
         appendXmlStationBoardParameters(url, time, stationId, maxDepartures, equivs, "vs_java3");
@@ -535,7 +536,8 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
                     final String administration = normalizeLineAdministration(
                             XmlPullUtil.optAttr(pp, "administration", null));
 
-                    if (!"cancel".equals(delay) && !"cancel".equals(eDelay)) {
+                    final boolean cancelled = !"cancel".equals(delay) && !"cancel".equals(eDelay);
+//                    if (cancelled) {
                         final Calendar plannedTime = new GregorianCalendar(timeZone);
                         plannedTime.clear();
                         parseXmlStationBoardDate(plannedTime, fpDate);
@@ -621,9 +623,16 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
                             message = null;
                         }
 
-                        final Departure departure = new Departure(plannedTime.getTime(),
-                                predictedTime != null ? predictedTime.getTime() : null, line, position, destination,
-                                capacity, message);
+                        final Departure departure = new Departure(
+                                PTDate.fromCalendar(plannedTime),
+                                predictedTime != null ? PTDate.fromCalendar(predictedTime) : null,
+                                line,
+                                position, null,
+                                destination,
+                                cancelled,
+                                capacity,
+                                message,
+                                null);
 
                         final Location location;
                         if (!stationBoardCanDoEquivs || depStation == null) {
@@ -643,7 +652,7 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
                         }
 
                         stationDepartures.departures.add(departure);
-                    }
+//                    }
 
                     XmlPullUtil.requireSkip(pp, "Journey");
                 }
@@ -730,7 +739,7 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
         if (options == null)
             options = new TripOptions();
 
-        final CharSequence productsStr;
+        final String productsStr;
         if (options.products != null)
             productsStr = productsString(options.products);
         else
@@ -993,7 +1002,7 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
                         XmlPullUtil.enter(pp, "Dep");
                         time.setTimeInMillis(currentDate.getTimeInMillis());
                         parseTime(time, XmlPullUtil.valueTag(pp, "Time"));
-                        final Date departureTime = time.getTime();
+                        final PTDate departureTime = PTDate.fromCalendar(time);
                         final Position departurePos = parsePlatform(pp);
                         XmlPullUtil.skipExit(pp, "Dep");
 
@@ -1053,8 +1062,8 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
                                         XmlPullUtil.next(pp);
                                     final Location location = parseLocation(pp);
                                     if (location.id.equals(sectionDepartureLocation.id)) {
-                                        Date stopArrivalTime = null;
-                                        Date stopDepartureTime = null;
+                                        PTDate stopArrivalTime = null;
+                                        PTDate stopDepartureTime = null;
                                         Position stopArrivalPosition = null;
                                         Position stopDeparturePosition = null;
 
@@ -1062,7 +1071,7 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
                                             XmlPullUtil.enter(pp, "Arr");
                                             time.setTimeInMillis(currentDate.getTimeInMillis());
                                             parseTime(time, XmlPullUtil.valueTag(pp, "Time"));
-                                            stopArrivalTime = time.getTime();
+                                            stopArrivalTime = PTDate.fromCalendar(time);
                                             stopArrivalPosition = parsePlatform(pp);
                                             XmlPullUtil.skipExit(pp, "Arr");
                                         }
@@ -1071,7 +1080,7 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
                                             XmlPullUtil.enter(pp, "Dep");
                                             time.setTimeInMillis(currentDate.getTimeInMillis());
                                             parseTime(time, XmlPullUtil.valueTag(pp, "Time"));
-                                            stopDepartureTime = time.getTime();
+                                            stopDepartureTime = PTDate.fromCalendar(time);
                                             stopDeparturePosition = parsePlatform(pp);
                                             XmlPullUtil.skipExit(pp, "Dep");
                                         }
@@ -1127,7 +1136,7 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
                         XmlPullUtil.enter(pp, "Arr");
                         time.setTimeInMillis(currentDate.getTimeInMillis());
                         parseTime(time, XmlPullUtil.valueTag(pp, "Time"));
-                        final Date arrivalTime = time.getTime();
+                        final PTDate arrivalTime = PTDate.fromCalendar(time);
                         final Position arrivalPos = parsePlatform(pp);
                         XmlPullUtil.skipExit(pp, "Arr");
 
@@ -1169,7 +1178,9 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
 
                     XmlPullUtil.skipExit(pp, "Connection");
 
-                    trips.add(new Trip(id, departureLocation, arrivalLocation, legs, null, capacity, numTransfers));
+                    trips.add(new Trip(
+                            new Date(),
+                            id, null, departureLocation, arrivalLocation, legs, null, capacity, numTransfers));
                 }
 
                 XmlPullUtil.skipExit(pp, "ConnectionList");
@@ -1178,7 +1189,7 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
             } catch (final XmlPullParserException x) {
                 throw new ParserException("cannot parse xml: " + bodyPeek, x);
             }
-        }, endpoint, request, "application/xml", null);
+        }, endpoint, request, "application/xml");
 
         return result.get();
     }
@@ -1787,22 +1798,18 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
 
                             for (int iStop = 0; iStop < numStops; iStop++) {
                                 final long plannedStopDepartureTime = time(is, resDate, tripDayOffset);
-                                final Date plannedStopDepartureDate = plannedStopDepartureTime != 0
-                                        ? new Date(plannedStopDepartureTime) : null;
+                                final PTDate plannedStopDepartureDate = timestampFromMillis(plannedStopDepartureTime);
                                 final long plannedStopArrivalTime = time(is, resDate, tripDayOffset);
-                                final Date plannedStopArrivalDate = plannedStopArrivalTime != 0
-                                        ? new Date(plannedStopArrivalTime) : null;
+                                final PTDate plannedStopArrivalDate = timestampFromMillis(plannedStopArrivalTime);
                                 final Position plannedStopDeparturePosition = normalizePosition(strings.read(is));
                                 final Position plannedStopArrivalPosition = normalizePosition(strings.read(is));
 
                                 is.readInt();
 
                                 final long predictedStopDepartureTime = time(is, resDate, tripDayOffset);
-                                final Date predictedStopDepartureDate = predictedStopDepartureTime != 0
-                                        ? new Date(predictedStopDepartureTime) : null;
+                                final PTDate predictedStopDepartureDate = timestampFromMillis(predictedStopDepartureTime);
                                 final long predictedStopArrivalTime = time(is, resDate, tripDayOffset);
-                                final Date predictedStopArrivalDate = predictedStopArrivalTime != 0
-                                        ? new Date(predictedStopArrivalTime) : null;
+                                final PTDate predictedStopArrivalDate = timestampFromMillis(predictedStopArrivalTime);
                                 final Position predictedStopDeparturePosition = normalizePosition(strings.read(is));
                                 final Position predictedStopArrivalPosition = normalizePosition(strings.read(is));
 
@@ -1844,9 +1851,9 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
                             else
                                 throw new IllegalStateException("unknown routingType: " + routingType);
 
-                            final Date departureTime = new Date(
+                            final PTDate departureTime = timestampFromMillis(
                                     predictedDepartureTime != 0 ? predictedDepartureTime : plannedDepartureTime);
-                            final Date arrivalTime = new Date(
+                            final PTDate arrivalTime = timestampFromMillis(
                                     predictedArrivalTime != 0 ? predictedArrivalTime : plannedArrivalTime);
 
                             final Trip.Leg lastLeg = legs.size() > 0 ? legs.get(legs.size() - 1) : null;
@@ -1882,12 +1889,12 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
                             }
 
                             final Stop departure = new Stop(departureLocation, true,
-                                    plannedDepartureTime != 0 ? new Date(plannedDepartureTime) : null,
-                                    predictedDepartureTime != 0 ? new Date(predictedDepartureTime) : null,
+                                    timestampFromMillis(plannedDepartureTime),
+                                    timestampFromMillis(predictedDepartureTime),
                                     plannedDeparturePosition, predictedDeparturePosition, departureCancelled);
                             final Stop arrival = new Stop(arrivalLocation, false,
-                                    plannedArrivalTime != 0 ? new Date(plannedArrivalTime) : null,
-                                    predictedArrivalTime != 0 ? new Date(predictedArrivalTime) : null,
+                                    timestampFromMillis(plannedArrivalTime),
+                                    timestampFromMillis(predictedArrivalTime),
                                     plannedArrivalPosition, predictedArrivalPosition, arrivalCancelled);
 
                             leg = new Trip.Public(line, direction, departure, arrival, intermediateStops, null,
@@ -1898,7 +1905,9 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
                         legs.add(leg);
                     }
 
-                    final Trip trip = new Trip(connectionId, resDeparture, resArrival, legs, null, null,
+                    final Trip trip = new Trip(
+                            new Date(),
+                            connectionId, null, resDeparture, resArrival, legs, null, null,
                             (int) numChanges);
 
                     if (realtimeStatus != 2) // Verbindung fällt aus
@@ -2070,7 +2079,7 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
     }
 
     private static class StringTable {
-        private Charset encoding = Charsets.US_ASCII;
+        private Charset encoding = StandardCharsets.US_ASCII;
         private final byte[] table;
 
         public StringTable(final DataInputStream is, final int stringTablePtr, final int length) throws IOException {
@@ -2994,5 +3003,9 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
             return new Line(null, network, product, normalizedName, lineStyle(network, product, normalizedName),
                     attrSet, comment);
         }
+    }
+
+    protected final PTDate timestampFromMillis(long time) {
+        return time == 0 ? null : new PTDate(time, timeZone);
     }
 }

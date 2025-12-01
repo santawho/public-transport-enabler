@@ -18,13 +18,15 @@
 package de.schildbach.pte;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.annotation.Nullable;
-
-import com.google.common.collect.Sets;
 
 import de.schildbach.pte.dto.Line;
 import de.schildbach.pte.dto.Line.Attr;
@@ -41,10 +43,18 @@ import okhttp3.HttpUrl;
  * @author Andreas Schildbach
  */
 public final class BvgProvider extends AbstractHafasClientInterfaceProvider {
+    private static final Set<Capability> BVG_CAPABILITIES;
+
     private static final HttpUrl API_BASE = HttpUrl.parse("https://bvg-apps-ext.hafas.de/bin/mgate.exe");
     private static final Product[] PRODUCTS_MAP = { Product.SUBURBAN_TRAIN, Product.SUBWAY, Product.TRAM, Product.BUS,
             Product.FERRY, Product.HIGH_SPEED_TRAIN, Product.REGIONAL_TRAIN, Product.ON_DEMAND, null, null };
     private static final String DEFAULT_API_CLIENT = "{\"id\":\"BVG\",\"type\":\"AND\"}";
+
+    static {
+        Set<Capability> capabilities = new HashSet<>(CAPABILITIES);
+        capabilities.remove(Capability.BIKE_OPTION);
+        BVG_CAPABILITIES = capabilities;
+    }
 
     public BvgProvider(final String apiAuthorization) {
         this(DEFAULT_API_CLIENT, apiAuthorization);
@@ -52,11 +62,16 @@ public final class BvgProvider extends AbstractHafasClientInterfaceProvider {
 
     public BvgProvider(final String apiClient, final String apiAuthorization) {
         super(NetworkId.BVG, API_BASE, PRODUCTS_MAP);
-        setApiVersion("1.18");
+        setApiVersion("1.72");
         setApiExt("BVG.1");
         setApiClient(apiClient);
         setApiAuthorization(apiAuthorization);
         setStyles(STYLES);
+    }
+
+    @Override
+    protected Set<Capability> getCapabilities() {
+        return BVG_CAPABILITIES;
     }
 
     private static final Pattern P_SPLIT_NAME_SU = Pattern.compile("(.*?)(?:\\s+\\((S|U|S\\+U)\\))?");
@@ -116,34 +131,46 @@ public final class BvgProvider extends AbstractHafasClientInterfaceProvider {
         return fareName.replaceAll("Tarifgebiet ", "");
     }
 
+    private static final Set<Attr> ATTRS_CIRCLE_CLOCKWISE =
+            Stream.of(Attr.CIRCLE_CLOCKWISE).collect(Collectors.toSet());
+    private static final Set<Attr> ATTRS_CIRCLE_ANTICLOCKWISE =
+            Stream.of(Attr.CIRCLE_ANTICLOCKWISE).collect(Collectors.toSet());
+    private static final Set<Attr> ATTRS_SERVICE_REPLACEMENT_CIRCLE_CLOCKWISE =
+            Stream.of(Attr.SERVICE_REPLACEMENT, Attr.CIRCLE_CLOCKWISE).collect(Collectors.toSet());
+    private static final Set<Attr> ATTRS_SERVICE_REPLACEMENT_CIRCLE_ANTICLOCKWISE =
+            Stream.of(Attr.SERVICE_REPLACEMENT, Attr.CIRCLE_ANTICLOCKWISE).collect(Collectors.toSet());
+    private static final Set<Attr> ATTRS_LINE_AIRPORT =
+            Stream.of(Attr.LINE_AIRPORT).collect(Collectors.toSet());
+
     @Override
     protected Line newLine(final String id, final String operator, final Product product, final @Nullable String name,
-            final @Nullable String shortName, final @Nullable String number, final Style style) {
-        final Line line = super.newLine(id, operator, product, name, shortName, number, style);
+            final @Nullable String shortName, final @Nullable String number, final @Nullable String addName,
+            final Style style) {
+        final Line line = super.newLine(id, operator, product, name, shortName, number, addName, style);
 
         if (line.product == Product.SUBURBAN_TRAIN) {
             if ("S41".equals(line.label))
                 return new Line(id, line.network, line.product, line.label, line.name, line.style,
-                        Sets.newHashSet(Attr.CIRCLE_CLOCKWISE), line.message);
+                        ATTRS_CIRCLE_CLOCKWISE, line.message);
             if ("S42".equals(line.label))
                 return new Line(id, line.network, line.product, line.label, line.name, line.style,
-                        Sets.newHashSet(Attr.CIRCLE_ANTICLOCKWISE), line.message);
+                        ATTRS_CIRCLE_ANTICLOCKWISE, line.message);
             if ("S9".equals(line.label))
                 return new Line(id, line.network, line.product, line.label, line.name, line.style,
-                        Sets.newHashSet(Attr.LINE_AIRPORT), line.message);
+                        ATTRS_LINE_AIRPORT, line.message);
             if ("S45".equals(line.label))
                 return new Line(id, line.network, line.product, line.label, line.name, line.style,
-                        Sets.newHashSet(Attr.LINE_AIRPORT), line.message);
+                        ATTRS_LINE_AIRPORT, line.message);
         } else if (line.product == Product.BUS) {
             if ("S41".equals(line.label))
                 return new Line(id, line.network, line.product, line.label, line.name, line.style,
-                        Sets.newHashSet(Attr.SERVICE_REPLACEMENT, Attr.CIRCLE_CLOCKWISE), line.message);
+                        ATTRS_SERVICE_REPLACEMENT_CIRCLE_CLOCKWISE, line.message);
             if ("S42".equals(line.label))
                 return new Line(id, line.network, line.product, line.label, line.name, line.style,
-                        Sets.newHashSet(Attr.SERVICE_REPLACEMENT, Attr.CIRCLE_ANTICLOCKWISE), line.message);
+                        ATTRS_SERVICE_REPLACEMENT_CIRCLE_ANTICLOCKWISE, line.message);
             if ("TXL".equals(line.label))
                 return new Line(id, line.network, line.product, line.label, line.name, line.style,
-                        Sets.newHashSet(Attr.LINE_AIRPORT), line.message);
+                        ATTRS_LINE_AIRPORT, line.message);
         }
 
         return line;

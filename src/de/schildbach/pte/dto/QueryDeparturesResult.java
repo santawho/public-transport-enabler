@@ -17,22 +17,20 @@
 
 package de.schildbach.pte.dto;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.io.Serializable;
 import java.util.LinkedList;
 import java.util.List;
 
 import javax.annotation.Nullable;
 
-import com.google.common.base.MoreObjects;
-import com.google.common.base.MoreObjects.ToStringHelper;
+import static java.util.Objects.requireNonNull;
 
 /**
  * @author Andreas Schildbach
  */
-@SuppressWarnings("serial")
-public class QueryDeparturesResult implements Serializable {
+public final class QueryDeparturesResult implements Serializable {
+    private static final long serialVersionUID = 5333898202401323425L;
+
     public enum Status {
         OK, INVALID_STATION, SERVICE_DOWN
     }
@@ -48,7 +46,7 @@ public class QueryDeparturesResult implements Serializable {
 
     public QueryDeparturesResult(final ResultHeader header, final Status status) {
         this.header = header;
-        this.status = checkNotNull(status);
+        this.status = requireNonNull(status);
     }
 
     public StationDepartures findStationDepartures(final String stationId) {
@@ -63,10 +61,10 @@ public class QueryDeparturesResult implements Serializable {
 
     @Override
     public String toString() {
-        final ToStringHelper helper = MoreObjects.toStringHelper(this).addValue(status);
-        if (stationDepartures != null)
-            helper.add("size", stationDepartures.size()).add("stationDepartures", stationDepartures);
-        return helper.toString();
+        return getClass().getSimpleName() + "{" +
+                status + "," +
+                "size=" + stationDepartures.size() + "," +
+                "stationDepartures=" + stationDepartures + "}";
     }
 
     public String toShortString() {

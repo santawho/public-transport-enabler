@@ -44,7 +44,7 @@ public class SeProvider extends AbstractHafasClientInterfaceProvider {
 
     public SeProvider(final String apiClient, final String apiAuthorization) {
         super(NetworkId.SE, API_BASE, PRODUCTS_MAP);
-        setApiVersion("1.18");
+        setApiVersion("1.73");
         setApiClient(apiClient);
         setApiAuthorization(apiAuthorization);
     }
@@ -69,6 +69,6 @@ public class SeProvider extends AbstractHafasClientInterfaceProvider {
 
     @Override
     public Set<Product> defaultProducts() {
-        return Product.ALL;
+        return Product.ALL_INCLUDING_HIGHSPEED;
     }
 }

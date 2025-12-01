@@ -47,7 +47,7 @@ public class ZvvProvider extends AbstractHafasClientInterfaceProvider {
     public ZvvProvider(final String apiClient, final String apiAuthorization) {
         super(NetworkId.ZVV, API_BASE, PRODUCTS_MAP);
         setApiEndpoint("gate");
-        setApiVersion("1.15");
+        setApiVersion("1.93");
         setApiExt("ZVV.2");
         setApiClient(apiClient);
         setApiAuthorization(apiAuthorization);
@@ -102,7 +102,7 @@ public class ZvvProvider extends AbstractHafasClientInterfaceProvider {
 
     @Override
     public Set<Product> defaultProducts() {
-        return Product.ALL;
+        return Product.ALL_INCLUDING_HIGHSPEED;
     }
 
     private static final Map<String, Style> STYLES = new HashMap<>();

@@ -17,31 +17,39 @@
 
 package de.schildbach.pte;
 
+import org.msgpack.core.MessageUnpacker;
+
 import java.io.IOException;
 import java.util.Date;
+import java.util.List;
 import java.util.Set;
+import java.util.TimeZone;
 
 import javax.annotation.Nullable;
 
+import de.schildbach.pte.dto.JourneyRef;
 import de.schildbach.pte.dto.Location;
 import de.schildbach.pte.dto.LocationType;
 import de.schildbach.pte.dto.NearbyLocationsResult;
 import de.schildbach.pte.dto.Point;
 import de.schildbach.pte.dto.Product;
 import de.schildbach.pte.dto.QueryDeparturesResult;
+import de.schildbach.pte.dto.QueryJourneyResult;
 import de.schildbach.pte.dto.QueryTripsContext;
 import de.schildbach.pte.dto.QueryTripsResult;
 import de.schildbach.pte.dto.Style;
-import de.schildbach.pte.dto.SuggestLocationsResult;
+import de.schildbach.pte.dto.Trip;
 import de.schildbach.pte.dto.TripOptions;
+import de.schildbach.pte.dto.TripRef;
+import de.schildbach.pte.dto.TripShare;
 
 /**
  * Interface to be implemented by providers of transportation networks.
  * 
  * @author Andreas Schildbach
  */
-public interface NetworkProvider {
-    public enum Capability {
+public interface NetworkProvider extends Provider, LocationSearchProvider {
+    enum Capability {
         /* can suggest locations */
         SUGGEST_LOCATIONS,
         /* can determine nearby locations */
@@ -51,28 +59,41 @@ public interface NetworkProvider {
         /* can query trips */
         TRIPS,
         /* supports trip queries passing by a specific location */
-        TRIPS_VIA
+        TRIPS_VIA,
+        JOURNEY,
+        TRIP_RELOAD,
+        MIN_TRANSFER_TIMES,
+        BIKE_OPTION,
+        TRIP_SHARING,
+        TRIP_LINKING,
+        TRIP_DETAILS,
     }
 
-    public enum Optimize {
+    enum Optimize {
         LEAST_DURATION, LEAST_CHANGES, LEAST_WALKING
     }
 
-    public enum WalkSpeed {
+    enum WalkSpeed {
         SLOW, NORMAL, FAST
     }
 
-    public enum Accessibility {
+    enum Accessibility {
         NEUTRAL, LIMITED, BARRIER_FREE
     }
 
-    public enum TripFlag {
+    enum TripFlag {
         BIKE
+    }
+
+    enum TripDetails {
+        TRANSFERS
     }
 
     NetworkId id();
 
     boolean hasCapabilities(final Capability... capabilities);
+
+    TimeZone getTimeZone();
 
     /**
      * Find locations near to given location. At least one of lat/lon pair or station id must be present in
@@ -89,8 +110,31 @@ public interface NetworkProvider {
      * @return nearby stations
      * @throws IOException
      */
-    NearbyLocationsResult queryNearbyLocations(Set<LocationType> types, Location location, int maxDistance,
-            int maxLocations) throws IOException;
+    NearbyLocationsResult queryNearbyLocations(
+            Set<LocationType> types, Location location,
+            int maxDistance, int maxLocations) throws IOException;
+
+    /**
+     * Find locations near to given location. At least one of lat/lon pair or station id must be present in
+     * that location.
+     *
+     * @param types
+     *            types of locations to find
+     * @param location
+     *            location to determine nearby stations
+     * @param maxDistance
+     *            maximum distance in meters, or {@code 0}
+     * @param maxLocations
+     *            maximum number of locations, or {@code 0}
+     * @param products
+     *            filter to stations serving listed products, or {@code null}
+     * @return nearby stations
+     * @throws IOException
+     */
+    NearbyLocationsResult queryNearbyLocations(
+            Set<LocationType> types, Location location,
+            int maxDistance, int maxLocations,
+            Set<Product> products) throws IOException;
 
     /**
      * Get departures at a given station, probably live
@@ -106,26 +150,30 @@ public interface NetworkProvider {
      * @return result object containing the departures
      * @throws IOException
      */
-    QueryDeparturesResult queryDepartures(String stationId, @Nullable Date time, int maxDepartures, boolean equivs)
-            throws IOException;
+    QueryDeparturesResult queryDepartures(
+            String stationId, @Nullable Date time,
+            int maxDepartures, boolean equivs) throws IOException;
 
     /**
-     * Meant for auto-completion of location names, like in an Android AutoCompleteTextView.
-     * 
-     * @param constraint
-     *            input by user so far
-     * @param types
-     *            types of locations to suggest, or {@code null} for any
-     * @param maxLocations
-     *            maximum number of locations to suggest or {@code 0}
-     * @return location suggestions
+     * Get departures at a given station, probably live
+     *
+     * @param stationId
+     *            id of the station
+     * @param time
+     *            desired time for departing, or {@code null} for the provider default
+     * @param maxDepartures
+     *            maximum number of departures to get or {@code 0}
+     * @param equivs
+     *            also query equivalent stations?
+     * @param products
+     *            filter to stations serving listed products, or {@code null}
+     * @return result object containing the departures
      * @throws IOException
      */
-    SuggestLocationsResult suggestLocations(CharSequence constraint, @Nullable Set<LocationType> types,
-            int maxLocations) throws IOException;
-
-    @Deprecated
-    SuggestLocationsResult suggestLocations(CharSequence constraint) throws IOException;
+    QueryDeparturesResult queryDepartures(
+            String stationId, @Nullable Date time,
+            int maxDepartures, boolean equivs,
+            Set<Product> products) throws IOException;
 
     /**
      * Typical products for a network
@@ -174,6 +222,10 @@ public interface NetworkProvider {
      */
     QueryTripsResult queryMoreTrips(QueryTripsContext context, boolean later) throws IOException;
 
+    QueryTripsResult queryReloadTrip(final TripRef tripRef) throws IOException;
+
+    QueryJourneyResult queryJourney(final JourneyRef journeyRef) throws IOException;
+
     /**
      * Get style of line
      * 
@@ -183,9 +235,15 @@ public interface NetworkProvider {
      *            line product to get style of, may be {@code null}
      * @param label
      *            line label to get style of, may be {@code null}
+     * @param styleFromNetwork
+     *            style delivered by network, may be {@code null}
      * @return object containing background, foreground and optional border colors
      */
-    Style lineStyle(@Nullable String network, @Nullable Product product, @Nullable String label);
+    Style lineStyle(
+            @Nullable String network,
+            @Nullable Product product,
+            @Nullable String label,
+            final @Nullable Style styleFromNetwork);
 
     /**
      * Gets the primary covered area of the network
@@ -195,4 +253,20 @@ public interface NetworkProvider {
      * @throws IOException
      */
     Point[] getArea() throws IOException;
+
+    TripRef unpackTripRefFromMessage(final MessageUnpacker unpacker) throws IOException;
+
+    TripShare unpackTripShareFromMessage(final MessageUnpacker unpacker) throws IOException;
+
+    String getOpenLink(final Trip trip) throws IOException;
+
+    String getShareLink(final Trip trip) throws IOException;
+
+    TripShare shareTrip(final Trip trip) throws IOException;
+
+    QueryTripsResult loadSharedTrip(final TripShare tripShare) throws IOException;
+
+    Trip queryTripDetails(final Trip trip, final List<TripDetails> whichDetails) throws IOException;
+
+    TransferEvaluationProvider getTransferEvaluationProvider() throws IOException;
 }

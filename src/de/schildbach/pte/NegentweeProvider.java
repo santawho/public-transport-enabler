@@ -31,14 +31,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.annotation.Nullable;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import com.google.common.collect.ImmutableSet;
 
 import de.schildbach.pte.dto.Departure;
 import de.schildbach.pte.dto.Fare;
@@ -58,6 +58,7 @@ import de.schildbach.pte.dto.StationDepartures;
 import de.schildbach.pte.dto.Stop;
 import de.schildbach.pte.dto.SuggestLocationsResult;
 import de.schildbach.pte.dto.SuggestedLocation;
+import de.schildbach.pte.dto.PTDate;
 import de.schildbach.pte.dto.Trip;
 import de.schildbach.pte.dto.TripOptions;
 import de.schildbach.pte.exception.InternalErrorException;
@@ -79,12 +80,13 @@ public class NegentweeProvider extends AbstractNetworkProvider {
     private static final TimeZone API_TIMEZONE = TimeZone.getTimeZone("Europe/Amsterdam");
     private static final int DEFAULT_MAX_LOCATIONS = 50;
 
-    private final List CAPABILITIES = Arrays.asList(
+    private static final Set<Capability> CAPABILITIES = Set.of(
             Capability.SUGGEST_LOCATIONS,
             Capability.NEARBY_LOCATIONS,
             Capability.DEPARTURES,
             Capability.TRIPS,
-            Capability.TRIPS_VIA
+            Capability.TRIPS_VIA,
+            Capability.BIKE_OPTION
     );
 
     private static final EnumSet<Product> trainProducts = EnumSet.of(Product.HIGH_SPEED_TRAIN, Product.REGIONAL_TRAIN,
@@ -132,8 +134,9 @@ public class NegentweeProvider extends AbstractNetworkProvider {
         }
     }
 
-    @SuppressWarnings("serial")
     private static class TripsContext implements QueryTripsContext {
+        private static final long serialVersionUID = -7934124534284180966L;
+
         private String url, earlier, later;
         public Location from, to, via;
 
@@ -333,7 +336,8 @@ public class NegentweeProvider extends AbstractNetworkProvider {
     }
 
     // Including these type names will cause the locations API to fail, skip them
-    private static final ImmutableSet<String> DISALLOWED_TYPE_NAMES = ImmutableSet.of("latlong", "streetrange");
+    private static final Set<String> DISALLOWED_TYPE_NAMES =
+            Stream.of("latlong", "streetrange").collect(Collectors.toSet());
 
     private String locationTypesToQueryParameterString(Set<LocationType> types) {
         StringBuilder typeValue = new StringBuilder();
@@ -359,17 +363,17 @@ public class NegentweeProvider extends AbstractNetworkProvider {
         return formatter.format(date.getTime());
     }
 
-    private Date dateFromJSONObject(JSONObject obj, String key) throws JSONException {
+    private PTDate dateFromJSONObject(JSONObject obj, String key) throws JSONException {
         try {
             Calendar cal = Calendar.getInstance(API_TIMEZONE);
             ParserUtils.parseIsoDateTime(cal, obj.getString(key));
-            return cal.getTime();
+            return new PTDate(cal.getTime(), API_TIMEZONE);
         } catch (RuntimeException e) {
             return null;
         }
     }
 
-    private Date timeFromJSONObject(JSONObject obj, String key) throws JSONException {
+    private PTDate timeFromJSONObject(JSONObject obj, String key) throws JSONException {
         try {
             Calendar calParsed = Calendar.getInstance(API_TIMEZONE);
             ParserUtils.parseIsoTime(calParsed, obj.getString(key));
@@ -381,13 +385,13 @@ public class NegentweeProvider extends AbstractNetworkProvider {
                 calNow.add(Calendar.HOUR, 24);
             }
 
-            return calParsed.getTime();
+            return new PTDate(calParsed.getTime(), API_TIMEZONE);
         } catch (RuntimeException e) {
             return null;
         }
     }
 
-    private Date realtimeDateFromJSONObject(JSONObject obj, String key, String realtimeKey) throws JSONException {
+    private PTDate realtimeDateFromJSONObject(JSONObject obj, String key, String realtimeKey) throws JSONException {
         return dateFromJSONObject(obj, (!obj.isNull(realtimeKey)) ? realtimeKey : key);
     }
 
@@ -395,7 +399,7 @@ public class NegentweeProvider extends AbstractNetworkProvider {
             @Nullable Map<String, JSONObject> disturbances) throws JSONException {
         JSONArray legs = trip.getJSONArray("legs");
 
-        Date tripDeparture = realtimeDateFromJSONObject(trip, "departure", "realtimeDeparture");
+        PTDate tripDeparture = realtimeDateFromJSONObject(trip, "departure", "realtimeDeparture");
         /* Date tripArrival = */ realtimeDateFromJSONObject(trip, "arrival", "realtimeArrival");
 
         // Get journey legs
@@ -478,8 +482,8 @@ public class NegentweeProvider extends AbstractNetworkProvider {
                 break;
             case "continuous":
                 // Get leg time from trip or previous leg
-                Date legDeparture = (i == 0) ? tripDeparture : foundLegs.getLast().getArrivalTime();
-                Date legArrival = ParserUtils.addMinutes(legDeparture,
+                PTDate legDeparture = (i == 0) ? tripDeparture : foundLegs.getLast().getArrivalTime();
+                PTDate legArrival = ParserUtils.addMinutes(legDeparture,
                         ParserUtils.parseMinutesFromTimeString(leg.getString("duration")));
 
                 foundLegs.add(new Trip.Individual(Trip.Individual.Type.WALK, firstStop.location, legDeparture,
@@ -502,7 +506,11 @@ public class NegentweeProvider extends AbstractNetworkProvider {
                     fareInfo.getInt("reducedPriceCents") / 100, null, null));
         }
 
-        return new Trip(trip.getString("id"), from, to, foundLegs, tripFares, null, trip.getInt("numberOfChanges"));
+        final String id = trip.getString("id");
+        final int numberOfChanges = trip.getInt("numberOfChanges");
+        return new Trip(
+                new Date(),
+                id, null, from, to, foundLegs, tripFares, null, numberOfChanges);
     }
 
     private Stop stopFromJSONObject(JSONObject stop) throws JSONException {
@@ -539,13 +547,18 @@ public class NegentweeProvider extends AbstractNetworkProvider {
 
         /* String lineName = */ departure.optString("service");
         Product lineProduct = productFromMode(mode.getString("type"), mode.getString("name"));
-        return new Departure(timeFromJSONObject(departure, "time"), timeFromJSONObject(departure, "time"),
+        return new Departure(
+                timeFromJSONObject(departure, "time"),
+                timeFromJSONObject(departure, "time"),
                 new Line(null, departure.getString("operatorName"), lineProduct,
                         !departure.isNull("service") ? departure.getString("service") : mode.getString("name"), null,
                         Standard.STYLES.get(lineProduct), null, null),
-                !departure.isNull("platform") ? new Position(departure.getString("platform")) : null,
-                new Location(LocationType.STATION, null, null, departure.getString("destinationName")), null,
-                !departure.isNull("realtimeText") ? departure.optString("realtimeText") : null);
+                !departure.isNull("platform") ? new Position(departure.getString("platform")) : null, null,
+                new Location(LocationType.STATION, null, null, departure.getString("destinationName")),
+                false,
+                null,
+                !departure.isNull("realtimeText") ? departure.optString("realtimeText") : null,
+                null);
     }
 
     private Position positionFromJSONObject(JSONObject obj, String key) throws JSONException {
@@ -704,8 +717,8 @@ public class NegentweeProvider extends AbstractNetworkProvider {
     }
 
     @Override
-    protected boolean hasCapability(Capability capability) {
-        return CAPABILITIES.contains(capability);
+    protected Set<Capability> getCapabilities() {
+        return CAPABILITIES;
     }
 
     @Override

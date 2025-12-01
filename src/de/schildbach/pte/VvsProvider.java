@@ -19,19 +19,19 @@ package de.schildbach.pte;
 
 import javax.annotation.Nullable;
 
-import com.google.common.base.Charsets;
-
 import de.schildbach.pte.dto.Line;
 import de.schildbach.pte.dto.Point;
 import de.schildbach.pte.dto.Product;
 
 import okhttp3.HttpUrl;
 
+import java.nio.charset.StandardCharsets;
+
 /**
  * @author Andreas Schildbach
  */
 public class VvsProvider extends AbstractEfaProvider {
-    private static final HttpUrl API_BASE = HttpUrl.parse("https://www2.vvs.de/vvs/");
+    private static final HttpUrl API_BASE = HttpUrl.parse("https://www3.vvs.de/mngvvs/");
 
     public VvsProvider() {
         this(API_BASE);
@@ -40,7 +40,7 @@ public class VvsProvider extends AbstractEfaProvider {
     public VvsProvider(final HttpUrl apiBase) {
         super(NetworkId.VVS, apiBase);
 
-        setRequestUrlEncoding(Charsets.UTF_8);
+        setRequestUrlEncoding(StandardCharsets.UTF_8);
         setIncludeRegionId(false);
         setNumTripsRequested(4);
     }

@@ -19,10 +19,7 @@ package de.schildbach.pte;
 
 import java.util.Set;
 
-import com.google.common.base.Charsets;
-
 import de.schildbach.pte.dto.Product;
-import de.schildbach.pte.util.StringReplaceReader;
 
 import okhttp3.HttpUrl;
 
@@ -45,7 +42,7 @@ public class PlProvider extends AbstractHafasClientInterfaceProvider {
 
     public PlProvider(final String apiClient, final String apiAuthorization) {
         super(NetworkId.PL, API_BASE, PRODUCTS_MAP);
-        setApiVersion("1.21");
+        setApiVersion("1.63");
         setApiClient(apiClient);
         setApiAuthorization(apiAuthorization);
         setSessionCookieName("SERVERID");
@@ -68,6 +65,6 @@ public class PlProvider extends AbstractHafasClientInterfaceProvider {
 
     @Override
     public Set<Product> defaultProducts() {
-        return Product.ALL;
+        return Product.ALL_INCLUDING_HIGHSPEED;
     }
 }

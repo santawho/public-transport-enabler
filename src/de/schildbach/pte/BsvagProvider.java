@@ -17,15 +17,16 @@
 
 package de.schildbach.pte;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import javax.annotation.Nullable;
 
-import com.google.common.base.Charsets;
-
 import de.schildbach.pte.dto.Location;
+import de.schildbach.pte.dto.LocationType;
 import de.schildbach.pte.dto.Style;
 import de.schildbach.pte.dto.TripOptions;
 
@@ -35,13 +36,19 @@ import okhttp3.HttpUrl;
  * @author Andreas Schildbach
  */
 public class BsvagProvider extends AbstractEfaProvider {
-    private static final HttpUrl API_BASE = HttpUrl.parse("https://bsvg.efa.de/bsvagstd/");
+    private static final HttpUrl API_BASE = HttpUrl.parse(
+//            "https://bsvg.efa.de/bsvagstd/"
+            "https://bsvg.efa.de/vrbstd_relaunch/"
+    );
 
     public BsvagProvider() {
         super(NetworkId.BSVAG, API_BASE);
 
-        setRequestUrlEncoding(Charsets.UTF_8);
+        setRequestUrlEncoding(StandardCharsets.UTF_8);
         setUseRouteIndexAsTripId(false);
+        setNeedsSpEncId(true);
+        setIncludeRegionId(false);
+        setReducedAnyTooManyObjFilter(0);
         setStyles(STYLES);
         setSessionCookieName("HASESSIONID");
     }
@@ -52,6 +59,14 @@ public class BsvagProvider extends AbstractEfaProvider {
             final @Nullable TripOptions options) {
         super.appendTripRequestParameters(url, from, via, to, time, dep, options);
         url.addEncodedQueryParameter("inclMOT_11", "on");
+    }
+
+    @Override
+    protected void appendStopfinderRequestParameters(final HttpUrl.Builder url, final CharSequence constraint, final String outputFormat, @androidx.annotation.Nullable final Set<LocationType> types, final int maxLocations) {
+        super.appendStopfinderRequestParameters(url, constraint, outputFormat, types, 0);
+        url.addEncodedQueryParameter("odvSugMacroBSVAG", "true");
+        url.addEncodedQueryParameter("commonMacro", "true");
+        url.removeAllEncodedQueryParameters("anyObjFilter_sf");
     }
 
     private static final Map<String, Style> STYLES = new HashMap<>();

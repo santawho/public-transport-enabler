@@ -175,7 +175,7 @@ public class DbProviderLiveTest extends AbstractProviderLiveTest {
 
     @Test
     public void tripsAcrossBorder() throws Exception {
-        final TripOptions options = new TripOptions(EnumSet.of(Product.BUS), null, WalkSpeed.NORMAL,
+        final TripOptions options = new TripOptions(EnumSet.of(Product.BUS), null, WalkSpeed.NORMAL, null,
                 Accessibility.NEUTRAL, null);
         final Location from = new Location(LocationType.STATION, "8506131", null, "Kreuzlingen");
         final Location to = new Location(LocationType.STATION, "8003400", null, "Konstanz");

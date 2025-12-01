@@ -39,7 +39,7 @@ public class SydneyProvider extends AbstractEfaProvider {
     private static final String TRIP_ENDPOINT = "XML_TRIP_REQUEST2";
 
     public SydneyProvider() {
-        super(NetworkId.SYDNEY, API_BASE, null, TRIP_ENDPOINT, null, null);
+        super(NetworkId.SYDNEY, API_BASE, null, TRIP_ENDPOINT, null, null, null, null);
         setLanguage("en");
         setTimeZone("Australia/Sydney");
         setUseProxFootSearch(false);
