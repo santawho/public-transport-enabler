@@ -627,7 +627,7 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
                                 PTDate.fromCalendar(plannedTime),
                                 predictedTime != null ? PTDate.fromCalendar(predictedTime) : null,
                                 line,
-                                position,
+                                position, null,
                                 destination,
                                 cancelled,
                                 capacity,

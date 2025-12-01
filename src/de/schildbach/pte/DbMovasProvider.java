@@ -1111,7 +1111,7 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
                         stop.plannedDepartureTime,
                         stop.predictedDepartureTime,
                         line,
-                        Optional.ofNullable(stop.predictedDeparturePosition).orElse(stop.plannedDeparturePosition),
+                        stop.plannedDeparturePosition, stop.predictedDeparturePosition,
                         parseDirection(dep),
                         cancelled,
                         null,

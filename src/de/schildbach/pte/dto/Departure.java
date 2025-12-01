@@ -36,7 +36,8 @@ public final class Departure implements Serializable {
     public final @Nullable PTDate plannedTime;
     public final @Nullable PTDate predictedTime;
     public final Line line;
-    public final @Nullable Position position;
+    public final @Nullable Position plannedPosition;
+    public final @Nullable Position predictedPosition;
     public final @Nullable Location destination;
     public final boolean cancelled;
     public final @Nullable int[] capacity;
@@ -47,7 +48,8 @@ public final class Departure implements Serializable {
             final PTDate plannedTime,
             final PTDate predictedTime,
             final Line line,
-            final Position position,
+            final Position plannedPosition,
+            final Position predictedPosition,
             final Location destination,
             final boolean cancelled,
             final int[] capacity,
@@ -57,7 +59,8 @@ public final class Departure implements Serializable {
         this.predictedTime = predictedTime;
         checkArgument(plannedTime != null || predictedTime != null);
         this.line = requireNonNull(line);
-        this.position = position;
+        this.plannedPosition = plannedPosition;
+        this.predictedPosition = predictedPosition;
         this.destination = destination;
         this.cancelled = cancelled;
         this.capacity = capacity;
@@ -68,8 +71,13 @@ public final class Departure implements Serializable {
     public PTDate getTime() {
         if (predictedTime != null)
             return predictedTime;
-        else
-            return plannedTime;
+        return plannedTime;
+    }
+
+    public Position getPosition() {
+        if (predictedPosition != null)
+            return predictedPosition;
+        return plannedPosition;
     }
 
     @Override
@@ -79,7 +87,8 @@ public final class Departure implements Serializable {
                         "planned=" + String.format(Locale.US, "%ta %<tR", plannedTime) + "," : "") +
                 (predictedTime != null ?
                         "predicted=" + String.format(Locale.US, "%ta %<tR", predictedTime) + "," : "") +
-                (position != null ? position + "," : "") +
+                (plannedPosition != null ? "plannedPosition=" + plannedPosition + "," : "") +
+                (predictedPosition != null ? "predictedPosition=" + predictedPosition + "," : "") +
                 (destination != null ? "destination=" + destination + "," : "") +
                 line + "}";
     }

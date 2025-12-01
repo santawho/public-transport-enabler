@@ -506,7 +506,8 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
 //                    if (cancelled)
 //                        continue;
 
-                    final Position position = parseJsonPosition(stbStop, "dPlatfS", "dPltfS");
+                    final Position plannedPosition = parseJsonPosition(stbStop, "dPlatfS", "dPltfS");
+                    final Position predictedPosition = parseJsonPosition(stbStop, "dPlatfR", "dPltfR");
 
                     c.clear();
                     ParserUtils.parseIsoDate(c, jny.getString("date"));
@@ -548,7 +549,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                                 plannedTime,
                                 predictedTime,
                                 line,
-                                position,
+                                plannedPosition, predictedPosition,
                                 destination,
                                 cancelled,
                                 null,

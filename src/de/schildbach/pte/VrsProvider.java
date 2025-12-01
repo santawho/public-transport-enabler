@@ -536,7 +536,7 @@ public class VrsProvider extends AbstractNetworkProvider {
                             plannedTime,
                             predictedTime,
                             line,
-                            position,
+                            position, null,
                             destination,
                             false,
                             null,

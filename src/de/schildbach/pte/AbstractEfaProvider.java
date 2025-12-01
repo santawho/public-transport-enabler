@@ -1670,7 +1670,8 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                                     PTDate.fromCalendar(plannedDepartureTime),
                                     predictedDepartureTime.isSet(Calendar.HOUR_OF_DAY)
                                             ? PTDate.fromCalendar(predictedDepartureTime) : null,
-                                    lineDestinationAndCancelled.line, position,
+                                    lineDestinationAndCancelled.line,
+                                    position, null,
                                     lineDestinationAndCancelled.destination,
                                     lineDestinationAndCancelled.cancelled,
                                     null,
@@ -1768,7 +1769,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                                 predictedDepartureTime.isSet(Calendar.HOUR_OF_DAY)
                                         ? PTDate.fromCalendar(predictedDepartureTime) : null,
                                 parseMobileMResult.line,
-                                position,
+                                position, null,
                                 parseMobileMResult.destination,
                                 false,
                                 null,

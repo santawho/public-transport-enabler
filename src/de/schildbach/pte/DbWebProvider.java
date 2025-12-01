@@ -1118,11 +1118,13 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
                 }
 //                if (cancelled)
 //                    continue;
+                final Position plannedPosition = parsePosition(dep.optString("gleis", null));
+                final Position predictedPosition = parsePosition(dep.optString("ezGleis", null));
                 final Departure departure = new Departure(
                         parseIso8601NoOffset(dep.optString("zeit", null)),
                         parseIso8601NoOffset(dep.optString("ezZeit", null)),
                         line,
-                        parsePosition(Optional.ofNullable(dep.optString("ezGleis", null)).orElse(dep.optString("gleis", null))),
+                        plannedPosition, predictedPosition,
                         createLocation(LocationType.STATION, null, null, destinationName, null, null),
                         cancelled,
                         null,
