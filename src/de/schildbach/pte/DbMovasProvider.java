@@ -35,6 +35,7 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -726,15 +727,23 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
         }
     }
 
-    public static class DbMovasJourneyRef extends JourneyRef {
+    public static class DbMovasJourneyRef extends JourneyRef
+            implements BahnvorhersageProvider.BahnvorhersageJourneyRef {
         private static final long serialVersionUID = -4247207547836359686L;
 
         public final String journeyId;
+        public final String journeyRequestId;
         public final Line line;
 
-        public DbMovasJourneyRef(final String journeyId, final Line line) {
+        public DbMovasJourneyRef(final String journeyId, final String journeyRequestId, final Line line) {
             this.journeyId = journeyId;
+            this.journeyRequestId = journeyRequestId;
             this.line = line;
+        }
+
+        @Override
+        public String getBahnvorhersageRefreshJourneyId() {
+            return journeyRequestId;
         }
 
         @Override
@@ -780,7 +789,7 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
         return new Trip.Public(journeyRef.line, arrivalStop.location, departureStop, arrivalStop, intermediateStops, null, message, journeyRef);
     }
 
-    private Trip.Leg parseLeg(final JSONObject abschnitt) throws JSONException {
+    private Trip.Leg parseLeg(final JSONObject abschnitt, final String journeyRequestId) throws JSONException {
         Stop departureStop = null;
         Stop arrivalStop = null;
         final String typ = abschnitt.optString("typ", null);
@@ -802,7 +811,7 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
             final String message = parseJourneyMessages(abschnitt, null);
             final String journeyId = abschnitt.optString("zuglaufId", null);
             return new Trip.Public(line, destination, departureStop, arrivalStop, intermediateStops, null, message,
-                    journeyId == null ? null : new DbMovasJourneyRef(journeyId, line));
+                    journeyId == null ? null : new DbMovasJourneyRef(journeyId, journeyRequestId, line));
         } else {
             final int dist = abschnitt.optInt("distanz");
             if (dist == 0 && departureStop.location.id.equals(arrivalStop.location.id)) {
@@ -858,15 +867,17 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
             final boolean limitToDticket, final boolean hasDticket
     ) throws JSONException {
         final JSONObject verbindung = verbindungParent.getJSONObject("verbindung");
+        final DbProvider.CtxRecon ctxRecon = new DbProvider.CtxRecon(verbindung.optString("kontext"));
         final JSONArray abschnitte = verbindung.getJSONArray("verbindungsAbschnitte");
         final List<Trip.Leg> legs = new ArrayList<>();
         Location tripFrom = null;
         Location tripTo = null;
 
+        final Iterator<String> itJourneyRequestIds = ctxRecon.journeyRequestIds.iterator();
         Trip.Public prevPublicLegWithArrivalSamePlatform = null;
         for (int iLeg = 0; iLeg < abschnitte.length(); iLeg++) {
             final JSONObject abschnitt = abschnitte.getJSONObject(iLeg);
-            final Trip.Leg leg = parseLeg(abschnitt);
+            final Trip.Leg leg = parseLeg(abschnitt, itJourneyRequestIds.next());
             if (leg == null) continue;
             if (leg instanceof Trip.Public) {
                 final Trip.Public publicLeg = (Trip.Public) leg;
@@ -895,7 +906,6 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
         final List<Fare> fares = parseFares(verbindungParent);
         final int transfers = verbindung.optInt("umstiegeAnzahl", -1);
         final int[] capacity = parseCapacity(verbindung);
-        final DbWebProvider.CtxRecon ctxRecon = new DbWebProvider.CtxRecon(verbindung.optString("kontext"));
         return new Trip(
                 new Date(),
                 ctxRecon.tripId,
@@ -1116,7 +1126,7 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
                         cancelled,
                         null,
                         parseJourneyMessages(dep, null),
-                        journeyId == null ? null : new DbMovasJourneyRef(journeyId, line));
+                        journeyId == null ? null : new DbMovasJourneyRef(journeyId, null, line));
 
                 stationDepartures.departures.add(departure);
                 added += 1;

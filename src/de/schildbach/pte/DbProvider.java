@@ -17,7 +17,9 @@
 
 package de.schildbach.pte;
 
-import java.util.EnumSet;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -103,5 +105,70 @@ public final class DbProvider extends DbWebProvider.Fernverkehr {
                 return "https://bahn.de";
             }
         };
+    }
+
+    public static class CtxRecon {
+        public final String ctxRecon;
+        public final Map<String, String> entries;
+        public final String shortRecon;
+        public final String startLocation;
+        public final String endLocation;
+        public final String tripId;
+        public final List<String> journeyRequestIds;
+
+        public CtxRecon(final String ctxRecon) {
+            this.ctxRecon = ctxRecon;
+            this.entries = parseMap("¶", ctxRecon);
+            if (entries != null) {
+                final StringBuilder sb = new StringBuilder();
+                for (String key : entries.keySet()) {
+                    if ("KCC".equals(key) || "SC".equals(key))
+                        continue;
+                    final String value = entries.get(key);
+                    sb.append("¶");
+                    sb.append(key);
+                    sb.append("¶");
+                    sb.append(value);
+                }
+                shortRecon = sb.toString();
+            } else {
+                shortRecon = null;
+            }
+            String startLocation = null;
+            String endLocation = null;
+            this.tripId = getEntry("HKI");
+            journeyRequestIds = parseArray("§", tripId);
+            if (journeyRequestIds != null) {
+                if (!journeyRequestIds.isEmpty()) {
+                    final List<String> firstLeg = parseArray("\\$", journeyRequestIds.get(0));
+                    final List<String> lastLeg = parseArray("\\$", journeyRequestIds.get(journeyRequestIds.size() - 1));
+                    if (firstLeg != null && firstLeg.size() >= 2)
+                        startLocation = firstLeg.get(1);
+                    if (lastLeg != null && lastLeg.size() >= 3)
+                        endLocation = lastLeg.get(2);
+                }
+            }
+            this.startLocation = startLocation;
+            this.endLocation = endLocation;
+        }
+
+        public String getEntry(final String key) {
+            if (key == null || entries == null)
+                return null;
+            return entries.get(key);
+        }
+
+        public static Map<String, String> parseMap(final String separator, final String value) {
+            if (value == null)
+                return null;
+            final HashMap<String, String> entries = new HashMap<>();
+            final String[] split = value.split(separator);
+            for (int i = 2, splitLength = split.length; i < splitLength; i += 2) {
+                final String k = split[i-1];
+                final String v = split[i];
+                entries.put(k, v);
+            }
+            return entries;
+        }
     }
 }

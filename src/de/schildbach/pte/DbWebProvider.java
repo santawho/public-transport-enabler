@@ -37,6 +37,7 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -705,15 +706,23 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
         }
     }
 
-    public static class DbWebJourneyRef extends JourneyRef {
+    public static class DbWebJourneyRef extends JourneyRef
+            implements BahnvorhersageProvider.BahnvorhersageJourneyRef {
         private static final long serialVersionUID = 7738174208212249291L;
 
         public final String journeyId;
+        public final String journeyRequestId;
         public final Line line;
 
-        public DbWebJourneyRef(final String journeyId, final Line line) {
+        public DbWebJourneyRef(final String journeyId, final String journeyRequestId, final Line line) {
             this.journeyId = journeyId;
+            this.journeyRequestId = journeyRequestId;
             this.line = line;
+        }
+
+        @Override
+        public String getBahnvorhersageRefreshJourneyId() {
+            return journeyRequestId;
         }
 
         @Override
@@ -750,7 +759,12 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
         return new Trip.Public(journeyRef.line, arrivalStop.location, departureStop, arrivalStop, intermediateStops, null, message, journeyRef);
     }
 
-    private Trip.Leg parseLeg(final JSONObject abschnitt, final @Nullable Location fallbackDeparture, final @Nullable Location fallbackArrival) throws JSONException {
+    private Trip.Leg parseLeg(
+            final JSONObject abschnitt,
+            final String journeyRequestId,
+            final @Nullable Location fallbackDeparture,
+            final @Nullable Location fallbackArrival
+    ) throws JSONException {
         final Stop departureStop;
         final Stop arrivalStop;
         final JSONObject verkehrsmittel = abschnitt.getJSONObject("verkehrsmittel");
@@ -777,7 +791,7 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
                     defaultTeilstreckenHinweis);
             final String journeyId = abschnitt.optString("journeyId", null);
             return new Trip.Public(line, destination, departureStop, arrivalStop, intermediateStops, null, message,
-                    journeyId == null ? null : new DbWebJourneyRef(journeyId, line));
+                    journeyId == null ? null : new DbWebJourneyRef(journeyId, journeyRequestId, line));
         } else {
             final int dist = abschnitt.optInt("distanz");
             return new Trip.Individual(
@@ -831,11 +845,13 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
 
         for (int iTrip = 0; iTrip < verbindungen.length(); iTrip++) {
             final JSONObject verbindung = verbindungen.getJSONObject(iTrip);
+            final DbProvider.CtxRecon ctxRecon = new DbProvider.CtxRecon(verbindung.optString("ctxRecon"));
             final JSONArray abschnitte = verbindung.getJSONArray("verbindungsAbschnitte");
             final List<Trip.Leg> legs = new ArrayList<>();
             Location tripFrom = null;
             Location tripTo = null;
 
+            final Iterator<String> itJourneyRequestIds = ctxRecon.journeyRequestIds.iterator();
             Trip.Public prevPublicLegWithArrivalSamePlatform = null;
             for (int iLeg = 0; iLeg < abschnitte.length(); iLeg++) {
                 final JSONObject abschnitt = abschnitte.getJSONObject(iLeg);
@@ -855,7 +871,7 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
                                 to
 //                                createLocation(LocationType.ADDRESS, null, null, abschnitt.getString("ankunftsOrt"), null, null)
                         );
-                final Trip.Leg leg = parseLeg(abschnitt, fallbackDeparture, fallbackArrival);
+                final Trip.Leg leg = parseLeg(abschnitt, itJourneyRequestIds.next(), fallbackDeparture, fallbackArrival);
                 if (leg instanceof Trip.Public) {
                     final Trip.Public publicLeg = (Trip.Public) leg;
                     if (prevPublicLegWithArrivalSamePlatform != null) {
@@ -883,7 +899,6 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
             final List<Fare> fares = parseFares(verbindung);
             final int transfers = verbindung.optInt("umstiegsAnzahl", -1);
             final int[] capacity = parseCapacity(verbindung);
-            final CtxRecon ctxRecon = new CtxRecon(verbindung.optString("ctxRecon"));
             trips.add(new Trip(
                     new Date(),
                     ctxRecon.tripId,
@@ -1129,7 +1144,7 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
                         cancelled,
                         null,
                         parseJourneyMessages(dep, null, null, null),
-                        journeyId == null ? null : new DbWebJourneyRef(journeyId, line));
+                        journeyId == null ? null : new DbWebJourneyRef(journeyId, null, line));
 
                 stationDepartures.departures.add(departure);
                 added += 1;
@@ -1376,7 +1391,7 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
                 final Trip trip,
                 final TripRef simplifiedTripRef,
                 final String recon) {
-            final CtxRecon ctxRecon = new CtxRecon(recon);
+            final DbProvider.CtxRecon ctxRecon = new DbProvider.CtxRecon(recon);
             // this URL opens in browser, because DB Navigator does not deep link this pattern
             final String baseUrl = "https://www.bahn.de/buchung/fahrplan/suche";
             // this URL opens in DB Navigator if installed, because it deep links this pattern.
@@ -1452,68 +1467,6 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
             } catch (final JSONException x) {
                 throw new ParserException("cannot parse json: '" + page + "' on " + url, x);
             }
-        }
-    }
-
-    public static class CtxRecon {
-        public final String ctxRecon;
-        public final Map<String, String> entries;
-        public final String shortRecon;
-        public final String startLocation;
-        public final String endLocation;
-        public final String tripId;
-
-        public CtxRecon(final String ctxRecon) {
-            this.ctxRecon = ctxRecon;
-            this.entries = parseMap("¶", ctxRecon);
-            if (entries != null) {
-                final StringBuilder sb = new StringBuilder();
-                for (String key : entries.keySet()) {
-                    if ("KCC".equals(key) || "SC".equals(key))
-                        continue;
-                    final String value = entries.get(key);
-                    sb.append("¶");
-                    sb.append(key);
-                    sb.append("¶");
-                    sb.append(value);
-                }
-                shortRecon = sb.toString();
-            } else {
-                shortRecon = null;
-            }
-            String startLocation = null;
-            String endLocation = null;
-            this.tripId = getEntry("HKI");
-            final List<String> hkiEntries = parseArray("§", tripId);
-            if (hkiEntries != null && hkiEntries.size() >= 1) {
-                final List<String> firstLeg = parseArray("\\$", hkiEntries.get(0));
-                final List<String> lastLeg = parseArray("\\$", hkiEntries.get(hkiEntries.size()-1));
-                if (firstLeg != null && firstLeg.size() >= 2)
-                    startLocation = firstLeg.get(1);
-                if (lastLeg != null && lastLeg.size() >= 3)
-                    endLocation = lastLeg.get(2);
-            }
-            this.startLocation = startLocation;
-            this.endLocation = endLocation;
-        }
-
-        public String getEntry(final String key) {
-            if (key == null || entries == null)
-                return null;
-            return entries.get(key);
-        }
-
-        public static Map<String, String> parseMap(final String separator, final String value) {
-            if (value == null)
-                return null;
-            final HashMap<String, String> entries = new HashMap<>();
-            final String[] split = value.split(separator);
-            for (int i = 2, splitLength = split.length; i < splitLength; i += 2) {
-                final String k = split[i-1];
-                final String v = split[i];
-                entries.put(k, v);
-            }
-            return entries;
         }
     }
 

@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import de.schildbach.pte.dto.JourneyRef;
 import de.schildbach.pte.dto.Product;
 import de.schildbach.pte.dto.TransferDetails;
 import de.schildbach.pte.dto.Trip;
@@ -39,6 +40,10 @@ public final class BahnvorhersageProvider extends AbstractApiProvider implements
 
     public interface BahnvorhersageTripRef {
         String getBahnvorhersageRefreshToken();
+    }
+
+    public interface BahnvorhersageJourneyRef {
+        String getBahnvorhersageRefreshJourneyId();
     }
 
     private static final HttpUrl API_BASE = HttpUrl.parse("https://bahnvorhersage.de/api/");
@@ -58,12 +63,38 @@ public final class BahnvorhersageProvider extends AbstractApiProvider implements
 
         if (!(tripRef instanceof BahnvorhersageTripRef))
             throw new RuntimeException("trip is not compatible with Bahnvorhersage: tripRef=" + tripRef.getClass().getName());
-        final String refreshToken = ((BahnvorhersageTripRef) tripRef).getBahnvorhersageRefreshToken();
 
         if (!checkPreconditions(trip))
             return null;
 
+        String refreshToken = refreshTokenFromPublicLegs(trip);
+        if (refreshToken == null)
+            refreshToken = ((BahnvorhersageTripRef) tripRef).getBahnvorhersageRefreshToken();
+
+        if (refreshToken == null)
+            return null;
+
         return queryTransferDetailsForRefreshToken(refreshToken);
+    }
+
+    private String refreshTokenFromPublicLegs(final Trip trip) {
+        final StringBuilder builder = new StringBuilder();
+        builder.append("¶HKI¶");
+        boolean isNotFirst = false;
+        for (final Trip.Leg leg : trip.legs) {
+            if (leg instanceof Trip.Public) {
+                final Trip.Public publicLeg = (Trip.Public) leg;
+                final JourneyRef journeyRef = publicLeg.journeyRef;
+                if (!(journeyRef instanceof BahnvorhersageJourneyRef))
+                    return null;
+                final BahnvorhersageJourneyRef bahnvorhersageJourneyRef = (BahnvorhersageJourneyRef) journeyRef;
+                if (isNotFirst)
+                    builder.append("§");
+                isNotFirst = true;
+                builder.append(bahnvorhersageJourneyRef.getBahnvorhersageRefreshJourneyId());
+            }
+        }
+        return builder.toString();
     }
 
     private boolean checkPreconditions(final Trip trip) {
