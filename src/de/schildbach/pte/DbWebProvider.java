@@ -756,7 +756,13 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
         final String message = parseJourneyMessages(
                 journey, journey.optJSONArray("zugattribute"), journeyRef.line.network,
                 defaultTeilstreckenHinweis);
-        return new Trip.Public(journeyRef.line, arrivalStop.location, departureStop, arrivalStop, intermediateStops, null, message, journeyRef);
+        return new Trip.Public(
+                journeyRef.line,
+                arrivalStop.location,
+                departureStop, arrivalStop, intermediateStops,
+                null,
+                message,
+                new DbWebJourneyRef(journeyRef.journeyId, null, journeyRef.line));
     }
 
     private Trip.Leg parseLeg(
@@ -1261,7 +1267,7 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
     }
 
     private QueryJourneyResult doQueryJourney(final DbWebJourneyRef journeyRef) throws IOException {
-        HttpUrl url = this.journeyEndpoint.newBuilder()
+        final HttpUrl url = this.journeyEndpoint.newBuilder()
                 .addQueryParameter("journeyId", journeyRef.journeyId)
                 .addQueryParameter("poly", "true")
                 .build();
@@ -1269,7 +1275,7 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
         try {
             page = doRequest(url);
             final JSONObject res = new JSONObject(page);
-            Trip.Public leg = parseJourney(res, journeyRef);
+            final Trip.Public leg = parseJourney(res, journeyRef);
             return new QueryJourneyResult(this.resultHeader, url.toString(), journeyRef, leg);
         } catch (InternalErrorException | BlockedException e) {
             final String code = parseErrorCode(e);

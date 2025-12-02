@@ -786,7 +786,13 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
             }
         }
         final String message = parseJourneyMessages(journey, operator);
-        return new Trip.Public(journeyRef.line, arrivalStop.location, departureStop, arrivalStop, intermediateStops, null, message, journeyRef);
+        return new Trip.Public(
+                journeyRef.line,
+                arrivalStop.location,
+                departureStop, arrivalStop, intermediateStops,
+                null,
+                message,
+                new DbMovasJourneyRef(journeyRef.journeyId, null, journeyRef.line));
     }
 
     private Trip.Leg parseLeg(final JSONObject abschnitt, final String journeyRequestId) throws JSONException {

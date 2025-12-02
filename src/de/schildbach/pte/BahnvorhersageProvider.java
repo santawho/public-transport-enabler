@@ -57,22 +57,22 @@ public final class BahnvorhersageProvider extends AbstractApiProvider implements
 
     @Override
     public List<TransferDetails> evaluateTransfersForTrip(final Trip trip) throws IOException {
-        final TripRef tripRef = trip.tripRef;
-        if (tripRef == null)
-            return null;
-
-        if (!(tripRef instanceof BahnvorhersageTripRef))
-            throw new RuntimeException("trip is not compatible with Bahnvorhersage: tripRef=" + tripRef.getClass().getName());
-
         if (!checkPreconditions(trip))
             return null;
 
         String refreshToken = refreshTokenFromPublicLegs(trip);
-        if (refreshToken == null)
-            refreshToken = ((BahnvorhersageTripRef) tripRef).getBahnvorhersageRefreshToken();
+        if (refreshToken == null) {
+            final TripRef tripRef = trip.tripRef;
+            if (tripRef == null)
+                return null;
 
-        if (refreshToken == null)
-            return null;
+            if (!(tripRef instanceof BahnvorhersageTripRef))
+                throw new RuntimeException("trip is not compatible with Bahnvorhersage: tripRef=" + tripRef.getClass().getName());
+
+            refreshToken = ((BahnvorhersageTripRef) tripRef).getBahnvorhersageRefreshToken();
+            if (refreshToken == null)
+                return null;
+        }
 
         return queryTransferDetailsForRefreshToken(refreshToken);
     }
@@ -88,10 +88,13 @@ public final class BahnvorhersageProvider extends AbstractApiProvider implements
                 if (!(journeyRef instanceof BahnvorhersageJourneyRef))
                     return null;
                 final BahnvorhersageJourneyRef bahnvorhersageJourneyRef = (BahnvorhersageJourneyRef) journeyRef;
+                final String bahnvorhersageRefreshJourneyId = bahnvorhersageJourneyRef.getBahnvorhersageRefreshJourneyId();
+                if (bahnvorhersageRefreshJourneyId == null)
+                    return null;
                 if (isNotFirst)
                     builder.append("§");
                 isNotFirst = true;
-                builder.append(bahnvorhersageJourneyRef.getBahnvorhersageRefreshJourneyId());
+                builder.append(bahnvorhersageRefreshJourneyId);
             }
         }
         return builder.toString();
