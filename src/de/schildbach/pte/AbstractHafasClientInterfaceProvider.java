@@ -758,6 +758,9 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
             final JSONObject head = new JSONObject(page.toString());
             final String headErr = head.optString("err", null);
             if (headErr != null && !"OK".equals(headErr)) {
+                log.warn("Hafas head error: {}", head.toString());
+                if ("HAMM".equals(headErr)) // ??? (sporadically found on OEBB)
+                    return new QueryTripsResult(new ResultHeader(network, SERVER_PRODUCT), QueryTripsResult.Status.SERVICE_DOWN);
                 final String headErrTxt = head.optString("errTxt");
                 throw new RuntimeException(headErr + " " + headErrTxt);
             }
@@ -807,8 +810,6 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                 if ("CGI_NO_SERVER".equals(err))
                     return new QueryTripsResult(header, QueryTripsResult.Status.SERVICE_DOWN);
                 if ("H_UNKNOWN".equals(err))
-                    return new QueryTripsResult(header, QueryTripsResult.Status.SERVICE_DOWN);
-                if ("HAMM".equals(err)) // ???
                     return new QueryTripsResult(header, QueryTripsResult.Status.SERVICE_DOWN);
                 throw new RuntimeException(msg);
             }
