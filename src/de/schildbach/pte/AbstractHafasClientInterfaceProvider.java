@@ -1065,7 +1065,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
     private QueryJourneyResult jsonJourney(HafasJourneyRef journeyRef) throws IOException {
         final String request = wrapJsonApiRequest("JourneyDetails", "{" //
                         + "\"jid\":\"" + journeyRef.jid + "\"," //
-                        + "\"getPolyline\":true}", //
+                        + "\"getPasslist\":true,\"getPolyline\":true}", //
                 false);
 
         final HttpUrl url = requestUrl(request);
