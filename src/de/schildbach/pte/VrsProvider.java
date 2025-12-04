@@ -43,7 +43,6 @@ import de.schildbach.pte.util.ParserUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import com.google.common.base.Strings;
 
 import de.schildbach.pte.dto.Departure;
 import de.schildbach.pte.dto.Fare;
@@ -453,7 +452,7 @@ public class VrsProvider extends AbstractNetworkProvider {
     public QueryDeparturesResult queryDepartures(
             final String stationId, @Nullable final Date time,
             final int maxDepartures, final boolean equivs) throws IOException {
-        requireNonNull(Strings.emptyToNull(stationId));
+        requireNonNull(stationId);
 
         // g=p means group by product; not used here
         // d=minutes overwrites c=count and returns departures for the next d minutes
@@ -468,7 +467,7 @@ public class VrsProvider extends AbstractNetworkProvider {
 
         try {
             final JSONObject head = new JSONObject(page.toString());
-            final String error = Strings.emptyToNull(head.optString("error", "").trim());
+            final String error = head.optString("error", null);
             if (error != null) {
                 if (error.equals("ASS2-Server lieferte leere Antwort."))
                     return new QueryDeparturesResult(new ResultHeader(NetworkId.VRS, SERVER_PRODUCT),
@@ -577,7 +576,7 @@ public class VrsProvider extends AbstractNetworkProvider {
             final List<SuggestedLocation> locations = new ArrayList<>();
 
             final JSONObject head = new JSONObject(page.toString());
-            final String error = Strings.emptyToNull(head.optString("error", "").trim());
+            final String error = head.optString("error", null);
             if (error != null) {
                 if (error.equals("ASS2-Server lieferte leere Antwort."))
                     return new SuggestLocationsResult(new ResultHeader(NetworkId.VRS, SERVER_PRODUCT),
@@ -689,7 +688,7 @@ public class VrsProvider extends AbstractNetworkProvider {
         try {
             final List<Trip> trips = new ArrayList<>();
             final JSONObject head = new JSONObject(page.toString());
-            final String error = Strings.emptyToNull(head.optString("error", "").trim());
+            final String error = head.optString("error", null);
             if (error != null) {
                 if (error.equals("ASS2-Server lieferte leere Antwort."))
                     return new QueryTripsResult(new ResultHeader(NetworkId.VRS, SERVER_PRODUCT),
@@ -871,7 +870,7 @@ public class VrsProvider extends AbstractNetworkProvider {
                                         segmentOriginPosition, segmentOriginPosition),
                                 new Stop(segmentDestination, false /* departure */, arrivalPlanned, arrivalPredicted,
                                         segmentDestinationPosition, segmentDestinationPosition),
-                                intermediateStops, points, Strings.emptyToNull(message.toString())));
+                                intermediateStops, points, message.length() > 0 ? message.toString() : null));
                     } else {
                         throw new IllegalStateException("unhandled type: " + type);
                     }
@@ -1150,7 +1149,7 @@ public class VrsProvider extends AbstractNetworkProvider {
 
         try {
             final JSONObject head = new JSONObject(page.toString());
-            final String error = Strings.emptyToNull(head.optString("error", "").trim());
+            final String error = head.optString("error", null);
             if (error != null) {
                 throw new IllegalStateException(error);
             }

@@ -17,9 +17,11 @@
 
 package de.schildbach.pte;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkState;
+import static de.schildbach.pte.util.Preconditions.checkArgument;
+import static de.schildbach.pte.util.Preconditions.checkState;
 import static java.util.Objects.requireNonNull;
+
+import com.google.common.io.BaseEncoding;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -51,14 +53,11 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import de.schildbach.pte.util.Encodings;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.msgpack.core.MessagePacker;
 import org.msgpack.core.MessageUnpacker;
-
-import com.google.common.base.Strings;
 
 import de.schildbach.pte.dto.Departure;
 import de.schildbach.pte.dto.Fare;
@@ -109,10 +108,6 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
     @Nullable
     private String apiClient;
     private boolean useAddName = false;
-    @Nullable
-    private byte[] requestChecksumSalt;
-    @Nullable
-    private byte[] requestMicMacSalt;
 
     private static final String SERVER_PRODUCT = "hci";
     private static final String SECTION_TYPE_JOURNEY = "JNY";
@@ -168,15 +163,15 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
 
     protected AbstractHafasClientInterfaceProvider setApiVersion(final String apiVersion) {
         final String[] versionParts = apiVersion.split("\\.");
-        checkArgument(versionParts.length == 2, "bad apiVersion");
-        checkArgument("1".equals(versionParts[0]), "apiVersion major must be 1");
+        checkArgument(versionParts.length == 2, () -> "bad apiVersion");
+        checkArgument("1".equals(versionParts[0]), () -> "apiVersion major must be 1");
         final int minorVersion;
         try {
             minorVersion = Integer.parseInt(versionParts[1]);
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException("invalid apiVersion");
         }
-        checkArgument(minorVersion >= 14, "apiVersion must be 1.14 or higher");
+        checkArgument(minorVersion >= 14, () -> "apiVersion must be 1.14 or higher");
         this.apiVersion = apiVersion;
         this.apiLevel = minorVersion;
         this.apiUseLocationLidOnly = minorVersion >= 40;
@@ -212,24 +207,6 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
 
     public String getApiClient() {
         return apiClient;
-    }
-
-    protected AbstractHafasClientInterfaceProvider setRequestChecksumSalt(final byte[] requestChecksumSalt) {
-        this.requestChecksumSalt = requestChecksumSalt;
-        return this;
-    }
-
-    public byte[] getRequestChecksumSalt() {
-        return requestChecksumSalt;
-    }
-
-    protected AbstractHafasClientInterfaceProvider setRequestMicMacSalt(final byte[] requestMicMacSalt) {
-        this.requestMicMacSalt = requestMicMacSalt;
-        return this;
-    }
-
-    public byte[] getRequestMicMacSalt() {
-        return requestMicMacSalt;
     }
 
     @Override
@@ -1214,24 +1191,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
 
     private HttpUrl requestUrl(final String body) {
         final HttpUrl.Builder url = apiBase.newBuilder().addPathSegment(apiEndpoint);
-        MessageDigest md5 = md5instance();
-        if (requestChecksumSalt != null) {
-            md5.reset();
-            md5.update(body.getBytes(StandardCharsets.UTF_8));
-            md5.update(requestChecksumSalt);
-            url.addQueryParameter("checksum", Encodings.HEX.encode(md5.digest()));
-        }
-        if (requestMicMacSalt != null) {
-            md5.reset();
-            md5.update(body.getBytes(StandardCharsets.UTF_8));
-            byte[] mic = md5.digest();
-            url.addQueryParameter("mic", Encodings.HEX.encode(mic));
-            md5.reset();
-            md5.update(Encodings.HEX.encode(mic).getBytes(StandardCharsets.UTF_8));
-            md5.update(requestMicMacSalt);
-            byte[] mac = md5.digest();
-            url.addQueryParameter("mac", Encodings.HEX.encode(mac));
-        }
+        addSaltToUrl(url, body);
         return url.build();
     }
 
@@ -1595,7 +1555,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
 
         for (int iProd = 0; iProd < prodListLen; iProd++) {
             final JSONObject prod = prodList.getJSONObject(iProd);
-            final String name = Strings.emptyToNull(prod.getString("name"));
+            final String name = prod.getString("name");
             final String nameS = prod.optString("nameS", null);
             final String number = prod.optString("number", null);
             final String addName = useAddName ? prod.optString("addName", null) : null;
@@ -1617,7 +1577,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
             final Product product = cls != -1 ? intToProduct(cls) : null;
             lines.add(newLine(
                     id, operator, product,
-                    name, nameS,
+                    !name.isEmpty() ? name : null, nameS,
                     ctxNum != null ? ctxNum : number,
                     addName,
                     style));
@@ -1739,15 +1699,60 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
         }
     }
 
-    public static final byte[] decryptSalt(final String encryptedSalt, final String saltEncryptionKey) {
+    @Nullable
+    private byte[] requestChecksumSalt;
+    @Nullable
+    private byte[] requestMicMacSalt;
+
+    private static final BaseEncoding HEX = BaseEncoding.base16().lowerCase();
+    private static final BaseEncoding BASE64 = BaseEncoding.base64();
+
+    private void addSaltToUrl(final HttpUrl.Builder url, final String body) {
+        final MessageDigest md5 = md5instance();
+        if (requestChecksumSalt != null) {
+            md5.reset();
+            md5.update(body.getBytes(StandardCharsets.UTF_8));
+            md5.update(requestChecksumSalt);
+            url.addQueryParameter("checksum", HEX.encode(md5.digest()));
+        }
+        if (requestMicMacSalt != null) {
+            md5.reset();
+            md5.update(body.getBytes(StandardCharsets.UTF_8));
+            final byte[] mic = md5.digest();
+            url.addQueryParameter("mic", HEX.encode(mic));
+            md5.reset();
+            md5.update(HEX.encode(mic).getBytes(StandardCharsets.UTF_8));
+            md5.update(requestMicMacSalt);
+            final byte[] mac = md5.digest();
+            url.addQueryParameter("mac", HEX.encode(mac));
+        }
+    }
+
+    protected void setRequestChecksumSalt(final byte[] requestChecksumSalt) {
+        this.requestChecksumSalt = requestChecksumSalt;
+    }
+
+    public byte[] getRequestChecksumSalt() {
+        return requestChecksumSalt;
+    }
+
+    protected void setRequestMicMacSalt(final byte[] requestMicMacSalt) {
+        this.requestMicMacSalt = requestMicMacSalt;
+    }
+
+    public byte[] getRequestMicMacSalt() {
+        return requestMicMacSalt;
+    }
+
+    public static byte[] decryptSalt(final String encryptedSalt, final String saltEncryptionKey) {
         try {
-            final byte[] key = Encodings.HEX.decode(saltEncryptionKey);
-            checkState(key.length * 8 == 128, "encryption key must be 128 bits");
+            final byte[] key = HEX.decode(saltEncryptionKey);
+            checkState(key.length * 8 == 128, () -> "encryption key must be 128 bits");
             final SecretKeySpec secretKey = new SecretKeySpec(key, "AES");
             final IvParameterSpec ivParameterSpec = new IvParameterSpec(new byte[16]);
             final Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
             cipher.init(Cipher.DECRYPT_MODE, secretKey, ivParameterSpec);
-            return cipher.doFinal(Encodings.BASE64.decode(encryptedSalt));
+            return cipher.doFinal(BASE64.decode(encryptedSalt));
         } catch (final GeneralSecurityException x) {
             // should not happen
             throw new RuntimeException(x);

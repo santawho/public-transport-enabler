@@ -27,7 +27,7 @@ import de.schildbach.pte.dto.Style;
 import okhttp3.HttpUrl;
 
 /**
- * Provider implementation for RMV (Rhein-Main, Germany).
+ * Provider implementation for the Rhein-Main-Verkehrsverbund (Germany).
  */
 public class RmvProvider extends AbstractHafasClientInterfaceProvider {
     private static final HttpUrl API_BASE = HttpUrl.parse("https://www.rmv.de/auskunft/bin/jp/");
@@ -42,7 +42,8 @@ public class RmvProvider extends AbstractHafasClientInterfaceProvider {
             Product.BUS,
             Product.FERRY,
             Product.ON_DEMAND,
-            Product.SUBURBAN_TRAIN,
+            Product.SUBURBAN_TRAIN, // upstream PTE has Product.REGIONAL_TRAIN instead?
+            // upstream PTE has additional Product.REGIONAL_TRAIN
     };
     private static final String DEFAULT_API_CLIENT = "{\"id\":\"RMV\",\"type\":\"WEB\",\"name\":\"webapp\",\"l\":\"vs_webapp\"}";
 

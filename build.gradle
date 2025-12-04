@@ -5,6 +5,7 @@ plugins {
 
 group = 'de.schildbach.pte'
 archivesBaseName = 'public-transport-enabler'
+version = 'SNAPSHOT'
 
 repositories {
     mavenCentral()
@@ -15,7 +16,6 @@ dependencies {
     implementation 'com.squareup.okhttp3:okhttp:3.12.13'
     //noinspection GradleDependency
     implementation 'com.squareup.okhttp3:logging-interceptor:3.12.13'
-    implementation 'com.google.guava:guava:33.5.0-android'
     implementation 'org.slf4j:slf4j-api:2.0.17'
     implementation 'com.google.code.findbugs:jsr305:3.0.2'
     implementation 'org.json:json:20090211' // provided by Android
@@ -50,4 +50,13 @@ compileTestJava {
 
 test {
     exclude 'de/schildbach/pte/live/**'
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+            pom
+        }
+    }
 }

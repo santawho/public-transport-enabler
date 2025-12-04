@@ -17,7 +17,7 @@
 
 package de.schildbach.pte;
 
-import static com.google.common.base.Preconditions.checkState;
+import static de.schildbach.pte.util.Preconditions.checkState;
 import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
@@ -52,8 +52,6 @@ import org.slf4j.LoggerFactory;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlPullParserFactory;
-
-import com.google.common.base.Strings;
 
 import de.schildbach.pte.dto.Departure;
 import de.schildbach.pte.dto.Fare;
@@ -344,7 +342,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
         for (int i = 0; i < messagesSize; i++) {
             final JSONObject message = messages.optJSONObject(i);
             final String messageName = message.getString("name");
-            final String messageValue = Strings.emptyToNull(message.getString("value"));
+            final String messageValue = message.getString("value");
             if ("code".equals(messageName) && !"-8010".equals(messageValue) && !"-8011".equals(messageValue))
                 return SuggestLocationsResult.Status.SERVICE_DOWN;
         }
@@ -1496,7 +1494,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
     @Override
     public QueryDeparturesResult queryDepartures(final String stationId, final @Nullable Date time,
             final int maxDepartures, final boolean equivs) throws IOException {
-        requireNonNull(Strings.emptyToNull(stationId));
+        requireNonNull(stationId);
 
         return xsltDepartureMonitorRequest(stationId, time, maxDepartures, equivs);
     }
@@ -2057,7 +2055,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
     private static final Pattern P_STATION_NAME_WHITESPACE = Pattern.compile("\\s+");
 
     protected String normalizeLocationName(final String name) {
-        if (Strings.isNullOrEmpty(name))
+        if (name == null || name.isEmpty())
             return null;
 
         return P_STATION_NAME_WHITESPACE.matcher(name).replaceAll(" ");
@@ -2664,11 +2662,10 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                     if (useRouteIndexAsTripId) {
                         final String routeIndex = XmlPullUtil.optAttr(pp, "routeIndex", null);
                         final String routeTripIndex = XmlPullUtil.optAttr(pp, "routeTripIndex", null);
-                        tripId = Strings.emptyToNull(
-                                Stream.of(routeIndex, routeTripIndex)
+                        tripId = Stream.of(routeIndex, routeTripIndex)
                                         .filter(Objects::nonNull)
                                         .map(Object::toString)
-                                        .collect(Collectors.joining("-")));
+                                        .collect(Collectors.collectingAndThen(Collectors.joining("-"), id -> !id.isEmpty() ? id : null));
                     } else {
                         tripId = null;
                     }
@@ -2776,8 +2773,8 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                         if (XmlPullUtil.test(pp, "itdSingleTicket")) {
                             final String net = XmlPullUtil.optAttr(pp, "net", null);
                             if (net != null) {
-                                final String currencyStr = Strings.emptyToNull(XmlPullUtil.optAttr(pp, "currency", null));
-                                if (currencyStr != null) {
+                                final String currencyStr = XmlPullUtil.optAttr(pp, "currency", null);
+                                if (currencyStr != null && !currencyStr.isEmpty()) {
                                     final Currency currency = parseCurrency(currencyStr);
                                     final String fareAdult = XmlPullUtil.optAttr(pp, "fareAdult", null);
                                     final String fareChild = XmlPullUtil.optAttr(pp, "fareChild", null);
@@ -3295,7 +3292,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                         // ignore
                     } else {
                         legs.add(new Trip.Public(parseMobileMResult.line, parseMobileMResult.destination, departure, arrival,
-                                intermediateStops, path, Strings.emptyToNull(message.toString()),
+                                intermediateStops, path, message.length() > 0 ? message.toString() : null,
                                 new EfaJourneyRef(parseMobileMResult.transportationId, departure.location.id,
                                         parseMobileMResult.tripCode, departure.plannedDepartureTime)));
                     }

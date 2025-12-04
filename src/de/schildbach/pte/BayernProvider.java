@@ -27,8 +27,6 @@ import java.util.Set;
 
 import javax.annotation.Nullable;
 
-import com.google.common.base.Strings;
-
 import de.schildbach.pte.dto.JourneyRef;
 import de.schildbach.pte.dto.Line;
 import de.schildbach.pte.dto.Location;
@@ -132,7 +130,7 @@ public class BayernProvider extends AbstractEfaProvider {
     @Override
     public QueryDeparturesResult queryDepartures(final String stationId, final @Nullable Date time,
             final int maxDepartures, final boolean equivs) throws IOException {
-        requireNonNull(Strings.emptyToNull(stationId));
+        requireNonNull(stationId);
 
         return queryDeparturesMobile(stationId, time, maxDepartures, equivs);
     }

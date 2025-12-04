@@ -17,7 +17,7 @@
 
 package de.schildbach.pte;
 
-import static com.google.common.base.Preconditions.checkState;
+import static de.schildbach.pte.util.Preconditions.checkState;
 import static java.util.Objects.requireNonNull;
 
 import java.io.BufferedInputStream;
@@ -54,8 +54,6 @@ import org.json.JSONObject;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlPullParserFactory;
-
-import com.google.common.base.Strings;
 
 import de.schildbach.pte.dto.Departure;
 import de.schildbach.pte.dto.Line;
@@ -392,7 +390,7 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
     @Override
     public QueryDeparturesResult queryDepartures(final String stationId, final @Nullable Date time,
             final int maxDepartures, final boolean equivs) throws IOException {
-        requireNonNull(Strings.emptyToNull(stationId));
+        requireNonNull(stationId);
 
         final HttpUrl.Builder url = stationBoardEndpoint.newBuilder().addPathSegment(apiLanguage);
         appendXmlStationBoardParameters(url, time, stationId, maxDepartures, equivs, "vs_java3");
