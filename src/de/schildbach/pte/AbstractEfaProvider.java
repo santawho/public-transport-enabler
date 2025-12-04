@@ -101,7 +101,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
     protected static final String COORD_FORMAT = "WGS84[DD.ddddd]";
     protected static final int COORD_FORMAT_TAIL = 7;
 
-    private static final Set<Capability> CAPABILITIES = Set.of(
+    protected static final Set<Capability> CAPABILITIES = Set.of(
             Capability.SUGGEST_LOCATIONS,
             Capability.NEARBY_LOCATIONS,
             Capability.DEPARTURES,
@@ -782,16 +782,19 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
         final String streetName = XmlPullUtil.optAttr(pp, "streetName", null);
         final Point coord = processCoordAttr(pp);
 
-        XmlPullUtil.enter(pp, "odvNameElem");
-        XmlPullUtil.optSkip(pp, "itdMapItemList");
         final String nameElem;
-        if (pp.getEventType() == XmlPullParser.TEXT) {
-            nameElem = normalizeLocationName(pp.getText());
-            pp.next();
+        if (XmlPullUtil.optEnter(pp, "odvNameElem")) {
+            XmlPullUtil.optSkip(pp, "itdMapItemList");
+            if (pp.getEventType() == XmlPullParser.TEXT) {
+                nameElem = normalizeLocationName(pp.getText());
+                pp.next();
+            } else {
+                nameElem = null;
+            }
+            XmlPullUtil.exit(pp, "odvNameElem");
         } else {
             nameElem = null;
         }
-        XmlPullUtil.exit(pp, "odvNameElem");
 
         if ("stop".equals(type)) {
             if (id != null && !stateless.startsWith(id))

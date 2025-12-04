@@ -151,7 +151,7 @@ public class BayernProvider extends AbstractEfaProvider {
     }
 
     @Override
-    public QueryJourneyResult queryJourney(JourneyRef aJourneyRef) throws IOException {
+    public QueryJourneyResult queryJourney(final JourneyRef aJourneyRef) throws IOException {
         return queryJourneyMobile((EfaJourneyRef) aJourneyRef);
     }
 

@@ -17,15 +17,20 @@
 
 package de.schildbach.pte;
 
+import java.io.IOException;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import javax.annotation.Nullable;
 
+import de.schildbach.pte.dto.JourneyRef;
 import de.schildbach.pte.dto.Line;
 import de.schildbach.pte.dto.Location;
 import de.schildbach.pte.dto.Product;
+import de.schildbach.pte.dto.QueryJourneyResult;
 import de.schildbach.pte.dto.Style;
 import de.schildbach.pte.dto.TripOptions;
 
@@ -37,6 +42,14 @@ import okhttp3.HttpUrl;
 public class SydneyProvider extends AbstractEfaProvider {
     private static final HttpUrl API_BASE = HttpUrl.parse("https://transportnsw.info/web/");
     private static final String TRIP_ENDPOINT = "XML_TRIP_REQUEST2";
+    private static final Set<Capability> SYDNEY_CAPABILITIES;
+
+    static {
+        final Set<Capability> capabilities = new HashSet<>(CAPABILITIES);
+        capabilities.remove(Capability.JOURNEY);
+        capabilities.remove(Capability.BIKE_OPTION);
+        SYDNEY_CAPABILITIES = capabilities;
+    }
 
     public SydneyProvider() {
         super(NetworkId.SYDNEY, API_BASE, null, TRIP_ENDPOINT, null, null, null, null);
@@ -45,6 +58,11 @@ public class SydneyProvider extends AbstractEfaProvider {
         setUseProxFootSearch(false);
         setUseRouteIndexAsTripId(false);
         setStyles(STYLES);
+    }
+
+    @Override
+    protected Set<Capability> getCapabilities() {
+        return SYDNEY_CAPABILITIES;
     }
 
     @Override
@@ -59,6 +77,11 @@ public class SydneyProvider extends AbstractEfaProvider {
             }
         }
         url.addEncodedQueryParameter("inclMOT_17", "on");
+    }
+
+    @Override
+    public QueryJourneyResult queryJourney(final JourneyRef aJourneyRef) throws IOException {
+        return queryJourneyMobile((EfaJourneyRef) aJourneyRef);
     }
 
     @Override
