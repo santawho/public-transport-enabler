@@ -214,7 +214,7 @@ public class RmvProvider extends AbstractHafasClientInterfaceProvider {
         STYLES.put("BX76", new Style(RMV_SHAPE, Style.rgb(79, 75, 114), Style.WHITE));
         STYLES.put("BX77", new Style(RMV_SHAPE, Style.rgb(167, 22, 128), Style.WHITE));
         STYLES.put("BX78", new Style(RMV_SHAPE, Style.rgb(0, 185, 242), Style.WHITE));
-        STYLES.put("BX79", new Style(RMV_SHAPE, Style.rgb(140, 198, 63), Style.WHITE));
+        STYLES.put("BX79", new Style(RMV_SHAPE, Style.rgb(0, 112, 126), Style.WHITE));
         STYLES.put("BX83", new Style(RMV_SHAPE, Style.rgb(196, 8, 117), Style.WHITE));
         STYLES.put("BX89", new Style(RMV_SHAPE, Style.rgb(135, 129, 189), Style.WHITE));
         STYLES.put("BX93", new Style(RMV_SHAPE, Style.rgb(143, 88, 115), Style.WHITE));
@@ -235,6 +235,68 @@ public class RmvProvider extends AbstractHafasClientInterfaceProvider {
         STYLES.put("Hanauer Straßenbahn GmbH|B11", new Style(RMV_SHAPE, Style.rgb(119, 182, 228), Style.WHITE));
         STYLES.put("Hanauer Straßenbahn GmbH|B12", new Style(RMV_SHAPE, Style.rgb(243, 144, 179), Style.WHITE));
         STYLES.put("Hanauer Straßenbahn GmbH|B20", new Style(RMV_SHAPE, Style.rgb(176, 13, 29), Style.WHITE));
+
+        // busses Bad Homburg
+        STYLES.put("Magistrat der Stadt Bad Homburg v.d.H.|B1", new Style(RMV_SHAPE, Style.rgb(234, 47, 50), Style.WHITE));
+        STYLES.put("Magistrat der Stadt Bad Homburg v.d.H.|B2", new Style(RMV_SHAPE, Style.rgb(30, 160, 100), Style.WHITE));
+        STYLES.put("Magistrat der Stadt Bad Homburg v.d.H.|B3", new Style(RMV_SHAPE, Style.rgb(24, 105, 178), Style.WHITE));
+        STYLES.put("Magistrat der Stadt Bad Homburg v.d.H.|B4", new Style(RMV_SHAPE, Style.rgb(240, 130, 54), Style.WHITE));
+        STYLES.put("Magistrat der Stadt Bad Homburg v.d.H.|B5", new Style(RMV_SHAPE, Style.rgb(240, 233, 69), Style.BLACK));
+        STYLES.put("Magistrat der Stadt Bad Homburg v.d.H.|B6", new Style(RMV_SHAPE, Style.rgb(65, 181, 107), Style.WHITE));
+        STYLES.put("Magistrat der Stadt Bad Homburg v.d.H.|B7", new Style(RMV_SHAPE, Style.rgb(180, 49, 145), Style.WHITE));
+        STYLES.put("Magistrat der Stadt Bad Homburg v.d.H.|B8", new Style(RMV_SHAPE, Style.rgb(36, 170, 225), Style.WHITE));
+        STYLES.put("Magistrat der Stadt Bad Homburg v.d.H.|B11", new Style(RMV_SHAPE, Style.rgb(234, 47, 50), Style.WHITE));
+        STYLES.put("Magistrat der Stadt Bad Homburg v.d.H.|B12", new Style(RMV_SHAPE, Style.rgb(30, 160, 100), Style.WHITE));
+        STYLES.put("Magistrat der Stadt Bad Homburg v.d.H.|B17", new Style(RMV_SHAPE, Style.rgb(180, 49, 145), Style.WHITE));
+        STYLES.put("Magistrat der Stadt Bad Homburg v.d.H.|B21", new Style(RMV_SHAPE, Style.rgb(244, 124, 39), Style.WHITE));
+        STYLES.put("Magistrat der Stadt Bad Homburg v.d.H.|B22", new Style(RMV_SHAPE, Style.rgb(30, 160, 100), Style.WHITE));
+        STYLES.put("Magistrat der Stadt Bad Homburg v.d.H.|B23", new Style(RMV_SHAPE, Style.rgb(247, 235, 47), Style.BLACK));
+        STYLES.put("Magistrat der Stadt Bad Homburg v.d.H.|B24", new Style(RMV_SHAPE, Style.rgb(0, 177, 176), Style.WHITE));
+        STYLES.put("Magistrat der Stadt Bad Homburg v.d.H.|B26", new Style(RMV_SHAPE, Style.rgb(90, 87, 165), Style.WHITE));
+        STYLES.put("Magistrat der Stadt Bad Homburg v.d.H.|B27", new Style(RMV_SHAPE, Style.rgb(180, 49, 145), Style.WHITE));
+        STYLES.put("Magistrat der Stadt Bad Homburg v.d.H.|B31", new Style(RMV_SHAPE, Style.rgb(254, 202, 38), Style.WHITE));
+        STYLES.put("Magistrat der Stadt Bad Homburg v.d.H.|B32", new Style(RMV_SHAPE, Style.rgb(144, 199, 61), Style.WHITE));
+        STYLES.put("Magistrat der Stadt Bad Homburg v.d.H.|B33", new Style(RMV_SHAPE, Style.rgb(198, 150, 38), Style.WHITE));
+        STYLES.put("Magistrat der Stadt Bad Homburg v.d.H.|B34", new Style(RMV_SHAPE, Style.rgb(72, 140, 202), Style.WHITE));
+        STYLES.put("Magistrat der Stadt Bad Homburg v.d.H.|B35", new Style(RMV_SHAPE, Style.rgb(208, 31, 38), Style.WHITE));
+        STYLES.put("Magistrat der Stadt Bad Homburg v.d.H.|B36", new Style(RMV_SHAPE, Style.rgb(213, 113, 173), Style.WHITE));
+        STYLES.put("Magistrat der Stadt Bad Homburg v.d.H.|B39", new Style(RMV_SHAPE, Style.rgb(41, 196, 243), Style.WHITE));
+
+        // busses Rüsselsheim
+        STYLES.put("Stadtwerke Rüsselsheim|B1", new Style(RMV_SHAPE, Style.rgb(249, 168, 54), Style.WHITE));
+        STYLES.put("Stadtwerke Rüsselsheim|B6", new Style(RMV_SHAPE, Style.rgb(99, 45, 143), Style.WHITE));
+        STYLES.put("Stadtwerke Rüsselsheim|B11", new Style(RMV_SHAPE, Style.rgb(84, 180, 76), Style.WHITE));
+        STYLES.put("Stadtwerke Rüsselsheim|B31", new Style(RMV_SHAPE, Style.rgb(255, 240, 3), Style.BLACK));
+        STYLES.put("Stadtwerke Rüsselsheim|B32", new Style(RMV_SHAPE, Style.rgb(255, 247, 172), Style.BLACK));
+        STYLES.put("Stadtwerke Rüsselsheim|B41", new Style(RMV_SHAPE, Style.rgb(33, 192, 235), Style.WHITE));
+        STYLES.put("Stadtwerke Rüsselsheim|B42", new Style(RMV_SHAPE, Style.rgb(0, 139, 205), Style.WHITE));
+        STYLES.put("Stadtwerke Rüsselsheim|B51", new Style(RMV_SHAPE, Style.rgb(215, 46, 108), Style.WHITE));
+        STYLES.put("Stadtwerke Rüsselsheim|B52", new Style(RMV_SHAPE, Style.rgb(132, 11, 52), Style.WHITE));
+        STYLES.put("Stadtwerke Rüsselsheim|B70", new Style(RMV_SHAPE, Style.rgb(0, 112, 112), Style.WHITE));
+        STYLES.put("Stadtwerke Rüsselsheim|B71", new Style(RMV_SHAPE, Style.rgb(241, 89, 33), Style.WHITE));
+
+        // busses Offenbach
+        STYLES.put("Offenbacher Verkehrsbetriebe GmbH|B101", new Style(RMV_SHAPE, Style.rgb(238, 29, 35), Style.WHITE));
+        STYLES.put("Offenbacher Verkehrsbetriebe GmbH|B102", new Style(RMV_SHAPE, Style.rgb(46, 48, 146), Style.WHITE));
+        STYLES.put("Offenbacher Verkehrsbetriebe GmbH|B103", new Style(RMV_SHAPE, Style.rgb(0, 165, 79), Style.WHITE));
+        STYLES.put("Offenbacher Verkehrsbetriebe GmbH|B104", new Style(RMV_SHAPE, Style.rgb(242, 194, 9), Style.WHITE));
+        STYLES.put("Offenbacher Verkehrsbetriebe GmbH|B105", new Style(RMV_SHAPE, Style.rgb(161, 208, 118), Style.WHITE));
+        STYLES.put("Offenbacher Verkehrsbetriebe GmbH|B106", new Style(RMV_SHAPE, Style.rgb(144, 38, 143), Style.WHITE));
+        STYLES.put("Offenbacher Verkehrsbetriebe GmbH|B107", new Style(RMV_SHAPE, Style.rgb(0, 174, 239), Style.WHITE));
+        STYLES.put("Offenbacher Verkehrsbetriebe GmbH|B108", new Style(RMV_SHAPE, Style.rgb(239, 89, 161), Style.WHITE));
+        STYLES.put("Offenbacher Verkehrsbetriebe GmbH|B120", new Style(RMV_SHAPE, Style.rgb(193, 104, 85), Style.WHITE));
+
+        // busses Darmstadt
+        STYLES.put("HEAG Mobilo|T1", new Style(RMV_SHAPE, Style.rgb(236, 123, 143), Style.WHITE));
+        STYLES.put("HEAG Mobilo|T2", new Style(RMV_SHAPE, Style.rgb(22, 159, 78), Style.WHITE));
+        STYLES.put("HEAG Mobilo|T3", new Style(RMV_SHAPE, Style.rgb(246, 192, 39), Style.WHITE));
+        STYLES.put("HEAG Mobilo|T4", new Style(RMV_SHAPE, Style.rgb(16, 116, 188), Style.WHITE));
+        STYLES.put("HEAG Mobilo|T5", new Style(RMV_SHAPE, Style.rgb(28, 169, 225), Style.WHITE));
+        STYLES.put("HEAG Mobilo|T6", new Style(RMV_SHAPE, Style.rgb(237, 126, 41), Style.WHITE));
+        STYLES.put("HEAG Mobilo|T7", new Style(RMV_SHAPE, Style.rgb(237, 2, 140), Style.WHITE));
+        STYLES.put("HEAG Mobilo|T8", new Style(RMV_SHAPE, Style.rgb(223, 42, 41), Style.WHITE));
+        STYLES.put("HEAG Mobilo|T9", new Style(RMV_SHAPE, Style.rgb(127, 195, 70), Style.WHITE));
+        STYLES.put("HEAG Mobilo|T10", new Style(RMV_SHAPE, Style.rgb(147, 149, 149), Style.WHITE));
     }
 
     // town (place) and stop name.
