@@ -221,6 +221,11 @@ public abstract class AbstractNetworkProvider extends AbstractLocationSearchProv
     }
 
     @Override
+    public TripRef createTripRefFromPreviousTripWithNewLegs(final Trip trip, final List<Trip.Leg> newLegs) {
+        return null;
+    }
+
+    @Override
     public NearbyLocationsResult queryNearbyLocations(
             final Set<LocationType> types, final Location location,
             final int maxDistance, final int maxLocations) throws IOException {

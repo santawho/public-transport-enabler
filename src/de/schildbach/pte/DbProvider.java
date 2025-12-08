@@ -17,23 +17,40 @@
 
 package de.schildbach.pte;
 
-import java.util.ArrayList;
+import org.msgpack.core.MessagePacker;
+import org.msgpack.core.MessageUnpacker;
+
+import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import javax.annotation.Nullable;
 
+import de.schildbach.pte.dto.JourneyRef;
+import de.schildbach.pte.dto.Line;
+import de.schildbach.pte.dto.Location;
 import de.schildbach.pte.dto.Product;
 import de.schildbach.pte.dto.Style;
+import de.schildbach.pte.dto.Trip;
+import de.schildbach.pte.dto.TripRef;
+import de.schildbach.pte.util.MessagePackUtils;
 
 /**
  * Provider implementation for movas API of Deutsche Bahn (Germany).
  * 
  * @author Andreas Schildbach
  */
-public final class DbProvider extends DbWebProvider.Fernverkehr {
+public abstract class DbProvider extends AbstractNetworkProvider {
+    public static final class Default extends DbWebProvider.Fernverkehr {
+        public Default() {
+            super(NetworkId.DB);
+        }
+    }
+
     public static final class Fernverkehr extends DbWebProvider.Fernverkehr {
         public Fernverkehr() {
             super(NetworkId.DB);
@@ -62,8 +79,8 @@ public final class DbProvider extends DbWebProvider.Fernverkehr {
 
     public static final Set<Product> REGIO_PRODUCTS = Product.ALL_EXCEPT_HIGHSPEED;
 
-    public DbProvider() {
-        super(NetworkId.DB);
+    public DbProvider(final NetworkId networkId) {
+        super(networkId);
     }
 
     public static final String OPERATOR_DB_FERNVERKEHR = "DB Fernverkehr AG";
@@ -105,6 +122,137 @@ public final class DbProvider extends DbWebProvider.Fernverkehr {
                 return "https://bahn.de";
             }
         };
+    }
+
+    public static class DbTripRef extends TripRef
+            implements BahnvorhersageProvider.BahnvorhersageTripRef {
+        private static final long serialVersionUID = -1951536102104578242L;
+
+        public final String ctxRecon;
+        public final boolean limitToDticket;
+        public final boolean hasDticket;
+
+        public DbTripRef(
+                final NetworkId network, final String ctxRecon,
+                final Location from, final Location via, final Location to,
+                final boolean limitToDticket, final boolean hasDticket) {
+            super(network, from, via, to);
+            this.ctxRecon = ctxRecon;
+            this.limitToDticket = limitToDticket;
+            this.hasDticket = hasDticket;
+        }
+
+        public DbTripRef(final DbTripRef simplifiedTripRef, final String ctxRecon) {
+            super(simplifiedTripRef);
+            this.ctxRecon = ctxRecon;
+            this.limitToDticket = simplifiedTripRef.limitToDticket;
+            this.hasDticket = simplifiedTripRef.hasDticket;
+        }
+
+        public DbTripRef(final NetworkId network, final MessageUnpacker unpacker) throws IOException {
+            super(network, unpacker);
+            this.ctxRecon = MessagePackUtils.unpackNullableString(unpacker);
+            this.limitToDticket = unpacker.unpackBoolean();
+            this.hasDticket = unpacker.unpackBoolean();
+        }
+
+        @Override
+        public String getBahnvorhersageRefreshToken() {
+            return ctxRecon;
+        }
+
+        @Override
+        public void packToMessage(final MessagePacker packer) throws IOException {
+            super.packToMessage(packer);
+            MessagePackUtils.packNullableString(packer, ctxRecon);
+            packer.packBoolean(limitToDticket);
+            packer.packBoolean(hasDticket);
+        }
+
+        public DbTripRef getSimplified() {
+            return new DbTripRef(network, null, from, via, to, limitToDticket, hasDticket);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof DbTripRef)) return false;
+            DbTripRef that = (DbTripRef) o;
+            return super.equals(that)
+                    && Objects.equals(ctxRecon, that.ctxRecon)
+                    && limitToDticket == that.limitToDticket
+                    && hasDticket == that.limitToDticket;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(super.hashCode(), ctxRecon, limitToDticket, hasDticket);
+        }
+    }
+
+    public static class DbJourneyRef extends JourneyRef
+            implements BahnvorhersageProvider.BahnvorhersageJourneyRef {
+        private static final long serialVersionUID = 7738174208212249291L;
+
+        public final String journeyId;
+        public final String journeyRequestId;
+        public final Line line;
+
+        public DbJourneyRef(final String journeyId, final String journeyRequestId, final Line line) {
+            this.journeyId = journeyId;
+            this.journeyRequestId = journeyRequestId;
+            this.line = line;
+        }
+
+        @Override
+        public String getBahnvorhersageRefreshJourneyId() {
+            return journeyRequestId;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof DbJourneyRef)) return false;
+            DbJourneyRef that = (DbJourneyRef) o;
+            return Objects.equals(journeyId, that.journeyId)
+                    && Objects.equals(line, that.line);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(journeyId, line);
+        }
+    }
+
+    @Override
+    public TripRef createTripRefFromPreviousTripWithNewLegs(final Trip trip, final List<Trip.Leg> newLegs) {
+        final TripRef prevTripRef = trip.tripRef;
+        if (!(prevTripRef instanceof DbTripRef))
+            return null;
+        return new DbTripRef((DbTripRef) prevTripRef, refreshTokenFromPublicLegs(newLegs));
+    }
+
+    public static String refreshTokenFromPublicLegs(final List<Trip.Leg> legs) {
+        final StringBuilder builder = new StringBuilder();
+        builder.append("¶HKI¶");
+        boolean isNotFirst = false;
+        for (final Trip.Leg leg : legs) {
+            if (leg instanceof Trip.Public) {
+                final Trip.Public publicLeg = (Trip.Public) leg;
+                final JourneyRef journeyRef = publicLeg.journeyRef;
+                if (!(journeyRef instanceof BahnvorhersageProvider.BahnvorhersageJourneyRef))
+                    return null;
+                final BahnvorhersageProvider.BahnvorhersageJourneyRef bahnvorhersageJourneyRef = (BahnvorhersageProvider.BahnvorhersageJourneyRef) journeyRef;
+                final String bahnvorhersageRefreshJourneyId = bahnvorhersageJourneyRef.getBahnvorhersageRefreshJourneyId();
+                if (bahnvorhersageRefreshJourneyId == null)
+                    return null;
+                if (isNotFirst)
+                    builder.append("§");
+                isNotFirst = true;
+                builder.append(bahnvorhersageRefreshJourneyId);
+            }
+        }
+        return builder.toString();
     }
 
     public static class CtxRecon {
@@ -170,5 +318,16 @@ public final class DbProvider extends DbWebProvider.Fernverkehr {
             }
             return entries;
         }
+
+        public static List<String> parseArray(final String separator, final String value) {
+            if (value == null)
+                return null;
+            return Arrays.asList(value.split(separator));
+        }
+    }
+
+    @Override
+    public Description getDescription() {
+        return getDbDescription();
     }
 }

@@ -89,7 +89,7 @@ import okhttp3.HttpUrl;
  * 
  * @author Andreas Schildbach
  */
-public abstract class DbMovasProvider extends AbstractNetworkProvider {
+public abstract class DbMovasProvider extends DbProvider {
     public static class Fernverkehr extends DbMovasProvider {
         public Fernverkehr() {
             this(NetworkId.DBMOVAS);
@@ -101,7 +101,7 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
 
         @Override
         public Set<Product> defaultProducts() {
-            return DbProvider.FERNVERKEHR_PRODUCTS;
+            return FERNVERKEHR_PRODUCTS;
         }
     }
 
@@ -116,7 +116,7 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
 
         @Override
         public Set<Product> defaultProducts() {
-            return DbProvider.REGIO_PRODUCTS;
+            return REGIO_PRODUCTS;
         }
     }
 
@@ -272,7 +272,7 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
 
     @Override
     public TripRef unpackTripRefFromMessage(final MessageUnpacker unpacker) throws IOException {
-        return new DbMovasTripRef(network, unpacker);
+        return new DbTripRef(network, unpacker);
     }
 
     @Override
@@ -589,7 +589,7 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
                 product,
                 shortName,
                 name,
-                DbProvider.lineStyle(styles, operator, product, name),
+                lineStyle(styles, operator, product, name),
                 lineAttrs,
                 null);
     }
@@ -661,107 +661,7 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
         return null;
     }
 
-    public static class DbMovasTripRef extends TripRef
-            implements BahnvorhersageProvider.BahnvorhersageTripRef {
-        private static final long serialVersionUID = -6844201755459607718L;
-
-        public final String kontext;
-        public final boolean limitToDticket;
-        public final boolean hasDticket;
-
-        public DbMovasTripRef(
-                final NetworkId network, final String kontext,
-                final Location from, final Location via, final Location to,
-                final boolean limitToDticket, final boolean hasDticket) {
-            super(network, from, via, to);
-            this.kontext = kontext;
-            this.limitToDticket = limitToDticket;
-            this.hasDticket = hasDticket;
-        }
-
-        public DbMovasTripRef(final DbWebProvider.DbWebTripRef simplifiedTripRef, final String kontext) {
-            super(simplifiedTripRef);
-            this.kontext = kontext;
-            this.limitToDticket = simplifiedTripRef.limitToDticket;
-            this.hasDticket = simplifiedTripRef.hasDticket;
-        }
-
-        public DbMovasTripRef(final NetworkId network, final MessageUnpacker unpacker) throws IOException {
-            super(network, unpacker);
-            this.kontext = MessagePackUtils.unpackNullableString(unpacker);
-            this.limitToDticket = unpacker.unpackBoolean();
-            this.hasDticket = unpacker.unpackBoolean();
-        }
-
-        @Override
-        public String getBahnvorhersageRefreshToken() {
-            return kontext;
-        }
-
-        @Override
-        public void packToMessage(final MessagePacker packer) throws IOException {
-            super.packToMessage(packer);
-            MessagePackUtils.packNullableString(packer, kontext);
-            packer.packBoolean(limitToDticket);
-            packer.packBoolean(hasDticket);
-        }
-
-        public DbMovasTripRef getSimplified() {
-            return new DbMovasTripRef(network, null, from, via, to, limitToDticket, hasDticket);
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (!(o instanceof DbMovasTripRef)) return false;
-            DbMovasTripRef that = (DbMovasTripRef) o;
-            return super.equals(that)
-                    && Objects.equals(kontext, that.kontext)
-                    && limitToDticket == that.limitToDticket
-                    && hasDticket == that.limitToDticket;
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(super.hashCode(), limitToDticket, hasDticket);
-        }
-    }
-
-    public static class DbMovasJourneyRef extends JourneyRef
-            implements BahnvorhersageProvider.BahnvorhersageJourneyRef {
-        private static final long serialVersionUID = -4247207547836359686L;
-
-        public final String journeyId;
-        public final String journeyRequestId;
-        public final Line line;
-
-        public DbMovasJourneyRef(final String journeyId, final String journeyRequestId, final Line line) {
-            this.journeyId = journeyId;
-            this.journeyRequestId = journeyRequestId;
-            this.line = line;
-        }
-
-        @Override
-        public String getBahnvorhersageRefreshJourneyId() {
-            return journeyRequestId;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (!(o instanceof DbMovasJourneyRef)) return false;
-            DbMovasJourneyRef that = (DbMovasJourneyRef) o;
-            return Objects.equals(journeyId, that.journeyId)
-                    && Objects.equals(line, that.line);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(journeyId, line);
-        }
-    }
-
-    private Trip.Public parseJourney(final JSONObject journey, final DbMovasJourneyRef journeyRef) throws JSONException {
+    private Trip.Public parseJourney(final JSONObject journey, final DbJourneyRef journeyRef) throws JSONException {
         Stop departureStop = null;
         Stop arrivalStop = null;
         final List<Stop> intermediateStops = parseStops(journey.optJSONArray("halte"));
@@ -792,7 +692,7 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
                 departureStop, arrivalStop, intermediateStops,
                 null,
                 message,
-                new DbMovasJourneyRef(journeyRef.journeyId, null, journeyRef.line));
+                new DbJourneyRef(journeyRef.journeyId, null, journeyRef.line));
     }
 
     private Trip.Leg parseLeg(final JSONObject abschnitt, final String journeyRequestId) throws JSONException {
@@ -817,7 +717,7 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
             final String message = parseJourneyMessages(abschnitt, null);
             final String journeyId = abschnitt.optString("zuglaufId", null);
             return new Trip.Public(line, destination, departureStop, arrivalStop, intermediateStops, null, message,
-                    journeyId == null ? null : new DbMovasJourneyRef(journeyId, journeyRequestId, line));
+                    journeyId == null ? null : new DbJourneyRef(journeyId, journeyRequestId, line));
         } else {
             final int dist = abschnitt.optInt("distanz");
             if (dist == 0 && departureStop.location.id.equals(arrivalStop.location.id)) {
@@ -873,7 +773,7 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
             final boolean limitToDticket, final boolean hasDticket
     ) throws JSONException {
         final JSONObject verbindung = verbindungParent.getJSONObject("verbindung");
-        final DbProvider.CtxRecon ctxRecon = new DbProvider.CtxRecon(verbindung.optString("kontext"));
+        final CtxRecon ctxRecon = new CtxRecon(verbindung.optString("kontext"));
         final JSONArray abschnitte = verbindung.getJSONArray("verbindungsAbschnitte");
         final List<Trip.Leg> legs = new ArrayList<>();
         Location tripFrom = null;
@@ -915,7 +815,7 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
         return new Trip(
                 new Date(),
                 ctxRecon.tripId,
-                new DbMovasTripRef(network, ctxRecon.ctxRecon, from, via, to, limitToDticket, hasDticket),
+                new DbTripRef(network, ctxRecon.ctxRecon, from, via, to, limitToDticket, hasDticket),
                 tripFrom,
                 tripTo,
                 legs,
@@ -1010,9 +910,9 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
         }
     }
 
-    private QueryTripsResult doQueryReloadTrip(final DbMovasTripRef tripRef) throws IOException {
+    private QueryTripsResult doQueryReloadTrip(final DbTripRef tripRef) throws IOException {
         final String request = "{\"autonomeReservierung\":false,\"einstiegsTypList\":[\"STANDARD\"],\"klasse\":\"KLASSE_2\"," //
-                + "\"verbindungHin\":{\"kontext\":\"" + tripRef.kontext + "\"},"
+                + "\"verbindungHin\":{\"kontext\":\"" + tripRef.ctxRecon + "\"},"
                 + "\"reisendenProfil\":{\"reisende\":[{\"ermaessigungen\":[\"KEINE_ERMAESSIGUNG KLASSENLOS\"],\"reisendenTyp\":\"ERWACHSENER\"}]}," //
                 + "\"fahrverguenstigungen\":{\"deutschlandTicketVorhanden\":" + tripRef.hasDticket + ",\"nurDeutschlandTicketVerbindungen\":" + tripRef.limitToDticket + "},"
                 + "\"reservierungsKontingenteVorhanden\":false}";
@@ -1132,7 +1032,7 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
                         cancelled,
                         null,
                         parseJourneyMessages(dep, null),
-                        journeyId == null ? null : new DbMovasJourneyRef(journeyId, null, line));
+                        journeyId == null ? null : new DbJourneyRef(journeyId, null, line));
 
                 stationDepartures.departures.add(departure);
                 added += 1;
@@ -1215,15 +1115,15 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
 
     @Override
     public QueryTripsResult queryReloadTrip(final TripRef tripRef) throws IOException {
-        return doQueryReloadTrip((DbMovasTripRef) tripRef);
+        return doQueryReloadTrip((DbTripRef) tripRef);
     }
 
     @Override
     public QueryJourneyResult queryJourney(final JourneyRef aJourneyRef) throws IOException {
-        return doQueryJourney((DbMovasJourneyRef) aJourneyRef);
+        return doQueryJourney((DbJourneyRef) aJourneyRef);
     }
 
-    private QueryJourneyResult doQueryJourney(final DbMovasJourneyRef journeyRef) throws IOException {
+    private QueryJourneyResult doQueryJourney(final DbJourneyRef journeyRef) throws IOException {
         HttpUrl url = this.journeyEndpoint.newBuilder()
                 .addPathSegment(journeyRef.journeyId)
                 .addQueryParameter("poly", "true")
@@ -1294,32 +1194,27 @@ public abstract class DbMovasProvider extends AbstractNetworkProvider {
 
     @Override
     public String getOpenLink(final Trip trip) throws IOException {
-        final DbMovasTripRef tripRef = (DbMovasTripRef) trip.tripRef;
-        return linkSharing.getOpenLink(trip, tripRef.getSimplified(), tripRef.kontext);
+        final DbTripRef tripRef = (DbTripRef) trip.tripRef;
+        return linkSharing.getOpenLink(trip, tripRef.getSimplified(), tripRef.ctxRecon);
     }
 
     @Override
     public String getShareLink(final Trip trip) throws IOException {
-        final DbMovasTripRef tripRef = (DbMovasTripRef) trip.tripRef;
-        return linkSharing.getShareLink(httpClient, trip, tripRef.getSimplified(), tripRef.kontext);
+        final DbTripRef tripRef = (DbTripRef) trip.tripRef;
+        return linkSharing.getShareLink(httpClient, trip, tripRef.getSimplified(), tripRef.ctxRecon);
     }
 
     @Override
     public TripShare shareTrip(final Trip trip) throws IOException {
-        final DbMovasTripRef tripRef = (DbMovasTripRef) trip.tripRef;
-        return linkSharing.shareTrip(httpClient, trip, tripRef.getSimplified(), tripRef.kontext);
+        final DbTripRef tripRef = (DbTripRef) trip.tripRef;
+        return linkSharing.shareTrip(httpClient, trip, tripRef.getSimplified(), tripRef.ctxRecon);
     }
 
     @Override
     public QueryTripsResult loadSharedTrip(final TripShare tripShare) throws IOException {
         final DbWebProvider.DbWebTripShare dbWebTripShare = (DbWebProvider.DbWebTripShare) tripShare;
         final String recon = linkSharing.loadSharedTrip(httpClient, dbWebTripShare);
-        final DbMovasTripRef tripRef = new DbMovasTripRef((DbWebProvider.DbWebTripRef) tripShare.simplifiedTripRef, recon);
+        final DbTripRef tripRef = new DbTripRef((DbTripRef) tripShare.simplifiedTripRef, recon);
         return queryReloadTrip(tripRef);
-    }
-
-    @Override
-    public Description getDescription() {
-        return DbProvider.getDbDescription();
     }
 }

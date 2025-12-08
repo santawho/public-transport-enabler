@@ -91,7 +91,7 @@ import okhttp3.HttpUrl;
 /**
  * Provider implementation for Web API of Deutsche Bahn (Germany).
  */
-public abstract class DbWebProvider extends AbstractNetworkProvider {
+public abstract class DbWebProvider extends DbProvider {
     private static final Logger log = LoggerFactory.getLogger(DbWebProvider.class);
 
     public static class Fernverkehr extends DbWebProvider {
@@ -105,7 +105,7 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
 
         @Override
         public Set<Product> defaultProducts() {
-            return DbProvider.FERNVERKEHR_PRODUCTS;
+            return FERNVERKEHR_PRODUCTS;
         }
     }
 
@@ -120,7 +120,7 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
 
         @Override
         public Set<Product> defaultProducts() {
-            return DbProvider.REGIO_PRODUCTS;
+            return REGIO_PRODUCTS;
         }
     }
 
@@ -242,7 +242,7 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
 
     @Override
     public TripRef unpackTripRefFromMessage(final MessageUnpacker unpacker) throws IOException {
-        return new DbWebTripRef(network, unpacker);
+        return new DbTripRef(network, unpacker);
     }
 
     @Override
@@ -577,7 +577,7 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
                 product,
                 shortName,
                 name,
-                DbProvider.lineStyle(styles, operator, product, name),
+                lineStyle(styles, operator, product, name),
                 lineAttrs,
                 null);
     }
@@ -640,107 +640,7 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
         return null;
     }
 
-    public static class DbWebTripRef extends TripRef
-            implements BahnvorhersageProvider.BahnvorhersageTripRef {
-        private static final long serialVersionUID = -1951536102104578242L;
-
-        public final String ctxRecon;
-        public final boolean limitToDticket;
-        public final boolean hasDticket;
-
-        public DbWebTripRef(
-                final NetworkId network, final String ctxRecon,
-                final Location from, final Location via, final Location to,
-                final boolean limitToDticket, final boolean hasDticket) {
-            super(network, from, via, to);
-            this.ctxRecon = ctxRecon;
-            this.limitToDticket = limitToDticket;
-            this.hasDticket = hasDticket;
-        }
-
-        public DbWebTripRef(final DbWebTripRef simplifiedTripRef, final String ctxRecon) {
-            super(simplifiedTripRef);
-            this.ctxRecon = ctxRecon;
-            this.limitToDticket = simplifiedTripRef.limitToDticket;
-            this.hasDticket = simplifiedTripRef.hasDticket;
-        }
-
-        public DbWebTripRef(final NetworkId network, final MessageUnpacker unpacker) throws IOException {
-            super(network, unpacker);
-            this.ctxRecon = MessagePackUtils.unpackNullableString(unpacker);
-            this.limitToDticket = unpacker.unpackBoolean();
-            this.hasDticket = unpacker.unpackBoolean();
-        }
-
-        @Override
-        public String getBahnvorhersageRefreshToken() {
-            return ctxRecon;
-        }
-
-        @Override
-        public void packToMessage(final MessagePacker packer) throws IOException {
-            super.packToMessage(packer);
-            MessagePackUtils.packNullableString(packer, ctxRecon);
-            packer.packBoolean(limitToDticket);
-            packer.packBoolean(hasDticket);
-        }
-
-        public DbWebTripRef getSimplified() {
-            return new DbWebTripRef(network, null, from, via, to, limitToDticket, hasDticket);
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (!(o instanceof DbWebTripRef)) return false;
-            DbWebTripRef that = (DbWebTripRef) o;
-            return super.equals(that)
-                    && Objects.equals(ctxRecon, that.ctxRecon)
-                    && limitToDticket == that.limitToDticket
-                    && hasDticket == that.limitToDticket;
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(super.hashCode(), ctxRecon, limitToDticket, hasDticket);
-        }
-    }
-
-    public static class DbWebJourneyRef extends JourneyRef
-            implements BahnvorhersageProvider.BahnvorhersageJourneyRef {
-        private static final long serialVersionUID = 7738174208212249291L;
-
-        public final String journeyId;
-        public final String journeyRequestId;
-        public final Line line;
-
-        public DbWebJourneyRef(final String journeyId, final String journeyRequestId, final Line line) {
-            this.journeyId = journeyId;
-            this.journeyRequestId = journeyRequestId;
-            this.line = line;
-        }
-
-        @Override
-        public String getBahnvorhersageRefreshJourneyId() {
-            return journeyRequestId;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (!(o instanceof DbWebJourneyRef)) return false;
-            DbWebJourneyRef that = (DbWebJourneyRef) o;
-            return Objects.equals(journeyId, that.journeyId)
-                    && Objects.equals(line, that.line);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(journeyId, line);
-        }
-    }
-
-    private Trip.Public parseJourney(final JSONObject journey, final DbWebJourneyRef journeyRef) throws JSONException {
+    private Trip.Public parseJourney(final JSONObject journey, final DbJourneyRef journeyRef) throws JSONException {
         Stop departureStop = null;
         Stop arrivalStop = null;
         final List<Stop> intermediateStops = parseStops(journey.optJSONArray("halte"));
@@ -762,7 +662,7 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
                 departureStop, arrivalStop, intermediateStops,
                 null,
                 message,
-                new DbWebJourneyRef(journeyRef.journeyId, null, journeyRef.line));
+                new DbJourneyRef(journeyRef.journeyId, null, journeyRef.line));
     }
 
     private Trip.Leg parseLeg(
@@ -797,7 +697,7 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
                     defaultTeilstreckenHinweis);
             final String journeyId = abschnitt.optString("journeyId", null);
             return new Trip.Public(line, destination, departureStop, arrivalStop, intermediateStops, null, message,
-                    journeyId == null ? null : new DbWebJourneyRef(journeyId, journeyRequestId, line));
+                    journeyId == null ? null : new DbJourneyRef(journeyId, journeyRequestId, line));
         } else {
             final int dist = abschnitt.optInt("distanz");
             return new Trip.Individual(
@@ -851,7 +751,7 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
 
         for (int iTrip = 0; iTrip < verbindungen.length(); iTrip++) {
             final JSONObject verbindung = verbindungen.getJSONObject(iTrip);
-            final DbProvider.CtxRecon ctxRecon = new DbProvider.CtxRecon(verbindung.optString("ctxRecon"));
+            final CtxRecon ctxRecon = new CtxRecon(verbindung.optString("ctxRecon"));
             final JSONArray abschnitte = verbindung.getJSONArray("verbindungsAbschnitte");
             final List<Trip.Leg> legs = new ArrayList<>();
             Location tripFrom = null;
@@ -908,7 +808,7 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
             trips.add(new Trip(
                     new Date(),
                     ctxRecon.tripId,
-                    new DbWebTripRef(network, ctxRecon.ctxRecon, from, via, to, limitToDticket, hasDticket),
+                    new DbTripRef(network, ctxRecon.ctxRecon, from, via, to, limitToDticket, hasDticket),
                     tripFrom,
                     tripTo,
                     legs,
@@ -1001,7 +901,7 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
         }
     }
 
-    private QueryTripsResult doQueryReloadTrip(final DbWebTripRef tripRef) throws IOException {
+    private QueryTripsResult doQueryReloadTrip(final DbTripRef tripRef) throws IOException {
         final String request = "{\"ctxRecon\":\"" + tripRef.ctxRecon
                 + "\",\"klasse\":\"KLASSE_2\"" //
                 + ",\"deutschlandTicketVorhanden\":" + tripRef.hasDticket
@@ -1150,7 +1050,7 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
                         cancelled,
                         null,
                         parseJourneyMessages(dep, null, null, null),
-                        journeyId == null ? null : new DbWebJourneyRef(journeyId, null, line));
+                        journeyId == null ? null : new DbJourneyRef(journeyId, null, line));
 
                 stationDepartures.departures.add(departure);
                 added += 1;
@@ -1258,15 +1158,15 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
 
     @Override
     public QueryTripsResult queryReloadTrip(final TripRef tripRef) throws IOException {
-        return doQueryReloadTrip((DbWebTripRef) tripRef);
+        return doQueryReloadTrip((DbTripRef) tripRef);
     }
 
     @Override
     public QueryJourneyResult queryJourney(final JourneyRef aJourneyRef) throws IOException {
-        return doQueryJourney((DbWebJourneyRef) aJourneyRef);
+        return doQueryJourney((DbJourneyRef) aJourneyRef);
     }
 
-    private QueryJourneyResult doQueryJourney(final DbWebJourneyRef journeyRef) throws IOException {
+    private QueryJourneyResult doQueryJourney(final DbJourneyRef journeyRef) throws IOException {
         final HttpUrl url = this.journeyEndpoint.newBuilder()
                 .addQueryParameter("journeyId", journeyRef.journeyId)
                 .addQueryParameter("poly", "true")
@@ -1336,19 +1236,19 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
 
     @Override
     public String getOpenLink(final Trip trip) throws IOException {
-        final DbWebTripRef tripRef = (DbWebTripRef) trip.tripRef;
+        final DbTripRef tripRef = (DbTripRef) trip.tripRef;
         return linkSharing.getOpenLink(trip, tripRef.getSimplified(), tripRef.ctxRecon);
     }
 
     @Override
     public String getShareLink(final Trip trip) throws IOException {
-        final DbWebTripRef tripRef = (DbWebTripRef) trip.tripRef;
+        final DbTripRef tripRef = (DbTripRef) trip.tripRef;
         return linkSharing.getShareLink(httpClient, trip, tripRef.getSimplified(), tripRef.ctxRecon);
     }
 
     @Override
     public TripShare shareTrip(final Trip trip) throws IOException {
-        final DbWebTripRef tripRef = (DbWebTripRef) trip.tripRef;
+        final DbTripRef tripRef = (DbTripRef) trip.tripRef;
         return linkSharing.shareTrip(httpClient, trip, tripRef.getSimplified(), tripRef.ctxRecon);
     }
 
@@ -1356,7 +1256,7 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
     public QueryTripsResult loadSharedTrip(final TripShare tripShare) throws IOException {
         final DbWebTripShare dbWebTripShare = (DbWebTripShare) tripShare;
         final String recon = linkSharing.loadSharedTrip(httpClient, dbWebTripShare);
-        final DbWebTripRef tripRef = new DbWebTripRef((DbWebTripRef) tripShare.simplifiedTripRef, recon);
+        final DbTripRef tripRef = new DbTripRef((DbTripRef) tripShare.simplifiedTripRef, recon);
         return queryReloadTrip(tripRef);
     }
 
@@ -1397,7 +1297,7 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
                 final Trip trip,
                 final TripRef simplifiedTripRef,
                 final String recon) {
-            final DbProvider.CtxRecon ctxRecon = new DbProvider.CtxRecon(recon);
+            final CtxRecon ctxRecon = new CtxRecon(recon);
             // this URL opens in browser, because DB Navigator does not deep link this pattern
             final String baseUrl = "https://www.bahn.de/buchung/fahrplan/suche";
             // this URL opens in DB Navigator if installed, because it deep links this pattern.
@@ -1474,16 +1374,5 @@ public abstract class DbWebProvider extends AbstractNetworkProvider {
                 throw new ParserException("cannot parse json: '" + page + "' on " + url, x);
             }
         }
-    }
-
-    public static List<String> parseArray(final String separator, final String value) {
-        if (value == null)
-            return null;
-        return Arrays.asList(value.split(separator));
-    }
-
-    @Override
-    public Description getDescription() {
-        return DbProvider.getDbDescription();
     }
 }

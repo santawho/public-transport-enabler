@@ -45,7 +45,7 @@ import de.schildbach.pte.dto.TripOptions;
  */
 public class DbProviderLiveTest extends AbstractProviderLiveTest {
     public DbProviderLiveTest() {
-        super(new DbProvider());
+        super(new DbProvider.Default());
     }
 
     @Test

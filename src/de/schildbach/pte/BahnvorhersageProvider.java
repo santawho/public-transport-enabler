@@ -60,7 +60,7 @@ public final class BahnvorhersageProvider extends AbstractApiProvider implements
         if (!checkPreconditions(trip))
             return null;
 
-        String refreshToken = refreshTokenFromPublicLegs(trip);
+        String refreshToken = DbProvider.refreshTokenFromPublicLegs(trip.legs);
         if (refreshToken == null) {
             final TripRef tripRef = trip.tripRef;
             if (tripRef == null)
@@ -77,30 +77,7 @@ public final class BahnvorhersageProvider extends AbstractApiProvider implements
         return queryTransferDetailsForRefreshToken(refreshToken);
     }
 
-    private String refreshTokenFromPublicLegs(final Trip trip) {
-        final StringBuilder builder = new StringBuilder();
-        builder.append("¶HKI¶");
-        boolean isNotFirst = false;
-        for (final Trip.Leg leg : trip.legs) {
-            if (leg instanceof Trip.Public) {
-                final Trip.Public publicLeg = (Trip.Public) leg;
-                final JourneyRef journeyRef = publicLeg.journeyRef;
-                if (!(journeyRef instanceof BahnvorhersageJourneyRef))
-                    return null;
-                final BahnvorhersageJourneyRef bahnvorhersageJourneyRef = (BahnvorhersageJourneyRef) journeyRef;
-                final String bahnvorhersageRefreshJourneyId = bahnvorhersageJourneyRef.getBahnvorhersageRefreshJourneyId();
-                if (bahnvorhersageRefreshJourneyId == null)
-                    return null;
-                if (isNotFirst)
-                    builder.append("§");
-                isNotFirst = true;
-                builder.append(bahnvorhersageRefreshJourneyId);
-            }
-        }
-        return builder.toString();
-    }
-
-    private boolean checkPreconditions(final Trip trip) {
+    private static boolean checkPreconditions(final Trip trip) {
         // at least one transfer must be train to train.
         // otherwise the result would contain no transfer evaluation at all,
         // because Bahnvorhersage supports trains only.
