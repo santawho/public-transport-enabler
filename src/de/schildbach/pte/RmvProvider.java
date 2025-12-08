@@ -286,7 +286,7 @@ public class RmvProvider extends AbstractHafasClientInterfaceProvider {
         STYLES.put("Offenbacher Verkehrsbetriebe GmbH|B108", new Style(RMV_SHAPE, Style.rgb(239, 89, 161), Style.WHITE));
         STYLES.put("Offenbacher Verkehrsbetriebe GmbH|B120", new Style(RMV_SHAPE, Style.rgb(193, 104, 85), Style.WHITE));
 
-        // busses Darmstadt
+        // trams Darmstadt
         STYLES.put("HEAG Mobilo|T1", new Style(RMV_SHAPE, Style.rgb(236, 123, 143), Style.WHITE));
         STYLES.put("HEAG Mobilo|T2", new Style(RMV_SHAPE, Style.rgb(22, 159, 78), Style.WHITE));
         STYLES.put("HEAG Mobilo|T3", new Style(RMV_SHAPE, Style.rgb(246, 192, 39), Style.WHITE));
