@@ -3014,6 +3014,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
         }
 
         XmlPullUtil.optSkip(pp, "itdFootPathInfo");
+        XmlPullUtil.optSkip(pp, "itdFrequencyInfo");
 
         while (XmlPullUtil.optEnter(pp, "infoLink")) {
             XmlPullUtil.optSkip(pp, "paramList");
