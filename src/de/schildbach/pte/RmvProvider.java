@@ -297,6 +297,38 @@ public class RmvProvider extends AbstractHafasClientInterfaceProvider {
         STYLES.put("HEAG Mobilo|T8", new Style(RMV_SHAPE, Style.rgb(223, 42, 41), Style.WHITE));
         STYLES.put("HEAG Mobilo|T9", new Style(RMV_SHAPE, Style.rgb(127, 195, 70), Style.WHITE));
         STYLES.put("HEAG Mobilo|T10", new Style(RMV_SHAPE, Style.rgb(147, 149, 149), Style.WHITE));
+
+        // busses Darmstadt
+        STYLES.put("HEAG mobiBus GmbH + Co. KG|B3A", new Style(RMV_SHAPE, Style.rgb(241, 88, 33), Style.WHITE));
+        STYLES.put("HEAG mobiBus GmbH + Co. KG|BA", new Style(RMV_SHAPE, Style.rgb(167, 122, 77), Style.WHITE));
+        STYLES.put("HEAG mobiBus GmbH + Co. KG|BAH", new Style(RMV_SHAPE, Style.rgb(95, 56, 18), Style.WHITE));
+        STYLES.put("HEAG mobiBus GmbH + Co. KG|BAIR", new Style(RMV_SHAPE, Style.rgb(63, 145, 154), Style.WHITE));
+        STYLES.put("HEAG mobiBus GmbH + Co. KG|BB", new Style(RMV_SHAPE, Style.rgb(159, 25, 96), Style.WHITE));
+        STYLES.put("HEAG mobiBus GmbH + Co. KG|BBE1", new Style(RMV_SHAPE, Style.rgb(44, 53, 138), Style.WHITE));
+        STYLES.put("HEAG mobiBus GmbH + Co. KG|BBE2", new Style(RMV_SHAPE, Style.rgb(159, 25, 96), Style.WHITE));
+        STYLES.put("HEAG mobiBus GmbH + Co. KG|BBE3", new Style(RMV_SHAPE, Style.rgb(159, 25, 96), Style.WHITE));
+        STYLES.put("HEAG mobiBus GmbH + Co. KG|BDG", new Style(RMV_SHAPE, Style.rgb(159, 25, 96), Style.WHITE));
+        STYLES.put("HEAG mobiBus GmbH + Co. KG|BEB", new Style(RMV_SHAPE, Style.rgb(139, 198, 63), Style.WHITE));
+        STYLES.put("HEAG mobiBus GmbH + Co. KG|BF", new Style(RMV_SHAPE, Style.rgb(192, 31, 46), Style.WHITE));
+        STYLES.put("HEAG mobiBus GmbH + Co. KG|BFM", new Style(RMV_SHAPE, Style.rgb(192, 31, 46), Style.WHITE));
+        STYLES.put("HEAG mobiBus GmbH + Co. KG|BG", new Style(RMV_SHAPE, Style.rgb(251, 177, 63), Style.WHITE));
+        STYLES.put("HEAG mobiBus GmbH + Co. KG|BH", new Style(RMV_SHAPE, Style.rgb(100, 46, 143), Style.WHITE));
+        STYLES.put("HEAG mobiBus GmbH + Co. KG|BK", new Style(RMV_SHAPE, Style.rgb(18, 118, 189), Style.WHITE));
+        STYLES.put("HEAG mobiBus GmbH + Co. KG|BL", new Style(RMV_SHAPE, Style.rgb(232, 132, 181), Style.WHITE));
+        STYLES.put("HEAG mobiBus GmbH + Co. KG|BM1", new Style(RMV_SHAPE, Style.rgb(159, 25, 96), Style.WHITE));
+        STYLES.put("HEAG mobiBus GmbH + Co. KG|BM2", new Style(RMV_SHAPE, Style.rgb(159, 25, 96), Style.WHITE));
+        STYLES.put("HEAG mobiBus GmbH + Co. KG|BM3", new Style(RMV_SHAPE, Style.rgb(159, 25, 96), Style.WHITE));
+        STYLES.put("HEAG mobiBus GmbH + Co. KG|BMX", new Style(RMV_SHAPE, Style.rgb(159, 25, 96), Style.WHITE));
+        STYLES.put("HEAG mobiBus GmbH + Co. KG|BO", new Style(RMV_SHAPE, Style.rgb(159, 25, 96), Style.WHITE));
+        STYLES.put("HEAG mobiBus GmbH + Co. KG|BP", new Style(RMV_SHAPE, Style.rgb(246, 147, 35), Style.WHITE));
+        STYLES.put("HEAG mobiBus GmbH + Co. KG|BPE", new Style(RMV_SHAPE, Style.rgb(246, 147, 35), Style.WHITE));
+        STYLES.put("HEAG mobiBus GmbH + Co. KG|BPG", new Style(RMV_SHAPE, Style.rgb(246, 147, 35), Style.WHITE));
+        STYLES.put("HEAG mobiBus GmbH + Co. KG|BR", new Style(RMV_SHAPE, Style.rgb(59, 181, 74), Style.WHITE));
+        STYLES.put("HEAG mobiBus GmbH + Co. KG|BWE1", new Style(RMV_SHAPE, Style.rgb(98, 112, 141), Style.WHITE));
+        STYLES.put("HEAG mobiBus GmbH + Co. KG|BWE2", new Style(RMV_SHAPE, Style.rgb(98, 112, 141), Style.WHITE));
+        STYLES.put("HEAG mobiBus GmbH + Co. KG|BWE3", new Style(RMV_SHAPE, Style.rgb(241, 90, 41), Style.WHITE));
+        STYLES.put("HEAG mobiBus GmbH + Co. KG|BWE4", new Style(RMV_SHAPE, Style.rgb(241, 90, 41), Style.WHITE));
+        STYLES.put("HEAG mobiBus GmbH + Co. KG|BWX-", new Style(RMV_SHAPE, Style.rgb(251, 177, 63), Style.WHITE));
     }
 
     // town (place) and stop name.
