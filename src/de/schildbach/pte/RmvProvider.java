@@ -221,6 +221,34 @@ public class RmvProvider extends AbstractHafasClientInterfaceProvider {
         STYLES.put("BX94", new Style(RMV_SHAPE, Style.rgb(112, 153, 165), Style.WHITE));
         STYLES.put("BX95", new Style(RMV_SHAPE, Style.rgb(91, 196, 190), Style.WHITE));
 
+        // S-Bahn Rhein-Main
+        STYLES.put("DB Regio AG S-Bahn Rhein-Main|SS1", new Style(RMV_SHAPE, Style.rgb(0, 149, 217), Style.WHITE));
+        STYLES.put("DB Regio AG S-Bahn Rhein-Main|SS2", new Style(RMV_SHAPE, Style.rgb(238, 29, 35), Style.WHITE));
+        STYLES.put("DB Regio AG S-Bahn Rhein-Main|SS3", new Style(RMV_SHAPE, Style.rgb(0, 168, 149), Style.WHITE));
+        STYLES.put("DB Regio AG S-Bahn Rhein-Main|SS4", new Style(RMV_SHAPE, Style.rgb(254, 202, 10), Style.BLACK));
+        STYLES.put("DB Regio AG S-Bahn Rhein-Main|SS5", new Style(RMV_SHAPE, Style.rgb(148, 91, 54), Style.WHITE));
+        STYLES.put("DB Regio AG S-Bahn Rhein-Main|SS6", new Style(RMV_SHAPE, Style.rgb(244, 121, 33), Style.WHITE));
+        STYLES.put("DB Regio AG S-Bahn Rhein-Main|SS7", new Style(RMV_SHAPE, Style.rgb(32, 84, 63), Style.WHITE));
+        STYLES.put("DB Regio AG S-Bahn Rhein-Main|SS8", new Style(RMV_SHAPE, Style.rgb(139, 198, 62), Style.WHITE));
+        STYLES.put("DB Regio AG S-Bahn Rhein-Main|SS9", new Style(RMV_SHAPE, Style.rgb(144, 38, 143), Style.WHITE));
+
+        // S-Bahn Rhein-Neckar
+        STYLES.put("DB Regio AG Mitte Region Südwest|SS1", new Style(RMV_SHAPE, Style.rgb(238, 29, 35), Style.WHITE));
+        STYLES.put("DB Regio AG Mitte Region Südwest|SS2", new Style(RMV_SHAPE, Style.rgb(0, 120, 192), Style.WHITE));
+        STYLES.put("DB Regio AG Mitte Region Südwest|SS3", new Style(RMV_SHAPE, Style.rgb(255, 220, 1), Style.BLACK));
+        STYLES.put("DB Regio AG Mitte Region Südwest|SS4", new Style(RMV_SHAPE, Style.rgb(0, 165, 79), Style.WHITE));
+        STYLES.put("DB Regio AG Mitte Region Südwest|SS5", new Style(RMV_SHAPE, Style.rgb(247, 151, 53), Style.WHITE));
+        STYLES.put("DB Regio AG Mitte Region Südwest|SS6", new Style(RMV_SHAPE, Style.rgb(1, 189, 242), Style.WHITE));
+        STYLES.put("DB Regio AG Mitte Region Südwest|SS7", new Style(RMV_SHAPE, Style.rgb(237, 74, 155), Style.WHITE));
+        STYLES.put("DB Regio AG Mitte Region Südwest|SS8", new Style(RMV_SHAPE, Style.rgb(164, 110, 168), Style.WHITE));
+        STYLES.put("DB Regio AG Mitte Region Südwest|SS9", new Style(RMV_SHAPE, Style.rgb(127, 194, 65), Style.WHITE));
+        STYLES.put("DB Regio AG Mitte Region Südwest|SS33", new Style(RMV_SHAPE, Style.rgb(136, 76, 158), Style.WHITE));
+        STYLES.put("DB Regio AG Mitte Region Südwest|SS39", new Style(RMV_SHAPE, Style.rgb(192, 102, 22), Style.WHITE));
+        STYLES.put("DB Regio AG Mitte Region Südwest|SS44", new Style(RMV_SHAPE, Style.rgb(0, 165, 79), Style.WHITE));
+        STYLES.put("DB Regio AG Mitte Region Südwest|SS51", new Style(RMV_SHAPE, Style.rgb(247, 151, 53), Style.WHITE));
+        STYLES.put("DB Regio AG Mitte Region Südwest|RRE5", new Style(RMV_SHAPE, Style.rgb(247, 151, 53), Style.WHITE));
+        STYLES.put("DB Regio AG Mitte Region Südwest|RRE9", new Style(RMV_SHAPE, Style.rgb(127, 194, 65), Style.WHITE));
+
         // busses Hanau
         STYLES.put("Hanauer Straßenbahn GmbH|B1", new Style(RMV_SHAPE, Style.rgb(139, 198, 62), Style.WHITE));
         STYLES.put("Hanauer Straßenbahn GmbH|B2", new Style(RMV_SHAPE, Style.rgb(255, 220, 1), Style.WHITE));
