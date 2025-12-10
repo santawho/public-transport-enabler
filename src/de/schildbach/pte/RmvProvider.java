@@ -81,34 +81,35 @@ public class RmvProvider extends AbstractHafasClientInterfaceProvider {
         STYLES.put(Product.REPLACEMENT_SERVICE.toString(), new Style(Standard.COLOR_BACKGROUND_REPLACEMENT_SERVICE, Style.WHITE));
         STYLES.put(null, new Style(Style.DKGRAY, Style.WHITE));
 
-        STYLES.put("UU1", new Style(RMV_SHAPE, Style.rgb(184, 41, 47), Style.WHITE));
-        STYLES.put("UU2", new Style(RMV_SHAPE, Style.rgb(0, 166, 81), Style.WHITE));
-        STYLES.put("UU3", new Style(RMV_SHAPE, Style.rgb(75, 93, 170), Style.WHITE));
-        STYLES.put("UU4", new Style(RMV_SHAPE, Style.rgb(240, 92, 161), Style.WHITE));
-        STYLES.put("UU5", new Style(RMV_SHAPE, Style.rgb(1, 122, 67), Style.WHITE));
-        STYLES.put("UU6", new Style(RMV_SHAPE, Style.rgb(1, 125, 198), Style.WHITE));
-        STYLES.put("UU7", new Style(RMV_SHAPE, Style.rgb(228, 161, 35), Style.WHITE));
-        STYLES.put("UU8", new Style(RMV_SHAPE, Style.rgb(199, 125, 181), Style.WHITE));
-        STYLES.put("UU9", new Style(RMV_SHAPE, Style.rgb(255, 222, 1), Style.BLACK));
-        STYLES.put("SS1", new Style(RMV_SHAPE, Style.rgb(0, 136, 195), Style.WHITE));
-        STYLES.put("SS2", new Style(RMV_SHAPE, Style.rgb(210, 33, 41), Style.WHITE));
-        STYLES.put("SS3", new Style(RMV_SHAPE, Style.rgb(0, 157, 135), Style.WHITE));
-        STYLES.put("SS4", new Style(RMV_SHAPE, Style.rgb(255, 222, 1), Style.BLACK, Style.BLACK));
-        STYLES.put("SS5", new Style(RMV_SHAPE, Style.rgb(133, 84, 55), Style.WHITE));
-        STYLES.put("SS6", new Style(RMV_SHAPE, Style.rgb(229, 113, 42), Style.WHITE));
-        STYLES.put("SS7", new Style(RMV_SHAPE, Style.rgb(37, 75, 58), Style.WHITE));
-        STYLES.put("SS8", new Style(RMV_SHAPE, Style.rgb(131, 191, 66), Style.WHITE));
-        STYLES.put("SS9", new Style(RMV_SHAPE, Style.rgb(129, 43, 124), Style.WHITE));
-        STYLES.put("T11", new Style(RMV_SHAPE, Style.rgb(136, 129, 189), Style.WHITE));
-        STYLES.put("T12", new Style(RMV_SHAPE, Style.rgb(231, 185, 9), Style.WHITE));
-        STYLES.put("T14", new Style(RMV_SHAPE, Style.rgb(0, 166, 222), Style.WHITE));
-        STYLES.put("T15", new Style(RMV_SHAPE, Style.rgb(245, 130, 32), Style.WHITE));
-        STYLES.put("T16", new Style(RMV_SHAPE, Style.rgb(81, 184, 72), Style.WHITE));
-        STYLES.put("T17", new Style(RMV_SHAPE, Style.rgb(237, 29, 37), Style.WHITE));
-        STYLES.put("T18", new Style(RMV_SHAPE, Style.rgb(22, 71, 158), Style.WHITE));
-        STYLES.put("T19", new Style(RMV_SHAPE, Style.WHITE, Style.rgb(120, 205, 208), Style.rgb(120, 205, 208)));
-        STYLES.put("T20", new Style(RMV_SHAPE, Style.WHITE, Style.rgb(148, 149, 152), Style.rgb(148, 149, 152)));
-        STYLES.put("T21", new Style(RMV_SHAPE, Style.rgb(242, 135, 183), Style.WHITE));
+//        STYLES.put("UU1", new Style(RMV_SHAPE, Style.rgb(184, 41, 47), Style.WHITE));
+//        STYLES.put("UU2", new Style(RMV_SHAPE, Style.rgb(0, 166, 81), Style.WHITE));
+//        STYLES.put("UU3", new Style(RMV_SHAPE, Style.rgb(75, 93, 170), Style.WHITE));
+//        STYLES.put("UU4", new Style(RMV_SHAPE, Style.rgb(240, 92, 161), Style.WHITE));
+//        STYLES.put("UU5", new Style(RMV_SHAPE, Style.rgb(1, 122, 67), Style.WHITE));
+//        STYLES.put("UU6", new Style(RMV_SHAPE, Style.rgb(1, 125, 198), Style.WHITE));
+//        STYLES.put("UU7", new Style(RMV_SHAPE, Style.rgb(228, 161, 35), Style.WHITE));
+//        STYLES.put("UU8", new Style(RMV_SHAPE, Style.rgb(199, 125, 181), Style.WHITE));
+//        STYLES.put("UU9", new Style(RMV_SHAPE, Style.rgb(255, 222, 1), Style.BLACK));
+//        STYLES.put("SS1", new Style(RMV_SHAPE, Style.rgb(0, 136, 195), Style.WHITE));
+//        STYLES.put("SS2", new Style(RMV_SHAPE, Style.rgb(210, 33, 41), Style.WHITE));
+//        STYLES.put("SS3", new Style(RMV_SHAPE, Style.rgb(0, 157, 135), Style.WHITE));
+//        STYLES.put("SS4", new Style(RMV_SHAPE, Style.rgb(255, 222, 1), Style.BLACK, Style.BLACK));
+//        STYLES.put("SS5", new Style(RMV_SHAPE, Style.rgb(133, 84, 55), Style.WHITE));
+//        STYLES.put("SS6", new Style(RMV_SHAPE, Style.rgb(229, 113, 42), Style.WHITE));
+//        STYLES.put("SS7", new Style(RMV_SHAPE, Style.rgb(37, 75, 58), Style.WHITE));
+//        STYLES.put("SS8", new Style(RMV_SHAPE, Style.rgb(131, 191, 66), Style.WHITE));
+//        STYLES.put("SS9", new Style(RMV_SHAPE, Style.rgb(129, 43, 124), Style.WHITE));
+//        STYLES.put("T11", new Style(RMV_SHAPE, Style.rgb(136, 129, 189), Style.WHITE));
+//        STYLES.put("T12", new Style(RMV_SHAPE, Style.rgb(231, 185, 9), Style.WHITE));
+//        STYLES.put("T14", new Style(RMV_SHAPE, Style.rgb(0, 166, 222), Style.WHITE));
+//        STYLES.put("T15", new Style(RMV_SHAPE, Style.rgb(245, 130, 32), Style.WHITE));
+//        STYLES.put("T16", new Style(RMV_SHAPE, Style.rgb(81, 184, 72), Style.WHITE));
+//        STYLES.put("T17", new Style(RMV_SHAPE, Style.rgb(237, 29, 37), Style.WHITE));
+//        STYLES.put("T18", new Style(RMV_SHAPE, Style.rgb(22, 71, 158), Style.WHITE));
+//        STYLES.put("T19", new Style(RMV_SHAPE, Style.WHITE, Style.rgb(120, 205, 208), Style.rgb(120, 205, 208)));
+//        STYLES.put("T20", new Style(RMV_SHAPE, Style.WHITE, Style.rgb(148, 149, 152), Style.rgb(148, 149, 152)));
+//        STYLES.put("T21", new Style(RMV_SHAPE, Style.rgb(242, 135, 183), Style.WHITE));
+
         STYLES.put("RRB2", new Style(RMV_SHAPE, Style.rgb(100, 183, 117), Style.WHITE));
         STYLES.put("RRB5", new Style(RMV_SHAPE, Style.rgb(0, 115, 176), Style.WHITE));
         STYLES.put("RRB6", new Style(RMV_SHAPE, Style.rgb(187, 117, 163), Style.WHITE));
@@ -248,6 +249,29 @@ public class RmvProvider extends AbstractHafasClientInterfaceProvider {
         STYLES.put("DB Regio AG Mitte Region Südwest|SS51", new Style(RMV_SHAPE, Style.rgb(247, 151, 53), Style.WHITE));
         STYLES.put("DB Regio AG Mitte Region Südwest|RRE5", new Style(RMV_SHAPE, Style.rgb(247, 151, 53), Style.WHITE));
         STYLES.put("DB Regio AG Mitte Region Südwest|RRE9", new Style(RMV_SHAPE, Style.rgb(127, 194, 65), Style.WHITE));
+
+        // U-Bahn Frankfurt
+        STYLES.put("Stadtwerke Verkehrsgesellschaft Frankfurt|UU1", new Style(RMV_SHAPE, Style.rgb(181, 31, 31), Style.WHITE));
+        STYLES.put("Stadtwerke Verkehrsgesellschaft Frankfurt|UU2", new Style(RMV_SHAPE, Style.rgb(0, 152, 67), Style.WHITE));
+        STYLES.put("Stadtwerke Verkehrsgesellschaft Frankfurt|UU3", new Style(RMV_SHAPE, Style.rgb(78, 85, 161), Style.WHITE));
+        STYLES.put("Stadtwerke Verkehrsgesellschaft Frankfurt|UU4", new Style(RMV_SHAPE, Style.rgb(234, 82, 151), Style.WHITE));
+        STYLES.put("Stadtwerke Verkehrsgesellschaft Frankfurt|UU5", new Style(RMV_SHAPE, Style.rgb(0, 115, 57), Style.WHITE));
+        STYLES.put("Stadtwerke Verkehrsgesellschaft Frankfurt|UU6", new Style(RMV_SHAPE, Style.rgb(0, 105, 180), Style.WHITE));
+        STYLES.put("Stadtwerke Verkehrsgesellschaft Frankfurt|UU7", new Style(RMV_SHAPE, Style.rgb(229, 161, 0), Style.WHITE));
+        STYLES.put("Stadtwerke Verkehrsgesellschaft Frankfurt|UU8", new Style(RMV_SHAPE, Style.rgb(206, 128, 180), Style.WHITE));
+        STYLES.put("Stadtwerke Verkehrsgesellschaft Frankfurt|UU9", new Style(RMV_SHAPE, Style.rgb(249, 218, 27), Style.BLACK));
+
+        // Tram Frankfurt
+        STYLES.put("Stadtwerke Verkehrsgesellschaft Frankfurt|T11", new Style(RMV_SHAPE, Style.rgb(253, 195, 0), Style.WHITE));
+        STYLES.put("Stadtwerke Verkehrsgesellschaft Frankfurt|T12", new Style(RMV_SHAPE, Style.rgb(197, 68, 9), Style.WHITE));
+        STYLES.put("Stadtwerke Verkehrsgesellschaft Frankfurt|T14", new Style(RMV_SHAPE, Style.rgb(233, 78, 15), Style.WHITE));
+        STYLES.put("Stadtwerke Verkehrsgesellschaft Frankfurt|T15", new Style(RMV_SHAPE, Style.rgb(253, 195, 0), Style.WHITE));
+        STYLES.put("Stadtwerke Verkehrsgesellschaft Frankfurt|T16", new Style(RMV_SHAPE, Style.rgb(239, 125, 0), Style.WHITE));
+        STYLES.put("Stadtwerke Verkehrsgesellschaft Frankfurt|T17", new Style(RMV_SHAPE, Style.rgb(233, 78, 15), Style.WHITE));
+        STYLES.put("Stadtwerke Verkehrsgesellschaft Frankfurt|T18", new Style(RMV_SHAPE, Style.rgb(247, 166, 0), Style.WHITE));
+        STYLES.put("Stadtwerke Verkehrsgesellschaft Frankfurt|T19", new Style(RMV_SHAPE, Style.rgb(240, 90, 34), Style.WHITE));
+        STYLES.put("Stadtwerke Verkehrsgesellschaft Frankfurt|T20", new Style(RMV_SHAPE, Style.rgb(247, 166, 0), Style.WHITE));
+        STYLES.put("Stadtwerke Verkehrsgesellschaft Frankfurt|T21", new Style(RMV_SHAPE, Style.rgb(247, 166, 0), Style.WHITE));
 
         // busses Hanau
         STYLES.put("Hanauer Straßenbahn GmbH|B1", new Style(RMV_SHAPE, Style.rgb(139, 198, 62), Style.WHITE));
