@@ -3014,7 +3014,6 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
         }
 
         XmlPullUtil.optSkip(pp, "itdFootPathInfo");
-        XmlPullUtil.optSkip(pp, "itdFrequencyInfo");
 
         while (XmlPullUtil.optEnter(pp, "infoLink")) {
             XmlPullUtil.optSkip(pp, "paramList");
@@ -3023,6 +3022,8 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                 message = infoLinkText;
             XmlPullUtil.skipExit(pp, "infoLink");
         }
+
+        XmlPullUtil.optSkip(pp, "itdFrequencyInfo");
 
         List<Stop> intermediateStops = null;
         if (XmlPullUtil.optEnter(pp, "itdStopSeq")) {
@@ -3042,6 +3043,8 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                     throw new IllegalStateException(firstLocation + " vs " + departureLocation);
                 intermediateStops.remove(0);
             }
+        } else {
+            log.warn("itdStopSeq not found");
         }
 
         List<Point> path = null;
