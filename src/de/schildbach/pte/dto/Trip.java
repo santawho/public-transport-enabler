@@ -52,7 +52,7 @@ public final class Trip implements Serializable {
     public final List<Leg> legs;
     public final List<Fare> fares;
     public final int[] capacity;
-    public final Integer numChanges;
+    private final Integer numChanges;
     private @Nullable String uniqueId;
     public TransferDetails[] transferDetails;
 
