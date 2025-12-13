@@ -381,6 +381,138 @@ public class RmvProvider extends AbstractHafasClientInterfaceProvider {
         STYLES.put("HEAG mobiBus GmbH + Co. KG|BWE3", new Style(RMV_SHAPE, Style.rgb(241, 90, 41), Style.WHITE));
         STYLES.put("HEAG mobiBus GmbH + Co. KG|BWE4", new Style(RMV_SHAPE, Style.rgb(241, 90, 41), Style.WHITE));
         STYLES.put("HEAG mobiBus GmbH + Co. KG|BWX-", new Style(RMV_SHAPE, Style.rgb(251, 177, 63), Style.WHITE));
+
+        // busses Wiesbaden
+        STYLES.put("ESWE Verkehrsgesellschaft mbH|B1", new Style(RMV_SHAPE, Style.rgb(238, 114, 3), Style.WHITE));
+        STYLES.put("ESWE Verkehrsgesellschaft mbH|B3", new Style(RMV_SHAPE, Style.rgb(139, 85, 147), Style.WHITE));
+        STYLES.put("ESWE Verkehrsgesellschaft mbH|B4", new Style(RMV_SHAPE, Style.rgb(47, 172, 102), Style.WHITE));
+        STYLES.put("ESWE Verkehrsgesellschaft mbH|B5", new Style(RMV_SHAPE, Style.rgb(228, 3, 46), Style.WHITE));
+        STYLES.put("ESWE Verkehrsgesellschaft mbH|B6", new Style(RMV_SHAPE, Style.rgb(235, 94, 87), Style.WHITE));
+        STYLES.put("ESWE Verkehrsgesellschaft mbH|B8", new Style(RMV_SHAPE, Style.rgb(238, 114, 3), Style.WHITE));
+        STYLES.put("ESWE Verkehrsgesellschaft mbH|B9", new Style(RMV_SHAPE, Style.rgb(71, 126, 192), Style.WHITE));
+        STYLES.put("ESWE Verkehrsgesellschaft mbH|B14", new Style(RMV_SHAPE, Style.rgb(47, 172, 102), Style.WHITE));
+        STYLES.put("ESWE Verkehrsgesellschaft mbH|B15", new Style(RMV_SHAPE, Style.rgb(228, 3, 46), Style.WHITE));
+        STYLES.put("ESWE Verkehrsgesellschaft mbH|B16", new Style(RMV_SHAPE, Style.rgb(243, 154, 139), Style.BLACK));
+        STYLES.put("ESWE Verkehrsgesellschaft mbH|B17", new Style(RMV_SHAPE, Style.rgb(0, 159, 227), Style.WHITE));
+        STYLES.put("ESWE Verkehrsgesellschaft mbH|B18", new Style(RMV_SHAPE, Style.rgb(140, 157, 166), Style.WHITE));
+        STYLES.put("ESWE Verkehrsgesellschaft mbH|B20", new Style(RMV_SHAPE, Style.rgb(228, 3, 46), Style.WHITE));
+        STYLES.put("ESWE Verkehrsgesellschaft mbH|B21", new Style(RMV_SHAPE, Style.rgb(0, 150, 65), Style.WHITE));
+        STYLES.put("ESWE Verkehrsgesellschaft mbH|B22", new Style(RMV_SHAPE, Style.rgb(0, 150, 65), Style.WHITE));
+        STYLES.put("ESWE Verkehrsgesellschaft mbH|B23", new Style(RMV_SHAPE, Style.rgb(0, 93, 169), Style.WHITE));
+        STYLES.put("ESWE Verkehrsgesellschaft mbH|B24", new Style(RMV_SHAPE, Style.rgb(0, 93, 169), Style.WHITE));
+        STYLES.put("ESWE Verkehrsgesellschaft mbH|B27", new Style(RMV_SHAPE, Style.rgb(184, 14, 128), Style.WHITE));
+        STYLES.put("ESWE Verkehrsgesellschaft mbH|B28", new Style(RMV_SHAPE, Style.rgb(0, 182, 237), Style.WHITE));
+        STYLES.put("ESWE Verkehrsgesellschaft mbH|B33", new Style(RMV_SHAPE, Style.rgb(139, 85, 147), Style.WHITE));
+        STYLES.put("ESWE Verkehrsgesellschaft mbH|B34", new Style(RMV_SHAPE, Style.rgb(145, 141, 190), Style.WHITE));
+        STYLES.put("ESWE Verkehrsgesellschaft mbH|B37", new Style(RMV_SHAPE, Style.rgb(40, 53, 131), Style.WHITE));
+        STYLES.put("ESWE Verkehrsgesellschaft mbH|B38", new Style(RMV_SHAPE, Style.rgb(0, 159, 227), Style.WHITE));
+        STYLES.put("ESWE Verkehrsgesellschaft mbH|B39", new Style(RMV_SHAPE, Style.rgb(244, 149, 74), Style.WHITE));
+        STYLES.put("ESWE Verkehrsgesellschaft mbH|B44", new Style(RMV_SHAPE, Style.rgb(71, 126, 192), Style.WHITE));
+        STYLES.put("ESWE Verkehrsgesellschaft mbH|B45", new Style(RMV_SHAPE, Style.rgb(203, 206, 0), Style.BLACK));
+        STYLES.put("ESWE Verkehrsgesellschaft mbH|B46", new Style(RMV_SHAPE, Style.rgb(199, 92, 159), Style.WHITE));
+        STYLES.put("ESWE Verkehrsgesellschaft mbH|B47", new Style(RMV_SHAPE, Style.rgb(107, 124, 133), Style.WHITE));
+        STYLES.put("ESWE Verkehrsgesellschaft mbH|B48", new Style(RMV_SHAPE, Style.rgb(71, 126, 192), Style.WHITE));
+        STYLES.put("ESWE Verkehrsgesellschaft mbH|B49", new Style(RMV_SHAPE, Style.rgb(142, 200, 154), Style.BLACK));
+        STYLES.put("ESWE Verkehrsgesellschaft mbH|B74", new Style(RMV_SHAPE, Style.rgb(230, 0, 125), Style.WHITE));
+        STYLES.put("ESWE Verkehrsgesellschaft mbH|BN2", new Style(RMV_SHAPE, Style.rgb(0, 93, 169), Style.WHITE));
+        STYLES.put("ESWE Verkehrsgesellschaft mbH|BN3", new Style(RMV_SHAPE, Style.rgb(184, 14, 128), Style.WHITE));
+        STYLES.put("ESWE Verkehrsgesellschaft mbH|BN4", new Style(RMV_SHAPE, Style.rgb(111, 188, 133), Style.WHITE));
+        STYLES.put("ESWE Verkehrsgesellschaft mbH|BN5", new Style(RMV_SHAPE, Style.rgb(0, 150, 65), Style.WHITE));
+        STYLES.put("ESWE Verkehrsgesellschaft mbH|BN7", new Style(RMV_SHAPE, Style.rgb(0, 159, 227), Style.WHITE));
+        STYLES.put("ESWE Verkehrsgesellschaft mbH|BN9", new Style(RMV_SHAPE, Style.rgb(200, 104, 166), Style.WHITE));
+        STYLES.put("ESWE Verkehrsgesellschaft mbH|BN10", new Style(RMV_SHAPE, Style.rgb(251, 186, 0), Style.BLACK));
+        STYLES.put("ESWE Verkehrsgesellschaft mbH|BN11", new Style(RMV_SHAPE, Style.rgb(206, 126, 0), Style.WHITE));
+        STYLES.put("ESWE Verkehrsgesellschaft mbH|BN12", new Style(RMV_SHAPE, Style.rgb(227, 6, 19), Style.WHITE));
+        STYLES.put("ESWE Verkehrsgesellschaft mbH|BN13", new Style(RMV_SHAPE, Style.rgb(0, 0, 0), Style.WHITE));
+        STYLES.put("ESWE Verkehrsgesellschaft mbH|BE46", new Style(RMV_SHAPE, Style.rgb(199, 92, 159), Style.WHITE));
+        STYLES.put("ESWE Verkehrsgesellschaft mbH|BE47", new Style(RMV_SHAPE, Style.rgb(107, 124, 133), Style.WHITE));
+
+        // busses Wetzlar
+        STYLES.put("Wetzlarer Verkehrsbetriebe und Reisebüro GmbH|B10", new Style(RMV_SHAPE, Style.rgb(247, 147, 29), Style.WHITE));
+        STYLES.put("Wetzlarer Verkehrsbetriebe und Reisebüro GmbH|B11", new Style(RMV_SHAPE, Style.rgb(238, 29, 35), Style.WHITE));
+        STYLES.put("Wetzlarer Verkehrsbetriebe und Reisebüro GmbH|B12", new Style(RMV_SHAPE, Style.rgb(46, 48, 146), Style.WHITE));
+        STYLES.put("Wetzlarer Verkehrsbetriebe und Reisebüro GmbH|B13", new Style(RMV_SHAPE, Style.rgb(46, 48, 146), Style.WHITE));
+        STYLES.put("Wetzlarer Verkehrsbetriebe und Reisebüro GmbH|B14", new Style(RMV_SHAPE, Style.rgb(143, 62, 151), Style.WHITE));
+        STYLES.put("Wetzlarer Verkehrsbetriebe und Reisebüro GmbH|B15", new Style(RMV_SHAPE, Style.rgb(0, 174, 239), Style.WHITE));
+        STYLES.put("Wetzlarer Verkehrsbetriebe und Reisebüro GmbH|B16", new Style(RMV_SHAPE, Style.rgb(155, 125, 38), Style.WHITE));
+        STYLES.put("Wetzlarer Verkehrsbetriebe und Reisebüro GmbH|B17", new Style(RMV_SHAPE, Style.rgb(237, 2, 140), Style.WHITE));
+        STYLES.put("Wetzlarer Verkehrsbetriebe und Reisebüro GmbH|B18", new Style(RMV_SHAPE, Style.rgb(237, 2, 140), Style.WHITE));
+
+        // busses Mainz
+        STYLES.put("Mainzer Mobilität|B6", new Style(RMV_SHAPE, Style.rgb(239, 125, 0), Style.WHITE));
+        STYLES.put("Mainzer Mobilität|B9", new Style(RMV_SHAPE, Style.rgb(0, 110, 137), Style.WHITE));
+        STYLES.put("Mainzer Mobilität|B28", new Style(RMV_SHAPE, Style.rgb(219, 226, 131), Style.BLACK));
+        STYLES.put("Mainzer Mobilität|B33", new Style(RMV_SHAPE, Style.rgb(0, 143, 207), Style.WHITE));
+        STYLES.put("Mainzer Mobilität|B52", new Style(RMV_SHAPE, Style.rgb(124, 123, 123), Style.WHITE));
+        STYLES.put("Mainzer Mobilität|B54", new Style(RMV_SHAPE, Style.rgb(64, 137, 39), Style.WHITE));
+        STYLES.put("Mainzer Mobilität|B55", new Style(RMV_SHAPE, Style.rgb(64, 137, 39), Style.WHITE));
+        STYLES.put("Mainzer Mobilität|B56", new Style(RMV_SHAPE, Style.rgb(149, 193, 31), Style.BLACK));
+        STYLES.put("Mainzer Mobilität|B57", new Style(RMV_SHAPE, Style.rgb(0, 117, 235), Style.WHITE));
+        STYLES.put("Mainzer Mobilität|B58", new Style(RMV_SHAPE, Style.rgb(149, 193, 31), Style.BLACK));
+        STYLES.put("Mainzer Mobilität|B60", new Style(RMV_SHAPE, Style.rgb(0, 175, 203), Style.WHITE));
+        STYLES.put("Mainzer Mobilität|B62", new Style(RMV_SHAPE, Style.rgb(194, 46, 12), Style.WHITE));
+        STYLES.put("Mainzer Mobilität|B63", new Style(RMV_SHAPE, Style.rgb(0, 175, 203), Style.WHITE));
+        STYLES.put("Mainzer Mobilität|B64", new Style(RMV_SHAPE, Style.rgb(245, 156, 0), Style.BLACK));
+        STYLES.put("Mainzer Mobilität|B65", new Style(RMV_SHAPE, Style.rgb(245, 156, 0), Style.WHITE));
+        STYLES.put("Mainzer Mobilität|B66", new Style(RMV_SHAPE, Style.rgb(255, 213, 0), Style.BLACK));
+        STYLES.put("Mainzer Mobilität|B67", new Style(RMV_SHAPE, Style.rgb(227, 6, 19), Style.WHITE));
+        STYLES.put("Mainzer Mobilität|B68", new Style(RMV_SHAPE, Style.rgb(0, 128, 61), Style.WHITE));
+        STYLES.put("Mainzer Mobilität|B69", new Style(RMV_SHAPE, Style.rgb(227, 6, 19), Style.WHITE));
+        STYLES.put("Mainzer Mobilität|B70", new Style(RMV_SHAPE, Style.rgb(167, 27, 113), Style.WHITE));
+        STYLES.put("Mainzer Mobilität|B71", new Style(RMV_SHAPE, Style.rgb(167, 27, 113), Style.WHITE));
+        STYLES.put("Mainzer Mobilität|B74", new Style(RMV_SHAPE, Style.rgb(230, 0, 125), Style.WHITE));
+        STYLES.put("Mainzer Mobilität|B75", new Style(RMV_SHAPE, Style.rgb(195, 159, 0), Style.WHITE));
+        STYLES.put("Mainzer Mobilität|B76", new Style(RMV_SHAPE, Style.rgb(138, 16, 2), Style.WHITE));
+        STYLES.put("Mainzer Mobilität|B78", new Style(RMV_SHAPE, Style.rgb(18, 74, 115), Style.WHITE));
+        STYLES.put("Mainzer Mobilität|B79", new Style(RMV_SHAPE, Style.rgb(0, 128, 61), Style.WHITE));
+        STYLES.put("Mainzer Mobilität|B80", new Style(RMV_SHAPE, Style.rgb(0, 97, 167), Style.WHITE));
+        STYLES.put("Mainzer Mobilität|B81", new Style(RMV_SHAPE, Style.rgb(0, 97, 167), Style.WHITE));
+        STYLES.put("Mainzer Mobilität|B90", new Style(RMV_SHAPE, Style.rgb(141, 0, 76), Style.WHITE));
+        STYLES.put("Mainzer Mobilität|B91", new Style(RMV_SHAPE, Style.rgb(145, 79, 0), Style.WHITE));
+        STYLES.put("Mainzer Mobilität|B92", new Style(RMV_SHAPE, Style.rgb(0, 109, 143), Style.WHITE));
+        STYLES.put("Mainzer Mobilität|B93", new Style(RMV_SHAPE, Style.rgb(91, 120, 19), Style.WHITE));
+        STYLES.put("Mainzer Mobilität|BN7", new Style(RMV_SHAPE, Style.rgb(0, 81, 37), Style.WHITE));
+
+        // tram Mainz
+        STYLES.put("Mainzer Mobilität|T50", new Style(RMV_SHAPE, Style.rgb(0, 0, 0), Style.WHITE));
+        STYLES.put("Mainzer Mobilität|T51", new Style(RMV_SHAPE, Style.rgb(74, 74, 73), Style.WHITE));
+        STYLES.put("Mainzer Mobilität|T52", new Style(RMV_SHAPE, Style.rgb(124, 123, 123), Style.WHITE));
+        STYLES.put("Mainzer Mobilität|T53", new Style(RMV_SHAPE, Style.rgb(100, 99, 99), Style.WHITE));
+        STYLES.put("Mainzer Mobilität|T59", new Style(RMV_SHAPE, Style.rgb(146, 146, 146), Style.WHITE));
+
+        // busses Gießen (1)
+        STYLES.put("Stadtwerke Gießen|B1", new Style(RMV_SHAPE, Style.rgb(214, 1, 127), Style.WHITE));
+        STYLES.put("Stadtwerke Gießen|B2", new Style(RMV_SHAPE, Style.rgb(133, 189, 59), Style.WHITE));
+        STYLES.put("Stadtwerke Gießen|B3", new Style(RMV_SHAPE, Style.rgb(0, 130, 195), Style.WHITE));
+        STYLES.put("Stadtwerke Gießen|B5", new Style(RMV_SHAPE, Style.rgb(238, 29, 35), Style.WHITE));
+        STYLES.put("Stadtwerke Gießen|B6", new Style(RMV_SHAPE, Style.rgb(245, 230, 1), Style.BLACK));
+        STYLES.put("Stadtwerke Gießen|B7", new Style(RMV_SHAPE, Style.rgb(0, 165, 79), Style.WHITE));
+        STYLES.put("Stadtwerke Gießen|B9", new Style(RMV_SHAPE, Style.rgb(132, 31, 131), Style.WHITE));
+        STYLES.put("Stadtwerke Gießen|B10", new Style(RMV_SHAPE, Style.rgb(150, 46, 51), Style.WHITE));
+        STYLES.put("Stadtwerke Gießen|B12", new Style(RMV_SHAPE, Style.rgb(254, 194, 16), Style.BLACK));
+        STYLES.put("Stadtwerke Gießen|B13", new Style(RMV_SHAPE, Style.rgb(147, 127, 58), Style.WHITE));
+        STYLES.put("Stadtwerke Gießen|B15", new Style(RMV_SHAPE, Style.rgb(111, 182, 223), Style.WHITE));
+        STYLES.put("Stadtwerke Gießen|B17", new Style(RMV_SHAPE, Style.rgb(35, 31, 32), Style.WHITE));
+        STYLES.put("Stadtwerke Gießen|B18", new Style(RMV_SHAPE, Style.rgb(242, 126, 148), Style.WHITE));
+        STYLES.put("Stadtwerke Gießen|B801", new Style(RMV_SHAPE, Style.rgb(1, 112, 126), Style.WHITE));
+        STYLES.put("Stadtwerke Gießen|B802", new Style(RMV_SHAPE, Style.rgb(247, 147, 29), Style.WHITE));
+
+        // busses Gießen (2)
+        STYLES.put("MIT.BUS|B1", new Style(RMV_SHAPE, Style.rgb(214, 1, 127), Style.WHITE));
+        STYLES.put("MIT.BUS|B2", new Style(RMV_SHAPE, Style.rgb(133, 189, 59), Style.WHITE));
+        STYLES.put("MIT.BUS|B3", new Style(RMV_SHAPE, Style.rgb(0, 130, 195), Style.WHITE));
+        STYLES.put("MIT.BUS|B5", new Style(RMV_SHAPE, Style.rgb(238, 29, 35), Style.WHITE));
+        STYLES.put("MIT.BUS|B7", new Style(RMV_SHAPE, Style.rgb(0, 165, 79), Style.WHITE));
+        STYLES.put("MIT.BUS|B9", new Style(RMV_SHAPE, Style.rgb(132, 31, 131), Style.WHITE));
+        STYLES.put("MIT.BUS|B10", new Style(RMV_SHAPE, Style.rgb(150, 46, 51), Style.WHITE));
+        STYLES.put("MIT.BUS|B12", new Style(RMV_SHAPE, Style.rgb(254, 194, 16), Style.BLACK));
+        STYLES.put("MIT.BUS|B13", new Style(RMV_SHAPE, Style.rgb(147, 127, 58), Style.WHITE));
+        STYLES.put("MIT.BUS|B14", new Style(RMV_SHAPE, Style.rgb(245, 230, 1), Style.BLACK));
+        STYLES.put("MIT.BUS|B15", new Style(RMV_SHAPE, Style.rgb(111, 182, 223), Style.WHITE));
+        STYLES.put("MIT.BUS|B17", new Style(RMV_SHAPE, Style.rgb(35, 31, 32), Style.WHITE));
+        STYLES.put("MIT.BUS|B18", new Style(RMV_SHAPE, Style.rgb(242, 126, 148), Style.WHITE));
+        STYLES.put("MIT.BUS|B801", new Style(RMV_SHAPE, Style.rgb(1, 112, 126), Style.WHITE));
+        STYLES.put("MIT.BUS|B802", new Style(RMV_SHAPE, Style.rgb(247, 147, 29), Style.WHITE));
     }
 
     // town (place) and stop name.
