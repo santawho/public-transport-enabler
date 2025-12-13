@@ -191,7 +191,7 @@ public class RmvProvider extends AbstractHafasClientInterfaceProvider {
         STYLES.put("BX11", new Style(RMV_SHAPE, Style.rgb(167, 22, 128), Style.WHITE));
         STYLES.put("BX14", new Style(RMV_SHAPE, Style.rgb(0, 103, 148), Style.WHITE));
         STYLES.put("BX15", new Style(RMV_SHAPE, Style.rgb(168, 138, 91), Style.WHITE));
-        STYLES.put("BX17", new Style(RMV_SHAPE, Style.rgb(229, 167, 18), Style.WHITE));
+        STYLES.put("BX17", new Style(RMV_SHAPE, Style.rgb(229, 167, 18), Style.BLACK));
         STYLES.put("BX18", new Style(RMV_SHAPE, Style.rgb(100, 133, 146), Style.WHITE));
         STYLES.put("BX19", new Style(RMV_SHAPE, Style.rgb(11, 45, 114), Style.WHITE));
         STYLES.put("BX26", new Style(RMV_SHAPE, Style.rgb(0, 111, 69), Style.WHITE));
