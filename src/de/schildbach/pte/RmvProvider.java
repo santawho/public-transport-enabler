@@ -273,6 +273,17 @@ public class RmvProvider extends AbstractHafasClientInterfaceProvider {
         STYLES.put("Stadtwerke Verkehrsgesellschaft Frankfurt|T20", new Style(RMV_SHAPE, Style.rgb(247, 166, 0), Style.WHITE));
         STYLES.put("Stadtwerke Verkehrsgesellschaft Frankfurt|T21", new Style(RMV_SHAPE, Style.rgb(247, 166, 0), Style.WHITE));
 
+        // busses Frankfurt
+        STYLES.put("In-der-City-Bus|BM32", new Style(RMV_SHAPE, Style.rgb(186, 91, 158), Style.WHITE));
+        STYLES.put("In-der-City-Bus|BM34", new Style(RMV_SHAPE, Style.rgb(167, 22, 129), Style.WHITE));
+        STYLES.put("In-der-City-Bus|BM36", new Style(RMV_SHAPE, Style.rgb(130, 14, 100), Style.WHITE));
+        STYLES.put("In-der-City-Bus|BM43", new Style(RMV_SHAPE, Style.rgb(206, 128, 180), Style.WHITE));
+        STYLES.put("In-der-City-Bus|BM46", new Style(RMV_SHAPE, Style.rgb(130, 14, 100), Style.WHITE));
+        STYLES.put("DB Regio Bus Mitte|BM55", new Style(RMV_SHAPE, Style.rgb(201, 65, 145), Style.WHITE));
+        STYLES.put("Transdev Rhein-Main GmbH|BM60", new Style(RMV_SHAPE, Style.rgb(130, 14, 100), Style.WHITE));
+        STYLES.put("Transdev Rhein-Main GmbH|BM72", new Style(RMV_SHAPE, Style.rgb(206, 128, 180), Style.WHITE));
+        STYLES.put("Transdev Rhein-Main GmbH|BM73", new Style(RMV_SHAPE, Style.rgb(206, 128, 180), Style.WHITE));
+
         // busses Hanau
         STYLES.put("Hanauer Straßenbahn GmbH|B1", new Style(RMV_SHAPE, Style.rgb(139, 198, 62), Style.WHITE));
         STYLES.put("Hanauer Straßenbahn GmbH|B2", new Style(RMV_SHAPE, Style.rgb(255, 220, 1), Style.WHITE));
@@ -513,6 +524,21 @@ public class RmvProvider extends AbstractHafasClientInterfaceProvider {
         STYLES.put("MIT.BUS|B18", new Style(RMV_SHAPE, Style.rgb(242, 126, 148), Style.WHITE));
         STYLES.put("MIT.BUS|B801", new Style(RMV_SHAPE, Style.rgb(1, 112, 126), Style.WHITE));
         STYLES.put("MIT.BUS|B802", new Style(RMV_SHAPE, Style.rgb(247, 147, 29), Style.WHITE));
+
+        // busses Rüsselsheim
+        STYLES.put("Rüsselsheimer Mobilität|B1", new Style(RMV_SHAPE, Style.rgb(247, 147, 29), Style.WHITE));
+        STYLES.put("Rüsselsheimer Mobilität|B2", new Style(RMV_SHAPE, Style.rgb(0, 165, 79), Style.WHITE));
+        STYLES.put("Rüsselsheimer Mobilität|B3a", new Style(RMV_SHAPE, Style.rgb(235, 219, 1), Style.BLACK));
+        STYLES.put("Rüsselsheimer Mobilität|B3b", new Style(RMV_SHAPE, Style.rgb(235, 219, 1), Style.BLACK));
+        STYLES.put("Rüsselsheimer Mobilität|B4a", new Style(RMV_SHAPE, Style.rgb(0, 114, 188), Style.WHITE));
+        STYLES.put("Rüsselsheimer Mobilität|B4b", new Style(RMV_SHAPE, Style.rgb(0, 114, 188), Style.WHITE));
+        STYLES.put("Rüsselsheimer Mobilität|B5a", new Style(RMV_SHAPE, Style.rgb(190, 29, 44), Style.WHITE));
+        STYLES.put("Rüsselsheimer Mobilität|B5b", new Style(RMV_SHAPE, Style.rgb(190, 29, 44), Style.WHITE));
+        STYLES.put("Rüsselsheimer Mobilität|B6", new Style(RMV_SHAPE, Style.rgb(101, 45, 145), Style.WHITE));
+        STYLES.put("Rüsselsheimer Mobilität|B7a", new Style(RMV_SHAPE, Style.rgb(0, 174, 239), Style.WHITE));
+        STYLES.put("Rüsselsheimer Mobilität|B7b", new Style(RMV_SHAPE, Style.rgb(0, 174, 239), Style.WHITE));
+        STYLES.put("Rüsselsheimer Mobilität|B8a", new Style(RMV_SHAPE, Style.rgb(237, 2, 140), Style.WHITE));
+        STYLES.put("Rüsselsheimer Mobilität|B8b", new Style(RMV_SHAPE, Style.rgb(237, 2, 140), Style.WHITE));
     }
 
     // town (place) and stop name.
