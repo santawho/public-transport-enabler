@@ -21,8 +21,6 @@ import static de.schildbach.pte.util.Preconditions.checkArgument;
 import static de.schildbach.pte.util.Preconditions.checkState;
 import static java.util.Objects.requireNonNull;
 
-import com.google.common.io.BaseEncoding;
-
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
@@ -30,6 +28,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Currency;
@@ -37,6 +36,7 @@ import java.util.Date;
 import java.util.EnumSet;
 import java.util.GregorianCalendar;
 import java.util.HashSet;
+import java.util.HexFormat;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -1704,27 +1704,25 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
     @Nullable
     private byte[] requestMicMacSalt;
 
-    private static final BaseEncoding HEX = BaseEncoding.base16().lowerCase();
-    private static final BaseEncoding BASE64 = BaseEncoding.base64();
-
     private void addSaltToUrl(final HttpUrl.Builder url, final String body) {
+        final HexFormat hex = HexFormat.of();
         final MessageDigest md5 = md5instance();
         if (requestChecksumSalt != null) {
             md5.reset();
             md5.update(body.getBytes(StandardCharsets.UTF_8));
             md5.update(requestChecksumSalt);
-            url.addQueryParameter("checksum", HEX.encode(md5.digest()));
+            url.addQueryParameter("checksum", hex.formatHex(md5.digest()));
         }
         if (requestMicMacSalt != null) {
             md5.reset();
             md5.update(body.getBytes(StandardCharsets.UTF_8));
             final byte[] mic = md5.digest();
-            url.addQueryParameter("mic", HEX.encode(mic));
+            url.addQueryParameter("mic", hex.formatHex(mic));
             md5.reset();
-            md5.update(HEX.encode(mic).getBytes(StandardCharsets.UTF_8));
+            md5.update(hex.formatHex(mic).getBytes(StandardCharsets.UTF_8));
             md5.update(requestMicMacSalt);
             final byte[] mac = md5.digest();
-            url.addQueryParameter("mac", HEX.encode(mac));
+            url.addQueryParameter("mac", hex.formatHex(mac));
         }
     }
 
@@ -1746,13 +1744,13 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
 
     public static byte[] decryptSalt(final String encryptedSalt, final String saltEncryptionKey) {
         try {
-            final byte[] key = HEX.decode(saltEncryptionKey);
+            final byte[] key = HexFormat.of().parseHex(saltEncryptionKey);
             checkState(key.length * 8 == 128, () -> "encryption key must be 128 bits");
             final SecretKeySpec secretKey = new SecretKeySpec(key, "AES");
             final IvParameterSpec ivParameterSpec = new IvParameterSpec(new byte[16]);
             final Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
             cipher.init(Cipher.DECRYPT_MODE, secretKey, ivParameterSpec);
-            return cipher.doFinal(BASE64.decode(encryptedSalt));
+            return cipher.doFinal(Base64.getDecoder().decode(encryptedSalt));
         } catch (final GeneralSecurityException x) {
             // should not happen
             throw new RuntimeException(x);

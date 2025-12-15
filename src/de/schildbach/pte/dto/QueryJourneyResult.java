@@ -17,17 +17,11 @@
 
 package de.schildbach.pte.dto;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
-import com.google.common.base.MoreObjects;
-import com.google.common.base.MoreObjects.ToStringHelper;
+import static java.util.Objects.requireNonNull;
 
 import java.io.Serializable;
-import java.util.List;
 
 import javax.annotation.Nullable;
-
-import de.schildbach.pte.NetworkProvider;
 
 /**
  * @author Andreas Schildbach
@@ -52,12 +46,12 @@ public final class QueryJourneyResult implements Serializable {
         this.status = Status.OK;
         this.queryUri = queryUri;
         this.journeyRef = journeyRef;
-        this.journeyLeg = checkNotNull(journeyLeg);
+        this.journeyLeg = requireNonNull(journeyLeg);
     }
 
     public QueryJourneyResult(final ResultHeader header, final Status status) {
         this.header = header;
-        this.status = checkNotNull(status);
+        this.status = requireNonNull(status);
 
         this.queryUri = null;
         this.journeyRef = null;
@@ -66,12 +60,11 @@ public final class QueryJourneyResult implements Serializable {
 
     @Override
     public String toString() {
-        final ToStringHelper helper = MoreObjects.toStringHelper(this).addValue(status);
-        if (status == Status.OK) {
-            if (journeyLeg != null)
-                helper.add("journeyLeg", journeyLeg);
-        }
-        return helper.toString();
+        return getClass().getSimpleName() + "{" +
+                status + "," +
+                (status == Status.OK && journeyLeg != null ?
+                        "journeyLeg=" + journeyLeg : "") +
+                "}";
     }
 
     public String toShortString() {
