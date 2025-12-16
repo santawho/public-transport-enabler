@@ -36,7 +36,6 @@ import java.util.Date;
 import java.util.EnumSet;
 import java.util.GregorianCalendar;
 import java.util.HashSet;
-import java.util.HexFormat;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -1705,24 +1704,23 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
     private byte[] requestMicMacSalt;
 
     private void addSaltToUrl(final HttpUrl.Builder url, final String body) {
-        final HexFormat hex = HexFormat.of();
         final MessageDigest md5 = md5instance();
         if (requestChecksumSalt != null) {
             md5.reset();
             md5.update(body.getBytes(StandardCharsets.UTF_8));
             md5.update(requestChecksumSalt);
-            url.addQueryParameter("checksum", hex.formatHex(md5.digest()));
+            url.addQueryParameter("checksum", byteArrayToHexString(md5.digest()));
         }
         if (requestMicMacSalt != null) {
             md5.reset();
             md5.update(body.getBytes(StandardCharsets.UTF_8));
             final byte[] mic = md5.digest();
-            url.addQueryParameter("mic", hex.formatHex(mic));
+            url.addQueryParameter("mic", byteArrayToHexString(mic));
             md5.reset();
-            md5.update(hex.formatHex(mic).getBytes(StandardCharsets.UTF_8));
+            md5.update(byteArrayToHexString(mic).getBytes(StandardCharsets.UTF_8));
             md5.update(requestMicMacSalt);
             final byte[] mac = md5.digest();
-            url.addQueryParameter("mac", hex.formatHex(mac));
+            url.addQueryParameter("mac", byteArrayToHexString(mac));
         }
     }
 
@@ -1744,7 +1742,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
 
     public static byte[] decryptSalt(final String encryptedSalt, final String saltEncryptionKey) {
         try {
-            final byte[] key = HexFormat.of().parseHex(saltEncryptionKey);
+            final byte[] key = hexStringToByteArray(saltEncryptionKey);
             checkState(key.length * 8 == 128, () -> "encryption key must be 128 bits");
             final SecretKeySpec secretKey = new SecretKeySpec(key, "AES");
             final IvParameterSpec ivParameterSpec = new IvParameterSpec(new byte[16]);
@@ -1756,4 +1754,22 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
             throw new RuntimeException(x);
         }
     }
+
+    public static String byteArrayToHexString(final byte[] bytes) {
+        final StringBuilder sb = new StringBuilder(bytes.length * 2);
+        for(final byte b: bytes)
+            sb.append(String.format("%02x", b));
+        return sb.toString();
+    }
+
+    public static byte[] hexStringToByteArray(final String string) {
+        final int len = string.length();
+        final byte[] data = new byte[len / 2];
+        for (int i = 0; i < len; i += 2) {
+            data[i / 2] = (byte) ((Character.digit(string.charAt(i), 16) << 4)
+                    + Character.digit(string.charAt(i+1), 16));
+        }
+        return data;
+    }
+
 }
