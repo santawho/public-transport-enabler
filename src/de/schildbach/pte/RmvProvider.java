@@ -533,6 +533,29 @@ public class RmvProvider extends AbstractHafasClientInterfaceProvider {
         STYLES.put("Rüsselsheimer Mobilität|B7b", new Style(RMV_SHAPE, Style.rgb(0, 174, 239), Style.WHITE));
         STYLES.put("Rüsselsheimer Mobilität|B8a", new Style(RMV_SHAPE, Style.rgb(237, 2, 140), Style.WHITE));
         STYLES.put("Rüsselsheimer Mobilität|B8b", new Style(RMV_SHAPE, Style.rgb(237, 2, 140), Style.WHITE));
+
+        // busses Offenbach
+        STYLES.put("BOF-32", new Style(RMV_SHAPE, Style.rgb(208, 118, 39), Style.WHITE));
+        STYLES.put("BOF-40", new Style(RMV_SHAPE, Style.rgb(30, 155, 215), Style.WHITE));
+        STYLES.put("BOF-51", new Style(RMV_SHAPE, Style.rgb(64, 193, 239), Style.WHITE));
+        STYLES.put("BOF-52", new Style(RMV_SHAPE, Style.rgb(139, 198, 62), Style.WHITE));
+        STYLES.put("BOF-53", new Style(RMV_SHAPE, Style.rgb(16, 112, 185), Style.WHITE));
+        STYLES.put("BOF-64", new Style(RMV_SHAPE, Style.rgb(25, 98, 174), Style.WHITE));
+        STYLES.put("BOF-65", new Style(RMV_SHAPE, Style.rgb(242, 158, 197), Style.WHITE));
+        STYLES.put("BOF-67", new Style(RMV_SHAPE, Style.rgb(21, 173, 186), Style.WHITE));
+        STYLES.put("BOF-71", new Style(RMV_SHAPE, Style.rgb(110, 203, 243), Style.WHITE));
+        STYLES.put("BOF-72", new Style(RMV_SHAPE, Style.rgb(32, 67, 144), Style.WHITE));
+        STYLES.put("BOF-73", new Style(RMV_SHAPE, Style.rgb(84, 166, 214), Style.WHITE));
+        STYLES.put("BOF-75", new Style(RMV_SHAPE, Style.rgb(17, 134, 162), Style.WHITE));
+        STYLES.put("BOF-85", new Style(RMV_SHAPE, Style.rgb(158, 96, 165), Style.WHITE));
+        STYLES.put("BOF-86", new Style(RMV_SHAPE, Style.rgb(142, 140, 196), Style.WHITE));
+        STYLES.put("BOF-87", new Style(RMV_SHAPE, Style.rgb(231, 111, 161), Style.WHITE));
+        STYLES.put("BOF-91", new Style(RMV_SHAPE, Style.rgb(235, 94, 159), Style.WHITE));
+        STYLES.put("BOF-92", new Style(RMV_SHAPE, Style.rgb(67, 168, 66), Style.WHITE));
+        STYLES.put("BOF-95", new Style(RMV_SHAPE, Style.rgb(100, 43, 131), Style.WHITE));
+        STYLES.put("BOF-96", new Style(RMV_SHAPE, Style.rgb(230, 7, 124), Style.WHITE));
+        STYLES.put("BOF-97", new Style(RMV_SHAPE, Style.rgb(160, 53, 125), Style.WHITE));
+        STYLES.put("BOF-99", new Style(RMV_SHAPE, Style.rgb(231, 47, 36), Style.WHITE));
     }
 
     // town (place) and stop name.
