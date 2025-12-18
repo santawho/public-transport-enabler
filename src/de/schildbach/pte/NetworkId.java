@@ -83,6 +83,9 @@ import de.schildbach.pte.provider.hafas.ZvvProvider;
  * @author Andreas Schildbach
  */
 public enum NetworkId {
+    // World
+    TRANSITOUS,
+
     // Europe
     RT(Descriptor.from(RtProvider.class, Descriptor.GROUP_EUROPE, "DE;AT;CH;BE;LU;NL;DK;SE;NO;FI;GB;SI;HU;RO;BG;PL;SK;IT;ES;PT")),
     DBINTERNATIONAL(Descriptor.from(DbProvider.International.class, Descriptor.GROUP_EUROPE, "DE;AT;CH;BE;LU;NL;DK;SE;NO;FI;GB;SI;HU;RO;BG;PL;SK;IT;ES;PT")),
