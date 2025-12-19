@@ -27,7 +27,7 @@ import java.util.EnumSet;
 
 import org.junit.Test;
 
-import de.schildbach.pte.BayernProvider;
+import de.schildbach.pte.provider.efa.BayernProvider;
 import de.schildbach.pte.dto.Location;
 import de.schildbach.pte.dto.LocationType;
 import de.schildbach.pte.dto.NearbyLocationsResult;

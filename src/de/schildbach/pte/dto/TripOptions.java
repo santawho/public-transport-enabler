@@ -23,11 +23,11 @@ import java.util.Set;
 
 import javax.annotation.Nullable;
 
-import de.schildbach.pte.NetworkProvider;
-import de.schildbach.pte.NetworkProvider.Accessibility;
-import de.schildbach.pte.NetworkProvider.Optimize;
-import de.schildbach.pte.NetworkProvider.TripFlag;
-import de.schildbach.pte.NetworkProvider.WalkSpeed;
+import de.schildbach.pte.provider.NetworkProvider;
+import de.schildbach.pte.provider.NetworkProvider.Accessibility;
+import de.schildbach.pte.provider.NetworkProvider.Optimize;
+import de.schildbach.pte.provider.NetworkProvider.TripFlag;
+import de.schildbach.pte.provider.NetworkProvider.WalkSpeed;
 
 /**
  * Options for {@link NetworkProvider#queryTrips(Location, Location, Location, Date, boolean, TripOptions)}.

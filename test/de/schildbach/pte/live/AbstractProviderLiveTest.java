@@ -28,7 +28,7 @@ import java.util.Set;
 
 import javax.annotation.Nullable;
 
-import de.schildbach.pte.NetworkProvider;
+import de.schildbach.pte.provider.NetworkProvider;
 import de.schildbach.pte.dto.Location;
 import de.schildbach.pte.dto.LocationType;
 import de.schildbach.pte.dto.NearbyLocationsResult;

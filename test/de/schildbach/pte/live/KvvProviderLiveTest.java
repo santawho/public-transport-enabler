@@ -26,7 +26,7 @@ import java.util.Date;
 
 import org.junit.Test;
 
-import de.schildbach.pte.KvvProvider;
+import de.schildbach.pte.provider.efa.KvvProvider;
 import de.schildbach.pte.dto.Location;
 import de.schildbach.pte.dto.LocationType;
 import de.schildbach.pte.dto.NearbyLocationsResult;

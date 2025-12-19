@@ -23,6 +23,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
+import de.schildbach.pte.provider.NetworkProvider;
+
 public class NetworkProviderFactory {
     public static class ExtraNetworkConfigurator<T extends NetworkProvider> {
         private final NetworkId.State state;

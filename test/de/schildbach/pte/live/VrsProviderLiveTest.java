@@ -37,9 +37,9 @@ import java.util.TreeSet;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import de.schildbach.pte.NetworkProvider.Accessibility;
-import de.schildbach.pte.NetworkProvider.WalkSpeed;
-import de.schildbach.pte.VrsProvider;
+import de.schildbach.pte.provider.NetworkProvider.Accessibility;
+import de.schildbach.pte.provider.NetworkProvider.WalkSpeed;
+import de.schildbach.pte.provider.other.VrsProvider;
 import de.schildbach.pte.dto.Line;
 import de.schildbach.pte.dto.LineDestination;
 import de.schildbach.pte.dto.Location;
