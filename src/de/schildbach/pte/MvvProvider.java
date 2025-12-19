@@ -152,9 +152,4 @@ public class MvvProvider extends AbstractEfaProvider {
         STYLES.put("B", new Style(Shape.RECT, Style.parseColor("#005262"), Style.WHITE));
         STYLES.put("BX", new Style(Shape.RECT, Style.parseColor("#4e917a"), Style.WHITE));
     }
-
-    @Override
-    public Point[] getArea() {
-        return new Point[] { Point.fromDouble(48.140377, 11.560643) };
-    }
 }

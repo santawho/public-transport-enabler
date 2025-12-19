@@ -46,11 +46,6 @@ public class VvsProvider extends AbstractEfaProvider {
     }
 
     @Override
-    public Point[] getArea() {
-        return new Point[] { Point.fromDouble(48.784068, 9.181713) };
-    }
-
-    @Override
     protected Line parseLine(final @Nullable String id, final @Nullable String network, final @Nullable String mot,
             final @Nullable String symbol, final @Nullable String name, final @Nullable String longName,
             final @Nullable String trainType, final @Nullable String trainNum, final @Nullable String trainName) {

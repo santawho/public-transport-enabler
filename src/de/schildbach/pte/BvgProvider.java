@@ -289,9 +289,4 @@ public final class BvgProvider extends AbstractHafasClientInterfaceProvider {
         STYLES.put("RRB91", new Style(Shape.RECT, Style.parseColor("#A7653F"), Style.WHITE));
         STYLES.put("RRB93", new Style(Shape.RECT, Style.parseColor("#A7653F"), Style.WHITE));
     }
-
-    @Override
-    public Point[] getArea() {
-        return new Point[] { Point.fromDouble(52.674189, 13.074604), Point.fromDouble(52.341100, 13.757130) };
-    }
 }

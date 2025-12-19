@@ -145,11 +145,6 @@ public abstract class AbstractNetworkProvider extends AbstractLocationSearchProv
         return Standard.resolveLineStyle(styles, network, product, label, styleFromNetwork);
     }
 
-    @Override
-    public Point[] getArea() throws IOException {
-        return null;
-    }
-
     protected static String normalizeStationId(final String stationId) {
         if (stationId == null || stationId.length() == 0)
             return null;

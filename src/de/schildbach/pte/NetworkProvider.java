@@ -252,8 +252,6 @@ public interface NetworkProvider extends Provider, LocationSearchProvider {
      *         point)
      * @throws IOException
      */
-    Point[] getArea() throws IOException;
-
     TripRef unpackTripRefFromMessage(final MessageUnpacker unpacker) throws IOException;
 
     TripShare unpackTripShareFromMessage(final MessageUnpacker unpacker) throws IOException;

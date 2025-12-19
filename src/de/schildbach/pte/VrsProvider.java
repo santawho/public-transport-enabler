@@ -957,11 +957,6 @@ public class VrsProvider extends AbstractNetworkProvider {
         return super.lineStyle(network, product, label);
     }
 
-    @Override
-    public Point[] getArea() throws IOException {
-        return new Point[] { Point.from1E6(50937531, 6960279) };
-    }
-
     private Line parseLine(final JSONObject line) throws JSONException {
         final String number = processLineNumber(line.getString("number"));
         final Product productObj = parseProduct(line.getString("product"), number);
