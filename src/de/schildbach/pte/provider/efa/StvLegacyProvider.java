@@ -43,10 +43,10 @@ import static java.util.Objects.requireNonNull;
 /**
  * @author Andreas Schildbach
  */
-public class StvProvider extends AbstractEfaProvider {
+public class StvLegacyProvider extends AbstractEfaProvider {
     private static final HttpUrl API_BASE = HttpUrl.parse("http://appefa10.verbundlinie.at/android/");
 
-    public StvProvider() {
+    public StvLegacyProvider() {
         super(NetworkId.STV, API_BASE);
         setRequestUrlEncoding(StandardCharsets.UTF_8);
         setIncludeRegionId(false);

@@ -15,7 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package de.schildbach.pte.provider.hafas;
+package de.schildbach.pte.provider.hafas.austria;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -27,6 +27,7 @@ import de.schildbach.pte.NetworkId;
 import de.schildbach.pte.dto.Product;
 import de.schildbach.pte.dto.Style;
 
+import de.schildbach.pte.provider.hafas.AbstractHafasClientInterfaceProvider;
 import okhttp3.HttpUrl;
 
 /**
@@ -36,20 +37,33 @@ import okhttp3.HttpUrl;
  */
 public class VaoProvider extends AbstractHafasClientInterfaceProvider {
     private static final HttpUrl API_BASE = HttpUrl.parse("https://app.verkehrsauskunft.at/hamm/");
-    private static final Product[] PRODUCTS_MAP = { Product.HIGH_SPEED_TRAIN, Product.SUBURBAN_TRAIN, Product.SUBWAY,
+    protected static final Product[] PRODUCTS_MAP = { Product.HIGH_SPEED_TRAIN, Product.SUBURBAN_TRAIN, Product.SUBWAY,
             null, Product.TRAM, Product.REGIONAL_TRAIN, Product.BUS, Product.BUS, Product.TRAM, Product.FERRY,
             Product.ON_DEMAND, Product.BUS, Product.REGIONAL_TRAIN, null, null, null };
     private static final String DEFAULT_API_CLIENT = "{\"id\":\"VAO\",\"l\":\"vs_vao\",\"type\":\"AND\"}";
+    private static final String WEBAPP_CONFIG_URL = "https://app.verkehrsauskunft.at/webapp/config/webapp.config.json";
+
+    public VaoProvider() {
+        this(DEFAULT_API_CLIENT, WEBAPP_CONFIG_URL);
+    }
 
     public VaoProvider(final String apiAuthorization) {
         this(DEFAULT_API_CLIENT, apiAuthorization);
     }
 
     public VaoProvider(final String apiClient, final String apiAuthorization) {
-        super(NetworkId.VAO, API_BASE, PRODUCTS_MAP);
+        this(NetworkId.VAO, API_BASE, apiClient, apiAuthorization);
+    }
+
+    public VaoProvider(
+            final NetworkId networkId,
+            final HttpUrl apiBase,
+            final String apiClient,
+            final String apiAuthorization) {
+        super(networkId, apiBase, PRODUCTS_MAP);
         setApiEndpoint("gate");
         setApiVersion("1.59");
-        setApiExt("VAO.6");
+        setApiExt("VAO.22");
         setApiClient(apiClient);
         setApiAuthorization(apiAuthorization);
         setStyles(STYLES);
@@ -62,13 +76,51 @@ public class VaoProvider extends AbstractHafasClientInterfaceProvider {
 
     private static final Pattern P_SPLIT_NAME_ONE_COMMA = Pattern.compile("([^,]*), ([^,]{3,64})");
 
-    @Override
-    protected String[] splitStationName(final String name) {
-        final Matcher m = P_SPLIT_NAME_ONE_COMMA.matcher(name);
-        if (m.matches())
-            return new String[] { m.group(2), m.group(1) };
+    // town (place) and stop name.
+    // separated by space, or a comma, or a minus optionally followd by spaces.
+    // name is the second part and may contain spaces.
+    // place is the first part and may
+    // - be prefixed by "Bad " (like. "Bad Vilbel")
+    // - be suffixed by " (...)" (like "Frankfurt (Main)")
+    // other spaces are not permitted in a place.
+    // all places containing spaces must be listed in the SPECIAL_PLACES
+    private static final Pattern P_SPLIT_NAME_VAO = Pattern.compile("((?:Bad )?(?:St. )?[^ ]*(?: ?\\([^)]*\\))?)[ ,\\-]? *(.*)");
 
-        return super.splitStationName(name);
+    // list all places, which contain at least one space
+    // except: places with "Bad "-prefix and no further spaces
+    private static final String[] SPECIAL_PLACES = new String[]{
+// the following contain spaces and must be listed here
+    };
+
+    @Override
+    protected String[] splitStationName(final String placeAndName) {
+        for (final String place: SPECIAL_PLACES) {
+            if (!placeAndName.startsWith(place))
+                continue;
+
+            final int placeLength = place.length();
+            final String trailer = placeAndName.substring(placeLength);
+            if (trailer.startsWith("-"))
+                return new String[] { place, trailer.substring(1) };
+
+            if (trailer.startsWith(" - "))
+                return new String[] { place, trailer.substring(3) };
+
+            if (trailer.startsWith(" "))
+                return new String[] { place, trailer.substring(1) };
+        }
+
+        if (placeAndName.length() > 2 && !Character.isUpperCase(placeAndName.charAt(1))) {
+            final Matcher m = P_SPLIT_NAME_VAO.matcher(placeAndName);
+            if (m.matches()) {
+                final String place = m.group(1);
+                final String name = m.group(2);
+                if (name != null && !name.isEmpty())
+                    return new String[]{place, name};
+            }
+        }
+
+        return new String[] { null, placeAndName };
     }
 
     @Override
@@ -89,7 +141,7 @@ public class VaoProvider extends AbstractHafasClientInterfaceProvider {
         return super.splitAddress(address);
     }
 
-    private static final Map<String, Style> STYLES = new HashMap<>();
+    protected static final Map<String, Style> STYLES = new HashMap<>();
 
     static {
         // Salzburg S-Bahn

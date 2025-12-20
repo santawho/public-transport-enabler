@@ -104,6 +104,8 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
     @Nullable
     private String apiExt;
     @Nullable
+    private HttpUrl webappConfigUrl;
+    @Nullable
     private String apiAuthorization;
     @Nullable
     private String apiClient;
@@ -128,8 +130,10 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
         String url;
     }
 
-    protected AbstractHafasClientInterfaceProvider(final NetworkId network, final HttpUrl apiBase,
-                                                   final Product[] productsMap) {
+    protected AbstractHafasClientInterfaceProvider(
+            final NetworkId network,
+            final HttpUrl apiBase,
+            final Product[] productsMap) {
         super(network, productsMap);
         this.apiBase = requireNonNull(apiBase);
     }
@@ -192,11 +196,20 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
     }
 
     protected AbstractHafasClientInterfaceProvider setApiAuthorization(final String apiAuthorization) {
-        this.apiAuthorization = apiAuthorization;
+        if (apiAuthorization == null || apiAuthorization.startsWith("{")) {
+            this.apiAuthorization = apiAuthorization;
+            this.webappConfigUrl = null;
+        } else {
+            this.apiAuthorization = "";
+            this.webappConfigUrl = HttpUrl.parse(apiAuthorization);
+        }
         return this;
     }
 
     public String getApiAuthorization() {
+        if (apiAuthorization == null || !apiAuthorization.isEmpty() || webappConfigUrl == null)
+            return apiAuthorization;
+        loadWebappConfig();
         return apiAuthorization;
     }
 
@@ -207,6 +220,27 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
 
     public String getApiClient() {
         return apiClient;
+    }
+
+    private void loadWebappConfig() {
+        if (webappConfigUrl == null)
+            return;
+
+        final CharSequence page;
+        try {
+            page = httpClient.get(webappConfigUrl, null, "application/json");
+
+            try {
+                final JSONObject config = new JSONObject(page.toString());
+                final JSONObject hciAuth = config.getJSONObject("hciAuth");
+                final String aid = hciAuth.getString("aid");
+                apiAuthorization = String.format("{\"type\":\"AID\",\"aid\":\"%s\"}", aid);
+            } catch (final JSONException je) {
+                throw new ParserException("cannot parse json: '" + page + "' on " + webappConfigUrl, je);
+            }
+        } catch (final IOException ioe) {
+            throw new RuntimeException(ioe);
+        }
     }
 
     @Override
@@ -1165,6 +1199,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
 
     private String wrapJsonApiRequest(final String meth, final String req, final boolean formatted) {
         final String lang = "de".equals(userInterfaceLanguage) ? "deu" : "eng";
+        final String apiAuthorization = getApiAuthorization();
         return "{" //
                 + (apiAuthorization != null ? "\"auth\":" + apiAuthorization + "," : "") //
                 + "\"client\":" + requireNonNull(apiClient) + "," //

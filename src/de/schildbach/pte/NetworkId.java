@@ -28,6 +28,8 @@ import de.schildbach.pte.provider.db.DbHafasProvider;
 import de.schildbach.pte.provider.db.DbMovasProvider;
 import de.schildbach.pte.provider.db.DbProvider;
 import de.schildbach.pte.provider.db.DbWebProvider;
+import de.schildbach.pte.provider.hafas.austria.StvProvider;
+import de.schildbach.pte.provider.hafas.austria.VkgProvider;
 import de.schildbach.pte.provider.other.DeutschlandTicketProvider;
 import de.schildbach.pte.provider.efa.DingProvider;
 import de.schildbach.pte.provider.hafas.DsbProvider;
@@ -48,33 +50,32 @@ import de.schildbach.pte.provider.hafas.NsProvider;
 import de.schildbach.pte.provider.efa.NvbwProvider;
 import de.schildbach.pte.provider.hafas.NvvProvider;
 import de.schildbach.pte.provider.hafas.OebbProvider;
-import de.schildbach.pte.provider.hafas.OoevvProvider;
+import de.schildbach.pte.provider.hafas.austria.OoevvProvider;
 import de.schildbach.pte.provider.hafas.PlProvider;
 import de.schildbach.pte.provider.hafas.RmvProvider;
 import de.schildbach.pte.provider.hafas.RtProvider;
 import de.schildbach.pte.provider.hafas.SeProvider;
 import de.schildbach.pte.provider.hafas.ShProvider;
-import de.schildbach.pte.provider.efa.StvProvider;
-import de.schildbach.pte.provider.hafas.SvvProvider;
+import de.schildbach.pte.provider.hafas.austria.SvvProvider;
 import de.schildbach.pte.provider.efa.SydneyProvider;
 import de.schildbach.pte.provider.efa.TlemProvider;
-import de.schildbach.pte.provider.hafas.VaoProvider;
+import de.schildbach.pte.provider.hafas.austria.VaoProvider;
 import de.schildbach.pte.provider.hafas.VbbProvider;
 import de.schildbach.pte.provider.efa.VblProvider;
 import de.schildbach.pte.provider.hafas.VbnProvider;
 import de.schildbach.pte.provider.efa.VgnProvider;
 import de.schildbach.pte.provider.hafas.VgsProvider;
-import de.schildbach.pte.provider.hafas.VmobilProvider;
+import de.schildbach.pte.provider.hafas.austria.VmobilProvider;
 import de.schildbach.pte.provider.hafas.VmtProvider;
 import de.schildbach.pte.provider.efa.VmvProvider;
-import de.schildbach.pte.provider.hafas.VorProvider;
+import de.schildbach.pte.provider.hafas.austria.VorProvider;
 import de.schildbach.pte.provider.efa.VrnProvider;
 import de.schildbach.pte.provider.efa.VrrProvider;
 import de.schildbach.pte.provider.other.VrsProvider;
 import de.schildbach.pte.provider.efa.VvmProvider;
 import de.schildbach.pte.provider.efa.VvoProvider;
 import de.schildbach.pte.provider.efa.VvsProvider;
-import de.schildbach.pte.provider.hafas.VvtProvider;
+import de.schildbach.pte.provider.hafas.austria.VvtProvider;
 import de.schildbach.pte.provider.efa.VvvProvider;
 import de.schildbach.pte.provider.efa.WienProvider;
 import de.schildbach.pte.provider.hafas.ZvvProvider;
@@ -137,13 +138,14 @@ public enum NetworkId {
     // Austria
     OEBB(Descriptor.from(OebbProvider.class, "de-AT", "AT")),
     VAO(Descriptor.from(VaoProvider.class, "de-AT", "AT", State.disabled)),
-    VOR(Descriptor.from(VorProvider.class, "de-AT", "Niederösterreich;Burgenland;Wien")),
-    WIEN(Descriptor.from(WienProvider.class, "de-AT", "Wien", State.dead)),
+    VOR(Descriptor.from(VorProvider.class, "de-AT", "Wien;Niederösterreich;Burgenland")),
+    WIEN(Descriptor.from(WienProvider.class, "de-AT", "Wien", State.deprecated)),
     OOEVV(Descriptor.from(OoevvProvider.class, "de-AT", "Oberösterreich")),
     LINZ(Descriptor.from(LinzProvider.class, "de-AT", "Oberösterreich;Linz")),
     SVV(Descriptor.from(SvvProvider.class, "de-AT", "Salzburg")),
     VVT(Descriptor.from(VvtProvider.class, "de-AT", "Tirol")),
-    STV(Descriptor.from(StvProvider.class, "de-AT", "Steiermark;Graz;Marburg;Maribor;Klagenfurt")),
+    STV(Descriptor.from(StvProvider.class, "de-AT", "Steiermark;Graz;Marburg;Maribor")),
+    VKG(Descriptor.from(VkgProvider.class, "de-AT", "Kärnten;Klagenfurt")),
     VMOBIL(Descriptor.from(VmobilProvider.class, "de-AT", "Vorarlberg;Bregenz")),
 
     // Switzerland

@@ -26,7 +26,7 @@ import java.util.Date;
 
 import org.junit.Test;
 
-import de.schildbach.pte.provider.efa.StvProvider;
+import de.schildbach.pte.provider.efa.StvLegacyProvider;
 import de.schildbach.pte.dto.Location;
 import de.schildbach.pte.dto.LocationType;
 import de.schildbach.pte.dto.NearbyLocationsResult;
@@ -39,7 +39,7 @@ import de.schildbach.pte.dto.SuggestLocationsResult;
  */
 public class StvProviderLiveTest extends AbstractProviderLiveTest {
     public StvProviderLiveTest() {
-        super(new StvProvider());
+        super(new StvLegacyProvider());
     }
 
     @Test

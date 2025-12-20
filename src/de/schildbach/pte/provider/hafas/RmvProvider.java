@@ -48,6 +48,11 @@ public class RmvProvider extends AbstractHafasClientInterfaceProvider {
             // upstream PTE has additional Product.REGIONAL_TRAIN
     };
     private static final String DEFAULT_API_CLIENT = "{\"id\":\"RMV\",\"type\":\"WEB\",\"name\":\"webapp\",\"l\":\"vs_webapp\"}";
+    private static final String WEBAPP_CONFIG_URL = "https://www.rmv.de/auskunft/rmv/app/config/webapp.config.json";
+
+    public RmvProvider() {
+        this(DEFAULT_API_CLIENT, WEBAPP_CONFIG_URL);
+    }
 
     public RmvProvider(final String apiAuthorization) {
         this(DEFAULT_API_CLIENT, apiAuthorization);
@@ -632,7 +637,7 @@ public class RmvProvider extends AbstractHafasClientInterfaceProvider {
     // - be suffixed by " (...)" (like "Frankfurt (Main)")
     // other spaces are not permitted in a place.
     // all places containing spaces must be listed in the SPECIAL_PLACES
-    private static final Pattern P_SPLIT_NAME_RMV = Pattern.compile("((?:Bad )?[^ ]*(?: ?\\([^)]*\\))?)[ ,\\-]? *(.*)");
+    private static final Pattern P_SPLIT_NAME_RMV = Pattern.compile("((?:Bad )?(?:St. )?[^ ]*(?: ?\\([^)]*\\))?)[ ,\\-]? *(.*)");
 
     // list all places, which contain at least one space
     // except: places with "Bad "-prefix and no further spaces

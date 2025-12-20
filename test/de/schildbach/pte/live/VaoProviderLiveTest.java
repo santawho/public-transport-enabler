@@ -26,7 +26,7 @@ import java.util.Date;
 
 import org.junit.Test;
 
-import de.schildbach.pte.provider.hafas.VaoProvider;
+import de.schildbach.pte.provider.hafas.austria.VaoProvider;
 import de.schildbach.pte.dto.Location;
 import de.schildbach.pte.dto.LocationType;
 import de.schildbach.pte.dto.NearbyLocationsResult;
