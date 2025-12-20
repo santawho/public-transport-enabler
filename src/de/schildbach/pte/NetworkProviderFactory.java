@@ -101,11 +101,11 @@ public class NetworkProviderFactory {
     }
 
     public List<NetworkId.Descriptor> getAvailableNetworks() {
-        return getAvailableNetworks(null);
+        return getAvailableNetworks(NetworkId.State.hide);
     }
 
     public List<NetworkId.Descriptor> getAvailableNetworks(final NetworkId.State aExcludeState) {
-        final NetworkId.State excludeState = aExcludeState == null ? NetworkId.State.disabled : aExcludeState;
+        final NetworkId.State excludeState = aExcludeState == null ? NetworkId.State.show : aExcludeState;
         final List<NetworkId.Descriptor> descriptors = new ArrayList<>();
 
         for (final NetworkId networkId : NetworkId.values()) {
@@ -118,7 +118,7 @@ public class NetworkProviderFactory {
                 state = descriptor.getState();
             if (state == null)
                 state = NetworkId.State.active;
-            if (state.getValue() >= excludeState.getValue())
+            if (!state.lessThan(excludeState))
                 continue;
             descriptors.add(NetworkId.Descriptor.from(
                     networkId,

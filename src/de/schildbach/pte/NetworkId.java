@@ -85,21 +85,21 @@ import de.schildbach.pte.provider.hafas.ZvvProvider;
 public enum NetworkId {
     // Europe
     RT(Descriptor.from(RtProvider.class, "eu", "DE;AT;CH;BE;LU;NL;DK;SE;NO;FI;GB;SI;HU;RO;BG;PL;SK;IT;ES;PT")),
+    DBINTERNATIONAL(Descriptor.from(DbProvider.International.class, "eu", "DE;AT;CH;BE;LU;NL;DK;SE;NO;FI;GB;SI;HU;RO;BG;PL;SK;IT;ES;PT")),
 
     // Germany
     DEUTSCHLANDTICKET(Descriptor.from(DeutschlandTicketProvider.class, "de-DE", "DE")),
     DB(Descriptor.from(DbProvider.Default.class, "de-DE", "DE")),
     DBREGIO(Descriptor.from(DbProvider.Regio.class, "de-DE", "DE")),
-    DBDEUTSCHLANDTICKET(Descriptor.from(DbProvider.DeutschlandTicket.class, "de-DE", "DE")),
-    DBINTERNATIONAL(Descriptor.from(DbProvider.International.class, "eu", "DE;AT;CH;BE;LU;NL;DK;SE;NO;FI;GB;SI;HU;RO;BG;PL;SK;IT;ES;PT")),
-    DBWEB(Descriptor.from(DbProvider.Fernverkehr.class, "de-DE", "DE")),
-    DBREGIOWEB(Descriptor.from(DbWebProvider.Regio.class, "de-DE", "DE")),
-    DBDEUTSCHLANDTICKETWEB(Descriptor.from(DbWebProvider.DeutschlandTicket.class, "de-DE", "DE")),
+    DBDEUTSCHLANDTICKET(Descriptor.from(DbProvider.DeutschlandTicket.class, "de-DE", "DE", State.disabled)),
+    DBWEB(Descriptor.from(DbProvider.Fernverkehr.class, "de-DE", "DE", State.disabled)),
+    DBREGIOWEB(Descriptor.from(DbWebProvider.Regio.class, "de-DE", "DE", State.disabled)),
+    DBDEUTSCHLANDTICKETWEB(Descriptor.from(DbWebProvider.DeutschlandTicket.class, "de-DE", "DE", State.disabled)),
     DBMOVAS(Descriptor.from(DbMovasProvider.Fernverkehr.class, "de-DE", "DE")),
     DBREGIOMOVAS(Descriptor.from(DbMovasProvider.Regio.class, "de-DE", "DE")),
     DBDEUTSCHLANDTICKETMOVAS(Descriptor.from(DbMovasProvider.DeutschlandTicket.class, "de-DE", "DE")),
-    DBHAFAS(Descriptor.from(DbHafasProvider.Fernverkehr.class, "de-DE", "DE")),
-    DBREGIOHAFAS(Descriptor.from(DbHafasProvider.Regio.class, "de-DE", "DE")),
+    DBHAFAS(Descriptor.from(DbHafasProvider.Fernverkehr.class, "de-DE", "DE", State.defunct)),
+    DBREGIOHAFAS(Descriptor.from(DbHafasProvider.Regio.class, "de-DE", "DE", State.defunct)),
     BVG(Descriptor.from(BvgProvider.class, "de-DE", "Brandenburg;Berlin",
             new Point[] { Point.fromDouble(52.674189, 13.074604), Point.fromDouble(52.341100, 13.757130) })),
     VBB(Descriptor.from(VbbProvider.class, "de-DE", "Brandenburg")),
@@ -196,22 +196,27 @@ public enum NetworkId {
     }
 
     public enum State {
+        show(-1),
         active(0),
         beta(1),
         dead(2),
-        deprecated(3),
-        alpha(4),
-        wip(5),
-        disabled(6);
+        alpha(3),
+        wip(4),
+        unselectable(5),
+        hide(6),
+        unoperational(7),
+        disabled(8),
+        deprecated(9),
+        defunct(10);
 
-        private final int value;
+        private final int order;
 
-        State(final int value) {
-            this.value = value;
+        State(final int order) {
+            this.order = order;
         }
 
-        public int getValue() {
-            return value;
+        public boolean lessThan(final State other) {
+            return order < other.order;
         }
     }
 
