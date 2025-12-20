@@ -1,4 +1,6 @@
-package de.schildbach.pte;
+package de.schildbach.pte.provider.motis;
+
+import de.schildbach.pte.NetworkId;
 
 public class TransitousProvider extends AbstractMotisProvider {
     public TransitousProvider() {

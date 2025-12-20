@@ -1,5 +1,6 @@
-package de.schildbach.pte;
+package de.schildbach.pte.provider.motis;
 
+import de.schildbach.pte.NetworkId;
 import de.schildbach.pte.dto.PTDate;
 import de.schildbach.pte.exception.InternalErrorException;
 import org.json.JSONArray;
@@ -42,6 +43,7 @@ import de.schildbach.pte.dto.SuggestLocationsResult;
 import de.schildbach.pte.dto.SuggestedLocation;
 import de.schildbach.pte.dto.Trip;
 import de.schildbach.pte.dto.TripOptions;
+import de.schildbach.pte.provider.AbstractNetworkProvider;
 import okhttp3.HttpUrl;
 
 public abstract class AbstractMotisProvider extends AbstractNetworkProvider {
@@ -495,17 +497,6 @@ public abstract class AbstractMotisProvider extends AbstractNetworkProvider {
         } catch (final JSONException e) {
             throw new RuntimeException(e);
         }
-    }
-
-
-    @Override
-    public Point[] getArea() throws IOException {
-        return new Point[]{
-                Point.fromDouble(90, 0),
-                Point.fromDouble(90, 180),
-                Point.fromDouble(-90, 180),
-                Point.fromDouble(-90, 0)
-        };
     }
 
     @Override

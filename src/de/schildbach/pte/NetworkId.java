@@ -28,6 +28,7 @@ import de.schildbach.pte.provider.db.DbHafasProvider;
 import de.schildbach.pte.provider.db.DbMovasProvider;
 import de.schildbach.pte.provider.db.DbProvider;
 import de.schildbach.pte.provider.db.DbWebProvider;
+import de.schildbach.pte.provider.motis.TransitousProvider;
 import de.schildbach.pte.provider.other.DeutschlandTicketProvider;
 import de.schildbach.pte.provider.efa.DingProvider;
 import de.schildbach.pte.provider.hafas.DsbProvider;
@@ -84,7 +85,8 @@ import de.schildbach.pte.provider.hafas.ZvvProvider;
  */
 public enum NetworkId {
     // World
-    TRANSITOUS,
+    TRANSITOUS(Descriptor.from(TransitousProvider.class, Descriptor.GROUP_WORLD, "DE;AT;CH;BE;LU;NL;DK;SE;NO;FI;GB;SI;HU;RO;BG;PL;SK;IT;ES;PT;US;CA;AU",
+            new Point[]{Point.fromDouble(90, 0), Point.fromDouble(90, 180), Point.fromDouble(-90, 180), Point.fromDouble(-90, 0)})),
 
     // Europe
     RT(Descriptor.from(RtProvider.class, Descriptor.GROUP_EUROPE, "DE;AT;CH;BE;LU;NL;DK;SE;NO;FI;GB;SI;HU;RO;BG;PL;SK;IT;ES;PT")),
