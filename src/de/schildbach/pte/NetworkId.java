@@ -84,8 +84,8 @@ import de.schildbach.pte.provider.hafas.ZvvProvider;
  */
 public enum NetworkId {
     // Europe
-    RT(Descriptor.from(RtProvider.class, "eu", "DE;AT;CH;BE;LU;NL;DK;SE;NO;FI;GB;SI;HU;RO;BG;PL;SK;IT;ES;PT")),
-    DBINTERNATIONAL(Descriptor.from(DbProvider.International.class, "eu", "DE;AT;CH;BE;LU;NL;DK;SE;NO;FI;GB;SI;HU;RO;BG;PL;SK;IT;ES;PT")),
+    RT(Descriptor.from(RtProvider.class, Descriptor.GROUP_EUROPE, "DE;AT;CH;BE;LU;NL;DK;SE;NO;FI;GB;SI;HU;RO;BG;PL;SK;IT;ES;PT")),
+    DBINTERNATIONAL(Descriptor.from(DbProvider.International.class, Descriptor.GROUP_EUROPE, "DE;AT;CH;BE;LU;NL;DK;SE;NO;FI;GB;SI;HU;RO;BG;PL;SK;IT;ES;PT")),
 
     // Germany
     DEUTSCHLANDTICKET(Descriptor.from(DeutschlandTicketProvider.class, "de-DE", "DE")),
@@ -221,6 +221,9 @@ public enum NetworkId {
     }
 
     public interface Descriptor {
+        String GROUP_WORLD = "world";
+        String GROUP_EUROPE = "eu";
+
         Class<? extends NetworkProvider> getNetworkProviderClass();
         NetworkId getNetworkId();
         void setNetworkId(final NetworkId networkId);
