@@ -86,7 +86,8 @@ import de.schildbach.pte.provider.hafas.ZvvProvider;
 public enum NetworkId {
     // World
     TRANSITOUS(Descriptor.from(TransitousProvider.class, Descriptor.GROUP_WORLD, "DE;AT;CH;BE;LU;NL;DK;SE;NO;FI;GB;SI;HU;RO;BG;PL;SK;IT;ES;PT;US;CA;AU",
-            new Point[]{Point.fromDouble(90, 0), Point.fromDouble(90, 180), Point.fromDouble(-90, 180), Point.fromDouble(-90, 0)})),
+            new Point[]{Point.fromDouble(90, 0), Point.fromDouble(90, 180), Point.fromDouble(-90, 180), Point.fromDouble(-90, 0)},
+            State.wip)),
 
     // Europe
     RT(Descriptor.from(RtProvider.class, Descriptor.GROUP_EUROPE, "DE;AT;CH;BE;LU;NL;DK;SE;NO;FI;GB;SI;HU;RO;BG;PL;SK;IT;ES;PT")),
