@@ -71,6 +71,96 @@ public class RmvProvider extends AbstractHafasClientInterfaceProvider {
         return ",{\"value\": \"GROUP_PT\",\"mode\":\"INC\",\"type\":\"GROUP\"}";
     }
 
+    // town (place) and stop name.
+    // separated by space, or a comma, or a minus optionally followd by spaces.
+    // name is the second part and may contain spaces.
+    // place is the first part and may
+    // - be prefixed by "Bad " (like. "Bad Vilbel")
+    // - be suffixed by " (...)" (like "Frankfurt (Main)")
+    // other spaces are not permitted in a place.
+    // all places containing spaces must be listed in the SPECIAL_PLACES
+    private static final Pattern P_SPLIT_NAME_RMV = Pattern.compile("((?:Bad )?(?:St. )?[^ ]*(?: ?\\([^)]*\\))?)[ ,\\-]? *(.*)");
+
+    // list all places, which contain at least one space
+    // except: places with "Bad "-prefix and no further spaces
+    private static final String[] SPECIAL_PLACES = new String[]{
+// the following contain spaces and must be listed here
+            "Groß Gerau",
+            "Bad Soden-Salmünster-Bad Soden", // special, because "Bad Soden-Salmünster-Bad Soden Schweizerhaus", but "Bad Soden-Salmünster-Salmünster Am Palmusacker" and "Bad Soden-Salmünster-Kath.-Willenroth Waldschule"
+            "Hofheim am Taunus",
+            "Bad Homburg v.d.H."
+// we now split using a complex Regex, so the following do not need an exception
+//            "Frankfurt (Main)",
+//            "Offenbach (Main)",
+// we now split at first space, so the following do not need an exception
+//            "Mainz",
+//            "Wiesbaden",
+//            "Marburg",
+//            "Kassel",
+//            "Hanau",
+//            "Göttingen",
+//            "Darmstadt",
+//            "Aschaffenburg",
+//            "Berlin",
+//            "Fulda"
+    };
+
+    @Override
+    protected String[] splitStationName(final String placeAndName) {
+//        if (placeAndName.startsWith("F "))
+//            return new String[] {"Frankfurt", placeAndName.substring(2)};
+//
+//        if (placeAndName.startsWith("OF "))
+//            return new String[] {"Offenbach", placeAndName.substring(3)};
+//
+//        if (placeAndName.startsWith("MZ "))
+//            return new String[] {"Mainz", placeAndName.substring(3)};
+
+        for (final String place: SPECIAL_PLACES) {
+            if (!placeAndName.startsWith(place))
+                continue;
+
+            final int placeLength = place.length();
+            final String trailer = placeAndName.substring(placeLength);
+            if (trailer.startsWith("-"))
+                return new String[] { place, trailer.substring(1) };
+
+            if (trailer.startsWith(" - "))
+                return new String[] { place, trailer.substring(3) };
+
+            if (trailer.startsWith(" "))
+                return new String[] { place, trailer.substring(1) };
+        }
+
+        final Matcher m = P_SPLIT_NAME_RMV.matcher(placeAndName);
+        if (m.matches()) {
+            final String place = m.group(1);
+            final String name = m.group(2);
+            if (name != null && !name.isEmpty())
+                return new String[]{place, name};
+        }
+
+        return new String[] { null, placeAndName };
+    }
+
+    @Override
+    protected String[] splitPOI(final String poi) {
+        final Matcher m = P_SPLIT_NAME_FIRST_COMMA.matcher(poi);
+        if (m.matches())
+            return new String[] { m.group(1), m.group(2) };
+
+        return super.splitStationName(poi);
+    }
+
+    @Override
+    protected String[] splitAddress(final String address) {
+        final Matcher m = P_SPLIT_NAME_FIRST_COMMA.matcher(address);
+        if (m.matches())
+            return new String[] { m.group(1), m.group(2) };
+
+        return super.splitStationName(address);
+    }
+
     private static final Style.Shape RMV_SHAPE = Style.Shape.ROUNDED;
 
     protected static final Map<String, Style> STYLES = new HashMap<>();
@@ -627,95 +717,5 @@ public class RmvProvider extends AbstractHafasClientInterfaceProvider {
         STYLES.put("Engelhardt Omnibusbetrieb GmbH|B275", new Style(RMV_SHAPE, Style.rgb(167, 22, 129), Style.WHITE));
         STYLES.put("ESE Verkehrsgesellschaft mbH|B277", new Style(RMV_SHAPE, Style.rgb(0, 128, 61), Style.WHITE));
         STYLES.put("ESE Verkehrsgesellschaft mbH|B278", new Style(RMV_SHAPE, Style.rgb(131, 208, 245), Style.WHITE));
-    }
-
-    // town (place) and stop name.
-    // separated by space, or a comma, or a minus optionally followd by spaces.
-    // name is the second part and may contain spaces.
-    // place is the first part and may
-    // - be prefixed by "Bad " (like. "Bad Vilbel")
-    // - be suffixed by " (...)" (like "Frankfurt (Main)")
-    // other spaces are not permitted in a place.
-    // all places containing spaces must be listed in the SPECIAL_PLACES
-    private static final Pattern P_SPLIT_NAME_RMV = Pattern.compile("((?:Bad )?(?:St. )?[^ ]*(?: ?\\([^)]*\\))?)[ ,\\-]? *(.*)");
-
-    // list all places, which contain at least one space
-    // except: places with "Bad "-prefix and no further spaces
-    private static final String[] SPECIAL_PLACES = new String[]{
-// the following contain spaces and must be listed here
-            "Groß Gerau",
-            "Bad Soden-Salmünster-Bad Soden", // special, because "Bad Soden-Salmünster-Bad Soden Schweizerhaus", but "Bad Soden-Salmünster-Salmünster Am Palmusacker" and "Bad Soden-Salmünster-Kath.-Willenroth Waldschule"
-            "Hofheim am Taunus",
-            "Bad Homburg v.d.H."
-// we now split using a complex Regex, so the following do not need an exception
-//            "Frankfurt (Main)",
-//            "Offenbach (Main)",
-// we now split at first space, so the following do not need an exception
-//            "Mainz",
-//            "Wiesbaden",
-//            "Marburg",
-//            "Kassel",
-//            "Hanau",
-//            "Göttingen",
-//            "Darmstadt",
-//            "Aschaffenburg",
-//            "Berlin",
-//            "Fulda"
-    };
-
-    @Override
-    protected String[] splitStationName(final String placeAndName) {
-//        if (placeAndName.startsWith("F "))
-//            return new String[] {"Frankfurt", placeAndName.substring(2)};
-//
-//        if (placeAndName.startsWith("OF "))
-//            return new String[] {"Offenbach", placeAndName.substring(3)};
-//
-//        if (placeAndName.startsWith("MZ "))
-//            return new String[] {"Mainz", placeAndName.substring(3)};
-
-        for (final String place: SPECIAL_PLACES) {
-            if (!placeAndName.startsWith(place))
-                continue;
-
-            final int placeLength = place.length();
-            final String trailer = placeAndName.substring(placeLength);
-            if (trailer.startsWith("-"))
-                return new String[] { place, trailer.substring(1) };
-
-            if (trailer.startsWith(" - "))
-                return new String[] { place, trailer.substring(3) };
-
-            if (trailer.startsWith(" "))
-                return new String[] { place, trailer.substring(1) };
-        }
-
-        final Matcher m = P_SPLIT_NAME_RMV.matcher(placeAndName);
-        if (m.matches()) {
-            final String place = m.group(1);
-            final String name = m.group(2);
-            if (name != null && !name.isEmpty())
-                return new String[]{place, name};
-        }
-
-        return new String[] { null, placeAndName };
-    }
-
-    @Override
-    protected String[] splitPOI(final String poi) {
-        final Matcher m = P_SPLIT_NAME_FIRST_COMMA.matcher(poi);
-        if (m.matches())
-            return new String[] { m.group(1), m.group(2) };
-
-        return super.splitStationName(poi);
-    }
-
-    @Override
-    protected String[] splitAddress(final String address) {
-        final Matcher m = P_SPLIT_NAME_FIRST_COMMA.matcher(address);
-        if (m.matches())
-            return new String[] { m.group(1), m.group(2) };
-
-        return super.splitStationName(address);
     }
 }
