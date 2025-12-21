@@ -207,8 +207,6 @@ public class RmvProvider extends AbstractHafasClientInterfaceProvider {
 //        STYLES.put("T20", new Style(RMV_SHAPE, Style.WHITE, Style.rgb(148, 149, 152), Style.rgb(148, 149, 152)));
 //        STYLES.put("T21", new Style(RMV_SHAPE, Style.rgb(242, 135, 183), Style.WHITE));
 
-        STYLES.put("RRB5", new Style(RMV_SHAPE, Style.rgb(144, 38, 143), Style.WHITE));
-        STYLES.put("RRB6", new Style(RMV_SHAPE, Style.rgb(21, 192, 242), Style.WHITE));
         STYLES.put("RRB10", new Style(RMV_SHAPE, Style.rgb(227, 160, 35), Style.WHITE));
         STYLES.put("RRB12", new Style(RMV_SHAPE, Style.rgb(148, 91, 54), Style.WHITE));
         STYLES.put("RRB15", new Style(RMV_SHAPE, Style.rgb(227, 160, 35), Style.WHITE));
@@ -232,11 +230,13 @@ public class RmvProvider extends AbstractHafasClientInterfaceProvider {
         STYLES.put("RRB47", new Style(RMV_SHAPE, Style.rgb(199, 125, 180), Style.WHITE));
         STYLES.put("RRB48", new Style(RMV_SHAPE, Style.rgb(227, 160, 35), Style.WHITE));
         STYLES.put("RRB49", new Style(RMV_SHAPE, Style.rgb(0, 126, 197), Style.WHITE));
+        STYLES.put("RRB5", new Style(RMV_SHAPE, Style.rgb(144, 38, 143), Style.WHITE));
         STYLES.put("RRB50", new Style(RMV_SHAPE, Style.rgb(238, 29, 35), Style.WHITE));
         STYLES.put("RRB51", new Style(RMV_SHAPE, Style.rgb(238, 29, 35), Style.WHITE));
         STYLES.put("RRB52", new Style(RMV_SHAPE, Style.rgb(227, 160, 35), Style.WHITE));
         STYLES.put("RRB53", new Style(RMV_SHAPE, Style.rgb(199, 125, 180), Style.WHITE));
         STYLES.put("RRB58", new Style(RMV_SHAPE, Style.rgb(144, 38, 143), Style.WHITE));
+        STYLES.put("RRB6", new Style(RMV_SHAPE, Style.rgb(21, 192, 242), Style.WHITE));
         STYLES.put("RRB61", new Style(RMV_SHAPE, Style.rgb(0, 126, 197), Style.WHITE));
         STYLES.put("RRB62", new Style(RMV_SHAPE, Style.rgb(199, 125, 180), Style.WHITE));
         STYLES.put("RRB63", new Style(RMV_SHAPE, Style.rgb(21, 192, 242), Style.WHITE));
@@ -255,18 +255,18 @@ public class RmvProvider extends AbstractHafasClientInterfaceProvider {
         STYLES.put("RRB95", new Style(RMV_SHAPE, Style.rgb(238, 29, 35), Style.WHITE));
         STYLES.put("RRB96", new Style(RMV_SHAPE, Style.rgb(0, 126, 197), Style.WHITE));
         STYLES.put("RRB97", new Style(RMV_SHAPE, Style.rgb(148, 91, 54), Style.WHITE));
-        STYLES.put("RRE2", new Style(RMV_SHAPE, Style.rgb(227, 160, 35), Style.WHITE));
-        STYLES.put("RRE3", new Style(RMV_SHAPE, Style.rgb(227, 160, 35), Style.WHITE));
-        STYLES.put("RRE4", new Style(RMV_SHAPE, Style.rgb(144, 38, 143), Style.WHITE));
-        STYLES.put("RRE5", new Style(RMV_SHAPE, Style.rgb(144, 38, 143), Style.WHITE));
         STYLES.put("RRE10a", new Style(RMV_SHAPE, Style.rgb(0, 126, 197), Style.WHITE));
         STYLES.put("RRE13", new Style(RMV_SHAPE, Style.rgb(21, 192, 242), Style.WHITE));
         STYLES.put("RRE14", new Style(RMV_SHAPE, Style.rgb(144, 38, 143), Style.WHITE));
         STYLES.put("RRE15", new Style(RMV_SHAPE, Style.rgb(227, 160, 35), Style.WHITE));
         STYLES.put("RRE17", new Style(RMV_SHAPE, Style.rgb(199, 125, 180), Style.WHITE));
+        STYLES.put("RRE2", new Style(RMV_SHAPE, Style.rgb(227, 160, 35), Style.WHITE));
         STYLES.put("RRE20", new Style(RMV_SHAPE, Style.rgb(238, 29, 35), Style.WHITE));
         STYLES.put("RRE25", new Style(RMV_SHAPE, Style.rgb(0, 126, 197), Style.WHITE));
+        STYLES.put("RRE3", new Style(RMV_SHAPE, Style.rgb(227, 160, 35), Style.WHITE));
         STYLES.put("RRE30", new Style(RMV_SHAPE, Style.rgb(238, 29, 35), Style.WHITE));
+        STYLES.put("RRE4", new Style(RMV_SHAPE, Style.rgb(144, 38, 143), Style.WHITE));
+        STYLES.put("RRE5", new Style(RMV_SHAPE, Style.rgb(144, 38, 143), Style.WHITE));
         STYLES.put("RRE50", new Style(RMV_SHAPE, Style.rgb(238, 29, 35), Style.WHITE));
         STYLES.put("RRE54", new Style(RMV_SHAPE, Style.rgb(144, 38, 143), Style.WHITE));
         STYLES.put("RRE55", new Style(RMV_SHAPE, Style.rgb(144, 38, 143), Style.WHITE));
