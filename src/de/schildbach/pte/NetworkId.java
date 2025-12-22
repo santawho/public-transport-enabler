@@ -149,7 +149,7 @@ public enum NetworkId {
     VMOBIL(Descriptor.from(VmobilProvider.class, "de-AT", "Vorarlberg;Bregenz")),
 
     // Switzerland
-    VBL(Descriptor.from(VblProvider.class, "de-CH", "Luzern")),
+    VBL(Descriptor.from(VblProvider.class, "de-CH", "Luzern", State.deprecated)),
     ZVV(Descriptor.from(ZvvProvider.class, "de-CH", "Zürich")),
 
     // Netherlands
