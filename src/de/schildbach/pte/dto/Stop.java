@@ -153,6 +153,10 @@ public final class Stop implements Serializable {
         return predictedArrivalPosition != null;
     }
 
+    public boolean isArrivalPositionChanged() {
+        return predictedArrivalPosition != null && !predictedArrivalPosition.equals(plannedArrivalPosition);
+    }
+
     public PTDate getDepartureTime() {
         return getDepartureTime(false);
     }
@@ -199,6 +203,10 @@ public final class Stop implements Serializable {
 
     public boolean isDeparturePositionPredicted() {
         return predictedDeparturePosition != null;
+    }
+
+    public boolean isDeparturePositionChanged() {
+        return predictedDeparturePosition != null && !predictedDeparturePosition.equals(plannedDeparturePosition);
     }
 
     public PTDate getMinTime() {
