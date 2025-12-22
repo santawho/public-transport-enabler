@@ -152,4 +152,12 @@ public class Style implements Serializable {
         else
             return BLACK;
     }
+
+    @Override
+    public String toString() {
+        return "Style{" +
+                "shape=" + shape +
+                ", backgroundColor=" + String.format("%08x", backgroundColor) +
+                '}';
+    }
 }

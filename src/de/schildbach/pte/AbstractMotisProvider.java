@@ -1,14 +1,12 @@
 package de.schildbach.pte;
 
-import de.schildbach.pte.dto.PTDate;
-import de.schildbach.pte.exception.InternalErrorException;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
-import org.json.JSONException;
-
 import java.time.Instant;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -18,7 +16,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TimeZone;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import de.schildbach.pte.dto.Departure;
@@ -27,8 +27,8 @@ import de.schildbach.pte.dto.LineDestination;
 import de.schildbach.pte.dto.Location;
 import de.schildbach.pte.dto.LocationType;
 import de.schildbach.pte.dto.NearbyLocationsResult;
+import de.schildbach.pte.dto.PTDate;
 import de.schildbach.pte.dto.Point;
-
 import de.schildbach.pte.dto.Position;
 import de.schildbach.pte.dto.Product;
 import de.schildbach.pte.dto.QueryDeparturesResult;
@@ -42,6 +42,7 @@ import de.schildbach.pte.dto.SuggestLocationsResult;
 import de.schildbach.pte.dto.SuggestedLocation;
 import de.schildbach.pte.dto.Trip;
 import de.schildbach.pte.dto.TripOptions;
+import de.schildbach.pte.exception.InternalErrorException;
 import okhttp3.HttpUrl;
 
 public abstract class AbstractMotisProvider extends AbstractNetworkProvider {
@@ -58,9 +59,7 @@ public abstract class AbstractMotisProvider extends AbstractNetworkProvider {
         public Location to;
         public Date date;
 
-        Context(final String url,
-                @Nullable final String previousCursor, @Nullable final String nextCursor,
-                final Location from, final Location via, final Location to, final Date date) {
+        Context(final String url, @Nullable final String previousCursor, @Nullable final String nextCursor, final Location from, final Location via, final Location to, final Date date) {
             this.url = url;
             this.previousCursor = previousCursor;
             this.nextCursor = nextCursor;
@@ -68,16 +67,6 @@ public abstract class AbstractMotisProvider extends AbstractNetworkProvider {
             this.via = via;
             this.to = to;
             this.date = date;
-        }
-
-        Context(final Context copyFrom) {
-            this.url = copyFrom.url;
-            this.previousCursor = copyFrom.previousCursor;
-            this.nextCursor = copyFrom.nextCursor;
-            this.from = copyFrom.from;
-            this.via = copyFrom.via;
-            this.to = copyFrom.to;
-            this.date = copyFrom.date;
         }
 
         @Override
@@ -91,15 +80,10 @@ public abstract class AbstractMotisProvider extends AbstractNetworkProvider {
         }
     }
 
-    private final Set<Capability> CAPABILITIES = Set.of(
-            Capability.SUGGEST_LOCATIONS,
-            Capability.TRIPS,
-            Capability.DEPARTURES
-    );
+    private final Set<Capability> CAPABILITIES = Set.of(Capability.SUGGEST_LOCATIONS, Capability.TRIPS, Capability.DEPARTURES);
 
     protected static final String SERVER_PRODUCT = "MOTIS";
 
-    private static final int MAX_TRIPS = 100;
 
     public AbstractMotisProvider(final NetworkId networkId, final String apiUrl) {
         super(networkId);
@@ -145,50 +129,55 @@ public abstract class AbstractMotisProvider extends AbstractNetworkProvider {
         }
     }
 
-    private String locationTypeToString(final LocationType type) {
-        switch (type) {
-            case ADDRESS:
-                return "ADDRESS";
-            case STATION:
-                return "STOP";
-            case POI:
-                return "PLACE";
-            case ANY:
-            case COORD:
-            default:
-                //string (LocationType)
-                //Enum: "ADDRESS" "PLACE" "STOP"
-                //Optional. Default is all types.
-                return null;
+    private String locationTypesToString(final Set<LocationType> types) {
+        if (types.size() == 1) {
+            final LocationType type = types.iterator().next();
+            switch (type) {
+                case ADDRESS:
+                    return "ADDRESS";
+                case STATION:
+                    return "STOP";
+                case POI:
+                    return "PLACE";
+                case ANY:
+                case COORD:
+                default:
+                    return null;
+            }
+        } else {
+            //string (LocationType)
+            //Enum: "ADDRESS" "PLACE" "STOP"
+            //Optional. Default is all types.
+            return null;
         }
     }
 
-    private @Nullable Style parseStyle(final JSONObject obj) throws JSONException {
+    private @Nullable Style parseStyle(final JSONObject obj, final Product product) throws JSONException {
         if (obj.has("routeColor")) {
             final int backgroundColor = Style.parseColor("#" + obj.getString("routeColor"));
-            final int foregroundColor;
 
+            final int foregroundColor;
             if (obj.has("routeTextColor")) {
                 foregroundColor = Style.parseColor("#" + obj.getString("routeTextColor"));
             } else {
-                foregroundColor = Style.BLACK;
+                foregroundColor = Style.deriveForegroundColor(backgroundColor);
             }
-            return new Style(backgroundColor, foregroundColor);
+
+            final Style productDefaultStyle = Standard.STYLES.get(product);
+
+            return new Style(
+                    productDefaultStyle != null ? productDefaultStyle.shape : Style.Shape.RECT,
+                    backgroundColor,
+                    foregroundColor
+            );
         }
 
         return null;
     }
 
     @Override
-    public SuggestLocationsResult suggestLocations(
-            final CharSequence constraint,
-            @Nullable final Set<LocationType> types,
-            final int maxLocations) throws IOException {
-        final HttpUrl url = api.newBuilder()
-                .addPathSegment("v1")
-                .addPathSegment("geocode")
-                .addQueryParameter("text", constraint.toString())
-                .build();
+    public SuggestLocationsResult suggestLocations(final CharSequence constraint, @Nullable final Set<LocationType> types, final int maxLocations) throws IOException {
+        final HttpUrl url = api.newBuilder().addPathSegment("v1").addPathSegment("geocode").addQueryParameter("text", constraint.toString()).build();
 
         final CharSequence response = httpClient.get(url);
 
@@ -212,11 +201,7 @@ public abstract class AbstractMotisProvider extends AbstractNetworkProvider {
                 }
 
                 final LocationType type = parseLocationType(guessObj.getString("type"));
-                final SuggestedLocation loc = new SuggestedLocation(new Location(type,
-                        type == LocationType.STATION ? guessObj.getString("id") : null,
-                        Point.fromDouble(guessObj.getDouble("lat"), guessObj.getDouble("lon")),
-                        suggestedName,
-                        guessObj.getString("name")));
+                final SuggestedLocation loc = new SuggestedLocation(new Location(type, type == LocationType.STATION ? guessObj.getString("id") : null, Point.fromDouble(guessObj.getDouble("lat"), guessObj.getDouble("lon")), suggestedName, guessObj.getString("name")));
                 suggestions.add(loc);
             }
 
@@ -234,6 +219,7 @@ public abstract class AbstractMotisProvider extends AbstractNetworkProvider {
             case "SUBWAY":
                 return Product.SUBWAY;
             case "METRO":
+            case "SUBURBAN":
                 return Product.SUBURBAN_TRAIN;
             case "REGIONAL_RAIL":
             case "REGIONAL_FAST_RAIL":
@@ -246,8 +232,24 @@ public abstract class AbstractMotisProvider extends AbstractNetworkProvider {
             case "LONG_DISTANCE":
             case "HIGHSPEED_RAIL":
                 return Product.HIGH_SPEED_TRAIN;
-            default:
+            case "ODM":
+            case "FLEX":
+                return Product.ON_DEMAND;
+            case "CABLE_CAR":
+            case "FUNICULAR":
+            case "AERIAL_LIFT":
+            case "AREAL_LIFT":
+                return Product.CABLECAR;
+            case "WALK":
+            case "BIKE":
+            case "RENTAL":
+            case "CAR":
+            case "CAR_PARKING":
+            case "CAR_DROPOFF":
+            case "RIDE_SHARING":
                 return null;
+            default:
+                return Product.UNKNOWN;
         }
     }
 
@@ -271,7 +273,7 @@ public abstract class AbstractMotisProvider extends AbstractNetworkProvider {
                 list.add("REGIONAL_FAST_RAIL");
                 break;
             case SUBURBAN_TRAIN:
-                list.add("METRO");
+                list.add("SUBURBAN");
                 break;
             case HIGH_SPEED_TRAIN:
                 list.add("HIGHSPEED_RAIL");
@@ -288,8 +290,8 @@ public abstract class AbstractMotisProvider extends AbstractNetworkProvider {
             final String[] result = loc.name.split(",");
 
             try {
-                final float lat = Float.parseFloat(result[0]);
-                final float lon = Float.parseFloat(result[1]);
+                Float.parseFloat(result[0]);
+                Float.parseFloat(result[1]);
                 return loc.name;
             } catch (NumberFormatException e) {
                 throw new IllegalArgumentException();
@@ -308,12 +310,18 @@ public abstract class AbstractMotisProvider extends AbstractNetworkProvider {
         }
     }
 
-    private PTDate dateFromString(final String isoDate) {
+    private PTDate dateFromString(@Nonnull final String isoDate, @Nullable final String timezone) {
+        if (timezone == null) {
+            final Date date = Date.from(DateTimeFormatter.ISO_INSTANT.parse(isoDate, Instant::from));
+            return PTDate.withUnknownLocationSpecificOffset(date.getTime());
+        }
+        final ZoneId zoneid = ZoneId.of(timezone);
+        final TimeZone tz = TimeZone.getTimeZone(zoneid);
         final Date date = Date.from(DateTimeFormatter.ISO_INSTANT.parse(isoDate, Instant::from));
-        return new PTDate(date, 0);
+        return new PTDate(date, tz);
     }
 
-    private Trip.Leg parseTripLegIndividual(final JSONObject leg, final Context ctx) throws JSONException {
+    private Trip.Leg parseTripLegIndividual(final JSONObject leg, final Trip.Individual.Type tripType, final Context ctx) throws JSONException {
         final int distance = leg.has("distance") ? leg.getInt("distance") : 0;
 
         final JSONObject legFrom = leg.getJSONObject("from");
@@ -329,19 +337,19 @@ public abstract class AbstractMotisProvider extends AbstractNetworkProvider {
         final Location fromLocation = parseLocation(legFrom, startName);
         final Location toLocation = parseLocation(legTo, destName);
 
-        final PTDate departureTime = dateFromString(legFrom.getString("departure"));
-        final PTDate arrivalTime = dateFromString(legTo.getString("arrival"));
+        final PTDate departureTime = dateFromString(legFrom.getString("departure"), null);
+        final PTDate arrivalTime = dateFromString(legTo.getString("arrival"), null);
 
         // todo: parse legGeometry
-        return new Trip.Individual(Trip.Individual.Type.WALK, fromLocation, departureTime, toLocation, arrivalTime, null, distance);
+        return new Trip.Individual(tripType, fromLocation, departureTime, toLocation, arrivalTime, null, distance);
     }
 
     private Stop parseStop(final JSONObject stop, final boolean realTime) throws JSONException {
         final Location location = parseLocation(stop, stop.getString("name"));
-        final PTDate departureTime = realTime && stop.has("departure") ? dateFromString(stop.getString("departure")) : null;
-        final PTDate arrivalTime = realTime && stop.has("arrival") ? dateFromString(stop.getString("arrival")) : null;
-        final PTDate plannedDepartureTime = stop.has("scheduledDeparture") ? dateFromString(stop.getString("scheduledDeparture")) : null;
-        final PTDate plannedArrivalTime = stop.has("scheduledArrival") ? dateFromString(stop.getString("scheduledArrival")) : null;
+        final PTDate departureTime = realTime && stop.has("departure") ? dateFromString(stop.getString("departure"), stop.getString("tz")) : null;
+        final PTDate arrivalTime = realTime && stop.has("arrival") ? dateFromString(stop.getString("arrival"), stop.getString("tz")) : null;
+        final PTDate plannedDepartureTime = stop.has("scheduledDeparture") ? dateFromString(stop.getString("scheduledDeparture"), stop.getString("tz")) : null;
+        final PTDate plannedArrivalTime = stop.has("scheduledArrival") ? dateFromString(stop.getString("scheduledArrival"), stop.getString("tz")) : null;
         final boolean cancelled = stop.getBoolean("cancelled");
 
         final Position plannedTrack = stop.has("scheduledTrack") ? new Position(stop.getString("scheduledTrack")) : null;
@@ -351,8 +359,6 @@ public abstract class AbstractMotisProvider extends AbstractNetworkProvider {
     }
 
     private Trip.Leg parseTripLegPublic(final JSONObject leg) throws JSONException {
-        final Style style = parseStyle(leg);
-
         final boolean realTime = leg.getBoolean("realTime");
 
         final JSONArray stopsJson = leg.getJSONArray("intermediateStops");
@@ -363,26 +369,42 @@ public abstract class AbstractMotisProvider extends AbstractNetworkProvider {
             stops.add(parseStop(stopJson, realTime));
         }
 
-        final Line line = new Line(leg.has("tripId") ? leg.getString("tripId") : "",  null, productFromString(leg.getString("mode")),
-                leg.has("routeShortName") ? leg.getString("routeShortName") : "", style);
+        final Line line = parseLine(leg);
 
         final Location destination = new Location(LocationType.STATION, null, null, leg.getString("headsign"));
 
+        return new Trip.Public(line, destination, parseStop(leg.getJSONObject("from"), realTime), parseStop(leg.getJSONObject("to"), realTime), stops, null, // todo: parse legGeometry
+                "tripId: " + leg.optString("tripId"));
+    }
 
-        return new Trip.Public(
-                line,
-                destination,
-                parseStop(leg.getJSONObject("from"), realTime),
-                parseStop(leg.getJSONObject("to"), realTime),
-                stops,
-                null, // todo: parse legGeometry
-                null
-        );
+    @Nonnull
+    private Line parseLine(JSONObject leg) throws JSONException {
+        final String label = leg.optString("displayName");
+        final String name = leg.optString("routeShortName");
+        final Product product = productFromString(leg.getString("mode"));
+        final Style style = lineStyle(null, product, null, parseStyle(leg, product));
+        return new Line(null, null, product, label.isEmpty() ? null : label, name.isEmpty() ? null : name, style);
     }
 
     private Trip.Leg parseTripLeg(final JSONObject leg, final Context ctx) throws JSONException {
-        if (leg.getString("mode").equals("WALK")) {
-            return parseTripLegIndividual(leg, ctx);
+        final Trip.Individual.Type tripType;
+        switch (leg.getString("mode")) {
+            case "WALK":
+                tripType = Trip.Individual.Type.WALK;
+                break;
+            case "BIKE":
+                tripType = Trip.Individual.Type.BIKE;
+                break;
+            case "CAR":
+            case "CAR_PARKING":
+            case "CAR_DROPOFF":
+                tripType = Trip.Individual.Type.CAR;
+                break;
+            default:
+                tripType = null;
+        }
+        if (tripType != null) {
+            return parseTripLegIndividual(leg, tripType, ctx);
         } else {
             return parseTripLegPublic(leg);
         }
@@ -390,65 +412,46 @@ public abstract class AbstractMotisProvider extends AbstractNetworkProvider {
 
     private QueryTripsResult parseQueryTripsResult(final CharSequence response, final Context ctx, final boolean later) throws JSONException {
         final JSONObject obj = new JSONObject(response.toString());
-
-        final JSONArray itineraries = obj.getJSONArray("itineraries");
-
         ArrayList<Trip> trips = new ArrayList<>();
 
+        final JSONArray itineraries = obj.getJSONArray("itineraries");
         for (int i = 0; i < itineraries.length(); i++) {
-            final JSONObject itinerary = itineraries.getJSONObject(i);
-            final JSONArray legsJson = itinerary.getJSONArray("legs");
+            parseItinerary(ctx, itineraries.getJSONObject(i), trips);
+        }
 
-            final ArrayList<Trip.Leg> legs = new ArrayList<>();
-            for (int j = 0; j < legsJson.length(); j++) {
-                final JSONObject leg = legsJson.getJSONObject(j);
-                legs.add(parseTripLeg(leg, ctx));
-            }
-
-            final Trip trip = new Trip(
-                    new Date(),
-                    String.format("%s", legs.toString().hashCode()),
-                    null,
-                    ctx.from,
-                    ctx.to,
-                    legs,
-                    null,
-                    null,
-                    null);
-            trips.add(trip);
+        final JSONArray direct = obj.getJSONArray("direct");
+        for (int i = 0; i < direct.length(); i++) {
+            parseItinerary(ctx, direct.getJSONObject(i), trips);
         }
 
         final ResultHeader header = new ResultHeader(network, SERVER_PRODUCT);
-
         if (trips.isEmpty()) {
             return new QueryTripsResult(header, QueryTripsResult.Status.NO_TRIPS);
         }
 
-        if (later) {
-            trips = new ArrayList<Trip>(trips.subList(0, Math.min(MAX_TRIPS, trips.size() - 1)));
-        } else {
-            trips = new ArrayList<Trip>(trips.subList(Math.max(trips.size() - 1 - 100, 0), trips.size() - 1));
-        }
-
         // HACK: Since we truncate the number of results on the client side to avoid hitting binder limitations (TransactionTooLargeException),
         // we can't use the string provided by MOTIS.
-        final Context ctxNew = new Context(ctx);
-        if (obj.has("previousPageCursor"))
-            ctxNew.previousCursor = String.format(Locale.US, "EARLIER|%d", trips.get(0).getLastArrivalTime().toInstant().getEpochSecond());
-        if (obj.has("nextPageCursor"))
-            ctxNew.nextCursor = String.format(Locale.US, "LATER|%d", trips.get(trips.size() - 1).getLastArrivalTime().toInstant().getEpochSecond());
-        return new QueryTripsResult(header, ctx.url, ctx.from, ctx.via, ctx.to, ctxNew, trips);
+//        final Context ctxNew = new Context(ctx);
+        if (!obj.optString("previousPageCursor").isEmpty()) ctx.previousCursor = obj.getString("previousPageCursor");
+        if (!obj.optString("nextPageCursor").isEmpty()) ctx.nextCursor = obj.getString("nextPageCursor");
+        return new QueryTripsResult(header, ctx.url, ctx.from, ctx.via, ctx.to, ctx, trips);
+    }
+
+    private void parseItinerary(Context ctx, JSONObject itinerary, ArrayList<Trip> trips) throws JSONException {
+        final JSONArray legsJson = itinerary.getJSONArray("legs");
+
+        final ArrayList<Trip.Leg> legs = new ArrayList<>();
+        for (int j = 0; j < legsJson.length(); j++) {
+            final JSONObject leg = legsJson.getJSONObject(j);
+            legs.add(parseTripLeg(leg, ctx));
+        }
+
+        final Trip trip = new Trip(new Date(), String.format("%s", legs.toString().hashCode()), null, ctx.from, ctx.to, legs, null, null, itinerary.getInt("transfers"));
+        trips.add(trip);
     }
 
     @Override
-    public QueryTripsResult queryTrips(
-            final Location from,
-            final @Nullable Location via,
-            final Location to,
-            final Date date,
-            final boolean dep,
-            @Nullable final TripOptions options
-    ) throws IOException {
+    public QueryTripsResult queryTrips(final Location from, final @Nullable Location via, final Location to, final Date date, final boolean dep, @Nullable final TripOptions options) throws IOException {
         String transitModes = "TRANSIT";
         if (options != null && options.products != null) {
             final ArrayList<String> transitModesBuilder = new ArrayList<>();
@@ -458,13 +461,7 @@ public abstract class AbstractMotisProvider extends AbstractNetworkProvider {
             transitModes = String.join(",", transitModesBuilder);
         }
 
-        final HttpUrl.Builder builder = api.newBuilder()
-                    .addPathSegment("v4")
-                    .addPathSegment("plan")
-                    .addQueryParameter("time", DateTimeFormatter.ISO_INSTANT.format(date.toInstant()))
-                    .addQueryParameter("fromPlace", stringFromLocation(from))
-                    .addQueryParameter("toPlace", stringFromLocation(to))
-                    .addQueryParameter("transitModes", transitModes);
+        final HttpUrl.Builder builder = api.newBuilder().addPathSegment("v4").addPathSegment("plan").addQueryParameter("time", DateTimeFormatter.ISO_INSTANT.format(date.toInstant())).addQueryParameter("fromPlace", stringFromLocation(from)).addQueryParameter("toPlace", stringFromLocation(to)).addQueryParameter("transitModes", transitModes);
 
         final HttpUrl url = builder.build();
         try {
@@ -484,8 +481,7 @@ public abstract class AbstractMotisProvider extends AbstractNetworkProvider {
     @Override
     public QueryTripsResult queryMoreTrips(final QueryTripsContext contextObj, final boolean later) throws IOException {
         final Context ctx = (Context) contextObj;
-        final HttpUrl.Builder builder = HttpUrl.parse(ctx.url).newBuilder()
-                .addQueryParameter("pageCursor", later ? ctx.nextCursor : ctx.previousCursor);
+        final HttpUrl.Builder builder = HttpUrl.parse(ctx.url).newBuilder().addQueryParameter("pageCursor", later ? ctx.nextCursor : ctx.previousCursor);
 
         final HttpUrl url = builder.build();
         final CharSequence response = httpClient.get(url);
@@ -500,17 +496,11 @@ public abstract class AbstractMotisProvider extends AbstractNetworkProvider {
 
     @Override
     public Point[] getArea() throws IOException {
-        return new Point[]{
-                Point.fromDouble(90, 0),
-                Point.fromDouble(90, 180),
-                Point.fromDouble(-90, 180),
-                Point.fromDouble(-90, 0)
-        };
+        return new Point[]{Point.fromDouble(90, 0), Point.fromDouble(90, 180), Point.fromDouble(-90, 180), Point.fromDouble(-90, 0)};
     }
 
     @Override
-    public QueryDeparturesResult queryDepartures(final String stationId, @Nullable final Date time, final int maxDepartures, final boolean equivs)
-            throws IOException {
+    public QueryDeparturesResult queryDepartures(final String stationId, @Nullable final Date time, final int maxDepartures, final boolean equivs) throws IOException {
         return internQueryDepartures(stationId, time, maxDepartures, equivs).result;
     }
 
@@ -524,30 +514,16 @@ public abstract class AbstractMotisProvider extends AbstractNetworkProvider {
         }
     }
 
-    public MotisQueryDeparturesResult internQueryDepartures(
-            final String stationId, @Nullable final Date time, final int maxDepartures, final boolean equivs)
-            throws IOException {
+    public MotisQueryDeparturesResult internQueryDepartures(final String stationId, @Nullable final Date time, final int maxDepartures, final boolean equivs) throws IOException {
         final ResultHeader header = new ResultHeader(network, SERVER_PRODUCT);
 
         try {
-            final HttpUrl url = api.newBuilder()
-                    .addPathSegment("v5")
-                    .addPathSegment("stoptimes")
-                    .addQueryParameter("stopId", stationId)
-                    .addQueryParameter("time", DateTimeFormatter.ISO_INSTANT.format(time.toInstant()))
-                    .addQueryParameter("n", String.format(Locale.US, "%d", maxDepartures))
-                    .addQueryParameter("radius", "100")
-                    .build();
+            final HttpUrl url = api.newBuilder().addPathSegment("v5").addPathSegment("stoptimes").addQueryParameter("stopId", stationId).addQueryParameter("time", DateTimeFormatter.ISO_INSTANT.format(time.toInstant())).addQueryParameter("n", String.format(Locale.US, "%d", maxDepartures)).addQueryParameter("radius", "100").build();
             final CharSequence response = httpClient.get(url);
             final JSONObject json = new JSONObject(response.toString());
             final JSONObject from = json.getJSONObject("place");
 
-            final MotisQueryDeparturesResult result = new MotisQueryDeparturesResult(
-                    new QueryDeparturesResult(header),
-                    new Location(
-                            LocationType.STATION,
-                            from.getString("stopId"),
-                            Point.fromDouble(from.getDouble("lat"), from.getDouble("lon"))));
+            final MotisQueryDeparturesResult result = new MotisQueryDeparturesResult(new QueryDeparturesResult(header), new Location(LocationType.STATION, from.getString("stopId"), Point.fromDouble(from.getDouble("lat"), from.getDouble("lon"))));
 
             // departures by stop id
             final HashMap<String, ArrayList<Departure>> departures = new HashMap<>();
@@ -573,8 +549,7 @@ public abstract class AbstractMotisProvider extends AbstractNetworkProvider {
                 final String stopId = place.getString("stopId");
 
                 // line
-                final Style style = parseStyle(stopTime);
-                final Line line = new Line(null, null, productFromString(stopTime.getString("mode")), stopTime.getString("displayName"), style);
+                final Line line = parseLine(stopTime);
                 final Location destination = new Location(LocationType.STATION, null, null, stopTime.getString("headsign"));
                 final LineDestination lineDestination = new LineDestination(line, destination);
 
@@ -589,20 +564,10 @@ public abstract class AbstractMotisProvider extends AbstractNetworkProvider {
                 stops.put(place.getString("stopId"), stop);
 
                 // departure
-                final PTDate plannedDepartureTime = dateFromString(place.getString("scheduledDeparture"));
-                final PTDate departureTime = dateFromString(place.getString("departure"));
+                final PTDate plannedDepartureTime = dateFromString(place.getString("scheduledDeparture"), place.getString("tz"));
+                final PTDate departureTime = dateFromString(place.getString("departure"), place.getString("tz"));
 
-                final Departure departure = new Departure(
-                        plannedDepartureTime,
-                        departureTime,
-                        line,
-                        null,
-                        null,
-                        destination,
-                        false,
-                        null,
-                        null,
-                        null);
+                final Departure departure = new Departure(plannedDepartureTime, departureTime, line, null, null, destination, false, null, null, null);
                 if (departures.containsKey(stopId)) {
                     departures.get(stopId).add(departure);
                 } else {
@@ -631,14 +596,10 @@ public abstract class AbstractMotisProvider extends AbstractNetworkProvider {
             final MotisQueryDeparturesResult departures = internQueryDepartures(queryLocation.id, new Date(), 0, false);
             coord = departures.from.coord;
         }
-        final String locationType = locationTypeToString(queryLocation.type);
-        final HttpUrl.Builder builder = api
-                .newBuilder()
-                .addPathSegment("v1")
-                .addPathSegment("reverse-geocode")
-                .addEncodedQueryParameter("place", coord.getLatAsDouble() + "," + coord.getLonAsDouble());
+        final HttpUrl.Builder builder = api.newBuilder().addPathSegment("v1").addPathSegment("reverse-geocode").addEncodedQueryParameter("place", coord.getLatAsDouble() + "," + coord.getLonAsDouble());
+        final String locationType = locationTypesToString(ls);
         if (locationType != null) {
-            builder.addQueryParameter("type", locationTypeToString(queryLocation.type));
+            builder.addQueryParameter("type", locationType);
         }
         final HttpUrl url = builder.build();
         final String response = httpClient.get(url).toString();
@@ -648,7 +609,7 @@ public abstract class AbstractMotisProvider extends AbstractNetworkProvider {
         }
         try {
             final JSONArray json = new JSONArray(response);
-            final int length = Math.min(maxLocations, json.length());
+            final int length = maxLocations > 0 ? Math.min(maxLocations, json.length()) : json.length();
             final List<Location> result = new ArrayList<>(length);
             for (int i = 0; i < length; i++) {
                 final JSONObject loc = json.getJSONObject(i);

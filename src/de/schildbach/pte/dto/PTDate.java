@@ -101,4 +101,12 @@ public class PTDate extends Date {
     public int compareTo(final Date other) {
         return super.compareTo(other);
     }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "{" +
+                "super=" + super.toString() + ", " +
+                "offset=" + offset +
+                '}';
+    }
 }
