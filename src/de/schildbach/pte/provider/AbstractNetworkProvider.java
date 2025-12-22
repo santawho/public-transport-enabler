@@ -223,36 +223,6 @@ public abstract class AbstractNetworkProvider extends AbstractLocationSearchProv
     }
 
     @Override
-    public NearbyLocationsResult queryNearbyLocations(
-            final Set<LocationType> types, final Location location,
-            final int maxDistance, final int maxLocations) throws IOException {
-        return queryNearbyLocations(types, location, maxDistance, maxLocations, null);
-    }
-
-    @Override
-    public NearbyLocationsResult queryNearbyLocations(
-            final Set<LocationType> types, final Location location,
-            final int maxDistance, final int maxLocations,
-            final Set<Product> products) throws IOException {
-        return queryNearbyLocations(types, location, maxDistance, maxLocations);
-    }
-
-    @Override
-    public QueryDeparturesResult queryDepartures(
-            final String stationId, final Date time,
-            final int maxDepartures, final boolean equivs) throws IOException {
-        return queryDepartures(stationId, time, maxDepartures, equivs, null);
-    }
-
-    @Override
-    public QueryDeparturesResult queryDepartures(
-            final String stationId, final Date time,
-            final int maxDepartures, final boolean equivs,
-            final Set<Product> products) throws IOException {
-        return queryDepartures(stationId, time, maxDepartures, equivs);
-    }
-
-    @Override
     public Trip queryTripDetails(final Trip trip, final List<TripDetails> whichDetails) throws IOException {
         if ((whichDetails == null || whichDetails.contains(TripDetails.TRANSFERS))
                 && trip.transferDetails == null) {

@@ -944,8 +944,13 @@ public abstract class DbMovasProvider extends DbProvider {
     }
 
     @Override
-    public NearbyLocationsResult queryNearbyLocations(Set<LocationType> types, Location location, int maxDistance,
-            int maxLocations) throws IOException {
+    public NearbyLocationsResult queryNearbyLocations(
+            final Set<LocationType> types,
+            final Location location,
+            final boolean equivs,
+            int maxDistance,
+            int maxLocations,
+            final Set<Product> products) throws IOException {
         // TODO POIs not supported (?)
         if (maxDistance == 0)
             maxDistance = DEFAULT_MAX_DISTANCE;
@@ -954,12 +959,31 @@ public abstract class DbMovasProvider extends DbProvider {
         if (location.coord == null) {
             return new NearbyLocationsResult(this.resultHeader, NearbyLocationsResult.Status.INVALID_ID);
         }
+        final String productsString;
+        if (products == null) {
+            productsString = "ALL";
+        } else {
+            final StringBuilder builder = new StringBuilder();
+            boolean added = false;
+            for (final String key : PRODUCTS_MAP.keySet()) {
+                final Product product = PRODUCTS_MAP.get(key);
+                if (products.contains(product)) {
+                    if (added)
+                        builder.append(',');
+                    added = true;
+                    builder.append('"');
+                    builder.append(key);
+                    builder.append('"');
+                }
+            }
+            productsString = builder.toString();
+        }
         final String request = "{\"area\":" //
                 + "{\"coordinates\":{\"longitude\":" + location.coord.getLonAsDouble() + ",\"latitude\":"
                 + location.coord.getLatAsDouble() + "}," //
                 + "\"radius\":" + maxDistance + "}," //
                 + "\"maxResults\":" + maxLocations + "," //
-                + "\"products\":[\"ALL\"]}";
+                + "\"products\":[" + productsString + "]}";
 
         final HttpUrl url = this.nearbyEndpoint;
         final String contentType = "application/x.db.vendo.mob.location.v3+json";
@@ -979,9 +1003,12 @@ public abstract class DbMovasProvider extends DbProvider {
     }
 
     @Override
-    public QueryDeparturesResult queryDepartures(String stationId, @Nullable Date time, int maxDepartures,
-            boolean equivs)
-            throws IOException {
+    public QueryDeparturesResult queryDepartures(
+            final String stationId,
+            final @Nullable Date time,
+            int maxDepartures,
+            final boolean equivs,
+            final Set<Product> products) throws IOException {
         // TODO only 1 hour of results returned, find secret parameter?
         if (maxDepartures == 0)
             maxDepartures = DEFAULT_MAX_DEPARTURES;

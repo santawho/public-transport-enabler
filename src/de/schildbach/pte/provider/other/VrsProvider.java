@@ -392,8 +392,12 @@ public class VrsProvider extends AbstractNetworkProvider {
 
     @Override
     public NearbyLocationsResult queryNearbyLocations(
-            final Set<LocationType> types, final Location location,
-            final int maxDistance, final int maxLocations) throws IOException {
+            final Set<LocationType> types,
+            final Location location,
+            final boolean equivs,
+            final int maxDistance,
+            final int maxLocations,
+            final Set<Product> products) throws IOException {
         final Point queryCoord;
         if (location.hasCoord()) {
             queryCoord = location.coord;
@@ -439,12 +443,12 @@ public class VrsProvider extends AbstractNetworkProvider {
                     name = "P+R " + name;
                 }
                 final JSONArray lines = entry.optJSONArray("lines");
-                final EnumSet<Product> products = EnumSet.noneOf(Product.class);
+                final EnumSet<Product> stationProducts = EnumSet.noneOf(Product.class);
                 for (int j = 0; lines != null && j < lines.length(); j++) {
                     final JSONObject line = lines.getJSONObject(j);
-                    products.add(parseProduct(line.getString("productCode"), line.getString("name")));
+                    stationProducts.add(parseProduct(line.getString("productCode"), line.getString("name")));
                 }
-                locations.add(new Location(type, id, coord, place, name, products));
+                locations.add(new Location(type, id, coord, place, name, stationProducts));
                 if (maxLocations > 0 && ++num >= maxLocations) {
                     break;
                 }
@@ -459,8 +463,11 @@ public class VrsProvider extends AbstractNetworkProvider {
     // TODO equivs not supported; JSON result would support multiple timetables
     @Override
     public QueryDeparturesResult queryDepartures(
-            final String stationId, @Nullable final Date time,
-            final int maxDepartures, final boolean equivs) throws IOException {
+            final String stationId,
+            final @Nullable Date time,
+            final int maxDepartures,
+            final boolean equivs,
+            final Set<Product> products) throws IOException {
         requireNonNull(stationId);
 
         // g=p means group by product; not used here

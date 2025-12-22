@@ -933,9 +933,12 @@ public abstract class DbWebProvider extends DbProvider {
 
     @Override
     public NearbyLocationsResult queryNearbyLocations(
-            final Set<LocationType> types, final Location location,
-            int maxDistance, int maxLocations,
-            Set<Product> products) throws IOException {
+            final Set<LocationType> types,
+            final Location location,
+            final boolean equivs,
+            int maxDistance,
+            int maxLocations,
+            final Set<Product> products) throws IOException {
         // TODO POIs not supported (?)
         if (maxDistance == 0)
             maxDistance = DEFAULT_MAX_DISTANCE;

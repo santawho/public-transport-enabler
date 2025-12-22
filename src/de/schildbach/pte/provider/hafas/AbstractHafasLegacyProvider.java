@@ -389,8 +389,12 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
     }
 
     @Override
-    public QueryDeparturesResult queryDepartures(final String stationId, final @Nullable Date time,
-            final int maxDepartures, final boolean equivs) throws IOException {
+    public QueryDeparturesResult queryDepartures(
+            final String stationId,
+            final @Nullable Date time,
+            final int maxDepartures,
+            final boolean equivs,
+            final Set<Product> products) throws IOException {
         requireNonNull(stationId);
 
         final HttpUrl.Builder url = stationBoardEndpoint.newBuilder().addPathSegment(apiLanguage);
@@ -2178,8 +2182,13 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
     }
 
     @Override
-    public NearbyLocationsResult queryNearbyLocations(final Set<LocationType> types, final Location location,
-            final int maxDistance, final int maxLocations) throws IOException {
+    public NearbyLocationsResult queryNearbyLocations(
+            final Set<LocationType> types,
+            final Location location,
+            final boolean equivs,
+            final int maxDistance,
+            final int maxLocations,
+            final Set<Product> products) throws IOException {
         if (location.hasCoord())
             return nearbyLocationsByCoordinate(types, location.coord, maxDistance, maxLocations);
         else if (location.type == LocationType.STATION && location.hasId())

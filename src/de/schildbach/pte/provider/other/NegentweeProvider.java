@@ -607,7 +607,7 @@ public class NegentweeProvider extends AbstractNetworkProvider {
         if (location.hasId()) {
             return Arrays.asList(location);
         } else if (location.hasCoord()) {
-            return queryNearbyLocations(EnumSet.of(location.type), location, -1, -1).locations;
+            return queryNearbyLocations(EnumSet.of(location.type), location, false, -1, -1, null).locations;
         } else if (location.hasName()) {
             return queryLocationsByName(location.name, EnumSet.of(location.type));
         } else {
@@ -725,8 +725,13 @@ public class NegentweeProvider extends AbstractNetworkProvider {
     }
 
     @Override
-    public NearbyLocationsResult queryNearbyLocations(Set<LocationType> types, Location location, int maxDistance,
-            int maxLocations) throws IOException {
+    public NearbyLocationsResult queryNearbyLocations(
+            final Set<LocationType> types,
+            Location location,
+            final boolean equivs,
+            final int maxDistance,
+            final int maxLocations,
+            final Set<Product> products) throws IOException {
         // Coordinates are required
         if (!location.hasCoord()) {
             try {
@@ -783,8 +788,12 @@ public class NegentweeProvider extends AbstractNetworkProvider {
     }
 
     @Override
-    public QueryDeparturesResult queryDepartures(String stationId, @Nullable Date time, int maxDepartures,
-            boolean equivs) throws IOException {
+    public QueryDeparturesResult queryDepartures(
+            final String stationId,
+            final @Nullable Date time,
+            final int maxDepartures,
+            final boolean equivs,
+            final Set<Product> products) throws IOException {
         // The stationId does not need the / character escaped
         HttpUrl url = buildApiUrl("locations/" + stationId + "/departure-times", new ArrayList<QueryParameter>());
         final CharSequence page;
