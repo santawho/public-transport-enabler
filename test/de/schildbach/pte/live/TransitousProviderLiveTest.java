@@ -17,7 +17,7 @@
 
 package de.schildbach.pte.live;
 
-import de.schildbach.pte.TransitousProvider;
+import de.schildbach.pte.provider.motis.TransitousProvider;
 import de.schildbach.pte.dto.*;
 import org.junit.Test;
 

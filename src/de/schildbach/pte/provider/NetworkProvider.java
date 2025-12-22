@@ -1,0 +1,273 @@
+/*
+ * Copyright the original author or authors.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+package de.schildbach.pte.provider;
+
+import org.msgpack.core.MessageUnpacker;
+
+import java.io.IOException;
+import java.util.Date;
+import java.util.List;
+import java.util.Set;
+import java.util.TimeZone;
+
+import javax.annotation.Nullable;
+
+import de.schildbach.pte.NetworkId;
+import de.schildbach.pte.dto.JourneyRef;
+import de.schildbach.pte.dto.Location;
+import de.schildbach.pte.dto.LocationType;
+import de.schildbach.pte.dto.NearbyLocationsResult;
+import de.schildbach.pte.dto.Product;
+import de.schildbach.pte.dto.QueryDeparturesResult;
+import de.schildbach.pte.dto.QueryJourneyResult;
+import de.schildbach.pte.dto.QueryTripsContext;
+import de.schildbach.pte.dto.QueryTripsResult;
+import de.schildbach.pte.dto.Style;
+import de.schildbach.pte.dto.Trip;
+import de.schildbach.pte.dto.TripOptions;
+import de.schildbach.pte.dto.TripRef;
+import de.schildbach.pte.dto.TripShare;
+import de.schildbach.pte.provider.locationsearch.LocationSearchProvider;
+
+/**
+ * Interface to be implemented by providers of transportation networks.
+ * 
+ * @author Andreas Schildbach
+ */
+public interface NetworkProvider extends Provider, LocationSearchProvider {
+    enum Capability {
+        /* can suggest locations */
+        SUGGEST_LOCATIONS,
+        /* can determine nearby locations */
+        NEARBY_LOCATIONS,
+        /* can query for departures */
+        DEPARTURES,
+        /* can query trips */
+        TRIPS,
+        /* supports trip queries passing by a specific location */
+        TRIPS_VIA,
+        JOURNEY,
+        TRIP_RELOAD,
+        MIN_TRANSFER_TIMES,
+        BIKE_OPTION,
+        TRIP_SHARING,
+        TRIP_LINKING,
+        TRIP_DETAILS,
+    }
+
+    enum Optimize {
+        LEAST_DURATION, LEAST_CHANGES, LEAST_WALKING
+    }
+
+    enum WalkSpeed {
+        SLOW, NORMAL, FAST
+    }
+
+    enum Accessibility {
+        NEUTRAL, LIMITED, BARRIER_FREE
+    }
+
+    enum TripFlag {
+        BIKE
+    }
+
+    enum TripDetails {
+        TRANSFERS
+    }
+
+    NetworkId id();
+
+    boolean hasCapabilities(final Capability... capabilities);
+
+    TimeZone getTimeZone();
+
+    /**
+     * Find locations near to given location. At least one of lat/lon pair or station id must be present in
+     * that location.
+     * 
+     * @param types
+     *            types of locations to find
+     * @param location
+     *            location to determine nearby stations
+     * @param maxDistance
+     *            maximum distance in meters, or {@code 0}
+     * @param maxLocations
+     *            maximum number of locations, or {@code 0}
+     * @return nearby stations
+     * @throws IOException
+     */
+    NearbyLocationsResult queryNearbyLocations(
+            Set<LocationType> types, Location location,
+            int maxDistance, int maxLocations) throws IOException;
+
+    /**
+     * Find locations near to given location. At least one of lat/lon pair or station id must be present in
+     * that location.
+     *
+     * @param types
+     *            types of locations to find
+     * @param location
+     *            location to determine nearby stations
+     * @param maxDistance
+     *            maximum distance in meters, or {@code 0}
+     * @param maxLocations
+     *            maximum number of locations, or {@code 0}
+     * @param products
+     *            filter to stations serving listed products, or {@code null}
+     * @return nearby stations
+     * @throws IOException
+     */
+    NearbyLocationsResult queryNearbyLocations(
+            Set<LocationType> types, Location location,
+            int maxDistance, int maxLocations,
+            Set<Product> products) throws IOException;
+
+    /**
+     * Get departures at a given station, probably live
+     * 
+     * @param stationId
+     *            id of the station
+     * @param time
+     *            desired time for departing, or {@code null} for the provider default
+     * @param maxDepartures
+     *            maximum number of departures to get or {@code 0}
+     * @param equivs
+     *            also query equivalent stations?
+     * @return result object containing the departures
+     * @throws IOException
+     */
+    QueryDeparturesResult queryDepartures(
+            String stationId, @Nullable Date time,
+            int maxDepartures, boolean equivs) throws IOException;
+
+    /**
+     * Get departures at a given station, probably live
+     *
+     * @param stationId
+     *            id of the station
+     * @param time
+     *            desired time for departing, or {@code null} for the provider default
+     * @param maxDepartures
+     *            maximum number of departures to get or {@code 0}
+     * @param equivs
+     *            also query equivalent stations?
+     * @param products
+     *            filter to stations serving listed products, or {@code null}
+     * @return result object containing the departures
+     * @throws IOException
+     */
+    QueryDeparturesResult queryDepartures(
+            String stationId, @Nullable Date time,
+            int maxDepartures, boolean equivs,
+            Set<Product> products) throws IOException;
+
+    /**
+     * Typical products for a network
+     * 
+     * @return products
+     */
+    Set<Product> defaultProducts();
+
+    /**
+     * Query trips, asking for any ambiguousnesses
+     * 
+     * @param from
+     *            location to route from, mandatory
+     * @param via
+     *            location to route via, may be {@code null}
+     * @param to
+     *            location to route to, mandatory
+     * @param date
+     *            desired date for departing, mandatory
+     * @param dep
+     *            date is departure date? {@code true} for departure, {@code false} for arrival
+     * @param options
+     *            additional trip options such as products, optimize, walkSpeed and accessibility, or
+     *            {@code null} for the provider default
+     * @return result object that can contain alternatives to clear up ambiguousnesses, or contains possible
+     *         trips
+     * @throws IOException
+     */
+    QueryTripsResult queryTrips(Location from, @Nullable Location via, Location to, Date date, boolean dep,
+            @Nullable TripOptions options) throws IOException;
+
+    @Deprecated
+    QueryTripsResult queryTrips(Location from, @Nullable Location via, Location to, Date date, boolean dep,
+            @Nullable Set<Product> products, @Nullable Optimize optimize, @Nullable WalkSpeed walkSpeed,
+            @Nullable Accessibility accessibility, @Nullable Set<TripFlag> flags) throws IOException;
+
+    /**
+     * Query more trips (e.g. earlier or later)
+     * 
+     * @param context
+     *            context to query more trips from
+     * @param later
+     *            {@code true} to get later trips, {@code false} to get earlier trips
+     * @return result object that contains possible trips
+     * @throws IOException
+     */
+    QueryTripsResult queryMoreTrips(QueryTripsContext context, boolean later) throws IOException;
+
+    QueryTripsResult queryReloadTrip(final TripRef tripRef) throws IOException;
+
+    QueryJourneyResult queryJourney(final JourneyRef journeyRef) throws IOException;
+
+    /**
+     * Get style of line
+     * 
+     * @param network
+     *            network to disambiguate line, may be {@code null}
+     * @param product
+     *            line product to get style of, may be {@code null}
+     * @param label
+     *            line label to get style of, may be {@code null}
+     * @param styleFromNetwork
+     *            style delivered by network, may be {@code null}
+     * @return object containing background, foreground and optional border colors
+     */
+    Style lineStyle(
+            @Nullable String network,
+            @Nullable Product product,
+            @Nullable String label,
+            final @Nullable Style styleFromNetwork);
+
+    /**
+     * Gets the primary covered area of the network
+     * 
+     * @return array containing points of a polygon (special case: just one coordinate defines just a center
+     *         point)
+     * @throws IOException
+     */
+    TripRef unpackTripRefFromMessage(final MessageUnpacker unpacker) throws IOException;
+
+    TripShare unpackTripShareFromMessage(final MessageUnpacker unpacker) throws IOException;
+
+    String getOpenLink(final Trip trip) throws IOException;
+
+    String getShareLink(final Trip trip) throws IOException;
+
+    TripShare shareTrip(final Trip trip) throws IOException;
+
+    QueryTripsResult loadSharedTrip(final TripShare tripShare) throws IOException;
+
+    TripRef createTripRefFromPreviousTripWithNewLegs(final Trip trip, final List<Trip.Leg> newLegs);
+
+    Trip queryTripDetails(final Trip trip, final List<TripDetails> whichDetails) throws IOException;
+
+    TransferEvaluationProvider getTransferEvaluationProvider() throws IOException;
+}

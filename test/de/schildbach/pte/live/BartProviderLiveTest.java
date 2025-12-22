@@ -17,7 +17,7 @@
 
 package de.schildbach.pte.live;
 
-import de.schildbach.pte.BartProvider;
+import de.schildbach.pte.provider.hafas.BartProvider;
 import de.schildbach.pte.dto.Location;
 import de.schildbach.pte.dto.LocationType;
 import de.schildbach.pte.dto.NearbyLocationsResult;

@@ -23,7 +23,7 @@ import java.util.Date;
 
 import org.junit.Test;
 
-import de.schildbach.pte.InvgProvider;
+import de.schildbach.pte.provider.hafas.InvgProvider;
 import de.schildbach.pte.dto.Location;
 import de.schildbach.pte.dto.LocationType;
 import de.schildbach.pte.dto.NearbyLocationsResult;

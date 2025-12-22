@@ -24,7 +24,7 @@ import java.util.Date;
 
 import org.junit.Test;
 
-import de.schildbach.pte.OebbProvider;
+import de.schildbach.pte.provider.hafas.OebbProvider;
 import de.schildbach.pte.dto.Location;
 import de.schildbach.pte.dto.LocationType;
 import de.schildbach.pte.dto.NearbyLocationsResult;

@@ -17,9 +17,9 @@
 
 package de.schildbach.pte.live;
 
-import de.schildbach.pte.NetworkProvider.Accessibility;
-import de.schildbach.pte.NetworkProvider.WalkSpeed;
-import de.schildbach.pte.RmvProvider;
+import de.schildbach.pte.provider.NetworkProvider.Accessibility;
+import de.schildbach.pte.provider.NetworkProvider.WalkSpeed;
+import de.schildbach.pte.provider.hafas.RmvProvider;
 import de.schildbach.pte.dto.Location;
 import de.schildbach.pte.dto.LocationType;
 import de.schildbach.pte.dto.NearbyLocationsResult;
