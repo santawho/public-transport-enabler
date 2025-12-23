@@ -991,8 +991,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                                 for (int iFare = 0; iFare < fareList.length(); iFare++) {
                                     final JSONObject jsonFare = fareList.getJSONObject(iFare);
                                     final String fareName = jsonFare.getString("name");
-                                    final JSONObject priceObj = jsonFare.getJSONObject("price");
-                                    final Price price = parsePriceObject(priceObj);
+                                    final Price price = parsePriceObject(jsonFare.optJSONObject("price"));
                                     if (price != null
                                             && price.amount == totalPrice.amount
                                             && price.currency.equals(totalPrice.currency)) {
@@ -1668,10 +1667,8 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
 
     private Price parsePriceFromObject(final JSONObject jsonObject) throws JSONException {
         final boolean hasPriceObject = apiLevel >= 27;
-        if (hasPriceObject) {
-            final JSONObject jsonPrice = jsonObject.optJSONObject("price");
-            return parsePriceObject(jsonPrice);
-        }
+        if (hasPriceObject)
+            return parsePriceObject(jsonObject.optJSONObject("price"));
         final Currency currency = ParserUtils.getCurrency(jsonObject.optString("cur"));
         final float amount = jsonObject.getInt("prc") / 100f;
         return new Price(currency, amount);
