@@ -92,7 +92,7 @@ public abstract class AbstractProviderLiveTest {
 
     protected final NearbyLocationsResult queryNearbyLocations(final Set<LocationType> types, final Location location,
             final int maxDistance, final int maxStations) throws IOException {
-        return provider.queryNearbyLocations(types, location, maxDistance, maxStations);
+        return provider.queryNearbyLocations(types, location, false, maxDistance, maxStations, null);
     }
 
     protected final QueryDeparturesResult queryDepartures(final String stationId, final boolean equivs)
@@ -102,7 +102,7 @@ public abstract class AbstractProviderLiveTest {
 
     protected final QueryDeparturesResult queryDepartures(final String stationId, final int maxDepartures,
             final boolean equivs) throws IOException {
-        final QueryDeparturesResult result = provider.queryDepartures(stationId, new Date(), maxDepartures, equivs);
+        final QueryDeparturesResult result = provider.queryDepartures(stationId, new Date(), maxDepartures, equivs, null);
 
         if (result.status == QueryDeparturesResult.Status.OK) {
             if (equivs)

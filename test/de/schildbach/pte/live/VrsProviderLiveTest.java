@@ -526,7 +526,7 @@ public class VrsProviderLiveTest extends AbstractProviderLiveTest {
         }
         Set<Line> lines = new TreeSet<>();
         for (Location station : stations) {
-            QueryDeparturesResult qdr = provider.queryDepartures(station.id, new Date(), 100, false);
+            QueryDeparturesResult qdr = provider.queryDepartures(station.id, new Date(), 100, false, null);
             if (qdr.status == QueryDeparturesResult.Status.OK) {
                 for (StationDepartures stationDepartures : qdr.stationDepartures) {
                     final List<LineDestination> stationDeparturesLines = stationDepartures.lines;
