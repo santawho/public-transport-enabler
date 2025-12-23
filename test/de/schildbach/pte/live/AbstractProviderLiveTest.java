@@ -37,6 +37,8 @@ import de.schildbach.pte.dto.QueryTripsContext;
 import de.schildbach.pte.dto.QueryTripsResult;
 import de.schildbach.pte.dto.SuggestLocationsResult;
 import de.schildbach.pte.dto.TripOptions;
+import org.hamcrest.CustomTypeSafeMatcher;
+import org.hamcrest.Matcher;
 
 /**
  * @author Andreas Schildbach
@@ -145,5 +147,14 @@ public abstract class AbstractProviderLiveTest {
         } catch (final IOException x) {
             throw new RuntimeException(x);
         }
+    }
+
+    public static Matcher<Location> hasName(String expectedName) {
+        return new CustomTypeSafeMatcher<Location>("has name") {
+            @Override
+            protected boolean matchesSafely(Location item) {
+                return expectedName.equals(item.name);
+            }
+        };
     }
 }
