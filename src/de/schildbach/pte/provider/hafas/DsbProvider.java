@@ -31,11 +31,19 @@ import okhttp3.HttpUrl;
  * @author Andreas Schildbach
  */
 public class DsbProvider extends AbstractHafasClientInterfaceProvider {
-    private static final HttpUrl API_BASE = HttpUrl.parse("https://mobilapps.rejseplanen.dk/bin/");
+//    private static final HttpUrl API_BASE = HttpUrl.parse("https://mobilapps.rejseplanen.dk/bin/");
+    private static final HttpUrl API_BASE = HttpUrl.parse("https://rkrp.hafas.cloud/");
     private static final Product[] PRODUCTS_MAP = { Product.HIGH_SPEED_TRAIN, Product.HIGH_SPEED_TRAIN,
             Product.REGIONAL_TRAIN, Product.REGIONAL_TRAIN, Product.SUBURBAN_TRAIN, Product.BUS, Product.BUS,
             Product.BUS, Product.BUS, Product.FERRY, Product.SUBWAY, Product.SUBURBAN_TRAIN /* Light Rail */ };
-    private static final String DEFAULT_API_CLIENT = "{\"id\":\"DK\",\"type\":\"AND\"}";
+//    private static final String DEFAULT_API_CLIENT = "{\"id\":\"DK\",\"type\":\"AND\"}";
+    private static final String DEFAULT_API_CLIENT = "{\"id\":\"DK\",\"type\":\"WEB\",\"name\":\"webapp\",\"l\":\"vs_webapp\"}";
+    private static final String WEBAPP_CONFIG_URL = "https://rkrp.hafas.cloud/webapp-lyra/config/webapp.config.json";
+
+    public DsbProvider() {
+        this(DEFAULT_API_CLIENT, WEBAPP_CONFIG_URL);
+    }
+
 
     public DsbProvider(final String apiAuthorization) {
         this(DEFAULT_API_CLIENT, apiAuthorization);
@@ -43,9 +51,10 @@ public class DsbProvider extends AbstractHafasClientInterfaceProvider {
 
     public DsbProvider(final String apiClient, final String apiAuthorization) {
         super(NetworkId.DSB, API_BASE, PRODUCTS_MAP);
-        setApiEndpoint("iphone.exe");
+//        setApiEndpoint("iphone.exe");
+        setApiEndpoint("gate");
         setApiVersion("1.62");
-        setApiExt("DK.9");
+        setApiExt("DK.11");
         setApiClient(apiClient);
         setApiAuthorization(apiAuthorization);
     }
