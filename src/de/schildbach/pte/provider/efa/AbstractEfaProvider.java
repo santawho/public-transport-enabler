@@ -1016,6 +1016,8 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                 return new Line(id, network, Product.HIGH_SPEED_TRAIN, "INT" + trainNumStr);
             if (("SC".equals(trainType) || "SC Pendolino".equals(trainName)) && trainNum != null) // SuperCity
                 return new Line(id, network, Product.HIGH_SPEED_TRAIN, "SC" + trainNumStr);
+            if ("DRF".equals(trainType) && trainNum != null) // DRF is Flix-Train, report as FLX
+                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "FLX" + trainNumStr);
             if ("ECB".equals(trainType) && trainNum != null) // EC, Verona-München
                 return new Line(id, network, Product.HIGH_SPEED_TRAIN, "ECB" + trainNumStr);
             if ("ES".equals(trainType) && trainNum != null) // Eurostar Italia
