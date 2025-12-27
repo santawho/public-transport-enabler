@@ -110,7 +110,7 @@ public enum NetworkId {
     MVV(Descriptor.from(MvvProvider.class, "de-DE", "Bayern;München",
             new Point[] { Point.fromDouble(48.140377, 11.560643) })),
     INVG(Descriptor.from(InvgProvider.class, "de-DE", "Ingolstadt")),
-    AVV_AUGSBURG(Descriptor.from(AvvAugsburgProvider.class, "de-DE", "Augsburg")),
+    AVV_AUGSBURG(Descriptor.from(AvvAugsburgProvider.class, "de-DE", "Augsburg", State.deprecated)), // AVV uses Efa now
     VGN(Descriptor.from(VgnProvider.class, "de-DE", "Nürnberg;Fürth;Erlangen")),
     VVM(Descriptor.from(VvmProvider.class, "de-DE", "Schwaben;Mittelschwaben;Krumbach;Günzburg;Memmingen")),
     VMV(Descriptor.from(VmvProvider.class, "de-DE", "Mecklenburg-Vorpommern;Schwerin")),
