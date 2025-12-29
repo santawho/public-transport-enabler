@@ -781,8 +781,11 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
             final String headErr = head.optString("err", null);
             if (headErr != null && !"OK".equals(headErr)) {
                 log.warn("Hafas head error: {}", head.toString());
-                if ("HAMM".equals(headErr)) // ??? (sporadically found on OEBB)
+                if ("HAMM".equals(headErr) // ??? (sporadically found on OEBB)
+                    || "HAMM_LOAD".equals(headErr) // ??? (sporadically found on DSB)
+                ) {
                     return new QueryTripsResult(new ResultHeader(network, SERVER_PRODUCT), QueryTripsResult.Status.SERVICE_DOWN);
+                }
                 final String headErrTxt = head.optString("errTxt");
                 throw new RuntimeException(headErr + " " + headErrTxt);
             }
