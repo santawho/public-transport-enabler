@@ -205,7 +205,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
         return this;
     }
 
-    public String getApiAuthorization() {
+    public String getApiAuthorization() throws IOException {
         if (apiAuthorization == null || !apiAuthorization.isEmpty() || webappConfigUrl == null)
             return apiAuthorization;
         loadWebappConfig();
@@ -221,24 +221,18 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
         return apiClient;
     }
 
-    private void loadWebappConfig() {
+    private void loadWebappConfig() throws IOException {
         if (webappConfigUrl == null)
             return;
 
-        final CharSequence page;
+        final CharSequence page = httpClient.get(webappConfigUrl, null, "application/json");
         try {
-            page = httpClient.get(webappConfigUrl, null, "application/json");
-
-            try {
-                final JSONObject config = new JSONObject(page.toString());
-                final JSONObject hciAuth = config.getJSONObject("hciAuth");
-                final String aid = hciAuth.getString("aid");
-                apiAuthorization = String.format("{\"type\":\"AID\",\"aid\":\"%s\"}", aid);
-            } catch (final JSONException je) {
-                throw new ParserException("cannot parse json: '" + page + "' on " + webappConfigUrl, je);
-            }
-        } catch (final IOException ioe) {
-            throw new RuntimeException(ioe);
+            final JSONObject config = new JSONObject(page.toString());
+            final JSONObject hciAuth = config.getJSONObject("hciAuth");
+            final String aid = hciAuth.getString("aid");
+            apiAuthorization = String.format("{\"type\":\"AID\",\"aid\":\"%s\"}", aid);
+        } catch (final JSONException je) {
+            throw new ParserException("cannot parse json: '" + page + "' on " + webappConfigUrl, je);
         }
     }
 
@@ -1210,7 +1204,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
         return false;
     }
 
-    private String wrapJsonApiRequest(final String meth, final String req, final boolean formatted) {
+    private String wrapJsonApiRequest(final String meth, final String req, final boolean formatted) throws IOException {
         final String lang = "de".equals(userInterfaceLanguage) ? "deu" : "eng";
         final String apiAuthorization = getApiAuthorization();
         return "{" //
