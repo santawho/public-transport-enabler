@@ -384,6 +384,11 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
             final JSONObject head = new JSONObject(page.toString());
             final String headErr = head.optString("err", null);
             if (headErr != null && !"OK".equals(headErr)) {
+                if ("HAMM".equals(headErr) // ??? (sporadically found on OEBB)
+                        || "HAMM_LOAD".equals(headErr) // ??? (sporadically found on DSB)
+                ) {
+                    return new NearbyLocationsResult(new ResultHeader(network, SERVER_PRODUCT), NearbyLocationsResult.Status.SERVICE_DOWN);
+                }
                 final String headErrTxt = head.optString("errTxt");
                 throw new RuntimeException(headErr + " " + headErrTxt);
             }
@@ -470,6 +475,11 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
             final JSONObject head = new JSONObject(page.toString());
             final String headErr = head.optString("err", null);
             if (headErr != null && !"OK".equals(headErr)) {
+                if ("HAMM".equals(headErr) // ??? (sporadically found on OEBB)
+                        || "HAMM_LOAD".equals(headErr) // ??? (sporadically found on DSB)
+                ) {
+                    return new QueryDeparturesResult(new ResultHeader(network, SERVER_PRODUCT), QueryDeparturesResult.Status.SERVICE_DOWN);
+                }
                 final String headErrTxt = head.optString("errTxt");
                 throw new RuntimeException(headErr + " " + headErrTxt);
             }
@@ -617,6 +627,11 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
             final JSONObject head = new JSONObject(page.toString());
             final String headErr = head.optString("err", null);
             if (headErr != null && !"OK".equals(headErr)) {
+                if ("HAMM".equals(headErr) // ??? (sporadically found on OEBB)
+                        || "HAMM_LOAD".equals(headErr) // ??? (sporadically found on DSB)
+                ) {
+                    return new SuggestLocationsResult(new ResultHeader(network, SERVER_PRODUCT), SuggestLocationsResult.Status.SERVICE_DOWN);
+                }
                 final String headErrTxt = head.optString("errTxt");
                 throw new RuntimeException(headErr + " " + headErrTxt);
             }
@@ -1121,6 +1136,11 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
             final JSONObject head = new JSONObject(page.toString());
             final String headErr = head.optString("err", null);
             if (headErr != null && !"OK".equals(headErr)) {
+                if ("HAMM".equals(headErr) // ??? (sporadically found on OEBB)
+                        || "HAMM_LOAD".equals(headErr) // ??? (sporadically found on DSB)
+                ) {
+                    return new QueryJourneyResult(new ResultHeader(network, SERVER_PRODUCT), QueryJourneyResult.Status.SERVICE_DOWN);
+                }
                 final String headErrTxt = head.optString("errTxt");
                 throw new RuntimeException(headErr + " " + headErrTxt);
             }
