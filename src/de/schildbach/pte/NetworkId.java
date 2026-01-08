@@ -169,9 +169,6 @@ public enum NetworkId {
     TLEM(Descriptor.from(TlemProvider.class, "en-UK", "GB;Greater London;Derbyshire;Leicestershire;Rutland;Northamptonshire;Nottinghamshire;Lincolnshire;Berkshire;Buckinghamshire;East Sussex;Hampshire;Isle of Wight;Kent;Oxfordshire;Surrey;West Sussex;Essex;Hertfordshire;Bedfordshire;Cambridgeshire;Norfolk;Suffolk;Somerset;Gloucestershire;Wiltshire;Dorset;Devon;Cornwall;West Devon;Stowford;Eastleigh;Swindon;Gloucester;Plymouth;Torbay;Bournemouth;Poole;Birmingham")),
     MERSEY(Descriptor.from(MerseyProvider.class, "en-UK", "GB;Liverpool", State.beta)),
 
-    // Ireland
-    EIREANN(Descriptor.from(EireannProvider.class, "en-IE", "IE;Dublin", State.disabled)),
-
     // Poland
     PL(Descriptor.from(PlProvider.class, "pl-PL", "PL;Warschau")),
 

@@ -797,6 +797,8 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                 log.debug("Hafas error: {}", msg);
                 if ("H890".equals(err)) // No connections found.
                     return new QueryTripsResult(header, QueryTripsResult.Status.NO_TRIPS);
+                if ("H883".equals(err)) // HAFAS Kernel: No connection found after post filtering
+                    return new QueryTripsResult(header, QueryTripsResult.Status.NO_TRIPS);
                 if ("H891".equals(err)) // No route found (try entering an intermediate station).
                     return new QueryTripsResult(header, QueryTripsResult.Status.NO_TRIPS);
                 if ("H892".equals(err)) // HAFAS Kernel: Request too complex (try entering less intermediate
@@ -813,6 +815,9 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                     return new QueryTripsResult(header, QueryTripsResult.Status.SERVICE_DOWN);
                 if ("H9240".equals(err)) // HAFAS Kernel: Internal error.
                     return new QueryTripsResult(header, QueryTripsResult.Status.SERVICE_DOWN);
+                if ("H900".equals(err)) // HAFAS Kernel: No connection found, the connection period requested may be
+                                        // outside the timetable period
+                    return new QueryTripsResult(header, QueryTripsResult.Status.INVALID_DATE);
                 if ("H9360".equals(err)) // Date outside of the timetable period.
                     return new QueryTripsResult(header, QueryTripsResult.Status.INVALID_DATE);
                 if ("H9380".equals(err)) // Departure/Arrival/Intermediate or equivalent stations def'd more
