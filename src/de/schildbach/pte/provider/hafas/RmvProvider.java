@@ -352,15 +352,15 @@ public class RmvProvider extends AbstractHafasClientInterfaceProvider {
         STYLES.put("DB Regio AG Mitte Region Südwest|RRE9", new Style(RMV_SHAPE, Style.rgb(127, 194, 65), Style.WHITE));
 
         // U-Bahn Frankfurt
-        STYLES.put("Stadtwerke Verkehrsgesellschaft Frankfurt|UU1", new Style(RMV_SHAPE, Style.rgb(181, 31, 31), Style.WHITE));
-        STYLES.put("Stadtwerke Verkehrsgesellschaft Frankfurt|UU2", new Style(RMV_SHAPE, Style.rgb(0, 152, 67), Style.WHITE));
-        STYLES.put("Stadtwerke Verkehrsgesellschaft Frankfurt|UU3", new Style(RMV_SHAPE, Style.rgb(78, 85, 161), Style.WHITE));
-        STYLES.put("Stadtwerke Verkehrsgesellschaft Frankfurt|UU4", new Style(RMV_SHAPE, Style.rgb(234, 82, 151), Style.WHITE));
-        STYLES.put("Stadtwerke Verkehrsgesellschaft Frankfurt|UU5", new Style(RMV_SHAPE, Style.rgb(0, 115, 57), Style.WHITE));
-        STYLES.put("Stadtwerke Verkehrsgesellschaft Frankfurt|UU6", new Style(RMV_SHAPE, Style.rgb(0, 105, 180), Style.WHITE));
-        STYLES.put("Stadtwerke Verkehrsgesellschaft Frankfurt|UU7", new Style(RMV_SHAPE, Style.rgb(229, 161, 0), Style.WHITE));
-        STYLES.put("Stadtwerke Verkehrsgesellschaft Frankfurt|UU8", new Style(RMV_SHAPE, Style.rgb(206, 128, 180), Style.WHITE));
-        STYLES.put("Stadtwerke Verkehrsgesellschaft Frankfurt|UU9", new Style(RMV_SHAPE, Style.rgb(249, 218, 27), Style.BLACK));
+        STYLES.put("Stadtwerke Verkehrsgesellschaft Frankfurt|UU1", new Style(RMV_SHAPE, Style.rgb(183, 40, 46), Style.WHITE));
+        STYLES.put("Stadtwerke Verkehrsgesellschaft Frankfurt|UU2", new Style(RMV_SHAPE, Style.rgb(15, 161, 81), Style.WHITE));
+        STYLES.put("Stadtwerke Verkehrsgesellschaft Frankfurt|UU3", new Style(RMV_SHAPE, Style.rgb(74, 93, 169), Style.WHITE));
+        STYLES.put("Stadtwerke Verkehrsgesellschaft Frankfurt|UU4", new Style(RMV_SHAPE, Style.rgb(239, 89, 161), Style.WHITE));
+        STYLES.put("Stadtwerke Verkehrsgesellschaft Frankfurt|UU5", new Style(RMV_SHAPE, Style.rgb(0, 121, 66), Style.WHITE));
+        STYLES.put("Stadtwerke Verkehrsgesellschaft Frankfurt|UU6", new Style(RMV_SHAPE, Style.rgb(0, 114, 188), Style.WHITE));
+        STYLES.put("Stadtwerke Verkehrsgesellschaft Frankfurt|UU7", new Style(RMV_SHAPE, Style.rgb(227, 160, 35), Style.WHITE));
+        STYLES.put("Stadtwerke Verkehrsgesellschaft Frankfurt|UU8", new Style(RMV_SHAPE, Style.rgb(199, 125, 180), Style.WHITE));
+        STYLES.put("Stadtwerke Verkehrsgesellschaft Frankfurt|UU9", new Style(RMV_SHAPE, Style.rgb(244, 217, 48), Style.BLACK));
 
         // Tram Frankfurt
         STYLES.put("Stadtwerke Verkehrsgesellschaft Frankfurt|T11", new Style(RMV_SHAPE, Style.rgb(253, 195, 0), Style.WHITE));
@@ -384,17 +384,28 @@ public class RmvProvider extends AbstractHafasClientInterfaceProvider {
         STYLES.put("Transdev Rhein-Main GmbH|BM60", new Style(RMV_SHAPE, Style.rgb(130, 14, 100), Style.WHITE));
         STYLES.put("Transdev Rhein-Main GmbH|BM72", new Style(RMV_SHAPE, Style.rgb(206, 128, 180), Style.WHITE));
         STYLES.put("Transdev Rhein-Main GmbH|BM73", new Style(RMV_SHAPE, Style.rgb(206, 128, 180), Style.WHITE));
+        STYLES.put("In-der-City-Bus|BN4", new Style(RMV_SHAPE, Style.rgb(0, 101, 174), Style.WHITE));
+        STYLES.put("In-der-City-Bus|BN5", new Style(RMV_SHAPE, Style.rgb(0, 101, 174), Style.WHITE));
+        STYLES.put("Transdev Rhein-Main GmbH|BN7", new Style(RMV_SHAPE, Style.rgb(0, 101, 174), Style.WHITE));
+        STYLES.put("Transdev Rhein-Main GmbH|BN8", new Style(RMV_SHAPE, Style.rgb(0, 101, 174), Style.WHITE));
+        STYLES.put("DB Regio Bus Mitte|BN11", new Style(RMV_SHAPE, Style.rgb(236, 102, 8), Style.WHITE));
+        STYLES.put("In-der-City-Bus|BN12", new Style(RMV_SHAPE, Style.rgb(236, 102, 8), Style.WHITE));
+        STYLES.put("In-der-City-Bus|BN16", new Style(RMV_SHAPE, Style.rgb(236, 102, 8), Style.WHITE));
+        STYLES.put("In-der-City-Bus|BN18", new Style(RMV_SHAPE, Style.rgb(236, 102, 8), Style.WHITE));
+        STYLES.put("Transdev Rhein-Main GmbH|BS3N", new Style(RMV_SHAPE, Style.rgb(0, 151, 87), Style.WHITE));
+        STYLES.put("Transdev Rhein-Main GmbH|BS4N", new Style(RMV_SHAPE, Style.rgb(0, 151, 87), Style.WHITE));
+        STYLES.put("DB Regio Bus Mitte|BS5N", new Style(RMV_SHAPE, Style.rgb(0, 151, 87), Style.WHITE));
 
         // busses Hanau
         STYLES.put("Hanauer Straßenbahn GmbH|B1", new Style(RMV_SHAPE, Style.rgb(139, 198, 62), Style.WHITE));
         STYLES.put("Hanauer Straßenbahn GmbH|B2", new Style(RMV_SHAPE, Style.rgb(255, 220, 1), Style.WHITE));
         STYLES.put("Hanauer Straßenbahn GmbH|B4", new Style(RMV_SHAPE, Style.rgb(135, 84, 0), Style.WHITE));
-        STYLES.put("Hanauer Straßenbahn GmbH|B5", new Style(RMV_SHAPE, Style.rgb(244, 130, 51), Style.WHITE));
+        STYLES.put("Hanauer Straßenbahn GmbH|B5", new Style(RMV_SHAPE, Style.rgb(244, 130, 50), Style.WHITE));
         STYLES.put("Hanauer Straßenbahn GmbH|B6", new Style(RMV_SHAPE, Style.rgb(135, 62, 151), Style.WHITE));
         STYLES.put("Hanauer Straßenbahn GmbH|B6S", new Style(RMV_SHAPE, Style.rgb(135, 62, 151), Style.WHITE));
         STYLES.put("Hanauer Straßenbahn GmbH|B7", new Style(RMV_SHAPE, Style.rgb(0, 140, 208), Style.WHITE));
         STYLES.put("Hanauer Straßenbahn GmbH|B8", new Style(RMV_SHAPE, Style.rgb(215, 12, 140), Style.WHITE));
-        STYLES.put("Hanauer Straßenbahn GmbH|B9", new Style(RMV_SHAPE, Style.rgb(239, 64, 34), Style.WHITE));
+        STYLES.put("Hanauer Straßenbahn GmbH|B9", new Style(RMV_SHAPE, Style.rgb(239, 62, 34), Style.WHITE));
         STYLES.put("Hanauer Straßenbahn GmbH|B10", new Style(RMV_SHAPE, Style.rgb(1, 90, 170), Style.WHITE));
         STYLES.put("Hanauer Straßenbahn GmbH|B11", new Style(RMV_SHAPE, Style.rgb(119, 182, 228), Style.WHITE));
         STYLES.put("Hanauer Straßenbahn GmbH|B12", new Style(RMV_SHAPE, Style.rgb(243, 144, 179), Style.WHITE));
@@ -727,5 +738,77 @@ public class RmvProvider extends AbstractHafasClientInterfaceProvider {
         STYLES.put("Engelhardt Omnibusbetrieb GmbH|B275", new Style(RMV_SHAPE, Style.rgb(167, 22, 129), Style.WHITE));
         STYLES.put("ESE Verkehrsgesellschaft mbH|B277", new Style(RMV_SHAPE, Style.rgb(0, 128, 61), Style.WHITE));
         STYLES.put("ESE Verkehrsgesellschaft mbH|B278", new Style(RMV_SHAPE, Style.rgb(131, 208, 245), Style.WHITE));
+
+        // busses Bad Nauheim
+        STYLES.put("Stadtwerke Bad Nauheim|BFB-11", new Style(RMV_SHAPE, Style.rgb(227, 6, 19), Style.WHITE));
+        STYLES.put("Stadtwerke Bad Nauheim|BFB-12", new Style(RMV_SHAPE, Style.rgb(0, 105, 180), Style.WHITE));
+        STYLES.put("Stadtwerke Bad Nauheim|BFB-14", new Style(RMV_SHAPE, Style.rgb(238, 115, 38), Style.WHITE));
+        STYLES.put("Stadtwerke Bad Nauheim|BFB-15", new Style(RMV_SHAPE, Style.rgb(0, 142, 63), Style.WHITE));
+
+        // busses Bad Vilbel
+        STYLES.put("Fa. Stadtwerke Bad Vilbel GmbH|BFB-60", new Style(RMV_SHAPE, Style.rgb(0, 153, 51), Style.WHITE));
+        STYLES.put("Fa. Stadtwerke Bad Vilbel GmbH|BFB-61", new Style(RMV_SHAPE, Style.rgb(0, 0, 255), Style.WHITE));
+        STYLES.put("Fa. Stadtwerke Bad Vilbel GmbH|BFB-62", new Style(RMV_SHAPE, Style.rgb(227, 30, 36), Style.WHITE));
+        STYLES.put("Fa. Stadtwerke Bad Vilbel GmbH|BFB-63", new Style(RMV_SHAPE, Style.rgb(153, 0, 204), Style.WHITE));
+        STYLES.put("Fa. Stadtwerke Bad Vilbel GmbH|BFB-64", new Style(RMV_SHAPE, Style.rgb(239, 127, 26), Style.WHITE));
+
+        // busses Odenwald
+        STYLES.put("Verkehrsges. Gersprenztal|B10", new Style(RMV_SHAPE, Style.rgb(197, 21, 23), Style.WHITE));
+        STYLES.put("Verkehrsges. Gersprenztal|B12", new Style(RMV_SHAPE, Style.rgb(156, 156, 155), Style.WHITE));
+        STYLES.put("Verkehrsges. Gersprenztal|B13", new Style(RMV_SHAPE, Style.rgb(28, 156, 216), Style.WHITE));
+        STYLES.put("Verkehrsges. Gersprenztal|B14", new Style(RMV_SHAPE, Style.rgb(252, 187, 5), Style.WHITE));
+        STYLES.put("Verkehrsges. Gersprenztal|B15", new Style(RMV_SHAPE, Style.rgb(185, 108, 169), Style.WHITE));
+        STYLES.put("Busverkehr Wissmüller|B20", new Style(RMV_SHAPE, Style.rgb(59, 170, 53), Style.WHITE));
+        STYLES.put("Omnibus Friedrich|B20", new Style(RMV_SHAPE, Style.rgb(59, 170, 53), Style.WHITE));
+        STYLES.put("Busverkehr Wissmüller|B21", new Style(RMV_SHAPE, Style.rgb(26, 155, 216), Style.WHITE));
+        STYLES.put("Omnibus Friedrich|B21", new Style(RMV_SHAPE, Style.rgb(26, 155, 216), Style.WHITE));
+        STYLES.put("Omnibus Friedrich|B22", new Style(RMV_SHAPE, Style.rgb(46, 44, 125), Style.WHITE));
+        STYLES.put("Omnibusbetrieb Lust|B22", new Style(RMV_SHAPE, Style.rgb(46, 44, 125), Style.WHITE));
+        STYLES.put("Busverkehr Wissmüller|B23", new Style(RMV_SHAPE, Style.rgb(111, 21, 12), Style.WHITE));
+        STYLES.put("Omnibus Friedrich|B23", new Style(RMV_SHAPE, Style.rgb(111, 21, 12), Style.WHITE));
+        STYLES.put("Omnibusbetrieb Lust|B23", new Style(RMV_SHAPE, Style.rgb(111, 21, 12), Style.WHITE));
+        STYLES.put("Busverkehr Wissmüller|B24", new Style(RMV_SHAPE, Style.rgb(228, 14, 125), Style.WHITE));
+        STYLES.put("Omnibusbetrieb Lust|B24", new Style(RMV_SHAPE, Style.rgb(228, 14, 125), Style.WHITE));
+        STYLES.put("Busverkehr Wissmüller|B30", new Style(RMV_SHAPE, Style.rgb(248, 172, 16), Style.WHITE));
+        STYLES.put("Omnibus Friedrich|B30", new Style(RMV_SHAPE, Style.rgb(248, 172, 16), Style.WHITE));
+        STYLES.put("Omnibusbetrieb Lust|B30", new Style(RMV_SHAPE, Style.rgb(248, 172, 16), Style.WHITE));
+        STYLES.put("Busverkehr Wissmüller|B31", new Style(RMV_SHAPE, Style.rgb(31, 113, 184), Style.WHITE));
+        STYLES.put("Omnibusbetrieb Lust|B31", new Style(RMV_SHAPE, Style.rgb(31, 113, 184), Style.WHITE));
+        STYLES.put("Busverkehr Wissmüller|B32", new Style(RMV_SHAPE, Style.rgb(176, 201, 9), Style.WHITE));
+        STYLES.put("Omnibusbetrieb Lust|B32", new Style(RMV_SHAPE, Style.rgb(176, 201, 9), Style.WHITE));
+        STYLES.put("Kirchgäßner Reisen|B33", new Style(RMV_SHAPE, Style.rgb(118, 110, 177), Style.WHITE));
+        STYLES.put("Omnibusbetrieb Lust|B33", new Style(RMV_SHAPE, Style.rgb(118, 110, 177), Style.WHITE));
+        STYLES.put("Busverkehr Wissmüller|B34", new Style(RMV_SHAPE, Style.rgb(229, 34, 55), Style.WHITE));
+        STYLES.put("Omnibusbetrieb Lust|B34", new Style(RMV_SHAPE, Style.rgb(229, 34, 55), Style.WHITE));
+        STYLES.put("Busverkehr Wissmüller|B35", new Style(RMV_SHAPE, Style.rgb(251, 234, 28), Style.BLACK));
+        STYLES.put("Omnibusbetrieb Lust|B35", new Style(RMV_SHAPE, Style.rgb(251, 234, 28), Style.BLACK));
+        STYLES.put("Busverkehr Wissmüller|B36", new Style(RMV_SHAPE, Style.rgb(0, 160, 152), Style.WHITE));
+        STYLES.put("Omnibusbetrieb Lust|B36", new Style(RMV_SHAPE, Style.rgb(0, 160, 152), Style.WHITE));
+        STYLES.put("Kirchgäßner Reisen|B37", new Style(RMV_SHAPE, Style.rgb(236, 101, 127), Style.WHITE));
+        STYLES.put("Busverkehr Wissmüller|B37", new Style(RMV_SHAPE, Style.rgb(236, 101, 127), Style.WHITE));
+        STYLES.put("Busverkehr Wissmüller|B40", new Style(RMV_SHAPE, Style.rgb(137, 68, 32), Style.WHITE));
+        STYLES.put("Busverkehr Wissmüller|B41", new Style(RMV_SHAPE, Style.rgb(46, 44, 125), Style.WHITE));
+        STYLES.put("Busverkehr Wissmüller|B42", new Style(RMV_SHAPE, Style.rgb(255, 219, 4), Style.BLACK));
+        STYLES.put("Busverkehr Wissmüller|B43", new Style(RMV_SHAPE, Style.rgb(238, 122, 6), Style.WHITE));
+        STYLES.put("Busverkehr Wissmüller|B44", new Style(RMV_SHAPE, Style.rgb(89, 186, 163), Style.WHITE));
+        STYLES.put("Busverkehr Wissmüller|B45", new Style(RMV_SHAPE, Style.rgb(0, 149, 63), Style.WHITE));
+        STYLES.put("Busverkehr Wissmüller|B46", new Style(RMV_SHAPE, Style.rgb(163, 25, 91), Style.WHITE));
+        STYLES.put("Busverkehr Wissmüller|B47", new Style(RMV_SHAPE, Style.rgb(210, 151, 56), Style.WHITE));
+        STYLES.put("Busverkehr Wissmüller|B48", new Style(RMV_SHAPE, Style.rgb(175, 106, 170), Style.WHITE));
+        STYLES.put("Kirchgäßner Reisen|B49", new Style(RMV_SHAPE, Style.rgb(221, 220, 3), Style.BLACK));
+        STYLES.put("Busverkehr Wissmüller|B50", new Style(RMV_SHAPE, Style.rgb(208, 20, 33), Style.WHITE));
+        STYLES.put("Busverkehr Wissmüller|B51", new Style(RMV_SHAPE, Style.rgb(65, 185, 192), Style.WHITE));
+        STYLES.put("Omnibus Sauter|B51", new Style(RMV_SHAPE, Style.rgb(65, 185, 192), Style.WHITE));
+        STYLES.put("Omnibus Sauter|B52", new Style(RMV_SHAPE, Style.rgb(127, 192, 171), Style.WHITE));
+        STYLES.put("Busverkehr Wissmüller|B52", new Style(RMV_SHAPE, Style.rgb(127, 192, 171), Style.WHITE));
+        STYLES.put("Omnibus Sauter|B53", new Style(RMV_SHAPE, Style.rgb(42, 74, 154), Style.WHITE));
+        STYLES.put("Omnibus Sauter|B54", new Style(RMV_SHAPE, Style.rgb(253, 201, 0), Style.BLACK));
+        STYLES.put("Omnibus Sauter|B55", new Style(RMV_SHAPE, Style.rgb(101, 35, 129), Style.WHITE));
+        STYLES.put("Omnibus Sauter|B56", new Style(RMV_SHAPE, Style.rgb(176, 201, 9), Style.WHITE));
+        STYLES.put("Busverkehr Wissmüller|B40N", new Style(RMV_SHAPE, Style.rgb(171, 161, 138), Style.WHITE));
+        STYLES.put("Omnibus Sauter|B40N", new Style(RMV_SHAPE, Style.rgb(171, 161, 138), Style.WHITE));
+        STYLES.put("Busverkehr Wissmüller|B50N", new Style(RMV_SHAPE, Style.rgb(208, 18, 31), Style.WHITE));
+        STYLES.put("Omnibus Sauter|B50N", new Style(RMV_SHAPE, Style.rgb(208, 18, 31), Style.WHITE));
+        STYLES.put("Busverkehr-Rhein-Neckar|B821", new Style(RMV_SHAPE, Style.rgb(208, 121, 175), Style.WHITE));
     }
 }
