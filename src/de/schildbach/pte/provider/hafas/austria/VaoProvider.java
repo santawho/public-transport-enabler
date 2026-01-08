@@ -84,7 +84,7 @@ public class VaoProvider extends AbstractHafasClientInterfaceProvider {
     // - be suffixed by " (...)" (like "Frankfurt (Main)")
     // other spaces are not permitted in a place.
     // all places containing spaces must be listed in the SPECIAL_PLACES
-    private static final Pattern P_SPLIT_NAME_VAO = Pattern.compile("((?:Bad )?(?:St. )?[^ ]*(?: ?\\([^)]*\\))?)[ ,\\-]? *(.*)");
+    private static final Pattern P_SPLIT_NAME_VAO = Pattern.compile("((?:Bad )?(?:St. )?[^ ]*(?: ?\\([^)]*\\))?(?:-[^ ]*)?)[ ,]? *(.*)");
 
     // list all places, which contain at least one space
     // except: places with "Bad "-prefix and no further spaces
