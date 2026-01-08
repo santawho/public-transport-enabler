@@ -23,7 +23,7 @@ import java.util.Date;
 
 import org.junit.Test;
 
-import de.schildbach.pte.provider.hafas.VgsProvider;
+import de.schildbach.pte.provider.hafas.SaarVVProvider;
 import de.schildbach.pte.dto.Location;
 import de.schildbach.pte.dto.LocationType;
 import de.schildbach.pte.dto.NearbyLocationsResult;
@@ -34,9 +34,9 @@ import de.schildbach.pte.dto.SuggestLocationsResult;
 /**
  * @author Andreas Schildbach
  */
-public class VgsProviderLiveTest extends AbstractProviderLiveTest {
-    public VgsProviderLiveTest() {
-        super(new VgsProvider(secretProperty("vgs.api_authorization")));
+public class SaarVVProviderLiveTest extends AbstractProviderLiveTest {
+    public SaarVVProviderLiveTest() {
+        super(new SaarVVProvider(secretProperty("saarvv.api_authorization")));
     }
 
     @Test

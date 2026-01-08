@@ -34,7 +34,6 @@ import de.schildbach.pte.provider.other.DeutschlandTicketProvider;
 import de.schildbach.pte.provider.efa.DingProvider;
 import de.schildbach.pte.provider.hafas.DsbProvider;
 import de.schildbach.pte.provider.efa.DubProvider;
-import de.schildbach.pte.provider.hafas.EireannProvider;
 import de.schildbach.pte.provider.efa.GvhProvider;
 import de.schildbach.pte.provider.hafas.InvgProvider;
 import de.schildbach.pte.provider.efa.KvvProvider;
@@ -64,7 +63,7 @@ import de.schildbach.pte.provider.hafas.VbbProvider;
 import de.schildbach.pte.provider.efa.VblProvider;
 import de.schildbach.pte.provider.hafas.VbnProvider;
 import de.schildbach.pte.provider.efa.VgnProvider;
-import de.schildbach.pte.provider.hafas.VgsProvider;
+import de.schildbach.pte.provider.hafas.SaarVVProvider;
 import de.schildbach.pte.provider.hafas.austria.VmobilProvider;
 import de.schildbach.pte.provider.hafas.VmtProvider;
 import de.schildbach.pte.provider.efa.VmvProvider;
@@ -121,7 +120,7 @@ public enum NetworkId {
     NASA(Descriptor.from(NasaProvider.class, "de-DE", "Sachsen;Leipzig;Sachsen-Anhalt;Magdeburg;Halle")),
     VMT(Descriptor.from(VmtProvider.class, "de-DE", "Thüringen;Mittelthüringen;Erfurt;Jena;Gera;Weimar;Gotha")),
     VVO(Descriptor.from(VvoProvider.class, "de-DE", "Sachsen;Dresden;Mittelsachsen;Chemnitz")),
-    VGS(Descriptor.from(VgsProvider.class, "de-DE", "Saarland;Saarbrücken")),
+    SAARVV(Descriptor.from(SaarVVProvider.class, "de-DE", "Saarland;Saarbrücken")),
     VRR(Descriptor.from(VrrProvider.class, "de-DE", "Nordrhein-Westfalen;Essen;Dortmund;Düsseldorf;Münster;Paderborn;Höxter;Bielefeld")),
     VRS(Descriptor.from(VrsProvider.class, "de-DE", "Köln;Bonn",
             new Point[] { Point.from1E6(50937531, 6960279) })),
