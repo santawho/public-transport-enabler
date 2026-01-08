@@ -125,6 +125,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
     private boolean includeRegionId = true;
     private int reducedAnyTooManyObjFilter = 2;
     private boolean useProxFootSearch = true;
+    private boolean allInterchangesAsLegs = false;
     private @Nullable String httpReferer = null;
     private @Nullable String httpRefererTrip = null;
     private boolean useRouteIndexAsTripId = true;
@@ -238,6 +239,11 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
 
     protected AbstractEfaProvider setUseProxFootSearch(final boolean useProxFootSearch) {
         this.useProxFootSearch = useProxFootSearch;
+        return this;
+    }
+
+    public AbstractEfaProvider setAllInterchangesAsLegs(final boolean allInterchangesAsLegs) {
+        this.allInterchangesAsLegs = allInterchangesAsLegs;
         return this;
     }
 
@@ -2171,6 +2177,8 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
 
         if (useProxFootSearch)
             url.addEncodedQueryParameter("useProxFootSearch", "1"); // walk if it makes journeys quicker
+        if (allInterchangesAsLegs)
+            url.addEncodedQueryParameter("allInterchangesAsLegs", "1"); // force output walk legs
         url.addEncodedQueryParameter("trITMOTvalue100", "10"); // maximum time to walk to first or from last
                                                                // stop
 

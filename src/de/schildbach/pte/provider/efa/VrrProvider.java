@@ -38,7 +38,8 @@ import okhttp3.HttpUrl;
  * @author Andreas Schildbach
  */
 public class VrrProvider extends AbstractEfaProvider {
-    private static final HttpUrl API_BASE = HttpUrl.parse("https://efa.vrr.de/standard/");
+    private static final HttpUrl API_BASE = HttpUrl.parse("https://www.vrr.de/vrr-efa/");
+    // https://efa.vrr.de/standard/
     // http://app.vrr.de/companion-vrr/
 
     public VrrProvider() {
@@ -49,6 +50,7 @@ public class VrrProvider extends AbstractEfaProvider {
         super(NetworkId.VRR, apiBase);
         setIncludeRegionId(false);
         setUseProxFootSearch(false);
+        setAllInterchangesAsLegs(true);
         setNeedsSpEncId(true);
         setUseRouteIndexAsTripId(false);
         setStyles(STYLES);
