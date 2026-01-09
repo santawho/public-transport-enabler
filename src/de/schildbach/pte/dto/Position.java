@@ -39,7 +39,7 @@ public final class Position implements Serializable {
         this(name, null);
     }
 
-    public Position(final String name, final String section) {
+    public Position(final String name, @Nullable final String section) {
         this.name = requireNonNull(name);
         // checkArgument(name.length() <= 5, "name too long: %s", name);
         this.section = section;
