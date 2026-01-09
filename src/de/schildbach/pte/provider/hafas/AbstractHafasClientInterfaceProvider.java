@@ -552,18 +552,28 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
 
                     final String jnyDirTxt = jny.optString("dirTxt", null);
                     Location destination = null;
-                    // if last entry in stopL happens to be our destination, use it
-                    final JSONArray stopList = jny.optJSONArray("stopL");
-                    if (stopList != null) {
-                        final int lastStopIdx = stopList.getJSONObject(stopList.length() - 1).getInt("locX");
-                        final String lastStopName = locList.getJSONObject(lastStopIdx).getString("name");
-                        if (jnyDirTxt != null && jnyDirTxt.equals(lastStopName))
-                            destination = parseLoc(locList, lastStopIdx, null, crdSysList, locList);
+                    final JSONArray prodL = jny.optJSONArray("prodL");
+                    if (prodL != null && prodL.length() > 0) {
+                        // use terminal of first product
+                        final int tLocX = prodL.getJSONObject(0).getInt("tLocX");
+                        destination = parseLoc(locList, tLocX, null, crdSysList, locList);
                     }
-                    // otherwise split unidentified destination as if it was a station and use it
-                    if (destination == null && jnyDirTxt != null) {
-                        final String[] splitJnyDirTxt = splitStationName(jnyDirTxt);
-                        destination = new Location(LocationType.ANY, null, splitJnyDirTxt[0], splitJnyDirTxt[1]);
+                    if (destination == null) {
+                        // if last entry in stopL happens to be our destination, use it
+                        final JSONArray stopList = jny.optJSONArray("stopL");
+                        if (stopList != null) {
+                            final int lastStopIdx = stopList.getJSONObject(stopList.length() - 1).getInt("locX");
+                            final String lastStopName = locList.getJSONObject(lastStopIdx).getString("name");
+                            if (jnyDirTxt != null && jnyDirTxt.equals(lastStopName))
+                                destination = parseLoc(locList, lastStopIdx, null, crdSysList, locList);
+                        }
+                    }
+                    if (destination == null) {
+                        // otherwise split unidentified destination as if it was a station and use it
+                        if (jnyDirTxt != null) {
+                            final String[] splitJnyDirTxt = splitStationName(jnyDirTxt);
+                            destination = new Location(LocationType.ANY, null, splitJnyDirTxt[0], splitJnyDirTxt[1]);
+                        }
                     }
 
                     final String message = buildMessageFromRemarks(jny, remarks, hims);
