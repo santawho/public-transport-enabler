@@ -91,7 +91,7 @@ import de.schildbach.pte.provider.hafas.ZvvProvider;
  */
 public enum NetworkId {
     // World
-    TRANSITOUS(Descriptor.from(TransitousProvider.class, Descriptor.GROUP_WORLD, "AE;AL;AT;AU;BA;BE;BG;BM;BR;CA;CH;CL;CO;CY;CZ;DE;DK;EE;EG;ES;ET;EU;FI;FR;GB;GE;GR;HK;HR;HU;ID;IE;IL;IN;IS;IT;JP;KR;LT;LU;LV;MA;MC;MD;ME;MK;MX;MY;NL;NO;NZ;OM;PL;PR;PT;RO;RS;SE;SG;SI;SK;TH;TR;UA;US;XK")),
+    TRANSITOUS(Descriptor.from(TransitousProvider.class, Descriptor.GROUP_WORLD, "AE;AL;AT;AU;BA;BE;BG;BM;BR;CA;CH;CL;CO;CY;CZ;DE;DK;EE;EG;ES;ET;EU;FI;FR;GB;GE;GR;HK;HR;HU;ID;IE;IL;IN;IS;IT;JP;KR;LT;LU;LV;MA;MC;MD;ME;MK;MX;MY;NL;NO;NZ;OM;PL;PR;PT;RO;RS;SE;SG;SI;SK;TH;TR;UA;US;XK", State.alpha)),
     
     // Europe
     RT(Descriptor.from(RtProvider.class, Descriptor.GROUP_EUROPE, "DE;AT;CH;BE;LU;NL;DK;SE;NO;FI;GB;SI;HU;RO;BG;PL;SK;IT;ES;PT")),
