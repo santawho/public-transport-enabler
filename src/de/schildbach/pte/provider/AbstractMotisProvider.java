@@ -342,7 +342,7 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
                 .addPathSegment("api")
                 .addPathSegment("v1")
                 .addPathSegment("reverse-geocode")
-                .addQueryParameter("place", String.format("%f,%f", location.coord.getLatAsDouble(), location.coord.getLonAsDouble()));
+                .addQueryParameter("place", String.format(Locale.US, "%f,%f", location.coord.getLatAsDouble(), location.coord.getLonAsDouble()));
         if (maxLocations > 0) {
             endpointBuilder.addQueryParameter("numResults", String.valueOf(maxLocations));
         }
@@ -556,7 +556,7 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
         if (from.type == LocationType.STATION) {
             endpointBuilder.addQueryParameter("fromPlace", from.id);
         } else if (from.coord != null) {
-            endpointBuilder.addQueryParameter("fromPlace", String.format("%f,%f", from.coord.getLatAsDouble(), from.coord.getLonAsDouble()));
+            endpointBuilder.addQueryParameter("fromPlace", String.format(Locale.US, "%f,%f", from.coord.getLatAsDouble(), from.coord.getLonAsDouble()));
         } else {
             throw new IllegalArgumentException("from needs to be stop or have coordinates: " + to);
         }
@@ -571,7 +571,7 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
         if (to.type == LocationType.STATION) {
             endpointBuilder.addQueryParameter("toPlace", to.id);
         } else if (to.coord != null) {
-            endpointBuilder.addQueryParameter("toPlace", String.format("%f,%f", to.coord.getLatAsDouble(), to.coord.getLonAsDouble()));
+            endpointBuilder.addQueryParameter("toPlace", String.format(Locale.US, "%f,%f", to.coord.getLatAsDouble(), to.coord.getLonAsDouble()));
         } else {
             throw new IllegalArgumentException("to needs to be stop or have coordinates: " + to);
         }
