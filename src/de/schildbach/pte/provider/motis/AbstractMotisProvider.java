@@ -15,13 +15,14 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package de.schildbach.pte.provider;
+package de.schildbach.pte.provider.motis;
 
 import de.schildbach.pte.NetworkId;
 import de.schildbach.pte.dto.*;
 import de.schildbach.pte.exception.InvalidDataException;
 import de.schildbach.pte.exception.NotFoundException;
 import de.schildbach.pte.exception.ParserException;
+import de.schildbach.pte.provider.AbstractNetworkProvider;
 import de.schildbach.pte.util.PolylineFormat;
 import okhttp3.HttpUrl;
 import org.json.JSONArray;

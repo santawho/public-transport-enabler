@@ -18,7 +18,6 @@
 package de.schildbach.pte.provider.motis;
 
 import de.schildbach.pte.NetworkId;
-import de.schildbach.pte.provider.AbstractMotisProvider;
 import okhttp3.HttpUrl;
 
 /**
