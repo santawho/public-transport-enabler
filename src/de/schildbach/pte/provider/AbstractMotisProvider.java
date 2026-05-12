@@ -378,7 +378,7 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
     }
 
     @Override
-    public QueryDeparturesResult queryDepartures(String stationId, @Nullable Date time, int maxDepartures, EquivalentStationsMode equivsMode, Set<Product> products) throws IOException {
+    public QueryDeparturesResult queryDepartures(String stationId, @Nullable Date time, int maxDepartures, EquivalentStationsMode equivsMode, @Nullable Set<Product> products) throws IOException {
         final HttpUrl.Builder endpointBuilder = apiBase.newBuilder()
                 .addPathSegment("api")
                 .addPathSegment("v5")
@@ -394,16 +394,18 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
             endpointBuilder.addQueryParameter("time", new SimpleDateFormat("yyyy-MM-dd'T'h:m:ss.SZ").format(time));
         }
         
-        List<String> motisModes = new ArrayList<>();
-        if (products.contains(Product.HIGH_SPEED_TRAIN) && products.contains(Product.REGIONAL_TRAIN)) {
-            // All train types included, so include the catch-all category as well
-            motisModes.add("RAIL");
-        }
-        for (Product p : products) {
-            Collections.addAll(motisModes, MODE_MOTIS_MAP.get(p));
-        }
+        if (products != null && !products.isEmpty()) {
+            List<String> motisModes = new ArrayList<>();
+            if (products.contains(Product.HIGH_SPEED_TRAIN) && products.contains(Product.REGIONAL_TRAIN)) {
+                // All train types included, so include the catch-all category as well
+                motisModes.add("RAIL");
+            }
+            for (Product p : products) {
+                Collections.addAll(motisModes, MODE_MOTIS_MAP.get(p));
+            }
 
-        endpointBuilder.addQueryParameter("mode", String.join(",", motisModes));
+            endpointBuilder.addQueryParameter("mode", String.join(",", motisModes));
+        }
 
         final HttpUrl endpoint = endpointBuilder.build();
 
