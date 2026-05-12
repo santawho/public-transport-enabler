@@ -307,6 +307,14 @@ public final class HttpClient {
         }
         return okHttpClient;
     }
+    
+    public void setTimeout(long timeout, TimeUnit unit) {
+        okHttpClient = getOkHttpClient().newBuilder()
+                .callTimeout(timeout, unit)
+                .readTimeout(timeout, unit)
+                .writeTimeout(timeout, unit)
+                .build();
+    }
 
     public CharSequence get(final HttpUrl url) throws IOException {
         return get(url, null, null, defaultReferer, defaultOrigin);
