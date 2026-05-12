@@ -23,17 +23,21 @@ import de.schildbach.pte.exception.InvalidDataException;
 import de.schildbach.pte.exception.NotFoundException;
 import de.schildbach.pte.exception.ParserException;
 import de.schildbach.pte.provider.AbstractNetworkProvider;
+import de.schildbach.pte.util.MessagePackUtils;
 import de.schildbach.pte.util.PolylineFormat;
 import okhttp3.HttpUrl;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.msgpack.core.MessagePacker;
+import org.msgpack.core.MessageUnpacker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.*;
@@ -515,7 +519,7 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
         }
     }
 
-    public static class QueryContext extends TripRef implements QueryTripsContext {
+    public static class QueryContext extends TripRef implements QueryTripsContext, Serializable, MessagePackUtils.Packable {
         protected Location from;
         @Nullable
         protected Location via;
@@ -527,11 +531,26 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
         protected String previousPageCursor;
         protected HttpUrl endpoint;
 
-        protected QueryContext(NetworkId network, HttpUrl endpoint, Location from, @Nullable Location via, Location to, @Nullable String nextPageCursor, @Nullable String previousPageCursor) {
+        public QueryContext(NetworkId network, HttpUrl endpoint, Location from, @Nullable Location via, Location to, @Nullable String nextPageCursor, @Nullable String previousPageCursor) {
             super(network, from, via, to);
             this.endpoint = endpoint;
             this.nextPageCursor = nextPageCursor;
             this.previousPageCursor = previousPageCursor;
+        }
+
+        @Override
+        public void packToMessage(MessagePacker packer) throws IOException {
+            super.packToMessage(packer);
+            MessagePackUtils.packNullableString(packer, previousPageCursor);
+            MessagePackUtils.packNullableString(packer, nextPageCursor);
+            MessagePackUtils.packNullableString(packer, endpoint.toString());
+        }
+
+        public QueryContext(NetworkId network, MessageUnpacker unpacker) throws IOException {
+            super(network, unpacker);
+            this.previousPageCursor = MessagePackUtils.unpackNullableString(unpacker);
+            this.nextPageCursor = MessagePackUtils.unpackNullableString(unpacker);
+            this.endpoint = HttpUrl.parse(requireNonNull(MessagePackUtils.unpackNullableString(unpacker)));
         }
 
         @Override
@@ -543,6 +562,11 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
         public boolean canQueryEarlier() {
             return previousPageCursor != null;
         }
+    }
+
+    @Override
+    public TripRef unpackTripRefFromMessage(MessageUnpacker unpacker) throws IOException {
+        return new QueryContext(network, unpacker);
     }
 
     @Override
