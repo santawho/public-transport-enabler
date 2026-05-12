@@ -37,6 +37,7 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.io.Serial;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
@@ -115,6 +116,22 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
         CAPABILITIES.add(Capability.MIN_TRANSFER_TIMES);
         CAPABILITIES.add(Capability.JOURNEY);
         CAPABILITIES.add(Capability.TRIP_RELOAD);
+    }
+
+    public static class MotisJourneyRef extends JourneyRef {
+        @Serial
+        private static final long serialVersionUID = 6082455169397886151L;
+
+        private final String tripId;
+
+        public MotisJourneyRef(final String tripId) {
+            this.tripId = tripId;
+        }
+
+        @Override
+        public String getUniqueId() {
+            return tripId;
+        }
     }
 
     private final HttpUrl apiBase;
@@ -302,12 +319,7 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
                         parseMotisStop(motisLeg.getJSONObject("to"), realtime),
                         intermediateStops,
                         null,
-                        new JourneyRef() {
-                            @Override
-                            public String getUniqueId() {
-                                return tripId;
-                            }
-                        }));
+                        new MotisJourneyRef(tripId)));
             } else {
                 log.warn("Unknown MOTIS leg mode: {}", mode);
                 continue;
@@ -462,13 +474,7 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
                             stopTime.has("cancelled") && stopTime.getBoolean("cancelled"),
                             null,
                             null,
-                            new JourneyRef() {
-                                @Override
-                                public String getUniqueId() {
-                                    return tripId;
-                                }
-                            }
-                    ));
+                            new MotisJourneyRef(tripId)));
                     if (!encounteredLines.contains(line.id)) {
                         assert sd.lines != null;
                         sd.lines.add(new LineDestination(line, destination));
@@ -520,6 +526,9 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
     }
 
     public static class QueryContext extends TripRef implements QueryTripsContext, Serializable, MessagePackUtils.Packable {
+        @Serial
+        private static final long serialVersionUID = 7250525175653739883L;
+
         protected Location from;
         @Nullable
         protected Location via;
@@ -529,11 +538,11 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
         protected String nextPageCursor;
         @Nullable
         protected String previousPageCursor;
-        protected HttpUrl endpoint;
+        protected String endpointUrl;
 
         public QueryContext(NetworkId network, HttpUrl endpoint, Location from, @Nullable Location via, Location to, @Nullable String nextPageCursor, @Nullable String previousPageCursor) {
             super(network, from, via, to);
-            this.endpoint = endpoint;
+            this.endpointUrl = endpoint.toString();
             this.nextPageCursor = nextPageCursor;
             this.previousPageCursor = previousPageCursor;
         }
@@ -543,14 +552,14 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
             super.packToMessage(packer);
             MessagePackUtils.packNullableString(packer, previousPageCursor);
             MessagePackUtils.packNullableString(packer, nextPageCursor);
-            MessagePackUtils.packNullableString(packer, endpoint.toString());
+            MessagePackUtils.packNullableString(packer, endpointUrl);
         }
 
         public QueryContext(NetworkId network, MessageUnpacker unpacker) throws IOException {
             super(network, unpacker);
             this.previousPageCursor = MessagePackUtils.unpackNullableString(unpacker);
             this.nextPageCursor = MessagePackUtils.unpackNullableString(unpacker);
-            this.endpoint = HttpUrl.parse(requireNonNull(MessagePackUtils.unpackNullableString(unpacker)));
+            this.endpointUrl = requireNonNull(MessagePackUtils.unpackNullableString(unpacker));
         }
 
         @Override
@@ -561,6 +570,10 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
         @Override
         public boolean canQueryEarlier() {
             return previousPageCursor != null;
+        }
+
+        public HttpUrl getEndpoint() {
+            return HttpUrl.parse(endpointUrl);
         }
     }
 
@@ -653,7 +666,7 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
             return new QueryTripsResult(new ResultHeader(network, "MOTIS"), QueryTripsResult.Status.NO_TRIPS);
         }
 
-        final HttpUrl.Builder b = ((QueryContext) context).endpoint.newBuilder();
+        final HttpUrl.Builder b = ((QueryContext) context).getEndpoint().newBuilder();
         b.addQueryParameter("pageCursor", pageCursor);
         final HttpUrl endpointWithCursor = b.build();
 
@@ -738,6 +751,6 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
             throw new IllegalArgumentException("cannot handle: " + tripRef);
         }
         final QueryContext ctx = (QueryContext) tripRef;
-        return this.actualQueryTrips(ctx.endpoint, tripRef.from, tripRef.via, tripRef.to, loadPath);
+        return this.actualQueryTrips(ctx.getEndpoint(), tripRef.from, tripRef.via, tripRef.to, loadPath);
     }
 }
