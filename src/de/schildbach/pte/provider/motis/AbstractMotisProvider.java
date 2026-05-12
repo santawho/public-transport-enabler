@@ -531,7 +531,7 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
         protected String previousPageCursor;
         protected HttpUrl endpoint;
 
-        protected QueryContext(NetworkId network, HttpUrl endpoint, Location from, @Nullable Location via, Location to, @Nullable String nextPageCursor, @Nullable String previousPageCursor) {
+        public QueryContext(NetworkId network, HttpUrl endpoint, Location from, @Nullable Location via, Location to, @Nullable String nextPageCursor, @Nullable String previousPageCursor) {
             super(network, from, via, to);
             this.endpoint = endpoint;
             this.nextPageCursor = nextPageCursor;
@@ -562,6 +562,11 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
         public boolean canQueryEarlier() {
             return previousPageCursor != null;
         }
+    }
+
+    @Override
+    public TripRef unpackTripRefFromMessage(MessageUnpacker unpacker) throws IOException {
+        return new QueryContext(network, unpacker);
     }
 
     @Override
