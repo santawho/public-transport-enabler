@@ -683,7 +683,7 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
         final HttpUrl.Builder endpointBuilder = apiBase.newBuilder()
                 .addPathSegment("api")
                 .addPathSegment("v5")
-                .addPathSegment("plan")
+                .addPathSegment("trip")
                 .addQueryParameter("tripId", journeyRef.getUniqueId())
                 .addQueryParameter("detailedLegs", String.valueOf(loadPath));
         
@@ -694,18 +694,12 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
         try {
             final JSONObject data = new JSONObject(apiResult.toString());
             
-            final String tripId = data.getString("tripId");
             final Trip trip = parseMotisItinerary(data, null);
 
             return new QueryJourneyResult(
                     new ResultHeader(network, "MOTIS"),
                     endpoint.toString(),
-                    new JourneyRef() {
-                        @Override
-                        public String getUniqueId() {
-                            return tripId;
-                        }
-                    },
+                    journeyRef,
                     (Trip.Public) trip.legs.get(0)
             );
         } catch (JSONException x) {
