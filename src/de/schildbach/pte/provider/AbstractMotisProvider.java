@@ -17,7 +17,6 @@
 
 package de.schildbach.pte.provider;
 
-import com.sun.tools.sjavac.Log;
 import de.schildbach.pte.NetworkId;
 import de.schildbach.pte.dto.*;
 import de.schildbach.pte.exception.InvalidDataException;
@@ -28,6 +27,8 @@ import okhttp3.HttpUrl;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -48,6 +49,8 @@ import static java.util.Objects.requireNonNull;
  * @author Dan Cojocaru
  */
 public class AbstractMotisProvider extends AbstractNetworkProvider {
+    private static final Logger log = LoggerFactory.getLogger(AbstractMotisProvider.class);
+    
     private static final Map<LocationType, String> SUPPORTED_NEARBY_LOCATIONS;
     private static final Map<String, Product> MOTIS_MODE_MAP;
     private static final Map<String, Trip.Individual.Type> MOTIS_INDIVIDUAL_MODE_MAP;
@@ -301,7 +304,7 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
                             }
                         }));
             } else {
-                Log.warn("Unknown MOTIS leg mode: " + mode);
+                log.warn("Unknown MOTIS leg mode: {}", mode);
                 continue;
             }
             legs.get(legs.size() - 1).setPath(polyline);
