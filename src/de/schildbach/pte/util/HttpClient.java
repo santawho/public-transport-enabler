@@ -78,8 +78,6 @@ import okio.Source;
 
 import static java.util.Objects.requireNonNull;
 
-import androidx.annotation.NonNull;
-
 /**
  * @author Andreas Schildbach
  */
@@ -256,15 +254,15 @@ public final class HttpClient {
             };
 
             final CompressionInterceptor.DecompressionAlgorithm DeflateInstance = new CompressionInterceptor.DecompressionAlgorithm() {
-                @NonNull
+                @Nonnull
                 @Override
                 public String getEncoding() {
                     return "deflate";
                 }
 
-                @NonNull
+                @Nonnull
                 @Override
-                public Source decompress(@NonNull final BufferedSource compressedSource) {
+                public Source decompress(@Nonnull final BufferedSource compressedSource) {
                     return new InflaterSource(compressedSource, new Inflater());
                 }
             };

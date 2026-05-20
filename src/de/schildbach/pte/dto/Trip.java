@@ -20,8 +20,6 @@ package de.schildbach.pte.dto;
 import static de.schildbach.pte.util.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
-import androidx.annotation.NonNull;
-
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -35,6 +33,7 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
@@ -340,7 +339,7 @@ public final class Trip implements Serializable {
         return Objects.hash(getId());
     }
 
-    @NonNull
+    @Nonnull
     @Override
     public String toString() {
         final PTDate firstPublicLegDepartureTime = getFirstPublicLegDepartureTime();

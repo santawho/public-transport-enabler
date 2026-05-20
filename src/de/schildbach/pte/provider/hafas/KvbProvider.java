@@ -17,8 +17,6 @@
 
 package de.schildbach.pte.provider.hafas;
 
-import androidx.annotation.Nullable;
-
 import java.util.regex.Matcher;
 
 import de.schildbach.pte.NetworkId;
@@ -26,6 +24,8 @@ import de.schildbach.pte.dto.Line;
 import de.schildbach.pte.dto.Product;
 import de.schildbach.pte.dto.Style;
 import okhttp3.HttpUrl;
+
+import javax.annotation.Nullable;
 
 /**
  * Provider implementation for KVB Köln / VRS (Germany).

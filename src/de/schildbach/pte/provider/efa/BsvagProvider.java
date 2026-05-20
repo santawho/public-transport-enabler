@@ -63,7 +63,7 @@ public class BsvagProvider extends AbstractEfaProvider {
     }
 
     @Override
-    protected void appendStopfinderRequestParameters(final HttpUrl.Builder url, final CharSequence constraint, final String outputFormat, @androidx.annotation.Nullable final Set<LocationType> types, final int maxLocations) {
+    protected void appendStopfinderRequestParameters(final HttpUrl.Builder url, final CharSequence constraint, final String outputFormat, @Nullable final Set<LocationType> types, final int maxLocations) {
         super.appendStopfinderRequestParameters(url, constraint, outputFormat, types, 0);
         url.addEncodedQueryParameter("odvSugMacroBSVAG", "true");
         url.addEncodedQueryParameter("commonMacro", "true");
