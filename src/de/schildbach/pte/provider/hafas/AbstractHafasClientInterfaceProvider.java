@@ -1799,7 +1799,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                 id = prodCtx.optString("lineId", null);
                 final String num = prodCtx.optString("num", null);
                 final String matchId = prodCtx.optString("matchId", null);
-                ctxNum = matchId == null || matchId.equals(number) ? num : matchId;
+                ctxNum = matchId == null || matchId.equals(number) || (num != null && num.equals(number)) ? num : matchId;
             } else {
                 id = null;
                 ctxNum = null;
