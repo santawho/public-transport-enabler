@@ -165,7 +165,7 @@ public abstract class AbstractNetworkProvider extends AbstractLocationSearchProv
     }
 
     private static final Pattern P_NAME_SECTION = Pattern.compile("(\\d{1,5})\\s*" + //
-            "([A-Z](?:\\s*-?\\s*[A-Z])?)?", Pattern.CASE_INSENSITIVE);
+            "([A-Z](?:\\s*-?\\s*[A-Z])?)?");
 
     private static final Pattern P_NAME_NOSW = Pattern.compile("(\\d{1,5})\\s*" + //
             "(Nord|Süd|Ost|West)", Pattern.CASE_INSENSITIVE);
