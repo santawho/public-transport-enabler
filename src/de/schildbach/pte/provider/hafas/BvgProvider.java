@@ -42,33 +42,79 @@ import okhttp3.HttpUrl;
  * 
  * @author Andreas Schildbach
  */
-public final class BvgProvider extends AbstractHafasClientInterfaceProvider {
+public abstract class BvgProvider extends AbstractHafasClientInterfaceProvider {
+    public static class Legacy extends BvgProvider {
+        private static final HttpUrl API_BASE = HttpUrl.parse(
+                // "https://bvg-apps-ext.hafas.de/" // from original PTE
+                "https://bvg-apps.hafas.de/"
+        );
+        private static final String DEFAULT_API_CLIENT = "{\"id\":\"BVG\",\"type\":\"AND\"}";
+
+        public Legacy(final String apiAuthorization) {
+            this(DEFAULT_API_CLIENT, apiAuthorization);
+        }
+
+        public Legacy(final String apiClient, final String apiAuthorization) {
+            super(NetworkId.BVGLEGACY, API_BASE, apiClient, apiAuthorization);
+            setApiEndpoint("gate");
+            setApiVersion("1.72");
+            setApiExt("BVG.1");
+        }
+    }
+
+    public static class NextGen extends BvgProvider {
+        private static final HttpUrl API_BASE = HttpUrl.parse("https://bvg.hafas.cloud/apps/");
+        private static final String DEFAULT_API_CLIENT = "{\"id\":\"VBB\",\"type\":\"WEB\",\"name\":\"webapp\",\"l\":\"vs_webapp\"}";
+        private static final String WEBAPP_CONFIG_URL = "https://bvg-apps.hafas.de/webapp/config/webapp.config.json";
+
+        public NextGen() {
+            this(DEFAULT_API_CLIENT, WEBAPP_CONFIG_URL);
+        }
+
+        public NextGen(final String apiAuthorization) {
+            this(DEFAULT_API_CLIENT, apiAuthorization);
+        }
+
+        public NextGen(final String apiClient, final String apiAuthorization) {
+            super(NetworkId.BVG, API_BASE, apiClient, apiAuthorization);
+            setApiEndpoint("gate");
+            setApiVersion("1.94");
+        }
+    }
+
     private static final Set<Capability> BVG_CAPABILITIES;
 
-    private static final HttpUrl API_BASE = HttpUrl.parse("https://bvg-apps-ext.hafas.de/");
-    private static final Product[] PRODUCTS_MAP = { Product.SUBURBAN_TRAIN, Product.SUBWAY, Product.TRAM, Product.BUS,
-            Product.FERRY, Product.HIGH_SPEED_TRAIN, Product.REGIONAL_TRAIN, Product.ON_DEMAND, null, null };
-    private static final String DEFAULT_API_CLIENT = "{\"id\":\"BVG\",\"type\":\"AND\"}";
-
-    static {
-        Set<Capability> capabilities = new HashSet<>(CAPABILITIES);
-        capabilities.remove(Capability.BIKE_OPTION);
-        BVG_CAPABILITIES = capabilities;
-    }
-
-    public BvgProvider(final String apiAuthorization) {
-        this(DEFAULT_API_CLIENT, apiAuthorization);
-    }
-
-    public BvgProvider(final String apiClient, final String apiAuthorization) {
-        super(NetworkId.BVG, API_BASE, PRODUCTS_MAP);
-        setApiEndpoint("gate");
-        setApiVersion("1.72");
-        setApiExt("BVG.1");
+    protected BvgProvider(
+            final NetworkId networkId,
+            final HttpUrl apiBase,
+            final String apiClient,
+            final String apiAuthorization
+    ) {
+        super(networkId, apiBase, PRODUCTS_MAP);
         setApiClient(apiClient);
         setApiAuthorization(apiAuthorization);
         setStyles(STYLES);
     }
+
+    private static final Product[] PRODUCTS_MAP = {
+            Product.SUBURBAN_TRAIN,
+            Product.SUBWAY,
+            Product.TRAM,
+            Product.BUS,
+            Product.FERRY,
+            Product.HIGH_SPEED_TRAIN,
+            Product.REGIONAL_TRAIN,
+            Product.ON_DEMAND,
+            null,
+            null
+    };
+
+    static {
+        final Set<Capability> capabilities = new HashSet<>(CAPABILITIES);
+        capabilities.remove(Capability.BIKE_OPTION);
+        BVG_CAPABILITIES = capabilities;
+    }
+
 
     @Override
     protected Set<Capability> getCapabilities() {

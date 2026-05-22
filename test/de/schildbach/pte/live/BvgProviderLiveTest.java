@@ -42,7 +42,7 @@ import de.schildbach.pte.util.LocationUtil;
  */
 public class BvgProviderLiveTest extends AbstractProviderLiveTest {
     public BvgProviderLiveTest() {
-        super(new BvgProvider(secretProperty("bvg.api_authorization")));
+        super(new BvgProvider.Legacy(secretProperty("bvg.api_authorization")));
     }
 
     @Test
