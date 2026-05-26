@@ -38,8 +38,15 @@ public class ZvvProvider extends AbstractHafasClientInterfaceProvider {
     private static final Product[] PRODUCTS_MAP = { Product.HIGH_SPEED_TRAIN, Product.REGIONAL_TRAIN,
             Product.REGIONAL_TRAIN, Product.REGIONAL_TRAIN, Product.FERRY, Product.SUBURBAN_TRAIN, Product.BUS,
             Product.CABLECAR, Product.BUS, Product.TRAM };
-    private static final HttpUrl API_BASE = HttpUrl.parse("https://online.fahrplan.zvv.ch/");
-    private static final String DEFAULT_API_CLIENT = "{\"id\":\"ZVV\",\"type\":\"AND\"}";
+    // private static final HttpUrl API_BASE = HttpUrl.parse("https://online.fahrplan.zvv.ch/");
+    // private static final String DEFAULT_API_CLIENT = "{\"id\":\"ZVV\",\"type\":\"AND\"}";
+    private static final HttpUrl API_BASE = HttpUrl.parse("https://zvv.hafas.cloud/");
+    private static final String DEFAULT_API_CLIENT = "{\"id\":\"ZVV\",\"type\":\"WEB\",\"name\":\"webapp\",\"l\":\"vs_webapp\"}";
+    private static final String WEBAPP_CONFIG_URL = "https://zvv.hafas.cloud/config/webapp.config.json";
+
+    public ZvvProvider() {
+        this(DEFAULT_API_CLIENT, WEBAPP_CONFIG_URL);
+    }
 
     public ZvvProvider(final String apiAuthorization) {
         this(DEFAULT_API_CLIENT, apiAuthorization);
@@ -49,7 +56,7 @@ public class ZvvProvider extends AbstractHafasClientInterfaceProvider {
         super(NetworkId.ZVV, API_BASE, PRODUCTS_MAP);
         setApiEndpoint("gate");
         setApiVersion("1.93");
-        setApiExt("ZVV.2");
+        // setApiExt("ZVV.2");
         setApiClient(apiClient);
         setApiAuthorization(apiAuthorization);
         setStyles(STYLES);
