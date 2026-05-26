@@ -367,15 +367,20 @@ public abstract class DbWebProvider extends DbProvider {
             return null;
         final String lidStr = loc.optString("id", null);
         final Location lid = parseLid(lidStr);
-        final String id = lid.type == LocationType.STATION
-                ? Optional.ofNullable(loc.optString("extId", null)).orElse(lid.id)
-                : lidStr;
+        final String id;
+        final String bahnhofsInfoId;
+        if (lid.type == LocationType.STATION) {
+            id = Optional.ofNullable(loc.optString("extId", null)).orElse(lid.id);
+            bahnhofsInfoId = Optional.ofNullable(loc.optString("bahnhofsInfoId", null)).orElse(id);
+        } else {
+            id = lidStr;
+            bahnhofsInfoId = null;
+        }
         Point coord = lid.coord;
         final double latitude = loc.optDouble("lat");
         if (coord == null && !Double.isNaN(latitude)) {
             coord = Point.fromDouble(latitude, loc.optDouble("lon"));
         }
-        final String bahnhofsInfoId = loc.optString("bahnhofsInfoId", null);
 
         return createLocation(
                 lid.type,

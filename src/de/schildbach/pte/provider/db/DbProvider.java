@@ -377,7 +377,7 @@ public abstract class DbProvider extends AbstractNetworkProvider {
             final LocationType type, final String id, final Point coord, final String name,
             final Set<Product> products, final String bahnhofsInfoId) {
         final String[] placeAndName = type == LocationType.STATION ? splitStationName(name) : splitAddress(name);
-        final String infoId = bahnhofsInfoId != null ? bahnhofsInfoId : id;
+        final String infoId = bahnhofsInfoId != null ? bahnhofsInfoId : (id != null && id.length() <= 10) ? id : null;
         final String url = infoId == null ? null : (
                 "https://www.bahnhof.de"
                         + ("de".equals(this.userInterfaceLanguage) ? "" : "/en")

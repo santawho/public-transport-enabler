@@ -376,9 +376,15 @@ public abstract class DbMovasProvider extends DbProvider {
             return null;
         final String lidStr = loc.optString("locationId", null);
         final Location lid = parseLid(lidStr);
-        final String id = lid.type == LocationType.STATION
-                ? Optional.ofNullable(loc.optString("evaNr", null)).orElse(lid.id)
-                : lidStr;
+        final String id;
+        final String bahnhofsInfoId;
+        if (lid.type == LocationType.STATION) {
+            id = Optional.ofNullable(loc.optString("evaNr", null)).orElse(lid.id);
+            bahnhofsInfoId = Optional.ofNullable(loc.optString("stationId", null)).orElse(id);
+        } else {
+            id = lidStr;
+            bahnhofsInfoId = null;
+        }
         Point coord = null;
         JSONObject pos = loc.optJSONObject("coordinates");
         if (pos == null) {
@@ -389,7 +395,6 @@ public abstract class DbMovasProvider extends DbProvider {
         } else {
             coord = lid.coord;
         }
-        final String bahnhofsInfoId = loc.optString("stationId", null);
 
         return createLocation(
                 lid.type,
