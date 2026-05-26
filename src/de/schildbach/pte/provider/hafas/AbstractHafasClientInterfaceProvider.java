@@ -464,7 +464,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                 final String msg = "err=" + err + ", errTxt=\"" + errTxt + "\"";
                 log.debug("Hafas error: {}", msg);
                 final String plainErr = getPlainErr(err);
-                if ("FAIL".equals(plainErr) && "HCI Service: request failed".equals(errTxt))
+                if ("FAIL".equals(plainErr))
                     return new NearbyLocationsResult(header, NearbyLocationsResult.Status.SERVICE_DOWN);
                 if ("CGI_READ_FAILED".equals(plainErr))
                     return new NearbyLocationsResult(header, NearbyLocationsResult.Status.SERVICE_DOWN);
@@ -565,7 +565,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                 final String plainErr = getPlainErr(err);
                 if ("LOCATION".equals(plainErr) && "HCI Service: location missing or invalid".equals(errTxt))
                     return new QueryDeparturesResult(header, QueryDeparturesResult.Status.INVALID_STATION);
-                if ("FAIL".equals(plainErr) && "HCI Service: request failed".equals(errTxt))
+                if ("FAIL".equals(plainErr))
                     return new QueryDeparturesResult(header, QueryDeparturesResult.Status.SERVICE_DOWN);
                 if ("PROBLEMS".equals(plainErr) && "HCI Service: problems during service execution".equals(errTxt))
                     return new QueryDeparturesResult(header, QueryDeparturesResult.Status.SERVICE_DOWN);
@@ -737,7 +737,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                 final String msg = "err=" + err + ", errTxt=\"" + errTxt + "\"";
                 log.debug("Hafas error: {}", msg);
                 final String plainErr = getPlainErr(err);
-                if ("FAIL".equals(plainErr) && "HCI Service: request failed".equals(errTxt))
+                if ("FAIL".equals(plainErr))
                     return new SuggestLocationsResult(header, SuggestLocationsResult.Status.SERVICE_DOWN);
                 if ("CGI_READ_FAILED".equals(plainErr))
                     return new SuggestLocationsResult(header, SuggestLocationsResult.Status.SERVICE_DOWN);
