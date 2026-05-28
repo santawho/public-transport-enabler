@@ -154,7 +154,6 @@ public abstract class DbMovasProvider extends DbProvider {
         );
 
     private static final HttpUrl API_BASE = HttpUrl.parse(
-            // "https://app.vendo.noncd.db.de/mob/"
             "https://app.services-bahn.de/mob/"
     );
     private final ResultHeader resultHeader;
