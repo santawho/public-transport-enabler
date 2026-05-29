@@ -40,6 +40,7 @@ import de.schildbach.pte.provider.hafas.TpgProvider;
 import de.schildbach.pte.provider.hafas.UestraProvider;
 import de.schildbach.pte.provider.hafas.austria.StvProvider;
 import de.schildbach.pte.provider.hafas.austria.VkgProvider;
+import de.schildbach.pte.provider.other.CHSearchProvider;
 import de.schildbach.pte.provider.other.DeutschlandTicketProvider;
 import de.schildbach.pte.provider.efa.DingProvider;
 import de.schildbach.pte.provider.hafas.DsbProvider;
@@ -172,6 +173,7 @@ public enum NetworkId {
     ZVV(Descriptor.from(ZvvProvider.class, "de-CH", "Zürich")),
     BLS(Descriptor.from(BlsProvider.class, "de-CH", "Bern")),
     TPG(Descriptor.from(TpgProvider.class, "de-CH", "Genève")),
+    SEARCHCH(Descriptor.from(CHSearchProvider.class, "de-CH", "CH;Bern;Zürich;Luzern;Genève", State.alpha)),
 
     // Netherlands
     NS(Descriptor.from(NsProvider.class, "nl-NL", "NL;Amsterdam", State.alpha)),
