@@ -589,6 +589,10 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
         return result;
     }
 
+    protected int getSuggestedLocationsServerLimit() {
+        return 10;
+    }
+
     @Override
     public SuggestLocationsResult suggestLocations(final CharSequence constraint, @Nullable final Set<LocationType> types, final int maxLocations) throws IOException {
         final HttpUrl.Builder endpointBuilder = apiBase.newBuilder()
@@ -597,7 +601,8 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
                 .addPathSegment("geocode")
                 .addQueryParameter("text", constraint.toString());
         if (maxLocations > 0) {
-            endpointBuilder.addQueryParameter("numResults", String.valueOf(maxLocations));
+            endpointBuilder.addQueryParameter("numResults", String.valueOf(
+                    Math.min(maxLocations, getSuggestedLocationsServerLimit())));
         }
         final HttpUrl endpoint = endpointBuilder.build();
 
