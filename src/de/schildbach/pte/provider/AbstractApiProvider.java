@@ -35,6 +35,14 @@ public abstract class AbstractApiProvider implements ApiProvider {
          this.log = LoggerFactory.getLogger(this.getClass());
     }
 
+    public Logger getLog() {
+        return log;
+    }
+
+    public HttpClient getHttpClient() {
+        return httpClient;
+    }
+
     public String setUserInterfaceLanguage(@javax.annotation.Nullable final String userInterfaceLanguage) {
         final String lang = userInterfaceLanguage == null ? null : userInterfaceLanguage.toLowerCase();
         final String[] validLangs = getValidUserInterfaceLanguages();

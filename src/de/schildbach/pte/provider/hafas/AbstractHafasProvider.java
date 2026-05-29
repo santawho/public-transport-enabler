@@ -59,8 +59,6 @@ public abstract class AbstractHafasProvider extends AbstractNetworkProvider {
             Capability.BIKE_OPTION
     );
 
-    protected static final Logger log = LoggerFactory.getLogger(AbstractHafasProvider.class);
-
     private final Product[] productsMap;
 
     protected AbstractHafasProvider(final NetworkId network, final Product[] productsMap) {

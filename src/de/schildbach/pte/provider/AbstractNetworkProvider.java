@@ -31,6 +31,8 @@ import java.util.regex.Pattern;
 import javax.annotation.Nullable;
 
 import org.msgpack.core.MessageUnpacker;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import de.schildbach.pte.NetworkId;
 import de.schildbach.pte.Standard;
@@ -49,6 +51,7 @@ import de.schildbach.pte.dto.Trip;
 import de.schildbach.pte.dto.TripOptions;
 import de.schildbach.pte.dto.TripRef;
 import de.schildbach.pte.dto.TripShare;
+import de.schildbach.pte.provider.efa.AbstractEfaProvider;
 import de.schildbach.pte.provider.locationsearch.AbstractLocationSearchProvider;
 
 /**

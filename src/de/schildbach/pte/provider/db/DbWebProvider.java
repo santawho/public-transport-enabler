@@ -89,8 +89,6 @@ import okhttp3.HttpUrl;
  * Provider implementation for Web API of Deutsche Bahn (Germany).
  */
 public abstract class DbWebProvider extends DbProvider {
-    private static final Logger log = LoggerFactory.getLogger(DbWebProvider.class);
-
     public static class Fernverkehr extends DbWebProvider {
         public Fernverkehr() {
             this(NetworkId.DBWEB);
@@ -255,12 +253,13 @@ public abstract class DbWebProvider extends DbProvider {
     }
 
     private static String doRequest(
-            final HttpClient httpClient,
+            final DbProvider dbProvider,
             final String userInterfaceLanguage,
             final HttpUrl url,
             final String body,
             final String contentType,
             final long callTimeoutSecs) throws IOException {
+        final HttpClient httpClient = dbProvider.getHttpClient();
         // DB API requires these headers
         // Content-Type must be exactly as passed below,
         // passing it to httpClient.get would add charset suffix
@@ -275,16 +274,16 @@ public abstract class DbWebProvider extends DbProvider {
     }
 
     private static String doRequest(
-            final HttpClient httpClient,
+            final DbProvider dbProvider,
             final String userInterfaceLanguage,
             final HttpUrl url,
             final String body,
             final String contentType) throws IOException {
-        return doRequest(httpClient, userInterfaceLanguage, url, body, contentType, 0);
+        return doRequest(dbProvider, userInterfaceLanguage, url, body, contentType, 0);
     }
 
     private String doRequest(final HttpUrl url, final String body, final long callTimeoutSecs) throws IOException {
-        return doRequest(httpClient, userInterfaceLanguage, url, body, null, callTimeoutSecs);
+        return doRequest(this, userInterfaceLanguage, url, body, null, callTimeoutSecs);
     }
 
     private String doRequest(final HttpUrl url, final String body) throws IOException {
@@ -1264,13 +1263,13 @@ public abstract class DbWebProvider extends DbProvider {
     @Override
     public String getShareLink(final Trip trip) throws IOException {
         final DbTripRef tripRef = (DbTripRef) trip.tripRef;
-        return linkSharing.getShareLink(httpClient, trip, tripRef.getSimplified(), tripRef.ctxRecon);
+        return linkSharing.getShareLink(this, trip, tripRef.getSimplified(), tripRef.ctxRecon);
     }
 
     @Override
     public TripShare shareTrip(final Trip trip) throws IOException {
         final DbTripRef tripRef = (DbTripRef) trip.tripRef;
-        return linkSharing.shareTrip(httpClient, trip, tripRef.getSimplified(), tripRef.ctxRecon);
+        return linkSharing.shareTrip(this, trip, tripRef.getSimplified(), tripRef.ctxRecon);
     }
 
     @Override
@@ -1278,7 +1277,7 @@ public abstract class DbWebProvider extends DbProvider {
             final TripShare tripShare,
             final boolean loadPath) throws IOException {
         final DbWebTripShare dbWebTripShare = (DbWebTripShare) tripShare;
-        final String recon = linkSharing.loadSharedTrip(httpClient, dbWebTripShare);
+        final String recon = linkSharing.loadSharedTrip(this, dbWebTripShare);
         final DbTripRef tripRef = new DbTripRef((DbTripRef) tripShare.simplifiedTripRef, recon);
         return queryReloadTrip(tripRef, loadPath);
     }
@@ -1338,11 +1337,11 @@ public abstract class DbWebProvider extends DbProvider {
         }
 
         public String getShareLink(
-                final HttpClient httpClient,
+                final DbProvider dbProvider,
                 final Trip trip,
                 final TripRef simplifiedTripRef,
                 final String recon) throws IOException {
-            final DbWebTripShare tripShare = shareTrip(httpClient, trip, simplifiedTripRef, recon);
+            final DbWebTripShare tripShare = shareTrip(dbProvider, trip, simplifiedTripRef, recon);
             if (tripShare == null)
                 return null;
             final String vbid = tripShare.vbid;
@@ -1352,7 +1351,7 @@ public abstract class DbWebProvider extends DbProvider {
         }
 
         public DbWebTripShare shareTrip(
-                final HttpClient httpClient,
+                final DbProvider dbProvider,
                 final Trip trip,
                 final TripRef simplifiedTripRef, final String recon) throws IOException {
             final String request = "{\"hinfahrtDatum\":\"" + ISO_DATE_TIME_UTC_FORMAT.format(trip.getFirstDepartureTime()) + "\"," //
@@ -1364,14 +1363,14 @@ public abstract class DbWebProvider extends DbProvider {
 
             String page = null;
             try {
-                page = DbWebProvider.doRequest(httpClient, null, url, request, null);
+                page = DbWebProvider.doRequest(dbProvider, null, url, request, null);
                 final JSONObject res = new JSONObject(page);
                 final String vbid = res.optString("vbid");
                 return new DbWebTripShare(simplifiedTripRef, vbid);
             } catch (final InternalErrorException | BlockedException e) {
                 return null;
             } catch (final IOException | RuntimeException e) {
-                log.error("error on shareTrip request", e);
+                dbProvider.getLog().error("error on shareTrip request", e);
                 return null;
             } catch (final JSONException x) {
                 throw new ParserException("cannot parse json: '" + page + "' on " + url, x);
@@ -1379,7 +1378,7 @@ public abstract class DbWebProvider extends DbProvider {
         }
 
         public String loadSharedTrip(
-                final HttpClient httpClient,
+                final DbProvider dbProvider,
                 final DbWebTripShare tripShare) throws IOException {
             final HttpUrl url = this.loadConnectionEndpoint.newBuilder()
                     .addEncodedPathSegment(tripShare.vbid)
@@ -1387,13 +1386,13 @@ public abstract class DbWebProvider extends DbProvider {
 
             String page = null;
             try {
-                page = DbWebProvider.doRequest(httpClient, null, url, null, null);
+                page = DbWebProvider.doRequest(dbProvider, null, url, null, null);
                 final JSONObject res = new JSONObject(page);
                 return res.optString("hinfahrtRecon");
             } catch (final InternalErrorException | BlockedException e) {
                 return null;
             } catch (final IOException | RuntimeException e) {
-                log.error("error on loadSharedTrip request", e);
+                dbProvider.getLog().error("error on loadSharedTrip request", e);
                 return null;
             } catch (final JSONException x) {
                 throw new ParserException("cannot parse json: '" + page + "' on " + url, x);

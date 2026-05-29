@@ -37,8 +37,6 @@ import de.schildbach.pte.provider.TransferEvaluationApiProvider;
 import okhttp3.HttpUrl;
 
 public final class BahnvorhersageProvider extends AbstractApiProvider implements TransferEvaluationApiProvider {
-    private static final Logger log = LoggerFactory.getLogger(BahnvorhersageProvider.class);
-
     public interface BahnvorhersageTripRef {
         String getBahnvorhersageRefreshToken();
     }

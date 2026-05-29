@@ -136,8 +136,6 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
 
     private final XmlPullParserFactory parserFactory;
 
-    private static final Logger log = LoggerFactory.getLogger(AbstractEfaProvider.class);
-
     private static class Context implements QueryTripsContext {
         private static final long serialVersionUID = 5683979131609096441L;
 

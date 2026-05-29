@@ -90,8 +90,6 @@ import okhttp3.HttpUrl;
  * @author Andreas Schildbach
  */
 public abstract class DbMovasProvider extends DbProvider {
-    private static final Logger log = LoggerFactory.getLogger(DbMovasProvider.class);
-
     public static class Fernverkehr extends DbMovasProvider {
         public Fernverkehr() {
             this(NetworkId.DBMOVAS);
@@ -1225,19 +1223,19 @@ public abstract class DbMovasProvider extends DbProvider {
     @Override
     public String getShareLink(final Trip trip) throws IOException {
         final DbTripRef tripRef = (DbTripRef) trip.tripRef;
-        return linkSharing.getShareLink(httpClient, trip, tripRef.getSimplified(), tripRef.ctxRecon);
+        return linkSharing.getShareLink(this, trip, tripRef.getSimplified(), tripRef.ctxRecon);
     }
 
     @Override
     public TripShare shareTrip(final Trip trip) throws IOException {
         final DbTripRef tripRef = (DbTripRef) trip.tripRef;
-        return linkSharing.shareTrip(httpClient, trip, tripRef.getSimplified(), tripRef.ctxRecon);
+        return linkSharing.shareTrip(this, trip, tripRef.getSimplified(), tripRef.ctxRecon);
     }
 
     @Override
     public QueryTripsResult loadSharedTrip(final TripShare tripShare, final boolean loadPath) throws IOException {
         final DbWebProvider.DbWebTripShare dbWebTripShare = (DbWebProvider.DbWebTripShare) tripShare;
-        final String recon = linkSharing.loadSharedTrip(httpClient, dbWebTripShare);
+        final String recon = linkSharing.loadSharedTrip(this, dbWebTripShare);
         final DbTripRef tripRef = new DbTripRef((DbTripRef) tripShare.simplifiedTripRef, recon);
         return queryReloadTrip(tripRef, loadPath);
     }

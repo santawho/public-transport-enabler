@@ -56,8 +56,6 @@ import static java.util.Objects.requireNonNull;
  * @author Dan Cojocaru
  */
 public class AbstractMotisProvider extends AbstractNetworkProvider {
-    private static final Logger log = LoggerFactory.getLogger(AbstractMotisProvider.class);
-    
     private static final Map<LocationType, String> SUPPORTED_NEARBY_LOCATIONS;
     private static final Map<String, Product> MOTIS_MODE_MAP;
     private static final Map<String, Trip.Individual.Type> MOTIS_INDIVIDUAL_MODE_MAP;
