@@ -107,6 +107,11 @@ public class CHSearchProvider extends AbstractNetworkProvider {
     }
 
     @Override
+    public Set<Product> defaultProducts() {
+        return Product.ALL_INCLUDING_HIGHSPEED;
+    }
+
+    @Override
     protected Set<Capability> getCapabilities() {
         return CAPABILITIES;
     }
@@ -206,8 +211,9 @@ public class CHSearchProvider extends AbstractNetworkProvider {
                 final PTDate predictedTime = addMinutesToDate(sbEntry.time, sbEntry.dep_delay);
                 final Line line = new Line(sbEntry.Z, sbEntry.operator, type2Product(sbEntry.G), getTrainName(sbEntry.G, sbEntry.Z, sbEntry.L), new Style(Style.Shape.RECT, sbEntry.bgColor, sbEntry.fgColor));
                 final Location destinationLocation = new Location(LocationType.STATION, sbEntry.terminal.stationID, Point.fromDouble(sbEntry.terminal.lat, sbEntry.terminal.lon), null, sbEntry.terminal.name);
-                final Position departurePos = sbEntry.track != null ? new Position(sbEntry.track) : null;
-                departures.add(new Departure(sbEntry.time, predictedTime, line, null, departurePos, destinationLocation, false, null, null, null));
+                final Position predictedDeparturePos = sbEntry.track != null ? new Position(sbEntry.track) : null;
+                final Position plannedDeparturePos = predictedDeparturePos;
+                departures.add(new Departure(sbEntry.time, predictedTime, line, plannedDeparturePos, predictedDeparturePos, destinationLocation, false, null, null, null));
             }
             final StationDepartures sd = new StationDepartures(boardLocation, departures, null);
             final QueryDeparturesResult QDres = new QueryDeparturesResult(resultHeader);
