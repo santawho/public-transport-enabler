@@ -193,6 +193,7 @@ public class CHSearchProvider extends AbstractNetworkProvider {
                 .addQueryParameter("time", TIME_FORMATTER.format(time))
                 .addQueryParameter("limit", String.valueOf(maxDepartures))
                 .addQueryParameter("show_tracks", "1")
+                .addQueryParameter("show_trackchanges", "1")
                 .addQueryParameter("show_delays", "1")
                 .build();
 
@@ -211,9 +212,8 @@ public class CHSearchProvider extends AbstractNetworkProvider {
                 final PTDate predictedTime = addMinutesToDate(sbEntry.time, sbEntry.dep_delay);
                 final Line line = new Line(sbEntry.Z, sbEntry.operator, type2Product(sbEntry.G), getTrainName(sbEntry.G, sbEntry.Z, sbEntry.L), new Style(Style.Shape.RECT, sbEntry.bgColor, sbEntry.fgColor));
                 final Location destinationLocation = new Location(LocationType.STATION, sbEntry.terminal.stationID, Point.fromDouble(sbEntry.terminal.lat, sbEntry.terminal.lon), null, sbEntry.terminal.name);
-                final Position predictedDeparturePos = sbEntry.track != null ? new Position(sbEntry.track) : null;
-                final Position plannedDeparturePos = predictedDeparturePos;
-                departures.add(new Departure(sbEntry.time, predictedTime, line, plannedDeparturePos, predictedDeparturePos, destinationLocation, false, null, null, null));
+                final TrackEntry track = sbEntry.track;
+                departures.add(new Departure(sbEntry.time, predictedTime, line, track.planned, track.predicted, destinationLocation, false, null, null, null));
             }
             final StationDepartures sd = new StationDepartures(boardLocation, departures, null);
             final QueryDeparturesResult QDres = new QueryDeparturesResult(resultHeader);
@@ -307,21 +307,19 @@ public class CHSearchProvider extends AbstractNetworkProvider {
                         final Point legExitLocation = leg.exit.lon != null ? Point.fromDouble(leg.exit.lat, leg.exit.lon) : null;
                         final Point legLocation = leg.lon != null ? Point.fromDouble(leg.lat, leg.lon) : null;
 
-                        // Some bus-stops in rural areas do not have a track name..
-                        final Position planedDeparturePos = leg.track != null ? new Position(leg.track) : null;
-                        final Position planedArrivalPos = leg.exit.track != null ? new Position(leg.exit.track) : null;
-
                         // Departure
                         final PTDate plannedDeparture = leg.departure;
                         final PTDate expectedDeparture = addMinutesToDate(leg.departure, leg.dep_delay);
                         final Location departureLocation = new Location(leg.isAddress ? LocationType.ADDRESS : LocationType.STATION, leg.stopID, legLocation, null, leg.name);
-                        final Stop departureStop = new Stop(departureLocation, true, plannedDeparture, expectedDeparture, planedDeparturePos, null, leg.cancelled);
+                        final TrackEntry entryTrack = leg.track;
+                        final Stop departureStop = new Stop(departureLocation, true, plannedDeparture, expectedDeparture, entryTrack.planned, entryTrack.predicted, leg.cancelled);
 
                         // Arrival
                         final PTDate plannedArrival = leg.exit.arrival;
                         final PTDate expectedArrival = addMinutesToDate(leg.exit.arrival, leg.exit.arr_delay);
                         final Location arrivalLocation = new Location(leg.exit.isAddress ? LocationType.ADDRESS : LocationType.STATION, leg.exit.stopID, legExitLocation, null, leg.exit.name);
-                        final Stop arrivalStop = new Stop(arrivalLocation, false, plannedArrival, expectedArrival, planedArrivalPos, null, leg.cancelled);
+                        final TrackEntry exitTrack = leg.exit.track;
+                        final Stop arrivalStop = new Stop(arrivalLocation, false, plannedArrival, expectedArrival, exitTrack.planned, exitTrack.predicted, leg.cancelled);
 
                         // Collect possible info texts (e.g number for on-demand services)
                         final String infoText = String.join(",", leg.infotexts);
@@ -541,6 +539,28 @@ public class CHSearchProvider extends AbstractNetworkProvider {
         }
     }
 
+    private static class TrackEntry {
+        public final @Nullable
+        Position planned;
+
+        public final @Nullable
+        Position predicted;
+
+        public TrackEntry(final JSONObject container, final String elementName) {
+            final String trackName = container.optString(elementName, null);
+            if (trackName == null) {
+                planned = null;
+                predicted = null;
+            } else if (trackName.startsWith("!")) {
+                predicted = new Position(trackName.substring(1));
+                planned = null;
+            } else {
+                planned = new Position(trackName);
+                predicted = null;
+            }
+        }
+    }
+
     private static class RouteResult {
         public final int nConnections;
         public final String error;
@@ -721,8 +741,7 @@ public class CHSearchProvider extends AbstractNetworkProvider {
                 public final double runningTime;
                 public final int dep_delay;
                 public final int arr_delay;
-                public final @Nullable
-                String track;
+                public final TrackEntry track;
                 public final @Nullable
                 Double lat;
                 public final boolean cancelled;
@@ -764,7 +783,7 @@ public class CHSearchProvider extends AbstractNetworkProvider {
                         this.runningTime = rawLeg.has("runningtime") ? rawLeg.getDouble("runningtime") : 0;
                         this.dep_delay = rawLeg.has("dep_delay") ? delayParser(rawLeg.getString("dep_delay"), provider) : 0;
                         this.arr_delay = rawLeg.has("arr_delay") ? delayParser(rawLeg.getString("arr_delay"), provider) : 0;
-                        this.track = rawLeg.has("track") ? rawLeg.getString("track") : null;
+                        this.track = new TrackEntry(rawLeg, "track");
                         this.lat = rawLeg.has("lat") ? rawLeg.getDouble("lat") : null;
                         this.lon = rawLeg.has("lon") ? rawLeg.getDouble("lon") : null;
                         this.isAddress = rawLeg.has("isaddress") && rawLeg.getBoolean("isaddress");
@@ -799,8 +818,7 @@ public class CHSearchProvider extends AbstractNetworkProvider {
                     String stopID;
                     public final String name;
                     public final double waitTime;
-                    public final @Nullable
-                    String track;
+                    public final TrackEntry track;
                     public final int arr_delay;
                     public final @Nullable
                     Double lat;
@@ -814,7 +832,7 @@ public class CHSearchProvider extends AbstractNetworkProvider {
                             this.stopID = rawExit.has("stopid") ? rawExit.getString("stopid") : null;
                             this.name = rawExit.getString("name");
                             this.waitTime = rawExit.has("waittime") ? rawExit.getDouble("waittime") : 0;
-                            this.track = rawExit.has("track") ? rawExit.getString("track") : null;
+                            this.track = new TrackEntry(rawExit, "track");
                             this.arr_delay = rawExit.has("arr_delay") ? delayParser(rawExit.getString("arr_delay"), provider) : 0;
                             this.lat = rawExit.has("lat") ? rawExit.getDouble("lat") : null;
                             this.lon = rawExit.has("lon") ? rawExit.getDouble("lon") : null;
@@ -899,8 +917,7 @@ public class CHSearchProvider extends AbstractNetworkProvider {
             public final String L; // Line number
             public final String Z; // Full train number
             public final String line;
-            public final @Nullable
-            String track;
+            public final TrackEntry track;
             public final String operator;
             public final int fgColor;
             public final int bgColor;
@@ -918,7 +935,7 @@ public class CHSearchProvider extends AbstractNetworkProvider {
                 // Otherwise we would get a line named "null"
                 this.line = "null".equals(rawLine) ? "" : rawLine;
                 this.operator = rawEntry.getString("operator");
-                this.track = rawEntry.has("track") ? rawEntry.getString("track") : null;
+                this.track = new TrackEntry(rawEntry, "track");
                 final String[] colors = rawEntry.getString("color").split("~", 3);
                 this.dep_delay = rawEntry.has("dep_delay") ? delayParser(rawEntry.getString("dep_delay"), provider) : 0;
                 this.arr_delay = rawEntry.has("arr_delay") ? delayParser(rawEntry.getString("arr_delay"), provider) : 0;
