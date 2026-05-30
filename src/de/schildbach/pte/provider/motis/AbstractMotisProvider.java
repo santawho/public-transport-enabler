@@ -590,7 +590,7 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
     }
 
     protected int getSuggestedLocationsServerLimit() {
-        return 10;
+        return Integer.MAX_VALUE;
     }
 
     @Override
