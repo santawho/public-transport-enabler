@@ -21,8 +21,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.msgpack.core.MessageUnpacker;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -53,7 +51,6 @@ import javax.annotation.Nullable;
 import de.schildbach.pte.NetworkId;
 import de.schildbach.pte.dto.Departure;
 import de.schildbach.pte.dto.Fare;
-import de.schildbach.pte.dto.JourneyRef;
 import de.schildbach.pte.dto.Line;
 import de.schildbach.pte.dto.Location;
 import de.schildbach.pte.dto.LocationType;
@@ -79,7 +76,6 @@ import de.schildbach.pte.exception.AbstractHttpException;
 import de.schildbach.pte.exception.BlockedException;
 import de.schildbach.pte.exception.InternalErrorException;
 import de.schildbach.pte.exception.ParserException;
-import de.schildbach.pte.provider.TransferEvaluationProvider;
 import de.schildbach.pte.util.GeoUtils;
 import de.schildbach.pte.util.ParserUtils;
 import okhttp3.HttpUrl;
@@ -216,7 +212,6 @@ public abstract class DbMovasProvider extends DbProvider {
     private final HttpUrl journeyEndpoint;
     private final HttpUrl locationsEndpoint;
     private final HttpUrl nearbyEndpoint;
-    private final BahnvorhersageProvider bahnvorhersageProvider;
 
     private static final int[] VALID_MIN_TRANSFER_TIMES = { 0, 10, 15, 20, 25, 30, 35, 40, 45 };
 
@@ -249,12 +244,6 @@ public abstract class DbMovasProvider extends DbProvider {
         this.resultHeader = new ResultHeader(network, "movas");
 
         this.linkSharing = new DbWebProvider.DbWebLinkSharing();
-        this.bahnvorhersageProvider = new BahnvorhersageProvider();
-    }
-
-    @Override
-    public TransferEvaluationProvider getTransferEvaluationProvider() {
-        return bahnvorhersageProvider;
     }
 
     @Override
@@ -479,11 +468,9 @@ public abstract class DbMovasProvider extends DbProvider {
         }
     };
 
-    private Line parseLine(final JSONObject jny) throws JSONException {
+    private Line parseLine(final JSONObject jny, final String produktGattung) throws JSONException {
         // TODO attrs, messages
-        Product product = SHORT_PRODUCTS_MAP.get(jny.optString("produktGattung", null));
-        if (product == null)
-            product = SHORT_PRODUCTS_MAP.get(jny.optString("produktGattungen", null));
+        final Product product = SHORT_PRODUCTS_MAP.get(produktGattung);
         final String shortName = jny.optString("mitteltext", null);
         final String name = Optional.ofNullable(jny.optString("langtext", null)).orElse(shortName);
         String operator = null;
@@ -648,12 +635,14 @@ public abstract class DbMovasProvider extends DbProvider {
                 arrivalStop.location,
                 departureStop, arrivalStop, intermediateStops,
                 message,
-                new DbJourneyRef(journeyRef.journeyId, null, journeyRef.line));
+                new DbJourneyRef(journeyRef.journeyId, null,
+                        journeyRef.adminCode, journeyRef.productName, journeyRef.serviceNumber,
+                        journeyRef.line));
         leg.setPath(path);
         return leg;
     }
 
-    private Trip.Leg parseLeg(final JSONObject abschnitt, final Supplier<String> journeyRequestId) throws JSONException {
+    private Trip.Leg parseLeg(final JSONObject abschnitt, final Supplier<String> journeyRequestIdSupplier) throws JSONException {
         Stop departureStop = null;
         Stop arrivalStop = null;
         final String typ = abschnitt.optString("typ", null);
@@ -670,12 +659,22 @@ public abstract class DbMovasProvider extends DbProvider {
             arrivalStop = parseStop(abschnitt, parseLocation(abschnitt.optJSONObject("ankunftsOrt")));
         }
         if (isPublicTransportLeg) {
-            final Line line = parseLine(abschnitt);
+            String produktGattung = abschnitt.optString("produktGattung", null);
+            if (produktGattung == null)
+                produktGattung = abschnitt.optString("produktGattungen", null);
+            final Line line = parseLine(abschnitt, produktGattung);
             final Location destination = parseDirection(abschnitt);
             final String message = parseJourneyMessages(abschnitt, null);
             final String journeyId = abschnitt.optString("zuglaufId", null);
+            final String administrationId = abschnitt.optString("administrationId", null);
+            final String verkehrsmittelNummer = abschnitt.optString("verkehrsmittelNummer", null);
+            final String zugNummer = abschnitt.optString("zugNummer", null);
+            final String productName = abschnitt.optString("kurztext", null);
+            String journeyRequestId = journeyRequestIdSupplier.get();
+            while (journeyRequestId == null || !journeyRequestId.startsWith("T$"))
+                journeyRequestId = journeyRequestIdSupplier.get();
             return new Trip.Public(line, destination, departureStop, arrivalStop, intermediateStops, message,
-                    journeyId == null ? null : new DbJourneyRef(journeyId, journeyRequestId.get(), line));
+                    journeyId == null ? null : new DbJourneyRef(journeyId, journeyRequestId, administrationId, productName, verkehrsmittelNummer, line));
         } else {
             final int dist = abschnitt.optInt("distanz");
             if (dist == 0 && departureStop.location.id.equals(arrivalStop.location.id)) {
@@ -1022,8 +1021,14 @@ public abstract class DbMovasProvider extends DbProvider {
                 }
 
                 final String journeyId = dep.optString("zuglaufId", null);
-                final Line line = parseLine(dep);
+                String produktGattung = dep.optString("produktGattung", null);
+                if (produktGattung == null)
+                    produktGattung = dep.optString("produktGattungen", null);
+                final Line line = parseLine(dep, produktGattung);
                 final Stop stop = parseStop(dep, location);
+                final String administrationId = dep.optString("administrationId", null);
+                final String verkehrsmittelNummer = dep.optString("verkehrsmittelNummer", null);
+                final String zugNummer = dep.optString("zugNummer", null);
                 final Departure departure = new Departure(
                         stop.plannedDepartureTime,
                         stop.predictedDepartureTime,
@@ -1033,7 +1038,7 @@ public abstract class DbMovasProvider extends DbProvider {
                         cancelled,
                         null,
                         parseJourneyMessages(dep, null),
-                        journeyId == null ? null : new DbJourneyRef(journeyId, null, line));
+                        journeyId == null ? null : new DbJourneyRef(journeyId, null, administrationId, produktGattung, verkehrsmittelNummer, line));
 
                 stationDepartures.departures.add(departure);
                 added += 1;
@@ -1130,13 +1135,7 @@ public abstract class DbMovasProvider extends DbProvider {
     }
 
     @Override
-    public QueryJourneyResult queryJourney(
-            final JourneyRef aJourneyRef,
-            final boolean loadPath) throws IOException {
-        return doQueryJourney((DbJourneyRef) aJourneyRef, loadPath);
-    }
-
-    private QueryJourneyResult doQueryJourney(
+    protected QueryJourneyResult doQueryJourney(
             final DbJourneyRef journeyRef,
             final boolean loadPath) throws IOException {
         final HttpUrl url = this.journeyEndpoint.newBuilder()

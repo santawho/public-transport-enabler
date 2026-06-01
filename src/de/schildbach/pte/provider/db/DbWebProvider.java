@@ -22,8 +22,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.msgpack.core.MessagePacker;
 import org.msgpack.core.MessageUnpacker;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.text.DateFormat;
@@ -53,7 +51,6 @@ import javax.annotation.Nullable;
 import de.schildbach.pte.NetworkId;
 import de.schildbach.pte.dto.Departure;
 import de.schildbach.pte.dto.Fare;
-import de.schildbach.pte.dto.JourneyRef;
 import de.schildbach.pte.dto.Line;
 import de.schildbach.pte.dto.Location;
 import de.schildbach.pte.dto.LocationType;
@@ -79,7 +76,6 @@ import de.schildbach.pte.exception.AbstractHttpException;
 import de.schildbach.pte.exception.BlockedException;
 import de.schildbach.pte.exception.InternalErrorException;
 import de.schildbach.pte.exception.ParserException;
-import de.schildbach.pte.provider.TransferEvaluationProvider;
 import de.schildbach.pte.util.GeoUtils;
 import de.schildbach.pte.util.HttpClient;
 import de.schildbach.pte.util.ParserUtils;
@@ -183,7 +179,6 @@ public abstract class DbWebProvider extends DbProvider {
     private final HttpUrl journeyEndpoint;
     private final HttpUrl locationsEndpoint;
     private final HttpUrl nearbyEndpoint;
-    private final BahnvorhersageProvider bahnvorhersageProvider;
 
     private static final int[] VALID_MIN_TRANSFER_TIMES = { 0, 10, 15, 20, 25, 30, 35, 40, 45 };
 
@@ -216,7 +211,6 @@ public abstract class DbWebProvider extends DbProvider {
         this.resultHeader = new ResultHeader(network, "dbweb");
 
         this.linkSharing = new DbWebLinkSharing();
-        this.bahnvorhersageProvider = new BahnvorhersageProvider();
 
         httpClient.setReferer(BASE_URL);
         httpClient.setOrigin(BASE_URL);
@@ -225,11 +219,6 @@ public abstract class DbWebProvider extends DbProvider {
         // httpClient.setCompressionDeflate(false);
         // ... now still enabled, because we changed the order of offered compression types
         // the DB server only fails with this order: gzip, deflate, br, zstd
-    }
-
-    @Override
-    public TransferEvaluationProvider getTransferEvaluationProvider() {
-        return bahnvorhersageProvider;
     }
 
     @Override
@@ -481,9 +470,9 @@ public abstract class DbWebProvider extends DbProvider {
         }
     };
 
-    private Line parseLine(final JSONObject verkehrsmittel) throws JSONException {
+    private Line parseLine(final JSONObject verkehrsmittel, final String produktGattung) throws JSONException {
         // TODO attrs, messages
-        final Product product = PRODUCTS_MAP.get(verkehrsmittel.optString("produktGattung", null));
+        final Product product = PRODUCTS_MAP.get(produktGattung);
         final String shortName = verkehrsmittel.optString("mittelText", null);
         final String name = Optional.ofNullable(verkehrsmittel.optString("langText", null)).orElse(shortName);
         String operator = null;
@@ -648,7 +637,9 @@ public abstract class DbWebProvider extends DbProvider {
                 arrivalStop.location,
                 departureStop, arrivalStop, intermediateStops,
                 message,
-                new DbJourneyRef(journeyRef.journeyId, null, journeyRef.line));
+                new DbJourneyRef(journeyRef.journeyId, null,
+                        journeyRef.adminCode, journeyRef.productName, journeyRef.serviceNumber,
+                        journeyRef.line));
         leg.setPath(path);
         return leg;
     }
@@ -676,7 +667,10 @@ public abstract class DbWebProvider extends DbProvider {
             arrivalStop = parseStop(abschnitt, fallbackArrival);
         }
         if (isPublicTransportLeg) {
-            final Line line = parseLine(verkehrsmittel);
+            final String produktGattung = verkehrsmittel.optString("produktGattung", null);
+            final String productName = verkehrsmittel.optString("kurzText", null);
+            final String serviceNumber = verkehrsmittel.optString("nummer", null);
+            final Line line = parseLine(verkehrsmittel, produktGattung);
             final Location destination = parseDirection(verkehrsmittel);
             final String defaultTeilstreckenHinweis = String.format("(%s - %s)",
                     departureStop.location.name, arrivalStop.location.name);
@@ -685,7 +679,7 @@ public abstract class DbWebProvider extends DbProvider {
                     defaultTeilstreckenHinweis);
             final String journeyId = abschnitt.optString("journeyId", null);
             return new Trip.Public(line, destination, departureStop, arrivalStop, intermediateStops, message,
-                    journeyId == null ? null : new DbJourneyRef(journeyId, journeyRequestId, line));
+                    journeyId == null ? null : new DbJourneyRef(journeyId, journeyRequestId, null, productName, serviceNumber, line));
         } else {
             final int dist = abschnitt.optInt("distanz");
             return new Trip.Individual(
@@ -765,7 +759,11 @@ public abstract class DbWebProvider extends DbProvider {
                                 to
 //                                createLocation(LocationType.ADDRESS, null, null, abschnitt.getString("ankunftsOrt"), null, null)
                         );
-                final Trip.Leg leg = parseLeg(abschnitt, itJourneyRequestIds.next(), fallbackDeparture, fallbackArrival);
+                String journeyRequestId = itJourneyRequestIds.next();
+                while (journeyRequestId != null && !(journeyRequestId.startsWith("T$") || journeyRequestId.startsWith("W$"))) {
+                    journeyRequestId = itJourneyRequestIds.next();
+                }
+                final Trip.Leg leg = parseLeg(abschnitt, journeyRequestId, fallbackDeparture, fallbackArrival);
                 if (leg instanceof Trip.Public) {
                     final Trip.Public publicLeg = (Trip.Public) leg;
                     if (prevPublicLegWithArrivalSamePlatform != null) {
@@ -1023,7 +1021,9 @@ public abstract class DbWebProvider extends DbProvider {
                 }
 
                 final String journeyId = dep.optString("journeyId", null);
-                final Line line = parseLine(dep.getJSONObject("verkehrmittel"));
+                final JSONObject verkehrmittel = dep.getJSONObject("verkehrmittel");
+                final String produktGattung = verkehrmittel.optString("produktGattung", null);
+                final Line line = parseLine(verkehrmittel, produktGattung);
                 String destinationName = dep.optString("terminus", null);
                 if (destinationName == null && vias != null) {
                     destinationName = vias.getString(vias.length() - 1);
@@ -1051,7 +1051,7 @@ public abstract class DbWebProvider extends DbProvider {
                         cancelled,
                         null,
                         parseJourneyMessages(dep, null, null, null),
-                        journeyId == null ? null : new DbJourneyRef(journeyId, null, line));
+                        journeyId == null ? null : new DbJourneyRef(journeyId, null, null, produktGattung,null, line));
 
                 stationDepartures.departures.add(departure);
                 added += 1;
@@ -1172,13 +1172,7 @@ public abstract class DbWebProvider extends DbProvider {
     }
 
     @Override
-    public QueryJourneyResult queryJourney(
-            final JourneyRef aJourneyRef,
-            final boolean loadPath) throws IOException {
-        return doQueryJourney((DbJourneyRef) aJourneyRef, loadPath);
-    }
-
-    private QueryJourneyResult doQueryJourney(final DbJourneyRef journeyRef, final boolean loadPath) throws IOException {
+    protected QueryJourneyResult doQueryJourney(final DbJourneyRef journeyRef, final boolean loadPath) throws IOException {
         final HttpUrl url = this.journeyEndpoint.newBuilder()
                 .addQueryParameter("journeyId", journeyRef.journeyId)
                 .addQueryParameter("poly", loadPath ? "true" : "false")

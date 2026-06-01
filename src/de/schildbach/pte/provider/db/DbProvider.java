@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -41,17 +42,18 @@ import de.schildbach.pte.dto.Location;
 import de.schildbach.pte.dto.LocationType;
 import de.schildbach.pte.dto.Point;
 import de.schildbach.pte.dto.Product;
+import de.schildbach.pte.dto.QueryJourneyResult;
 import de.schildbach.pte.dto.Style;
 import de.schildbach.pte.dto.Trip;
 import de.schildbach.pte.dto.TripRef;
 import de.schildbach.pte.provider.AbstractNetworkProvider;
 import de.schildbach.pte.Standard;
+import de.schildbach.pte.provider.TransferEvaluationProvider;
+import de.schildbach.pte.provider.db.bahnvorhersage.AbstractBahnvorhersageProvider;
 import de.schildbach.pte.util.MessagePackUtils;
 
 /**
- * Provider implementation for movas API of Deutsche Bahn (Germany).
- * 
- * @author Andreas Schildbach
+ * abstract provider implementation for Deutsche Bahn (Germany).
  */
 public abstract class DbProvider extends AbstractNetworkProvider {
     public static final class Default extends DbWebProvider.Fernverkehr {
@@ -88,9 +90,55 @@ public abstract class DbProvider extends AbstractNetworkProvider {
 
     public static final Set<Product> REGIO_PRODUCTS = Product.ALL_EXCEPT_HIGHSPEED;
 
+    private final AbstractBahnvorhersageProvider bahnvorhersageProvider;
+
     public DbProvider(final NetworkId networkId) {
         super(networkId);
+        this.bahnvorhersageProvider = AbstractBahnvorhersageProvider.createInstance(this);
     }
+
+    @Override
+    public TransferEvaluationProvider getTransferEvaluationProvider() {
+        return bahnvorhersageProvider;
+    }
+
+    @Override
+    public QueryJourneyResult queryJourney(
+            final JourneyRef journeyRef,
+            final boolean loadPath) throws IOException {
+        cleanupJourneyCache();
+        return doQueryJourneyAndCache((DbJourneyRef) journeyRef, loadPath);
+    }
+
+    private Map<DbJourneyRef, QueryJourneyResult> journeyCache = new ConcurrentHashMap<>();
+    private static long MAX_CACHE_KEEP_MILLIS = 50 * 1000;
+
+    public QueryJourneyResult queryJourneyWithCache(final DbJourneyRef journeyRef) throws IOException {
+        cleanupJourneyCache();
+        final QueryJourneyResult result = journeyCache.get(journeyRef);
+        if (result != null)
+            return result;
+        return doQueryJourneyAndCache(journeyRef, false);
+    }
+
+    private QueryJourneyResult doQueryJourneyAndCache(
+            final DbJourneyRef journeyRef,
+            final boolean loadPath) throws IOException {
+        final QueryJourneyResult result = doQueryJourney(journeyRef, loadPath);
+        if (result != null && result.status == QueryJourneyResult.Status.OK)
+            journeyCache.put(journeyRef, result);
+        return result;
+    }
+
+    private void cleanupJourneyCache() {
+        final long loadedAtLimit = System.currentTimeMillis() - MAX_CACHE_KEEP_MILLIS;
+        journeyCache.entrySet().removeIf(entry ->
+                entry.getValue().journeyLeg.loadedAt.getTime() < loadedAtLimit);
+    }
+
+    protected abstract QueryJourneyResult doQueryJourney(
+            final DbJourneyRef journeyRef,
+            final boolean loadPath) throws IOException;
 
     public static final String OPERATOR_DB_FERNVERKEHR = "DB Fernverkehr AG";
     public static final int COLOR_BACKGROUND_NON_DB_HIGH_SPEED_TRAIN = Style.parseColor("#e8d1be");
@@ -134,7 +182,7 @@ public abstract class DbProvider extends AbstractNetworkProvider {
     }
 
     public static class DbTripRef extends TripRef
-            implements BahnvorhersageProvider.BahnvorhersageTripRef {
+            implements AbstractBahnvorhersageProvider.BahnvorhersageTripRef {
         private static final long serialVersionUID = -1951536102104578242L;
 
         public final String ctxRecon;
@@ -200,16 +248,28 @@ public abstract class DbProvider extends AbstractNetworkProvider {
     }
 
     public static class DbJourneyRef extends JourneyRef
-            implements BahnvorhersageProvider.BahnvorhersageJourneyRef {
+            implements AbstractBahnvorhersageProvider.BahnvorhersageJourneyRef {
         private static final long serialVersionUID = 7738174208212249291L;
 
         public final String journeyId;
         public final String journeyRequestId;
+        public final String adminCode;
+        public final String productName;
+        public final String serviceNumber;
         public final Line line;
 
-        public DbJourneyRef(final String journeyId, final String journeyRequestId, final Line line) {
+        public DbJourneyRef(
+                final String journeyId,
+                final String journeyRequestId,
+                final String adminCode,
+                final String productName,
+                final String serviceNumber,
+                final Line line) {
             this.journeyId = journeyId;
             this.journeyRequestId = journeyRequestId;
+            this.adminCode = adminCode;
+            this.productName = productName;
+            this.serviceNumber = serviceNumber;
             this.line = line;
         }
 
@@ -254,9 +314,9 @@ public abstract class DbProvider extends AbstractNetworkProvider {
             if (leg instanceof Trip.Public) {
                 final Trip.Public publicLeg = (Trip.Public) leg;
                 final JourneyRef journeyRef = publicLeg.journeyRef;
-                if (!(journeyRef instanceof BahnvorhersageProvider.BahnvorhersageJourneyRef))
+                if (!(journeyRef instanceof AbstractBahnvorhersageProvider.BahnvorhersageJourneyRef))
                     return null;
-                final BahnvorhersageProvider.BahnvorhersageJourneyRef bahnvorhersageJourneyRef = (BahnvorhersageProvider.BahnvorhersageJourneyRef) journeyRef;
+                final AbstractBahnvorhersageProvider.BahnvorhersageJourneyRef bahnvorhersageJourneyRef = (AbstractBahnvorhersageProvider.BahnvorhersageJourneyRef) journeyRef;
                 final String bahnvorhersageRefreshJourneyId = bahnvorhersageJourneyRef.getBahnvorhersageRefreshJourneyId();
                 if (bahnvorhersageRefreshJourneyId == null)
                     return null;
