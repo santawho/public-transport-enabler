@@ -44,6 +44,7 @@ import java.util.Set;
 import java.util.StringJoiner;
 import java.util.TimeZone;
 import java.util.UUID;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
@@ -646,7 +647,7 @@ public abstract class DbWebProvider extends DbProvider {
 
     private Trip.Leg parseLeg(
             final JSONObject abschnitt,
-            final String journeyRequestId,
+            final Supplier<String> journeyRequestIdSupplier,
             final @Nullable Location fallbackDeparture,
             final @Nullable Location fallbackArrival
     ) throws JSONException {
@@ -680,6 +681,9 @@ public abstract class DbWebProvider extends DbProvider {
                     abschnitt, verkehrsmittel.optJSONArray("zugattribute"), null,
                     defaultTeilstreckenHinweis);
             final String journeyId = abschnitt.optString("journeyId", null);
+            String journeyRequestId = journeyRequestIdSupplier.get();
+            while (journeyRequestId == null || !journeyRequestId.startsWith("T$"))
+                journeyRequestId = journeyRequestIdSupplier.get();
             return new Trip.Public(line, destination, departureStop, arrivalStop, intermediateStops, message,
                     journeyId == null ? null : new DbJourneyRef(journeyId, journeyRequestId, null, productName, serviceNumber, line));
         } else {
@@ -761,11 +765,7 @@ public abstract class DbWebProvider extends DbProvider {
                                 to
 //                                createLocation(LocationType.ADDRESS, null, null, abschnitt.getString("ankunftsOrt"), null, null)
                         );
-                String journeyRequestId = itJourneyRequestIds.next();
-                while (journeyRequestId != null && !(journeyRequestId.startsWith("T$") || journeyRequestId.startsWith("W$"))) {
-                    journeyRequestId = itJourneyRequestIds.next();
-                }
-                final Trip.Leg leg = parseLeg(abschnitt, journeyRequestId, fallbackDeparture, fallbackArrival);
+                final Trip.Leg leg = parseLeg(abschnitt, itJourneyRequestIds::next, fallbackDeparture, fallbackArrival);
                 if (leg instanceof Trip.Public) {
                     final Trip.Public publicLeg = (Trip.Public) leg;
                     if (prevPublicLegWithArrivalSamePlatform != null) {
