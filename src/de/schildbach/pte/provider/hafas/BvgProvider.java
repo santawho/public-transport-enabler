@@ -45,7 +45,8 @@ import okhttp3.HttpUrl;
 public abstract class BvgProvider extends AbstractHafasClientInterfaceProvider {
     public static class Legacy extends BvgProvider {
         private static final HttpUrl API_BASE = HttpUrl.parse(
-                // "https://bvg-apps-ext.hafas.de/" // from original PTE
+                // "https://bvg-apps-ext.hafas.de/" // from original PTE legacy
+                // "https://bvg.hafas.cloud/apps/" // from original PTE since June 2026, is the one used by the BVG web server
                 "https://bvg-apps.hafas.de/"
         );
         private static final String DEFAULT_API_CLIENT = "{\"id\":\"BVG\",\"type\":\"AND\"}";
