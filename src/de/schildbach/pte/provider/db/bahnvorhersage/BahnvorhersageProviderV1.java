@@ -30,7 +30,7 @@ import de.schildbach.pte.provider.TransferEvaluationApiProvider;
 import de.schildbach.pte.provider.db.DbProvider;
 import okhttp3.HttpUrl;
 
-public final class BahnvorhersageProviderV1 extends AbstractBahnvorhersageProvider implements TransferEvaluationApiProvider {
+public final class BahnvorhersageProviderV1 extends AbstractBahnvorhersageProvider {
     private final HttpUrl refreshJourneyEndpoint;
 
     public BahnvorhersageProviderV1(final DbProvider dbProvider) {
@@ -59,12 +59,8 @@ public final class BahnvorhersageProviderV1 extends AbstractBahnvorhersageProvid
             page = doRequest(url, request);
             final JSONObject res = new JSONObject(page);
             return parseLegsFromJourneyResult(res);
-        } catch (final IOException | RuntimeException e) {
-            log.error("service is down");
         } catch (final JSONException x) {
             throw new ParserException("cannot parse json: '" + page + "' on " + url, x);
         }
-
-        return null;
     }
 }

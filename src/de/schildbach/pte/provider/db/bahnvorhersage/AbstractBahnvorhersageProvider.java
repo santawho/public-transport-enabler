@@ -35,7 +35,7 @@ import de.schildbach.pte.provider.db.DbProvider;
 import okhttp3.HttpUrl;
 
 public abstract class AbstractBahnvorhersageProvider extends AbstractApiProvider implements TransferEvaluationApiProvider {
-    public static int USE_VERSION = 1;
+    public static int USE_VERSION = 2;
 
     public static AbstractBahnvorhersageProvider createInstance(final DbProvider dbProvider) {
         switch (USE_VERSION) {

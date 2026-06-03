@@ -43,7 +43,7 @@ import de.schildbach.pte.provider.TransferEvaluationApiProvider;
 import de.schildbach.pte.provider.db.DbProvider;
 import okhttp3.HttpUrl;
 
-public final class BahnvorhersageProviderV2 extends AbstractBahnvorhersageProvider implements TransferEvaluationApiProvider {
+public final class BahnvorhersageProviderV2 extends AbstractBahnvorhersageProvider {
     private final HttpUrl journeysEndpoint;
 
     public BahnvorhersageProviderV2(final DbProvider dbProvider) {
@@ -70,13 +70,9 @@ public final class BahnvorhersageProviderV2 extends AbstractBahnvorhersageProvid
             if (res.length() < 1)
                 return null;
             return parseLegsFromJourneyResult(res.getJSONObject(0));
-        } catch (final IOException | RuntimeException e) {
-            log.error("service is down", e);
         } catch (final JSONException x) {
             throw new ParserException("cannot parse json: '" + page + "' on " + url, x);
         }
-
-        return null;
     }
 
     private JSONObject buildRequestObject(final Trip trip) throws JSONException, IOException {
@@ -204,7 +200,6 @@ public final class BahnvorhersageProviderV2 extends AbstractBahnvorhersageProvid
         oLine.put("type", "line");
         final String lineId = "?";
         oLine.put("id", lineId);
-        oLine.put("name", line.label);
 
         String adminCode = null;
         String fahrtNr = null;
@@ -230,9 +225,10 @@ public final class BahnvorhersageProviderV2 extends AbstractBahnvorhersageProvid
                 }
             }
         }
-        oLine.put("productName", productName == null ? "?" : productName);
-        oLine.put("adminCode", adminCode == null ? "?" : adminCode);
         oLine.put("fahrtNr", fahrtNr == null ? "0" : fahrtNr);
+        oLine.put("name", line.label);
+        oLine.put("adminCode", adminCode == null ? "?" : adminCode);
+        oLine.put("productName", productName == null ? "?" : productName);
 
         return oLine;
     }
@@ -332,7 +328,7 @@ public final class BahnvorhersageProviderV2 extends AbstractBahnvorhersageProvid
         return obj == null ? JSONObject.NULL : obj;
     }
 
-    private static final DateFormat ISO_DATE_TIME_UTC_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+    private static final DateFormat ISO_DATE_TIME_UTC_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
 
     private String buildDateTime(final PTDate date) {
         if (date == null)

@@ -669,7 +669,9 @@ public abstract class DbWebProvider extends DbProvider {
         if (isPublicTransportLeg) {
             final String produktGattung = verkehrsmittel.optString("produktGattung", null);
             final String productName = verkehrsmittel.optString("kurzText", null);
-            final String serviceNumber = verkehrsmittel.optString("nummer", null);
+            String serviceNumber = verkehrsmittel.optString("nummer", null);
+            if (serviceNumber != null && !serviceNumber.isEmpty() && !Character.isDigit(serviceNumber.charAt(0)))
+                serviceNumber = null;
             final Line line = parseLine(verkehrsmittel, produktGattung);
             final Location destination = parseDirection(verkehrsmittel);
             final String defaultTeilstreckenHinweis = String.format("(%s - %s)",

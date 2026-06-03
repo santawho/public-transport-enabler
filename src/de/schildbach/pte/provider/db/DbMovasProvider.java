@@ -674,7 +674,7 @@ public abstract class DbMovasProvider extends DbProvider {
             while (journeyRequestId == null || !journeyRequestId.startsWith("T$"))
                 journeyRequestId = journeyRequestIdSupplier.get();
             return new Trip.Public(line, destination, departureStop, arrivalStop, intermediateStops, message,
-                    journeyId == null ? null : new DbJourneyRef(journeyId, journeyRequestId, administrationId, productName, verkehrsmittelNummer, line));
+                    journeyId == null ? null : new DbJourneyRef(journeyId, journeyRequestId, administrationId, productName, zugNummer, line));
         } else {
             final int dist = abschnitt.optInt("distanz");
             if (dist == 0 && departureStop.location.id.equals(arrivalStop.location.id)) {
@@ -1038,7 +1038,7 @@ public abstract class DbMovasProvider extends DbProvider {
                         cancelled,
                         null,
                         parseJourneyMessages(dep, null),
-                        journeyId == null ? null : new DbJourneyRef(journeyId, null, administrationId, produktGattung, verkehrsmittelNummer, line));
+                        journeyId == null ? null : new DbJourneyRef(journeyId, null, administrationId, produktGattung, zugNummer, line));
 
                 stationDepartures.departures.add(departure);
                 added += 1;
