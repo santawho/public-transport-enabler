@@ -767,11 +767,6 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
     }
 
     @Override
-    public Trip queryTripDetails(final Trip trip, final List<TripDetails> whichDetails) throws IOException {
-        return super.queryTripDetails(trip, whichDetails);
-    }
-
-    @Override
     public QueryJourneyResult queryJourney(final JourneyRef journeyRef, final boolean loadPath) throws IOException {
         final HttpUrl.Builder endpointBuilder = apiBase.newBuilder()
                 .addPathSegment("api")
