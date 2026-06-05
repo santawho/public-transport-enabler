@@ -851,7 +851,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
             final int polyXListLen = polyXList.length();
             for (int i = 0; i < polyXListLen; i++) {
                 final String encodedPolyline = encodedPolylines.get(polyXList.getInt(i));
-                path.addAll(PolylineFormat.decode(encodedPolyline));
+                path.addAll(PolylineFormat.decode(encodedPolyline, 5));
             }
         } else {
             path = null;

@@ -58,10 +58,6 @@ public final class Point implements Serializable, MessagePackUtils.Packable {
         return new Point(lat / 1E6, lon / 1E6);
     }
 
-    public static Point from1E5(final int lat, final int lon) {
-        return new Point(lat / 1E5, lon / 1E5);
-    }
-
     public double getLatAsDouble() {
         return lat;
     }
@@ -76,14 +72,6 @@ public final class Point implements Serializable, MessagePackUtils.Packable {
 
     public int getLonAs1E6() {
         return (int) Math.round(lon * 1E6);
-    }
-
-    public int getLatAs1E5() {
-        return (int) Math.round(lat * 1E5);
-    }
-
-    public int getLonAs1E5() {
-        return (int) Math.round(lon * 1E5);
     }
 
     @Override

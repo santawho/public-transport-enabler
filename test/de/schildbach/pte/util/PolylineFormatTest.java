@@ -32,7 +32,8 @@ public class PolylineFormatTest {
     @Test
     public void test() {
         final List<Point> polyline = PolylineFormat.decode(
-                "}qfeHyn|bBnBdA\\R]xBzA|@r@f@u@hCWS{@bCe@t@e@v@h@vCIFu@`@MPDJ@L?NAPIZXf@|@`Br@pAHLZp@~@jBbArBbBjDLTTd@fAzBcFnH[d@Vf@iA`BWb@t@zAb@~@LTNNdCzE~A{BAA??");
+                "}qfeHyn|bBnBdA\\R]xBzA|@r@f@u@hCWS{@bCe@t@e@v@h@vCIFu@`@MPDJ@L?NAPIZXf@|@`Br@pAHLZp@~@jBbArBbBjDLTTd@fAzBcFnH[d@Vf@iA`BWb@t@zAb@~@LTNNdCzE~A{BAA??",
+                5);
         assertEquals(44, polyline.size());
         assertEquals(Point.fromDouble(48.2078300, 16.3711700), polyline.get(0));
         assertEquals(Point.fromDouble(48.2051400, 16.3579600), polyline.get(43));

@@ -32,7 +32,8 @@ import de.schildbach.pte.dto.Point;
  * @author Andreas Schildbach
  */
 public final class PolylineFormat {
-    public static List<Point> decode(final String encodedPolyline) {
+    public static List<Point> decode(final String encodedPolyline, final int precision) {
+        final double exponent = Math.pow(10d, precision);
         final int len = encodedPolyline.length();
         final List<Point> path = new ArrayList<>(len / 2);
 
@@ -60,7 +61,7 @@ public final class PolylineFormat {
             } while (lonB >= 0x1f);
             lon += (lonResult & 1) != 0 ? ~(lonResult >> 1) : (lonResult >> 1);
 
-            path.add(Point.from1E5(lat, lon));
+            path.add(Point.fromDouble(lat / exponent, lon / exponent));
         }
         return path;
     }

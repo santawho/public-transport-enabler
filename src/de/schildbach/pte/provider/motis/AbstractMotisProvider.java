@@ -18,7 +18,30 @@
 package de.schildbach.pte.provider.motis;
 
 import de.schildbach.pte.NetworkId;
-import de.schildbach.pte.dto.*;
+import de.schildbach.pte.dto.Departure;
+import de.schildbach.pte.dto.JourneyRef;
+import de.schildbach.pte.dto.Line;
+import de.schildbach.pte.dto.LineDestination;
+import de.schildbach.pte.dto.Location;
+import de.schildbach.pte.dto.LocationType;
+import de.schildbach.pte.dto.NearbyLocationsResult;
+import de.schildbach.pte.dto.PTDate;
+import de.schildbach.pte.dto.Point;
+import de.schildbach.pte.dto.Position;
+import de.schildbach.pte.dto.Product;
+import de.schildbach.pte.dto.QueryDeparturesResult;
+import de.schildbach.pte.dto.QueryJourneyResult;
+import de.schildbach.pte.dto.QueryTripsContext;
+import de.schildbach.pte.dto.QueryTripsResult;
+import de.schildbach.pte.dto.ResultHeader;
+import de.schildbach.pte.dto.StationDepartures;
+import de.schildbach.pte.dto.Stop;
+import de.schildbach.pte.dto.Style;
+import de.schildbach.pte.dto.SuggestLocationsResult;
+import de.schildbach.pte.dto.SuggestedLocation;
+import de.schildbach.pte.dto.Trip;
+import de.schildbach.pte.dto.TripOptions;
+import de.schildbach.pte.dto.TripRef;
 import de.schildbach.pte.exception.InvalidDataException;
 import de.schildbach.pte.exception.NotFoundException;
 import de.schildbach.pte.exception.ParserException;
@@ -31,8 +54,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.msgpack.core.MessagePacker;
 import org.msgpack.core.MessageUnpacker;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -42,7 +63,17 @@ import java.io.Serializable;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.TimeZone;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -383,7 +414,10 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
 
             final Stop depStop = parseMotisStop(motisLeg.getJSONObject("from"), motisLeg.getBoolean("realTime"));
             final Stop arrStop = parseMotisStop(motisLeg.getJSONObject("to"), motisLeg.getBoolean("realTime"));
-            final List<Point> polyline = PolylineFormat.decode(motisLeg.getJSONObject("legGeometry").getString("points"));
+            final JSONObject legGeometry = motisLeg.getJSONObject("legGeometry");
+            final List<Point> polyline = PolylineFormat.decode(
+                    legGeometry.getString("points"),
+                    legGeometry.getInt("precision"));
 
             final String mode = motisLeg.getString("mode");
             if (MOTIS_INDIVIDUAL_MODE_MAP.containsKey(mode)) {
