@@ -414,7 +414,6 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
             maxLocations = DEFAULT_MAX_LOCATIONS;
         final boolean getStations = types.contains(LocationType.STATION);
         final boolean getPOIs = types.contains(LocationType.POI);
-        final int productsInt = productsInt(products);
         final String geoMatch;
         if (findNearbyStationsUsingRectangle) {
             if (maxDistance == 0)
@@ -431,7 +430,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                         + geoMatch //
                         + ",\"getStops\":" + getStations //
                         + ",\"getPOIs\":" + getPOIs //
-                        + (products == null ? "" : (",\"locFltrL\":[{\"value\":" + productsInt + ",\"mode\":\"INC\",\"type\":\"PROD\"}]")) //
+                        + (products == null ? "" : (",\"locFltrL\":[{\"value\":" + productsInt(products) + ",\"mode\":\"INC\",\"type\":\"PROD\"}]")) //
                         + (maxLocations > 0 ? (",\"maxLoc\":" + maxLocations) : "") //
                         + "}", //
                 false);
