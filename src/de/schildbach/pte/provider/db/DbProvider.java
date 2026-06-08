@@ -437,12 +437,20 @@ public abstract class DbProvider extends AbstractNetworkProvider {
             final LocationType type, final String id, final Point coord, final String name,
             final Set<Product> products, final String bahnhofsInfoId) {
         final String[] placeAndName = type == LocationType.STATION ? splitStationName(name) : splitAddress(name);
+        return new Location(type, id, coord, placeAndName[0], placeAndName[1], products);
+    }
+
+    @Override
+    public String getLocationInfoUrl(final Location location) {
+        return getLocationInfoUrl(location.id, null);
+    }
+
+    protected String getLocationInfoUrl(final String id, final String bahnhofsInfoId) {
         final String infoId = bahnhofsInfoId != null ? bahnhofsInfoId : (id != null && id.length() <= 10) ? id : null;
-        final String url = infoId == null ? null : (
+        return infoId == null ? null : (
                 "https://www.bahnhof.de"
-                        + ("de".equals(this.userInterfaceLanguage) ? "" : "/en")
-                        + "/bahnhof-de/id/" + infoId);
-        return new Location(type, id, coord, placeAndName[0], placeAndName[1], products, url);
+                + ("de".equals(this.userInterfaceLanguage) ? "" : "/en")
+                + "/bahnhof-de/id/" + infoId);
     }
 
     private String createLidEntry(final String key, final Object value) {

@@ -252,4 +252,6 @@ public interface NetworkProvider extends Provider, LocationSearchProvider {
     Trip queryTripDetails(final Trip trip, final List<TripDetails> whichDetails) throws IOException;
 
     TransferEvaluationProvider getTransferEvaluationProvider() throws IOException;
+
+    String getLocationInfoUrl(Location location);
 }

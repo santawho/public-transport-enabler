@@ -261,6 +261,11 @@ public abstract class AbstractNetworkProvider extends AbstractLocationSearchProv
     }
 
     @Override
+    public String getLocationInfoUrl(final Location location) {
+        return null;
+    }
+
+    @Override
     public Description getDescription() {
         return new Description.Base() {
             @Override

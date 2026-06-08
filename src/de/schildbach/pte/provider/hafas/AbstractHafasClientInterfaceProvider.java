@@ -1737,7 +1737,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
             coord = null;
         }
 
-        return new Location(locationType, id, identityId, displayId, coord, placeAndName[0], placeAndName[1], products, null);
+        return new Location(locationType, id, identityId, displayId, coord, placeAndName[0], placeAndName[1], products);
     }
 
     private static final Set<String> validLidNames = new HashSet<>(Arrays.asList("A", "O", "X", "Y", "U", "L"));

@@ -48,7 +48,6 @@ public final class Location implements Serializable, MessagePackUtils.Packable {
     public final @Nullable String place;
     public final @Nullable String name;
     public final @Nullable Set<Product> products;
-    public final @Nullable String infoUrl;
 
     public Location(
             final LocationType type,
@@ -58,8 +57,7 @@ public final class Location implements Serializable, MessagePackUtils.Packable {
             final @Nullable Point coord,
             final @Nullable String place,
             final @Nullable String name,
-            final @Nullable Set<Product> products,
-            final @Nullable String infoUrl) {
+            final @Nullable Set<Product> products) {
         this.type = requireNonNull(type);
         this.id = id;
         this.identityId = identityId == null ? id : identityId;
@@ -68,7 +66,6 @@ public final class Location implements Serializable, MessagePackUtils.Packable {
         this.place = place;
         this.name = name;
         this.products = products;
-        this.infoUrl = infoUrl;
 
         checkArgument(id == null || !id.isEmpty(), () ->
                 "ID cannot be the empty string");
@@ -83,13 +80,8 @@ public final class Location implements Serializable, MessagePackUtils.Packable {
     }
 
     public Location(final LocationType type, final String id, final Point coord, final String place, final String name,
-                    final Set<Product> products, final String infoUrl) {
-        this(type, id, id, id, coord, place, name, products, infoUrl);
-    }
-
-    public Location(final LocationType type, final String id, final Point coord, final String place, final String name,
                     final Set<Product> products) {
-        this(type, id, coord, place, name, products, null);
+        this(type, id, id, id, coord, place, name, products);
     }
 
     public Location(final LocationType type, final String id, final Point coord, final String place,
@@ -116,8 +108,7 @@ public final class Location implements Serializable, MessagePackUtils.Packable {
                 MessagePackUtils.unpackNullable(unpacker, Point::unpackFromMessage),
                 MessagePackUtils.unpackNullableString(unpacker),
                 MessagePackUtils.unpackNullableString(unpacker),
-                Product.unpackFromMessage(unpacker),
-                MessagePackUtils.unpackNullableString(unpacker));
+                Product.unpackFromMessage(unpacker));
     }
 
     @Override
@@ -128,7 +119,6 @@ public final class Location implements Serializable, MessagePackUtils.Packable {
         MessagePackUtils.packNullableString(packer, place);
         MessagePackUtils.packNullableString(packer, name);
         Product.packToMessage(packer, products);
-        MessagePackUtils.packNullableString(packer, infoUrl);
     }
 
     public boolean hasId() {
