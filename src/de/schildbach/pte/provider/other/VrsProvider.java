@@ -1072,6 +1072,7 @@ public class VrsProvider extends AbstractNetworkProvider {
             // can't filter for RailReplacementServices although this value is valid in API responses
             return "Bus,CommunityBus";
         case CABLECAR:
+        case COACH:
             // no mapping in VRS
             return "";
         case FERRY:
