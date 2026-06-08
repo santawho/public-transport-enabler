@@ -208,17 +208,21 @@ public final class Trip implements Serializable {
                 final Public publicLeg = (Public) leg;
                 if (publicLeg.departureStop.departureCancelled || publicLeg.arrivalStop.arrivalCancelled)
                     return false;
+
+                final Date departureTime = leg.getDepartureTime();
+                if (time != null && departureTime.before(time))
+                    return false;
+                time = departureTime;
+
+                final Date arrivalTime = leg.getArrivalTime();
+                if (time != null && arrivalTime.before(time))
+                    return false;
+                time = arrivalTime;
+            } else if (leg instanceof Individual) {
+                final Individual individualLeg = (Individual) leg;
+                if (time != null && individualLeg.distance > 0)
+                    time = new Date(time.getTime() + (long) individualLeg.min * 60000);
             }
-
-            final Date departureTime = leg.getDepartureTime();
-            if (time != null && departureTime.before(time))
-                return false;
-            time = departureTime;
-
-            final Date arrivalTime = leg.getArrivalTime();
-            if (time != null && arrivalTime.before(time))
-                return false;
-            time = arrivalTime;
         }
 
         return true;
