@@ -2940,7 +2940,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                     individualType,
                     lastIndividual.departure, lastIndividual.departureTime,
                     arrivalLocation, arrivalTime,
-                    distance);
+                    distance + lastIndividual.distance);
         } else {
             leg = new Trip.Individual(
                     individualType,
