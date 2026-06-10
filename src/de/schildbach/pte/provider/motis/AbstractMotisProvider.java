@@ -287,7 +287,7 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
                         ) : null);
     }
 
-    protected static Stop parseMotisStop(final JSONObject data, final boolean realtime) throws JSONException {
+    protected Stop parseMotisStop(final JSONObject data, final boolean realtime) throws JSONException {
         final Location location = parseMotisPlace(data);
         final TimeZone timeZone = getMotisTimeZone(data);
         final Function<String, PTDate> getDate = s -> parseMotisDateTime(s, timeZone);
@@ -307,19 +307,23 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
         );
     }
 
-    protected static Location parseMotisPlace(final JSONObject place) throws JSONException {
+    protected String[] splitStationName(final String motisPlaceName) {
+        return new String[] { null, motisPlaceName };
+    }
+
+    protected Location parseMotisPlace(final JSONObject place) throws JSONException {
         final String motisStopId = place.optString("stopId", null);
         final String stopId = motisStopId == null || motisStopId.isEmpty() ? null : motisStopId;
+        final String[] placeAndName = splitStationName(place.getString("name"));
         return new Location(
                 LocationType.STATION,
                 stopId,
                 Point.fromDouble(place.getDouble("lat"), place.getDouble("lon")),
-                null,
-                place.getString("name")
-        );
+                placeAndName[0],
+                placeAndName[1]);
     }
 
-    protected static Location parseMotisLocation(final JSONObject location) throws JSONException, InvalidDataException {
+    protected Location parseMotisLocation(final JSONObject location) throws JSONException, InvalidDataException {
         String place = null;
         final JSONArray areas = location.optJSONArray("areas");
         for (int ai = 0; ai < (areas != null ? areas.length() : 0); ai++) {
@@ -385,7 +389,7 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
         }
     }
 
-    protected static Stream<Location> parseMotisLocations(final String json) {
+    protected Stream<Location> parseMotisLocations(final String json) {
         try {
             return parseMotisLocations(new JSONArray(json));
         } catch (final JSONException e) {
@@ -393,7 +397,7 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
         }
     }
 
-    protected static Stream<Location> parseMotisLocations(final JSONArray data) {
+    protected Stream<Location> parseMotisLocations(final JSONArray data) {
         return IntStream.range(0, data.length()).mapToObj(i -> {
             try {
                 return parseMotisLocation(data.getJSONObject(i));

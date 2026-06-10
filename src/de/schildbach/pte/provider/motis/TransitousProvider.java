@@ -56,4 +56,15 @@ public class TransitousProvider extends AbstractMotisProvider {
     public Set<Product> defaultProducts() {
         return Product.ALL_INCLUDING_HIGHSPEED;
     }
+
+    // list all places, which contain at least one space
+    // except: places with "Bad "-prefix and no further spaces
+    private static final String[] SPECIAL_PLACES = new String[]{
+// the following contain spaces and must be listed here
+    };
+
+    @Override
+    protected String[] splitStationName(final String motisPlaceName) {
+        return parseSpaceDelimitedPlaceAndStation(motisPlaceName, SPECIAL_PLACES);
+    }
 }
