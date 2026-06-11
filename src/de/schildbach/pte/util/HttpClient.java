@@ -430,6 +430,7 @@ public final class HttpClient {
         OkHttpClient callSpecificHttpClient = getOkHttpClient();
         if (callTimeoutSecs != 0) {
             callSpecificHttpClient = callSpecificHttpClient.newBuilder()
+                    .readTimeout(callTimeoutSecs, TimeUnit.SECONDS)
                     .callTimeout(callTimeoutSecs, TimeUnit.SECONDS)
                     .build();
         }
