@@ -37,10 +37,16 @@ public class SeProvider extends AbstractHafasClientInterfaceProvider {
     private static final Product[] PRODUCTS_MAP = { Product.HIGH_SPEED_TRAIN /* Air */, Product.HIGH_SPEED_TRAIN,
             Product.REGIONAL_TRAIN, Product.BUS, Product.SUBURBAN_TRAIN, Product.SUBWAY, Product.TRAM, Product.BUS,
             Product.FERRY, Product.ON_DEMAND /* Taxi */ };
-    private static final String DEFAULT_API_CLIENT = "{\"id\":\"SAMTRAFIKEN\",\"type\":\"WEB\"}";
+    private static final String AND_API_CLIENT = "{\"id\":\"SAMTRAFIKEN\",\"type\":\"WEB\"}";
+    private static final String WEB_API_CLIENT = "{\"id\":\"SAMTRAFIKEN\",\"type\":\"WEB\",\"name\":\"webapp\",\"l\":\"vs_resrobot\"}";
+    private static final String WEBAPP_CONFIG_URL = "https://reseplanerare.resrobot.se/config/webapp.config.json";
+
+    public SeProvider() {
+        this(WEB_API_CLIENT, WEBAPP_CONFIG_URL);
+    }
 
     public SeProvider(final String apiAuthorization) {
-        this(DEFAULT_API_CLIENT, apiAuthorization);
+        this(AND_API_CLIENT, apiAuthorization);
     }
 
     public SeProvider(final String apiClient, final String apiAuthorization) {

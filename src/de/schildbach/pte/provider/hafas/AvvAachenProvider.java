@@ -34,10 +34,16 @@ public class AvvAachenProvider extends AbstractHafasClientInterfaceProvider {
     private static final Product[] PRODUCTS_MAP = { Product.REGIONAL_TRAIN, Product.HIGH_SPEED_TRAIN,
             Product.HIGH_SPEED_TRAIN, Product.BUS, Product.SUBURBAN_TRAIN, Product.SUBWAY, Product.TRAM, Product.BUS,
             Product.BUS, Product.ON_DEMAND, Product.FERRY };
-    private static final String DEFAULT_API_CLIENT = "{\"id\":\"AVV_AACHEN\",\"type\":\"WEB\"}";
+    private static final String AND_API_CLIENT = "{\"id\":\"AVV_AACHEN\",\"type\":\"WEB\"}";
+    private static final String WEB_API_CLIENT = "{\"id\":\"AVV_AACHEN\",\"type\":\"WEB\",\"name\":\"webapp\",\"l\":\"vs_avv\"}";
+    private static final String WEBAPP_CONFIG_URL = "https://auskunft.avv.de/config/webapp.config.json";
+
+    public AvvAachenProvider() {
+        this(WEB_API_CLIENT, WEBAPP_CONFIG_URL);
+    }
 
     public AvvAachenProvider(final String apiAuthorization) {
-        this(DEFAULT_API_CLIENT, apiAuthorization);
+        this(AND_API_CLIENT, apiAuthorization);
     }
 
     public AvvAachenProvider(final String apiClient, final String apiAuthorization) {

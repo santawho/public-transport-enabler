@@ -55,10 +55,16 @@ public class VbnProvider extends AbstractHafasClientInterfaceProvider {
             Product.TRAM, // Straßen-/ Stadtbahn
             Product.ON_DEMAND // Anrufverkehr
     };
-    private static final String DEFAULT_API_CLIENT = "{\"id\":\"VBN\",\"type\":\"AND\"}";
+    private static final String AND_API_CLIENT = "{\"id\":\"VBN\",\"type\":\"AND\"}";
+    private static final String WEB_API_CLIENT = "{\"id\":\"VBN\",\"type\":\"WEB\",\"name\":\"webapp\",\"l\":\"vs_webapp\"}";
+    private static final String WEBAPP_CONFIG_URL = "https://fahrplaner.vbn.de/fahrplan/config/webapp.config.json";
+
+    public VbnProvider() {
+        this(WEB_API_CLIENT, WEBAPP_CONFIG_URL);
+    }
 
     public VbnProvider(final String apiAuthorization) {
-        this(DEFAULT_API_CLIENT, apiAuthorization);
+        this(AND_API_CLIENT, apiAuthorization);
     }
 
     public VbnProvider(final String apiClient, final String apiAuthorization) {

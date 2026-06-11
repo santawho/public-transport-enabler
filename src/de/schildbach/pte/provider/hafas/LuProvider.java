@@ -35,10 +35,16 @@ public class LuProvider extends AbstractHafasClientInterfaceProvider {
     private static final Product[] PRODUCTS_MAP = { Product.HIGH_SPEED_TRAIN, Product.HIGH_SPEED_TRAIN,
             Product.HIGH_SPEED_TRAIN, Product.REGIONAL_TRAIN, Product.REGIONAL_TRAIN, Product.BUS, Product.BUS,
             Product.BUS, Product.BUS, Product.BUS };
-    private static final String DEFAULT_API_CLIENT = "{\"id\":\"CDT\",\"type\":\"AND\"}";
+    private static final String AND_API_CLIENT = "{\"id\":\"CDT\",\"type\":\"AND\"}";
+    private static final String WEB_API_CLIENT = "{\"id\":\"MMILUX\",\"type\":\"WEB\",\"name\":\"webapp\",\"l\":\"vs_webapp\"}";
+    private static final String WEBAPP_CONFIG_URL = "https://cdt.hafas.de/config/webapp.config.json";
+
+    public LuProvider() {
+        this(WEB_API_CLIENT, WEBAPP_CONFIG_URL);
+    }
 
     public LuProvider(final String apiAuthorization) {
-        this(DEFAULT_API_CLIENT, apiAuthorization);
+        this(AND_API_CLIENT, apiAuthorization);
     }
 
     public LuProvider(final String apiClient, final String apiAuthorization) {
@@ -46,7 +52,6 @@ public class LuProvider extends AbstractHafasClientInterfaceProvider {
         setApiEndpoint("gate");
         setApiVersion("1.77");
         setApiClient(apiClient);
-        setApiEndpoint("gate");
         setApiAuthorization(apiAuthorization);
     }
 

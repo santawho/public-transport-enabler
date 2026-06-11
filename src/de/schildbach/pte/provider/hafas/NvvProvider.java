@@ -32,20 +32,28 @@ import java.util.regex.Matcher;
  * @author Andreas Schildbach
  */
 public class NvvProvider extends AbstractHafasClientInterfaceProvider {
-    private static final HttpUrl API_BASE = HttpUrl.parse("https://auskunft.nvv.de/bin/");
+    private static final HttpUrl AND_API_BASE = HttpUrl.parse("https://auskunft.nvv.de/bin/");
+    private static final HttpUrl WEB_API_BASE = HttpUrl.parse("https://auskunft.nvv.de/");
     private static final Product[] PRODUCTS_MAP = { Product.HIGH_SPEED_TRAIN, Product.HIGH_SPEED_TRAIN,
             Product.REGIONAL_TRAIN, Product.SUBURBAN_TRAIN, Product.SUBWAY, Product.TRAM, Product.BUS, Product.BUS,
             Product.FERRY, Product.ON_DEMAND, Product.REGIONAL_TRAIN, Product.REGIONAL_TRAIN };
-    private static final String DEFAULT_API_CLIENT = "{\"id\":\"NVV\",\"type\":\"AND\"}";
+    private static final String AND_API_CLIENT = "{\"id\":\"NVV\",\"type\":\"AND\"}";
+    private static final String WEB_API_CLIENT = "{\"id\":\"NVV\",\"type\":\"WEB\",\"name\":\"webapp\",\"l\":\"vs_webapp\"}";
+    private static final String WEBAPP_CONFIG_URL = "https://auskunft.nvv.de/config/webapp.config.json";
 
-    public NvvProvider(final String apiAuthorization) {
-        this(DEFAULT_API_CLIENT, apiAuthorization);
+    public NvvProvider() {
+        this(WEB_API_BASE, WEB_API_CLIENT, WEBAPP_CONFIG_URL);
+        setApiEndpoint("gate");
     }
 
-    public NvvProvider(final String apiClient, final String apiAuthorization) {
-        super(NetworkId.NVV, API_BASE, PRODUCTS_MAP);
-        setApiVersion("1.68");
+    public NvvProvider(final String apiAuthorization) {
+        this(AND_API_BASE, AND_API_CLIENT, apiAuthorization);
         setApiExt("NVV.6.0");
+    }
+
+    private NvvProvider(final HttpUrl apiBase, final String apiClient, final String apiAuthorization) {
+        super(NetworkId.NVV, apiBase, PRODUCTS_MAP);
+        setApiVersion("1.68");
         setApiClient(apiClient);
         setApiAuthorization(apiAuthorization);
         setStyles(STYLES);

@@ -36,21 +36,23 @@ public class OebbProvider extends AbstractHafasClientInterfaceProvider {
             Product.HIGH_SPEED_TRAIN, Product.REGIONAL_TRAIN, Product.REGIONAL_TRAIN, Product.SUBURBAN_TRAIN,
             Product.BUS, Product.FERRY, Product.SUBWAY, Product.TRAM, Product.HIGH_SPEED_TRAIN, Product.ON_DEMAND,
             Product.HIGH_SPEED_TRAIN };
-    private static final String DEFAULT_API_CLIENT = "{\"id\":\"OEBB\",\"type\":\"AND\"}";
+    private static final String AND_API_CLIENT = "{\"id\":\"OEBB\",\"type\":\"AND\"}";
+    private static final String WEB_API_CLIENT = "{\"id\":\"OEBB\",\"type\":\"WEB\",\"name\":\"webapp\",\"l\":\"vs_webapp\"}";
+    private static final String WEBAPP_CONFIG_URL = "https://fahrplan.oebb.at/webapp/config/webapp.config.json";
+
+    public OebbProvider() {
+        this(WEB_API_CLIENT, WEBAPP_CONFIG_URL);
+    }
 
     public OebbProvider(final String apiAuthorization) {
-        this(API_BASE, apiAuthorization);
+        this(AND_API_CLIENT, apiAuthorization);
+        setApiExt("OEBB.14");
     }
 
-    public OebbProvider(final HttpUrl apiBase, final String apiAuthorization) {
-        this(apiBase, DEFAULT_API_CLIENT, apiAuthorization);
-    }
-
-    public OebbProvider(final HttpUrl apiBase, final String apiClient, final String apiAuthorization) {
-        super(NetworkId.OEBB, apiBase, PRODUCTS_MAP);
+    public OebbProvider(final String apiClient, final String apiAuthorization) {
+        super(NetworkId.OEBB, API_BASE, PRODUCTS_MAP);
         setApiEndpoint("gate");
         setApiVersion("1.88");
-        setApiExt("OEBB.14");
         setApiClient(apiClient);
         setApiAuthorization(apiAuthorization);
     }

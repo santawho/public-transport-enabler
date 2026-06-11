@@ -32,10 +32,16 @@ public class BartProvider extends AbstractHafasClientInterfaceProvider {
     private static final HttpUrl API_BASE = HttpUrl.parse("https://planner.bart.gov/gate/");
     private static final Product[] PRODUCTS_MAP = { null, null, Product.CABLECAR, Product.REGIONAL_TRAIN, null,
             Product.BUS, Product.FERRY, Product.SUBURBAN_TRAIN, Product.TRAM };
-    private static final String DEFAULT_API_CLIENT = "{\"id\":\"BART\",\"type\":\"WEB\"}";
+    private static final String AND_API_CLIENT = "{\"id\":\"BART\",\"type\":\"WEB\"}";
+    private static final String WEB_API_CLIENT = "{\"id\":\"BART\",\"type\":\"WEB\",\"name\":\"webapp\",\"l\":\"vs_webapp\"}";
+    private static final String WEBAPP_CONFIG_URL = "https://planner.bart.gov/config/webapp.config.json";
+
+    public BartProvider() {
+        this(WEB_API_CLIENT, WEBAPP_CONFIG_URL);
+    }
 
     public BartProvider(final String apiAuthorization) {
-        this(DEFAULT_API_CLIENT, apiAuthorization);
+        this(AND_API_CLIENT, apiAuthorization);
     }
 
     public BartProvider(final String apiClient, final String apiAuthorization) {

@@ -36,17 +36,23 @@ public class VbbProvider extends AbstractHafasClientInterfaceProvider {
     private static final HttpUrl API_BASE = HttpUrl.parse("https://fahrinfo.vbb.de/");
     private static final Product[] PRODUCTS_MAP = { Product.SUBURBAN_TRAIN, Product.SUBWAY, Product.TRAM, Product.BUS,
             Product.FERRY, Product.HIGH_SPEED_TRAIN, Product.REGIONAL_TRAIN, null, null, Product.BUS /* BEV */ };
-    private static final String DEFAULT_API_CLIENT = "{\"id\":\"VBB\",\"type\":\"AND\"}";
+    private static final String AND_API_CLIENT = "{\"id\":\"VBB\",\"type\":\"AND\"}";
+    private static final String WEB_API_CLIENT = "{\"id\":\"VBB\",\"type\":\"WEB\",\"name\":\"VBB WebApp\",\"l\":\"vs_webapp_vbb\"}";
+    private static final String WEBAPP_CONFIG_URL = "https://fahrinfo.vbb.de/webapp/config/webapp.config.json";
 
-    public VbbProvider(final String apiAuthorization) {
-        this(DEFAULT_API_CLIENT, apiAuthorization);
+    public VbbProvider() {
+        this(WEB_API_CLIENT, WEBAPP_CONFIG_URL);
     }
 
-    public VbbProvider(final String apiClient, final String apiAuthorization) {
+    public VbbProvider(final String apiAuthorization) {
+        this(AND_API_CLIENT, apiAuthorization);
+        setApiExt("VBB.4");
+    }
+
+    private VbbProvider(final String apiClient, final String apiAuthorization) {
         super(NetworkId.VBB, API_BASE, PRODUCTS_MAP);
         setApiEndpoint("gate");
         setApiVersion("1.77");
-        setApiExt("VBB.4");
         setApiClient(apiClient);
         setApiAuthorization(apiAuthorization);
     }

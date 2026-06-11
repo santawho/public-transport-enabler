@@ -41,10 +41,16 @@ public class InvgProvider extends AbstractHafasClientInterfaceProvider {
             null, null, null, null, null,
             Product.ON_DEMAND,
     };
-    private static final String DEFAULT_API_CLIENT = "{\"id\":\"INVG\",\"type\":\"AND\"}";
+    private static final String AND_API_CLIENT = "{\"id\":\"INVG\",\"type\":\"AND\"}";
+    private static final String WEB_API_CLIENT = "{\"id\":\"INVG\",\"type\":\"WEB\",\"name\":\"webapp\",\"l\":\"vs_webapp\"}";
+    private static final String WEBAPP_CONFIG_URL = "https://invg.hafas.de/webapp/config/webapp.config.json";
+
+    public InvgProvider() {
+        this(WEB_API_CLIENT, WEBAPP_CONFIG_URL);
+    }
 
     public InvgProvider(final String apiAuthorization) {
-        this(DEFAULT_API_CLIENT, apiAuthorization);
+        this(AND_API_CLIENT, apiAuthorization);
     }
 
     public InvgProvider(final String apiClient, final String apiAuthorization) {

@@ -34,10 +34,16 @@ public class VmtProvider extends AbstractHafasClientInterfaceProvider {
     private static final Product[] PRODUCTS_MAP = { Product.HIGH_SPEED_TRAIN, Product.HIGH_SPEED_TRAIN,
             Product.HIGH_SPEED_TRAIN, Product.REGIONAL_TRAIN, Product.SUBURBAN_TRAIN, Product.TRAM, Product.FERRY,
             Product.BUS /* guessing */, Product.BUS, null };
-    private static final String DEFAULT_API_CLIENT = "{\"name\":\"VMT\",\"type\":\"AND\"}";
+    private static final String AND_API_CLIENT = "{\"name\":\"VMT\",\"type\":\"AND\"}";
+    private static final String WEB_API_CLIENT = "{\"id\":\"VMT\",\"type\":\"WEB\",\"name\":\"webapp\",\"l\":\"vs_vmt\"}";
+    private static final String WEBAPP_CONFIG_URL = "https://vmt.hafas.de/config/webapp.config.json";
+
+    public VmtProvider() {
+        this(WEB_API_CLIENT, WEBAPP_CONFIG_URL);
+    }
 
     public VmtProvider(final String apiAuthorization) {
-        this(DEFAULT_API_CLIENT, apiAuthorization);
+        this(AND_API_CLIENT, apiAuthorization);
     }
 
     public VmtProvider(final String apiClient, final String apiAuthorization) {
