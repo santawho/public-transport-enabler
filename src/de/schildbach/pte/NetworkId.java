@@ -205,7 +205,7 @@ public enum NetworkId {
     BART(Descriptor.from(BartProvider.class, "us-US", "US;California;Kalifornien;San Francisco", State.beta)),
 
     // Australia
-    SYDNEY(Descriptor.from(SydneyProvider.class, "en-AU", "AU;New South Wales;Sydney"));
+    SYDNEY(Descriptor.from(SydneyProvider.class, "en-AU", "AU;New South Wales;Sydney", State.defunct));
     // MET(Descriptor.from(???, "en-AU", "AU;Victoria;Melbourne", State.disabled));
 
     private final Descriptor descriptor;
