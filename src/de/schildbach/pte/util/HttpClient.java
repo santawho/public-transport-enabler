@@ -305,7 +305,7 @@ public final class HttpClient {
         }
         return okHttpClient;
     }
-    
+
     public CharSequence get(
             final HttpUrl url)
             throws IOException {

@@ -27,13 +27,13 @@ import java.util.Date;
 import org.junit.Test;
 
 import de.schildbach.pte.provider.NetworkProvider;
-import de.schildbach.pte.provider.efa.StvLegacyProvider;
 import de.schildbach.pte.dto.Location;
 import de.schildbach.pte.dto.LocationType;
 import de.schildbach.pte.dto.NearbyLocationsResult;
 import de.schildbach.pte.dto.QueryDeparturesResult;
 import de.schildbach.pte.dto.QueryTripsResult;
 import de.schildbach.pte.dto.SuggestLocationsResult;
+import de.schildbach.pte.provider.hafas.austria.StvProvider;
 import de.schildbach.pte.util.LocationUtil;
 
 /**
@@ -41,7 +41,7 @@ import de.schildbach.pte.util.LocationUtil;
  */
 public class StvProviderLiveTest extends AbstractProviderLiveTest {
     public StvProviderLiveTest() {
-        super(new StvLegacyProvider());
+        super(new StvProvider(secretProperty("stv.api_authorization")));
     }
 
     @Test
@@ -58,7 +58,7 @@ public class StvProviderLiveTest extends AbstractProviderLiveTest {
 
     @Test
     public void queryDepartures() throws Exception {
-        final QueryDeparturesResult result = queryDepartures("63203040", NetworkProvider.EquivalentStationsMode.USE_META);
+        final QueryDeparturesResult result = queryDepartures("460304000", NetworkProvider.EquivalentStationsMode.USE_META);
         print(result);
     }
 
@@ -106,8 +106,8 @@ public class StvProviderLiveTest extends AbstractProviderLiveTest {
     @Test
     public void shortTrip() throws Exception {
         final QueryTripsResult result = queryTrips(
-                new Location(LocationType.STATION, "63203040", null, "Graz Hauptbahnhof"), null,
-                new Location(LocationType.STATION, "63203149", null, "Graz Babenbergerstraße"), new Date(), true, null);
+                new Location(LocationType.STATION, "460304000", null, "Graz Hauptbahnhof"), null,
+                new Location(LocationType.STATION, "460314900", null, "Graz Babenbergerstraße"), new Date(), true, null);
         print(result);
         assertEquals(QueryTripsResult.Status.OK, result.status);
         assertTrue(result.trips.size() > 0);
