@@ -25,7 +25,7 @@ import java.util.Date;
 import org.junit.Test;
 
 import de.schildbach.pte.provider.NetworkProvider;
-import de.schildbach.pte.provider.hafas.NasaProvider;
+import de.schildbach.pte.provider.hafas.InsaProvider;
 import de.schildbach.pte.dto.Location;
 import de.schildbach.pte.dto.LocationType;
 import de.schildbach.pte.dto.NearbyLocationsResult;
@@ -39,9 +39,9 @@ import de.schildbach.pte.util.LocationUtil;
 /**
  * @author Andreas Schildbach
  */
-public class NasaProviderLiveTest extends AbstractProviderLiveTest {
-    public NasaProviderLiveTest() {
-        super(new NasaProvider(secretProperty("nasa.api_authorization")));
+public class InsaProviderLiveTest extends AbstractProviderLiveTest {
+    public InsaProviderLiveTest() {
+        super(new InsaProvider(secretProperty("insa.api_authorization")));
     }
 
     @Test

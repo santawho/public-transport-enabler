@@ -23,13 +23,11 @@ import de.schildbach.pte.provider.hafas.IrlProvider;
 import de.schildbach.pte.provider.motis.NwexDirectionsRheinNeckarVerkehrProvider;
 import de.schildbach.pte.provider.motis.TransitousProvider;
 import de.schildbach.pte.provider.hafas.AvvAachenProvider;
-import de.schildbach.pte.provider.hafas.AvvAugsburgProvider;
 import de.schildbach.pte.provider.hafas.BartProvider;
 import de.schildbach.pte.provider.efa.BayernProvider;
 import de.schildbach.pte.provider.efa.BsvagProvider;
 import de.schildbach.pte.provider.hafas.BlsProvider;
 import de.schildbach.pte.provider.hafas.BvgProvider;
-import de.schildbach.pte.provider.db.DbHafasProvider;
 import de.schildbach.pte.provider.db.DbMovasProvider;
 import de.schildbach.pte.provider.db.DbProvider;
 import de.schildbach.pte.provider.db.DbWebProvider;
@@ -53,7 +51,7 @@ import de.schildbach.pte.provider.hafas.LuProvider;
 import de.schildbach.pte.provider.efa.MerseyProvider;
 import de.schildbach.pte.provider.efa.MvgProvider;
 import de.schildbach.pte.provider.efa.MvvProvider;
-import de.schildbach.pte.provider.hafas.NasaProvider;
+import de.schildbach.pte.provider.hafas.InsaProvider;
 import de.schildbach.pte.provider.other.NegentweeProvider;
 import de.schildbach.pte.provider.NetworkProvider;
 import de.schildbach.pte.provider.hafas.NsProvider;
@@ -112,8 +110,8 @@ public enum NetworkId {
     DBMOVAS(Descriptor.from(DbMovasProvider.Fernverkehr.class, "de-DE", "DE")),
     DBREGIOMOVAS(Descriptor.from(DbMovasProvider.Regio.class, "de-DE", "DE")),
     DBDEUTSCHLANDTICKETMOVAS(Descriptor.from(DbMovasProvider.DeutschlandTicket.class, "de-DE", "DE")),
-    DBHAFAS(Descriptor.from(DbHafasProvider.Fernverkehr.class, "de-DE", "DE", State.defunct)),
-    DBREGIOHAFAS(Descriptor.from(DbHafasProvider.Regio.class, "de-DE", "DE", State.defunct)),
+    // DBHAFAS(Descriptor.from(DbHafasProvider.Fernverkehr.class, "de-DE", "DE", State.defunct)),
+    // DBREGIOHAFAS(Descriptor.from(DbHafasProvider.Regio.class, "de-DE", "DE", State.defunct)),
     BVGLEGACY(Descriptor.from(BvgProvider.Legacy.class, "de-DE", "Brandenburg;Berlin",
             new Point[] { Point.fromDouble(52.674189, 13.074604), Point.fromDouble(52.341100, 13.757130) })),
     BVG(Descriptor.from(BvgProvider.NextGen.class, "de-DE", "Brandenburg;Berlin",
@@ -126,7 +124,7 @@ public enum NetworkId {
             new Point[] { Point.fromDouble(48.140377, 11.560643) })),
     SBMMVV(Descriptor.from(SbmMvvProvider.class, "de-DE", "Bayern;München", State.beta)),
     INVG(Descriptor.from(InvgProvider.class, "de-DE", "Ingolstadt")),
-    AVV_AUGSBURG(Descriptor.from(AvvAugsburgProvider.class, "de-DE", "Augsburg", State.deprecated)), // AVV uses Efa now
+    // AVV_AUGSBURG(Descriptor.from(AvvAugsburgProvider.class, "de-DE", "Augsburg", State.deprecated)), // AVV uses Efa now
     VGN(Descriptor.from(VgnProvider.class, "de-DE", "Nürnberg;Fürth;Erlangen")),
     VVM(Descriptor.from(VvmProvider.class, "de-DE", "Schwaben;Mittelschwaben;Krumbach;Günzburg;Memmingen")),
     VMV(Descriptor.from(VmvProvider.class, "de-DE", "Mecklenburg-Vorpommern;Schwerin")),
@@ -135,7 +133,7 @@ public enum NetworkId {
     UESTRA(Descriptor.from(UestraProvider.class, "de-DE", "Niedersachsen;Hannover;Hamburg")),
     BSVAG(Descriptor.from(BsvagProvider.class, "de-DE", "Braunschweig;Wolfsburg")),
     VBN(Descriptor.from(VbnProvider.class, "de-DE", "Niedersachsen;Hamburg;Bremen;Bremerhaven;Oldenburg (Oldenburg);Osnabrück;Göttingen;Rostock")),
-    NASA(Descriptor.from(NasaProvider.class, "de-DE", "Sachsen;Leipzig;Sachsen-Anhalt;Magdeburg;Halle")),
+    INSA(Descriptor.from(InsaProvider.class, "de-DE", "Sachsen;Leipzig;Sachsen-Anhalt;Magdeburg;Halle")),
     VMT(Descriptor.from(VmtProvider.class, "de-DE", "Thüringen;Mittelthüringen;Erfurt;Jena;Gera;Weimar;Gotha")),
     VVO(Descriptor.from(VvoProvider.class, "de-DE", "Sachsen;Dresden;Mittelsachsen;Chemnitz")),
     SAARVV(Descriptor.from(SaarVVProvider.class, "de-DE", "Saarland;Saarbrücken")),
