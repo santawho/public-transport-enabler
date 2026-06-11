@@ -47,7 +47,7 @@ public class InsaProvider extends AbstractHafasClientInterfaceProvider {
     }
 
     public InsaProvider(final String apiClient, final String apiAuthorization) {
-        super(NetworkId.INSA, API_BASE, PRODUCTS_MAP);
+        super(NetworkId.NASA, API_BASE, PRODUCTS_MAP);
         setApiVersion("1.48");
         setApiClient(apiClient);
         setApiAuthorization(apiAuthorization);

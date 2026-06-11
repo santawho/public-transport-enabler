@@ -133,7 +133,7 @@ public enum NetworkId {
     UESTRA(Descriptor.from(UestraProvider.class, "de-DE", "Niedersachsen;Hannover;Hamburg")),
     BSVAG(Descriptor.from(BsvagProvider.class, "de-DE", "Braunschweig;Wolfsburg")),
     VBN(Descriptor.from(VbnProvider.class, "de-DE", "Niedersachsen;Hamburg;Bremen;Bremerhaven;Oldenburg (Oldenburg);Osnabrück;Göttingen;Rostock")),
-    INSA(Descriptor.from(InsaProvider.class, "de-DE", "Sachsen;Leipzig;Sachsen-Anhalt;Magdeburg;Halle")),
+    NASA(Descriptor.from(InsaProvider.class, "de-DE", "Sachsen;Leipzig;Sachsen-Anhalt;Magdeburg;Halle")),
     VMT(Descriptor.from(VmtProvider.class, "de-DE", "Thüringen;Mittelthüringen;Erfurt;Jena;Gera;Weimar;Gotha")),
     VVO(Descriptor.from(VvoProvider.class, "de-DE", "Sachsen;Dresden;Mittelsachsen;Chemnitz")),
     SAARVV(Descriptor.from(SaarVVProvider.class, "de-DE", "Saarland;Saarbrücken")),
