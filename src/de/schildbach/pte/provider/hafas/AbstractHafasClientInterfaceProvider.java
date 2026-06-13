@@ -1586,6 +1586,18 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
         return sb.toString();
     }
 
+    protected Style.Shape getDefaultShape() {
+        return Style.Shape.ROUNDED;
+    }
+
+    protected Style.Shape getRectangleShape() {
+        return Style.Shape.RECT;
+    }
+
+    protected Style.Shape getCircleShape() {
+        return Style.Shape.CIRCLE;
+    }
+
     private List<Style> parseIcoList(final JSONArray icoList) throws JSONException {
         final List<Style> styles = new ArrayList<>(icoList.length());
         for (int i = 0; i < icoList.length(); i++) {
@@ -1595,18 +1607,18 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                 final JSONObject fg = ico.optJSONObject("fg");
                 final int foreground = fg != null ? parseIcoColor(fg) : Style.deriveForegroundColor(background);
                 final String shp = ico.optString("shp", null);
+                final Style.Shape shape;
                 if (shp == null) {
-                    styles.add(new Style(background, foreground));
+                    shape = getDefaultShape();
                 } else {
-                    final Style.Shape shape;
                     if ("C".equals(shp))
-                        shape = Style.Shape.CIRCLE;
+                        shape = getCircleShape();
                     else if ("R".equals(shp))
-                        shape = Style.Shape.RECT;
+                        shape = getRectangleShape();
                     else
                         throw new IllegalStateException("cannot handle shp: " + shp);
-                    styles.add(new Style(shape, background, foreground));
                 }
+                styles.add(new Style(shape, background, foreground));
             } else {
                 styles.add(null);
             }
