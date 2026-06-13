@@ -112,6 +112,11 @@ public class NvvProvider extends AbstractHafasClientInterfaceProvider {
         return super.splitStationName(address);
     }
 
+    @Override
+    protected Style.Shape getCircleShape() {
+        return Style.Shape.ROUNDED;
+    }
+
     private static final Map<String, Style> STYLES = new HashMap<>();
 
     static {
