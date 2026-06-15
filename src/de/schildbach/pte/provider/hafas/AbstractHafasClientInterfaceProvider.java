@@ -144,7 +144,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
     private static final String SECTION_TYPE_CHECK_IN = "CHKI";
     private static final String SECTION_TYPE_CHECK_OUT = "CHKO";
 
-    private static class Remark {
+    protected static class Remark {
         String code;
         String type;
         @Nullable
@@ -621,7 +621,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                     final String jnyDirTxt = jny.optString("dirTxt", null);
                     final Location directionLocation;
                     if (jnyDirTxt != null) {
-                        final String[] splitJnyDirTxt = splitStationName(jnyDirTxt);
+                        final String[] splitJnyDirTxt = splitDirectionName(jnyDirTxt);
                         directionLocation = new Location(LocationType.ANY, null, splitJnyDirTxt[0], splitJnyDirTxt[1]);
                     } else {
                         directionLocation = null;
@@ -809,7 +809,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
 
         final Location destination;
         if (dirTxt != null) {
-            final String[] splitDirTxt = splitStationName(dirTxt);
+            final String[] splitDirTxt = splitDirectionName(dirTxt);
             destination = new Location(LocationType.ANY, null, splitDirTxt[0], splitDirTxt[1]);
         } else {
             destination = null;
