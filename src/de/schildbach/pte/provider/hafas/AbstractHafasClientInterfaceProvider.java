@@ -272,8 +272,11 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
             if (apiUrl == null)
                 apiUrl = config.optString("urlMgate", null);
             if (apiUrl != null) {
-                apiBase = HttpUrl.parse(apiUrl);
-                setApiEndpoint("");
+                final HttpUrl url = HttpUrl.parse(apiUrl);
+                if (url != null) {
+                    apiBase = url;
+                    setApiEndpoint("");
+                }
             }
         } catch (final JSONException je) {
             throw new ParserException("cannot parse json: '" + page + "' on " + webappConfigUrl, je);
