@@ -118,7 +118,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
         return VALID_MIN_TRANSFER_TIMES[0];
     }
 
-    private final HttpUrl apiBase;
+    private HttpUrl apiBase;
     private String apiEndpoint = "mgate.exe";
     @Nullable
     private String apiVersion;
@@ -181,7 +181,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
         return this;
     }
 
-    public void setUseAddName(boolean useAddName) {
+    public void setUseAddName(final boolean useAddName) {
         this.useAddName = useAddName;
     }
 
@@ -200,7 +200,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
         final int minorVersion;
         try {
             minorVersion = Integer.parseInt(versionParts[1]);
-        } catch (NumberFormatException e) {
+        } catch (final NumberFormatException e) {
             throw new IllegalArgumentException("invalid apiVersion");
         }
         checkArgument(minorVersion >= 14, () -> "apiVersion must be 1.14 or higher");
@@ -210,7 +210,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
         return this;
     }
 
-    public String getApiVersion() {
+    public @Nullable String getApiVersion() {
         return apiVersion;
     }
 
@@ -219,7 +219,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
         return this;
     }
 
-    public String getApiExt() {
+    public @Nullable String getApiExt() {
         return apiExt;
     }
 
@@ -246,8 +246,12 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
         return this;
     }
 
-    public String getApiClient() {
+    public @Nullable String getApiClient() {
         return apiClient;
+    }
+
+    protected @Nullable String getWebAppLocalizationId() {
+        return null;
     }
 
     private void loadWebappConfig() throws IOException {
@@ -257,9 +261,20 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
         final CharSequence page = httpClient.get(webappConfigUrl, null, "application/json");
         try {
             final JSONObject config = new JSONObject(page.toString());
-            final JSONObject hciAuth = config.getJSONObject("hciAuth");
+            final String localizationId = getWebAppLocalizationId();
+            final JSONObject localConfig = localizationId == null ? null : config.optJSONObject(localizationId);
+            JSONObject hciAuth = localConfig == null ? null : localConfig.optJSONObject("hciAuth");
+            if (hciAuth == null)
+                hciAuth = config.getJSONObject("hciAuth");
             final String aid = hciAuth.getString("aid");
             apiAuthorization = String.format("{\"type\":\"AID\",\"aid\":\"%s\"}", aid);
+            String apiUrl = localConfig == null ? null : localConfig.optString("urlMgate", null);
+            if (apiUrl == null)
+                apiUrl = config.optString("urlMgate", null);
+            if (apiUrl != null) {
+                apiBase = HttpUrl.parse(apiUrl);
+                setApiEndpoint("");
+            }
         } catch (final JSONException je) {
             throw new ParserException("cannot parse json: '" + page + "' on " + webappConfigUrl, je);
         }
@@ -1321,7 +1336,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
     }
 
     protected Fare.Type normalizeFareType(final String... fareNames) {
-        for (String fareName : fareNames) {
+        for (final String fareName : fareNames) {
             if (fareName == null)
                 continue;
             final String fareNameLc = fareName.toLowerCase(Locale.US);
@@ -1494,7 +1509,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
 
         for (int i = 0; i < remList.length(); i++) {
             final JSONObject rem = remList.getJSONObject(i);
-            Remark remark = new Remark();
+            final Remark remark = new Remark();
             remark.type = rem.optString("type", null);
             remark.code = rem.optString("code", null);
             remark.title = rem.optString("txtS", null);
@@ -1511,7 +1526,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
 
         for (int i = 0; i < himList.length(); i++) {
             final JSONObject rem = himList.getJSONObject(i);
-            Remark remark = new Remark();
+            final Remark remark = new Remark();
             remark.type = "HIM";
             remark.code = "-";
             remark.title = rem.optString("head", null);
@@ -1535,7 +1550,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
             String message = null;
             for (int iRem = 0; iRem < remList.length(); iRem++) {
                 final JSONObject rem = remList.getJSONObject(iRem);
-                int remX = rem.optInt("remX", -1);
+                final int remX = rem.optInt("remX", -1);
                 if (remX >= 0 && remarks != null && remX < remarks.size()) {
                     final Remark remark = remarks.get(remX);
                     if ("l?".equals(remark.code))
@@ -1548,14 +1563,14 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
         if (msgList == null || msgList.length() == 0) {
             return null;
         }
-        StringBuilder sb = new StringBuilder();
+        final StringBuilder sb = new StringBuilder();
         for (int iRem = 0; iRem < msgList.length(); iRem++) {
             final JSONObject rem = msgList.getJSONObject(iRem);
             Remark remark = null;
-            int remX = rem.optInt("remX", -1);
+            final int remX = rem.optInt("remX", -1);
             if (remX >= 0 && remarks != null && remX < remarks.size())
                 remark = remarks.get(remX);
-            int himX = rem.optInt("himX", -1);
+            final int himX = rem.optInt("himX", -1);
             if (himX >= 0 && hims != null && himX < hims.size())
                 remark = hims.get(himX);
             if (remark != null) {
@@ -1670,7 +1685,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
     private Location parseLoc(
             final JSONArray locList,
             final int locListIndex,
-            @Nullable Map<Integer, MetaLocation> previousMetaLocsByIndex,
+            @Nullable final Map<Integer, MetaLocation> previousMetaLocsByIndex,
             final boolean alwaysUseMeta,
             final JSONArray crdSysList,
             final JSONArray commonLocL) throws JSONException {
@@ -1761,7 +1776,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
         if (nameValueStrings.length < 2)
             return lid;
         final StringBuilder validLid = new StringBuilder();
-        for (String nameValueString : nameValueStrings) {
+        for (final String nameValueString : nameValueStrings) {
             final String[] nameAndValue = nameValueString.split("=");
             if (nameAndValue.length != 2 || validLidNames.contains(nameAndValue[0])) {
                 validLid.append(nameValueString);
