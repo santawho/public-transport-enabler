@@ -85,6 +85,7 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * @author Dan Cojocaru
+ * apidoc: https://redocly.github.io/redoc/?url=https://raw.githubusercontent.com/motis-project/motis/refs/heads/master/openapi.yaml
  */
 public class AbstractMotisProvider extends AbstractNetworkProvider {
     private static final Map<LocationType, String> SUPPORTED_NEARBY_LOCATIONS;
@@ -200,12 +201,20 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
             if (!(o instanceof MotisTripRef)) return false;
             if (!super.equals(o)) return false;
             final MotisTripRef that = (MotisTripRef) o;
-            return Objects.equals(from, that.from) && Objects.equals(via, that.via) && Objects.equals(to, that.to) && Objects.equals(nextPageCursor, that.nextPageCursor) && Objects.equals(previousPageCursor, that.previousPageCursor) && Objects.equals(endpointUrl, that.endpointUrl);
+            return Objects.equals(from, that.from)
+                    && Objects.equals(via, that.via)
+                    && Objects.equals(to, that.to)
+                    && Objects.equals(nextPageCursor, that.nextPageCursor)
+                    && Objects.equals(previousPageCursor, that.previousPageCursor)
+                    && Objects.equals(endpointUrl, that.endpointUrl);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(super.hashCode(), from, via, to, nextPageCursor, previousPageCursor, endpointUrl);
+            return Objects.hash(super.hashCode(),
+                    from, via, to,
+                    nextPageCursor, previousPageCursor,
+                    endpointUrl);
         }
     }
 
@@ -264,7 +273,9 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
         return TimeZone.getTimeZone(tzString);
     }
 
-    protected static PTDate parseMotisDateTime(final String dateTime, final TimeZone timeZone) {
+    protected static PTDate parseMotisDateTime(
+            final String dateTime,
+            final TimeZone timeZone) {
         final long millis = OffsetDateTime.parse(dateTime).toInstant().toEpochMilli();
         if (timeZone == null) {
             return PTDate.withSystemOffset(millis);
@@ -407,7 +418,9 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
         });
     }
 
-    protected Trip parseMotisItinerary(final JSONObject data, final TripRef ref) throws JSONException, InvalidDataException {
+    protected Trip parseMotisItinerary(
+            final JSONObject data,
+            final TripRef ref) throws JSONException, InvalidDataException {
         // TODO: Add support for fares
 
         final JSONArray motisLegs = data.getJSONArray("legs");
@@ -483,7 +496,13 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
     }
 
     @Override
-    public NearbyLocationsResult queryNearbyLocations(final Set<LocationType> types, final Location location, final EquivalentStationsMode equivsMode, final int maxDistance, final int maxLocations, final Set<Product> products) throws IOException {
+    public NearbyLocationsResult queryNearbyLocations(
+            final Set<LocationType> types,
+            final Location location,
+            final EquivalentStationsMode equivsMode,
+            final int maxDistance,
+            final int maxLocations,
+            final Set<Product> products) throws IOException {
         if (location.coord == null) {
             throw new IllegalArgumentException("cannot handle: " + location);
         }
@@ -528,7 +547,12 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
     }
 
     @Override
-    public QueryDeparturesResult queryDepartures(final String stationId, @Nullable final Date time, final int maxDepartures, final EquivalentStationsMode equivsMode, @Nullable final Set<Product> products) throws IOException {
+    public QueryDeparturesResult queryDepartures(
+            final String stationId,
+            @Nullable final Date time,
+            final int maxDepartures,
+            final EquivalentStationsMode equivsMode,
+            @Nullable final Set<Product> products) throws IOException {
         final HttpUrl.Builder endpointBuilder = apiBase.newBuilder()
                 .addPathSegment("api")
                 .addPathSegment("v5")
@@ -632,7 +656,10 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
     }
 
     @Override
-    public SuggestLocationsResult suggestLocations(final CharSequence constraint, @Nullable final Set<LocationType> types, final int maxLocations) throws IOException {
+    public SuggestLocationsResult suggestLocations(
+            final CharSequence constraint,
+            @Nullable final Set<LocationType> types,
+            final int maxLocations) throws IOException {
         final HttpUrl.Builder endpointBuilder = apiBase.newBuilder()
                 .addPathSegment("api")
                 .addPathSegment("v1")
@@ -672,7 +699,14 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
     }
 
     @Override
-    public QueryTripsResult queryTrips(final Location from, @Nullable final Location via, final Location to, final Date date, final boolean dep, @Nullable final TripOptions options, final boolean loadPath) throws IOException {
+    public QueryTripsResult queryTrips(
+            final Location from,
+            @Nullable final Location via,
+            final Location to,
+            final Date date,
+            final boolean dep,
+            @Nullable final TripOptions options,
+            final boolean loadPath) throws IOException {
         final HttpUrl.Builder endpointBuilder = apiBase.newBuilder()
                 .addPathSegment("api")
                 .addPathSegment("v5")
@@ -734,8 +768,11 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
 
                 endpointBuilder.addQueryParameter("transitModes", String.join(",", motisModes));
             }
-            if (via != null && options.minTransferTimeMinutes != null) {
-                endpointBuilder.addQueryParameter("viaMinimumStay", String.valueOf(options.minTransferTimeMinutes));
+            if (options.minTransferTimeMinutes != null) {
+                endpointBuilder.addQueryParameter("additionalTransferTime", String.valueOf(options.minTransferTimeMinutes));
+                if (via != null) {
+                    endpointBuilder.addQueryParameter("viaMinimumStay", String.valueOf(options.minTransferTimeMinutes));
+                }
             }
         }
 
@@ -746,7 +783,10 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
     }
 
     @Override
-    public QueryTripsResult queryMoreTrips(final QueryTripsContext context, final boolean later, final boolean loadPath) throws IOException {
+    public QueryTripsResult queryMoreTrips(
+            final QueryTripsContext context,
+            final boolean later,
+            final boolean loadPath) throws IOException {
         if (!(context instanceof MotisTripRef)) {
             throw new IllegalArgumentException("Wrong context");
         }
@@ -762,7 +802,12 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
         return actualQueryTrips(endpointWithCursor, ((MotisTripRef) context).from, ((MotisTripRef) context).via, ((MotisTripRef) context).to, loadPath);
     }
 
-    protected QueryTripsResult actualQueryTrips(@Nonnull final HttpUrl endpoint, @Nonnull final Location from, @Nullable final Location via, @Nonnull final Location to, final boolean loadPath) throws IOException {
+    protected QueryTripsResult actualQueryTrips(
+            @Nonnull final HttpUrl endpoint,
+            @Nonnull final Location from,
+            @Nullable final Location via,
+            @Nonnull final Location to,
+            final boolean loadPath) throws IOException {
         final HttpUrl.Builder b = endpoint.newBuilder();
         b.removeAllQueryParameters("detailedTransfers");
         
@@ -805,7 +850,9 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
     }
 
     @Override
-    public QueryJourneyResult queryJourney(final JourneyRef journeyRef, final boolean loadPath) throws IOException {
+    public QueryJourneyResult queryJourney(
+            final JourneyRef journeyRef,
+            final boolean loadPath) throws IOException {
         final HttpUrl.Builder endpointBuilder = apiBase.newBuilder()
                 .addPathSegment("api")
                 .addPathSegment("v5")
@@ -834,7 +881,9 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
     }
 
     @Override
-    public QueryTripsResult queryReloadTrip(final TripRef tripRef, final boolean loadPath) throws IOException {
+    public QueryTripsResult queryReloadTrip(
+            final TripRef tripRef,
+            final boolean loadPath) throws IOException {
         if (tripRef.network != network || !(tripRef instanceof MotisTripRef)) {
             throw new IllegalArgumentException("cannot handle: " + tripRef);
         }
