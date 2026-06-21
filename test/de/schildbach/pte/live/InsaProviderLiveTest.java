@@ -41,7 +41,7 @@ import de.schildbach.pte.util.LocationUtil;
  */
 public class InsaProviderLiveTest extends AbstractProviderLiveTest {
     public InsaProviderLiveTest() {
-        super(new InsaProvider(secretProperty("insa.api_authorization")));
+        super(new InsaProvider.Nasa(secretProperty("nasa.api_authorization")));
     }
 
     @Test

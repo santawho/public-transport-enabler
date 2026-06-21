@@ -29,25 +29,45 @@ import okhttp3.HttpUrl;
  * 
  * @author Andreas Schildbach
  */
-public class InsaProvider extends AbstractHafasClientInterfaceProvider {
+public abstract class InsaProvider extends AbstractHafasClientInterfaceProvider {
     private static final HttpUrl API_BASE = HttpUrl.parse("https://reiseauskunft.insa.de/bin/");
     private static final Product[] PRODUCTS_MAP = { Product.HIGH_SPEED_TRAIN, Product.HIGH_SPEED_TRAIN,
             Product.REGIONAL_TRAIN, Product.REGIONAL_TRAIN, Product.SUBURBAN_TRAIN, Product.TRAM, Product.BUS,
             Product.ON_DEMAND, Product.REGIONAL_TRAIN, Product.REGIONAL_TRAIN };
-    private static final String AND_NASA_API_CLIENT = "{\"id\":\"NASA\",\"type\":\"AND\"}";
-    private static final String WEB_API_CLIENT = "{\"id\":\"NASA\",\"type\":\"WEB\",\"name\":\"webapp\",\"l\":\"vs_webapp_nasa\"}";
     private static final String WEBAPP_CONFIG_URL = "https://reiseauskunft.insa.de/auskunft-iframe/config/webapp.config.json";
 
-    public InsaProvider() {
-        this(WEB_API_CLIENT, WEBAPP_CONFIG_URL);
+    public static class Nasa extends InsaProvider {
+        private static final String AND_API_CLIENT = "{\"id\":\"NASA\",\"type\":\"AND\"}";
+        private static final String WEB_API_CLIENT = "{\"id\":\"NASA\",\"type\":\"WEB\",\"name\":\"webapp\",\"l\":\"vs_webapp_nasa\"}";
+
+        public Nasa() {
+            this(WEB_API_CLIENT, WEBAPP_CONFIG_URL);
+        }
+
+        public Nasa(final String apiAuthorization) {
+            this(AND_API_CLIENT, apiAuthorization);
+        }
+
+        public Nasa(final String apiClient, final String apiAuthorization) {
+            super(NetworkId.NASA, apiClient, apiAuthorization);
+        }
     }
 
-    public InsaProvider(final String apiAuthorization) {
-        this(AND_NASA_API_CLIENT, apiAuthorization);
+    public static class Mdv extends InsaProvider {
+        private static final String WEB_API_CLIENT = "{\"id\":\"NASA\",\"type\":\"WEB\",\"name\":\"webapp\",\"l\":\"vs_mdv\"}";
+
+        @Override
+        protected String getWebAppLocalizationId() {
+            return "vs_mdv";
+        }
+
+        public Mdv() {
+            super(NetworkId.MDV, WEB_API_CLIENT, WEBAPP_CONFIG_URL);
+        }
     }
 
-    public InsaProvider(final String apiClient, final String apiAuthorization) {
-        super(NetworkId.NASA, API_BASE, PRODUCTS_MAP);
+    protected InsaProvider(final NetworkId networkId, final String apiClient, final String apiAuthorization) {
+        super(networkId, API_BASE, PRODUCTS_MAP);
         setApiVersion("1.48");
         setApiClient(apiClient);
         setApiAuthorization(apiAuthorization);

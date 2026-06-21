@@ -59,6 +59,19 @@ public class VbnProvider extends AbstractHafasClientInterfaceProvider {
     private static final String WEB_API_CLIENT = "{\"id\":\"VBN\",\"type\":\"WEB\",\"name\":\"webapp\",\"l\":\"vs_webapp\"}";
     private static final String WEBAPP_CONFIG_URL = "https://fahrplaner.vbn.de/fahrplan/config/webapp.config.json";
 
+    public static class Vvw extends VbnProvider {
+        private static final String WEB_API_CLIENT = "{\"id\":\"VBN\",\"type\":\"WEB\",\"name\":\"webapp\",\"l\":\"vs_vvw\"}";
+
+        @Override
+        protected String getWebAppLocalizationId() {
+            return "vs_vvw";
+        }
+
+        public Vvw() {
+            super(NetworkId.VVW, WEB_API_CLIENT, WEBAPP_CONFIG_URL);
+        }
+    }
+
     public VbnProvider() {
         this(WEB_API_CLIENT, WEBAPP_CONFIG_URL);
     }
@@ -68,7 +81,11 @@ public class VbnProvider extends AbstractHafasClientInterfaceProvider {
     }
 
     public VbnProvider(final String apiClient, final String apiAuthorization) {
-        super(NetworkId.VBN, API_BASE, PRODUCTS_MAP);
+        this(NetworkId.VBN, apiClient, apiAuthorization);
+    }
+
+    protected VbnProvider(final NetworkId networkId, final String apiClient, final String apiAuthorization) {
+        super(networkId, API_BASE, PRODUCTS_MAP);
         setApiEndpoint("gate");
         setApiVersion("1.66");
         setApiClient(apiClient);
