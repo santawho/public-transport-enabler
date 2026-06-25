@@ -107,6 +107,11 @@ public class RmvProvider extends AbstractHafasClientInterfaceProvider {
     };
 
     @Override
+    protected String[] splitDirectionName(final String placeAndName) {
+        return parseSpaceDelimitedPlaceAndStation(placeAndName, SPECIAL_PLACES);
+    }
+
+    @Override
     protected String[] splitStationName(final String placeAndName) {
 //        if (placeAndName.startsWith("F "))
 //            return new String[] {"Frankfurt", placeAndName.substring(2)};
