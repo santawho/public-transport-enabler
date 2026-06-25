@@ -640,7 +640,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                     final Location directionLocation;
                     if (jnyDirTxt != null) {
                         final String[] splitJnyDirTxt = splitDirectionName(jnyDirTxt);
-                        directionLocation = new Location(LocationType.ANY, null, splitJnyDirTxt[0], splitJnyDirTxt[1]);
+                        directionLocation = new Location(LocationType.DIRECTION, null, splitJnyDirTxt[0], splitJnyDirTxt[1]);
                     } else {
                         directionLocation = null;
                     }
@@ -828,7 +828,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
         final Location destination;
         if (dirTxt != null) {
             final String[] splitDirTxt = splitDirectionName(dirTxt);
-            destination = new Location(LocationType.ANY, null, splitDirTxt[0], splitDirTxt[1]);
+            destination = new Location(LocationType.DIRECTION, null, splitDirTxt[0], splitDirTxt[1]);
         } else {
             destination = null;
         }

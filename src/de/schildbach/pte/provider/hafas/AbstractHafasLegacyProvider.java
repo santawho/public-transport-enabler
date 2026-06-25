@@ -584,7 +584,7 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
                             destination = new Location(LocationType.STATION, dirnr, destinationPlaceAndName[0],
                                     destinationPlaceAndName[1]);
                         } else {
-                            destination = new Location(LocationType.ANY, null, null, destinationName);
+                            destination = new Location(LocationType.DIRECTION, null, null, destinationName);
                         }
 
                         final Line prodLine = parseLineAndType(prod);

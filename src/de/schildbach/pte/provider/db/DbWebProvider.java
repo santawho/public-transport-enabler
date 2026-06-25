@@ -384,7 +384,7 @@ public abstract class DbWebProvider extends DbProvider {
         final String richtung = verkehrsmittel.optString("richtung", null);
         if (richtung == null)
             return null;
-        return createLocation(LocationType.STATION, null, null, richtung, null, null);
+        return createLocation(LocationType.DIRECTION, null, null, richtung, null, null);
     }
 
     private List<Location> parseLocations(final JSONArray locs) throws JSONException {
@@ -1049,7 +1049,7 @@ public abstract class DbWebProvider extends DbProvider {
                         parseIso8601NoOffset(dep.optString("ezZeit", null)),
                         line,
                         plannedPosition, predictedPosition,
-                        createLocation(LocationType.STATION, null, null, destinationName, null, null),
+                        createLocation(LocationType.DIRECTION, null, null, destinationName, null, null),
                         cancelled,
                         null,
                         parseJourneyMessages(dep, null, null, null),

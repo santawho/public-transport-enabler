@@ -1859,7 +1859,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
             XmlPullUtil.optValueTag(pp, "trainType", null);
             final String destinationName = normalizeLocationName(XmlPullUtil.optValueTag(pp, "des", null));
             final String destID = XmlPullUtil.optValueTag(pp, "destID", null);
-            destination = destinationName != null ? new Location(LocationType.ANY, null, null, destinationName) : null;
+            destination = destinationName != null ? new Location(LocationType.DIRECTION, null, null, destinationName) : null;
             XmlPullUtil.optValueTag(pp, "dy", null);
             final String de = XmlPullUtil.optValueTag(pp, "de", null);
             final String productName = n != null ? n : de;
@@ -2027,7 +2027,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
         if (destinationId != null)
             destination = new Location(LocationType.STATION, destinationId, null, destinationName);
         else if (destinationId == null && destinationName != null)
-            destination = new Location(LocationType.ANY, null, null, destinationName);
+            destination = new Location(LocationType.DIRECTION, null, null, destinationName);
         else
             destination = null;
 
@@ -3042,7 +3042,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
         if (destinationId != null)
             destination = new Location(LocationType.STATION, destinationId, null, destinationName);
         else if (destinationId == null && destinationName != null)
-            destination = new Location(LocationType.ANY, null, null, destinationName);
+            destination = new Location(LocationType.DIRECTION, null, null, destinationName);
         else
             destination = null;
 

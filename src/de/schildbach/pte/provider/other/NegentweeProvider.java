@@ -563,7 +563,7 @@ public class NegentweeProvider extends AbstractNetworkProvider {
                         !departure.isNull("service") ? departure.getString("service") : mode.getString("name"), null,
                         Standard.STYLES.get(lineProduct), null, null),
                 !departure.isNull("platform") ? new Position(departure.getString("platform")) : null, null,
-                new Location(LocationType.STATION, null, null, departure.getString("destinationName")),
+                new Location(LocationType.DIRECTION, null, null, departure.getString("destinationName")),
                 false,
                 null,
                 !departure.isNull("realtimeText") ? departure.optString("realtimeText") : null,

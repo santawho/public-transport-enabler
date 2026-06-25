@@ -544,7 +544,7 @@ public class VrsProvider extends AbstractNetworkProvider {
                             position = new Position(postName);
                         }
                     }
-                    final Location destination = new Location(LocationType.ANY, null /* id */, null /* place */,
+                    final Location destination = new Location(LocationType.DIRECTION, null /* id */, null /* place */,
                             lineObj.getString("direction"));
 
                     final LineDestination lineDestination = new LineDestination(line, destination);
