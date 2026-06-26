@@ -654,7 +654,8 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                         final Location lineTerminal = loc(lineTerminalAndName);
                         if (lineTerminal != null && lineTerminal.hasName()) {
                             if (directionLocation == null
-                                    || lineTerminalAndName.originalName.equals(jnyDirTxt)) // lineTerminal.name.equals(directionLocation.name)
+                                    || lineTerminalAndName.originalName.equals(jnyDirTxt)
+                                    || lineTerminal.name.equals(directionLocation.name))
                                 destination = lineTerminal;
                         }
                     }
@@ -667,7 +668,8 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                             final Location lastStop = loc(lastStopAndName);
                             if (lastStop != null && lastStop.hasName()) {
                                 if (directionLocation == null
-                                        || lastStopAndName.originalName.equals(jnyDirTxt)) // lastStop.name.equals(directionLocation.name)
+                                        || lastStopAndName.originalName.equals(jnyDirTxt)
+                                        || lastStop.name.equals(directionLocation.name))
                                     destination = lastStop;
                             }
                         }
