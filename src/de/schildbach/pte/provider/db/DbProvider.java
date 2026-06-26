@@ -436,7 +436,10 @@ public abstract class DbProvider extends AbstractNetworkProvider {
     protected Location createLocation(
             final LocationType type, final String id, final Point coord, final String name,
             final Set<Product> products, final String bahnhofsInfoId) {
-        final String[] placeAndName = type == LocationType.STATION ? splitStationName(name) : splitAddress(name);
+        final String[] placeAndName =
+                type == LocationType.STATION ? splitStationName(name)
+                : type == LocationType.DIRECTION ? splitStationName(name)
+                : splitAddress(name);
         return new Location(type, id, coord, placeAndName[0], placeAndName[1], products);
     }
 
