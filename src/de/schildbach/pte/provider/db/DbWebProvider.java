@@ -380,11 +380,11 @@ public abstract class DbWebProvider extends DbProvider {
                 bahnhofsInfoId);
     }
 
-    private Location parseDirection(final JSONObject verkehrsmittel) {
+    private Location parseDirection(final JSONObject verkehrsmittel, final LocationType type) {
         final String richtung = verkehrsmittel.optString("richtung", null);
         if (richtung == null)
             return null;
-        return createLocation(LocationType.DIRECTION, null, null, richtung, null, null);
+        return createLocation(type, null, null, richtung, null, null);
     }
 
     private List<Location> parseLocations(final JSONArray locs) throws JSONException {
@@ -674,7 +674,7 @@ public abstract class DbWebProvider extends DbProvider {
             if (serviceNumber != null && !serviceNumber.isEmpty() && !Character.isDigit(serviceNumber.charAt(0)))
                 serviceNumber = null;
             final Line line = parseLine(verkehrsmittel, produktGattung);
-            final Location destination = parseDirection(verkehrsmittel);
+            final Location destination = parseDirection(verkehrsmittel, LocationType.DIRECTION);
             final String defaultTeilstreckenHinweis = String.format("(%s - %s)",
                     departureStop.location.name, arrivalStop.location.name);
             final String message = parseJourneyMessages(
@@ -1049,7 +1049,7 @@ public abstract class DbWebProvider extends DbProvider {
                         parseIso8601NoOffset(dep.optString("ezZeit", null)),
                         line,
                         plannedPosition, predictedPosition,
-                        createLocation(LocationType.DIRECTION, null, null, destinationName, null, null),
+                        createLocation(LocationType.STATION, null, null, destinationName, null, null),
                         cancelled,
                         null,
                         parseJourneyMessages(dep, null, null, null),

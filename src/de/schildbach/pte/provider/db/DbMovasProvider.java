@@ -391,11 +391,11 @@ public abstract class DbMovasProvider extends DbProvider {
                 bahnhofsInfoId);
     }
 
-    private Location parseDirection(final JSONObject dep) {
+    private Location parseDirection(final JSONObject dep, final LocationType type) {
         final String richtung = dep.optString("richtung", null);
         if (richtung == null)
             return null;
-        return createLocation(LocationType.DIRECTION, null, null, richtung, null, null);
+        return createLocation(type, null, null, richtung, null, null);
     }
 
     private List<Location> parseLocations(final JSONArray locs) throws JSONException {
@@ -663,7 +663,7 @@ public abstract class DbMovasProvider extends DbProvider {
             if (produktGattung == null)
                 produktGattung = abschnitt.optString("produktGattungen", null);
             final Line line = parseLine(abschnitt, produktGattung);
-            final Location destination = parseDirection(abschnitt);
+            final Location destination = parseDirection(abschnitt, LocationType.DIRECTION);
             final String message = parseJourneyMessages(abschnitt, null);
             final String journeyId = abschnitt.optString("zuglaufId", null);
             final String administrationId = abschnitt.optString("administrationId", null);
@@ -1034,7 +1034,7 @@ public abstract class DbMovasProvider extends DbProvider {
                         stop.predictedDepartureTime,
                         line,
                         stop.plannedDeparturePosition, stop.predictedDeparturePosition,
-                        parseDirection(dep),
+                        parseDirection(dep, LocationType.STATION),
                         cancelled,
                         null,
                         parseJourneyMessages(dep, null),
