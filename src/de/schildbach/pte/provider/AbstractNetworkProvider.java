@@ -86,6 +86,18 @@ public abstract class AbstractNetworkProvider extends AbstractLocationSearchProv
         return getCapabilities().contains(capability);
     }
 
+    protected boolean isStationBoardDestinationCommonlyDirection() {
+        return false;
+    }
+
+    protected boolean isPublicLegDestinationCommonlyDirection() {
+        return true;
+    }
+
+    protected boolean isJourneyDestinationCommonlyDirection() {
+        return false;
+    }
+
     @Deprecated
     @Override
     public QueryTripsResult queryTrips(

@@ -82,6 +82,11 @@ public class NvvProvider extends AbstractHafasClientInterfaceProvider {
     };
 
     @Override
+    protected boolean isStationBoardDestinationCommonlyDirection() {
+        return true;
+    }
+
+    @Override
     protected String[] splitStationName(final String placeAndName) {
 //        if (placeAndName.startsWith("F "))
 //            return new String[] {"Frankfurt", placeAndName.substring(2)};

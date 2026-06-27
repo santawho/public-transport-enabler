@@ -61,6 +61,7 @@ import org.msgpack.core.MessageUnpacker;
 
 import de.schildbach.pte.NetworkId;
 import de.schildbach.pte.dto.Departure;
+import de.schildbach.pte.dto.Destination;
 import de.schildbach.pte.dto.Fare;
 import de.schildbach.pte.dto.JourneyRef;
 import de.schildbach.pte.dto.Line;
@@ -645,7 +646,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                     } else {
                         directionLocation = null;
                     }
-                    Location destination = null;
+                    Destination destination = null;
                     final JSONArray prodL = jny.optJSONArray("prodL");
                     if (prodL != null && prodL.length() > 0) {
                         // use terminal of first product
@@ -656,7 +657,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                             if (directionLocation == null
                                     || lineTerminalAndName.originalName.equals(jnyDirTxt)
                                     || lineTerminal.name.equals(directionLocation.name))
-                                destination = lineTerminal;
+                                destination = new Destination(lineTerminal, isStationBoardDestinationCommonlyDirection());
                         }
                     }
                     if (destination == null) {
@@ -670,13 +671,13 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                                 if (directionLocation == null
                                         || lastStopAndName.originalName.equals(jnyDirTxt)
                                         || lastStop.name.equals(directionLocation.name))
-                                    destination = lastStop;
+                                    destination = new Destination(lastStop, isStationBoardDestinationCommonlyDirection());
                             }
                         }
                     }
                     if (destination == null) {
-                        // otherwise split unidentified destination as if it was a station and use it
-                        destination = directionLocation;
+                        // otherwise use given direction
+                        destination = new Destination(directionLocation, !isStationBoardDestinationCommonlyDirection());
                     }
 
                     final String message = buildMessageFromRemarks(jny, remarks, hims);
@@ -832,10 +833,10 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
         final Line line = lines.get(jny.getInt("prodX"));
         final String dirTxt = jny.optString("dirTxt", null);
 
-        final Location destination;
+        final Destination destination;
         if (dirTxt != null) {
             final String[] splitDirTxt = splitDirectionName(dirTxt);
-            destination = new Location(LocationType.DIRECTION, null, splitDirTxt[0], splitDirTxt[1]);
+            destination = new Destination(new Location(LocationType.DIRECTION, null, splitDirTxt[0], splitDirTxt[1]));
         } else {
             destination = null;
         }

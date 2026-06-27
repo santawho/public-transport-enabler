@@ -31,9 +31,9 @@ public final class LineDestination implements Serializable {
     private static final long serialVersionUID = 8016508795997086017L;
 
     final public Line line;
-    final public @Nullable Location destination;
+    final public @Nullable Destination destination;
 
-    public LineDestination(final Line line, final Location destination) {
+    public LineDestination(final Line line, final Destination destination) {
         this.line = requireNonNull(line);
         this.destination = destination;
     }

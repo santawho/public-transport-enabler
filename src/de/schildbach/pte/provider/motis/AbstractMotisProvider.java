@@ -19,6 +19,7 @@ package de.schildbach.pte.provider.motis;
 
 import de.schildbach.pte.NetworkId;
 import de.schildbach.pte.dto.Departure;
+import de.schildbach.pte.dto.Destination;
 import de.schildbach.pte.dto.JourneyRef;
 import de.schildbach.pte.dto.Line;
 import de.schildbach.pte.dto.LineDestination;
@@ -460,7 +461,7 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
 
                 legs.add(new Trip.Public(
                         line,
-                        parseMotisPlace(motisLeg.getJSONObject("tripTo")),
+                        new Destination(parseMotisPlace(motisLeg.getJSONObject("tripTo"))),
                         parseMotisStop(motisLeg.getJSONObject("from"), realtime),
                         parseMotisStop(motisLeg.getJSONObject("to"), realtime),
                         intermediateStops,
@@ -621,7 +622,7 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
 
                     final Line line = parseMotisLine(stopTime);
 
-                    final Location destination = parseMotisPlace(stopTime.getJSONObject("tripTo"));
+                    final Destination destination = new Destination(parseMotisPlace(stopTime.getJSONObject("tripTo")));
 
                     final TimeZone timeZone = getMotisTimeZone(place);
                     sd.departures.add(new Departure(

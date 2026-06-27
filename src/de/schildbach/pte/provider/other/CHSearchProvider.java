@@ -220,9 +220,9 @@ public class CHSearchProvider extends AbstractNetworkProvider {
 
                 final PTDate predictedTime = addMinutesToDate(sbEntry.time, sbEntry.dep_delay);
                 final Line line = new Line(sbEntry.Z, sbEntry.operator, type2Product(sbEntry.G), getTrainName(sbEntry.G, sbEntry.Z, sbEntry.L), new Style(Style.Shape.RECT, sbEntry.bgColor, sbEntry.fgColor));
-                final Location destinationLocation = new Location(LocationType.STATION, sbEntry.terminal.stationID, Point.fromDouble(sbEntry.terminal.lat, sbEntry.terminal.lon), null, sbEntry.terminal.name);
+                final Destination destination = new Destination(new Location(LocationType.STATION, sbEntry.terminal.stationID, Point.fromDouble(sbEntry.terminal.lat, sbEntry.terminal.lon), null, sbEntry.terminal.name));
                 final TrackEntry track = sbEntry.track;
-                departures.add(new Departure(sbEntry.time, predictedTime, line, track.planned, track.predicted, destinationLocation, false, null, null, null));
+                departures.add(new Departure(sbEntry.time, predictedTime, line, track.planned, track.predicted, destination, false, null, null, null));
             }
             final StationDepartures sd = new StationDepartures(boardLocation, departures, null);
             final QueryDeparturesResult QDres = new QueryDeparturesResult(resultHeader);
@@ -341,7 +341,7 @@ public class CHSearchProvider extends AbstractNetworkProvider {
                             numChanges.getAndIncrement();
                             final Location terminalLocation = new Location(LocationType.STATION, null, null, leg.terminal);
                             final Line line = new Line(leg.Z, leg.operator, type2Product(leg.G), getTrainName(leg.G, leg.Z, leg.L), new Style(Style.Shape.RECT, leg.bgColor, leg.fgColor));
-                            legsList.add(new Trip.Public(line, terminalLocation, departureStop, arrivalStop, intermediateStops, infoText + disruptions));
+                            legsList.add(new Trip.Public(line, new Destination(terminalLocation), departureStop, arrivalStop, intermediateStops, infoText + disruptions));
                         }
 
                         for (final RouteResult.Connection.Leg.Stop stop : leg.stops) {

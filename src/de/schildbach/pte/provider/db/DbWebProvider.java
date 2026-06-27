@@ -51,6 +51,7 @@ import javax.annotation.Nullable;
 
 import de.schildbach.pte.NetworkId;
 import de.schildbach.pte.dto.Departure;
+import de.schildbach.pte.dto.Destination;
 import de.schildbach.pte.dto.Fare;
 import de.schildbach.pte.dto.Line;
 import de.schildbach.pte.dto.Location;
@@ -380,11 +381,11 @@ public abstract class DbWebProvider extends DbProvider {
                 bahnhofsInfoId);
     }
 
-    private Location parseDirection(final JSONObject verkehrsmittel, final LocationType type) {
+    private Destination parseDirection(final JSONObject verkehrsmittel, final LocationType type) {
         final String richtung = verkehrsmittel.optString("richtung", null);
         if (richtung == null)
             return null;
-        return createLocation(type, null, null, richtung, null, null);
+        return new Destination(createLocation(type, null, null, richtung, null, null));
     }
 
     private List<Location> parseLocations(final JSONArray locs) throws JSONException {
@@ -635,7 +636,7 @@ public abstract class DbWebProvider extends DbProvider {
         final List<Point> path = parsePolylineGroup(journey);
         final Trip.Public leg = new Trip.Public(
                 journeyRef.line,
-                arrivalStop.location,
+                new Destination(arrivalStop.location),
                 departureStop, arrivalStop, intermediateStops,
                 message,
                 new DbJourneyRef(journeyRef.journeyId, null,
@@ -674,7 +675,7 @@ public abstract class DbWebProvider extends DbProvider {
             if (serviceNumber != null && !serviceNumber.isEmpty() && !Character.isDigit(serviceNumber.charAt(0)))
                 serviceNumber = null;
             final Line line = parseLine(verkehrsmittel, produktGattung);
-            final Location destination = parseDirection(verkehrsmittel, LocationType.DIRECTION);
+            final Destination destination = parseDirection(verkehrsmittel, LocationType.DIRECTION);
             final String defaultTeilstreckenHinweis = String.format("(%s - %s)",
                     departureStop.location.name, arrivalStop.location.name);
             final String message = parseJourneyMessages(
@@ -1049,7 +1050,7 @@ public abstract class DbWebProvider extends DbProvider {
                         parseIso8601NoOffset(dep.optString("ezZeit", null)),
                         line,
                         plannedPosition, predictedPosition,
-                        createLocation(LocationType.STATION, null, null, destinationName, null, null),
+                        new Destination(createLocation(LocationType.STATION, null, null, destinationName, null, null)),
                         cancelled,
                         null,
                         parseJourneyMessages(dep, null, null, null),

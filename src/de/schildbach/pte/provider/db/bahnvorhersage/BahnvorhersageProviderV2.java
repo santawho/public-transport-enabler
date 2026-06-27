@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import de.schildbach.oeffi.util.Formats;
 import de.schildbach.pte.dto.Line;
 import de.schildbach.pte.dto.Location;
 import de.schildbach.pte.dto.PTDate;
@@ -39,7 +38,6 @@ import de.schildbach.pte.dto.Stop;
 import de.schildbach.pte.dto.TransferDetails;
 import de.schildbach.pte.dto.Trip;
 import de.schildbach.pte.exception.ParserException;
-import de.schildbach.pte.provider.TransferEvaluationApiProvider;
 import de.schildbach.pte.provider.db.DbProvider;
 import okhttp3.HttpUrl;
 
@@ -150,7 +148,7 @@ public final class BahnvorhersageProviderV2 extends AbstractBahnvorhersageProvid
 
         oLeg.put(idName, leg.journeyRef.getUniqueId());
         oLeg.put("line", buildLineObject(leg));
-        oLeg.put("direction", Formats.fullLocationName(leg.destination));
+        oLeg.put("direction", leg.destination == null ? null : leg.destination.location.fullName(true));
 
         final JSONArray stopOvers = new JSONArray();
         JSONObject oStopOver;
@@ -242,7 +240,7 @@ public final class BahnvorhersageProviderV2 extends AbstractBahnvorhersageProvid
             case STATION:
                 type = "station";
                 id = location.id;
-                name = Formats.fullLocationName(location);
+                name = location == null ? null : location.fullName(true);
                 break;
         }
         if (type == null)

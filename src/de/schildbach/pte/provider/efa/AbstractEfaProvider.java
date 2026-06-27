@@ -55,6 +55,7 @@ import org.xmlpull.v1.XmlPullParserFactory;
 
 import de.schildbach.pte.NetworkId;
 import de.schildbach.pte.dto.Departure;
+import de.schildbach.pte.dto.Destination;
 import de.schildbach.pte.dto.Fare;
 import de.schildbach.pte.dto.Fare.Type;
 import de.schildbach.pte.dto.JourneyRef;
@@ -1837,7 +1838,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
         final String ty = XmlPullUtil.valueTag(pp, "ty");
 
         final Line line;
-        final Location destination;
+        final Destination destination;
         String tripCode = null;
         String transportationId = null;
         if ("100".equals(ty) || "99".equals(ty)) {
@@ -1859,7 +1860,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
             XmlPullUtil.optValueTag(pp, "trainType", null);
             final String destinationName = normalizeLocationName(XmlPullUtil.optValueTag(pp, "des", null));
             final String destID = XmlPullUtil.optValueTag(pp, "destID", null);
-            destination = destinationName != null ? new Location(LocationType.DIRECTION, null, null, destinationName) : null;
+            destination = destinationName == null ? null : new Destination(new Location(LocationType.DIRECTION, null, null, destinationName));
             XmlPullUtil.optValueTag(pp, "dy", null);
             final String de = XmlPullUtil.optValueTag(pp, "de", null);
             final String productName = n != null ? n : de;
@@ -2000,13 +2001,13 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
 
     private static class LineDestinationAndCancelled {
         public final Line line;
-        public final Location destination;
+        public final Destination destination;
         public final boolean cancelled;
         public final String transportationId;
         public final String tripCode;
 
         public LineDestinationAndCancelled(
-                final Line line, final Location destination, final boolean cancelled,
+                final Line line, final Destination destination, final boolean cancelled,
                 final String transportationId, final String tripCode) {
             this.line = line;
             this.destination = destination;
@@ -2023,13 +2024,18 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
         final String destinationName = normalizeLocationName(XmlPullUtil.optAttr(pp, "direction", null));
         final String destinationIdStr = XmlPullUtil.optAttr(pp, "destID", null);
         final String destinationId = !"-1".equals(destinationIdStr) ? destinationIdStr : null;
-        final Location destination;
-        if (destinationId != null)
-            destination = new Location(LocationType.STATION, destinationId, null, destinationName);
-        else if (destinationId == null && destinationName != null)
-            destination = new Location(LocationType.DIRECTION, null, null, destinationName);
-        else
+        final Destination destination;
+        if (destinationName == null) {
             destination = null;
+        } else if (destinationId == null) {
+            destination = new Destination(
+                    new Location(LocationType.DIRECTION, null, null, destinationName),
+                    !isStationBoardDestinationCommonlyDirection());
+        } else {
+            destination = new Destination(
+                    new Location(LocationType.STATION, destinationId, null, destinationName),
+                    isStationBoardDestinationCommonlyDirection());
+        }
 
         final String slMotType = XmlPullUtil.attr(pp, "motType");
         final String slSymbol = XmlPullUtil.optAttr(pp, "symbol", null);
@@ -2379,7 +2385,8 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
         intermediateStops.remove(0);
 
         final String message = null;
-        final Trip.Public journeyLeg = new Trip.Public(styledLine, arrivalStop.location,
+        final Trip.Public journeyLeg = new Trip.Public(styledLine,
+                new Destination(arrivalStop.location),
                 departureStop, arrivalStop, intermediateStops, message, journeyRef);
         return new QueryJourneyResult(header, url.toString(), journeyRef, journeyLeg);
     }
@@ -2522,7 +2529,8 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
         final LineDestinationAndCancelled parseMobileMResult = parseMobileM(pp, false);
 
         final String message = null;
-        final Trip.Public journeyLeg = new Trip.Public(parseMobileMResult.line, arrivalStop.location,
+        final Trip.Public journeyLeg = new Trip.Public(parseMobileMResult.line,
+                new Destination(arrivalStop.location),
                 departureStop, arrivalStop, intermediateStops, message, journeyRef);
         return new QueryJourneyResult(header, url.toString(), journeyRef, journeyLeg);
     }
@@ -3038,13 +3046,18 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
 
         final String destinationName = normalizeLocationName(XmlPullUtil.optAttr(pp, "destination", null));
         final String destinationId = XmlPullUtil.optAttr(pp, "destID", null);
-        final Location destination;
-        if (destinationId != null)
-            destination = new Location(LocationType.STATION, destinationId, null, destinationName);
-        else if (destinationId == null && destinationName != null)
-            destination = new Location(LocationType.DIRECTION, null, null, destinationName);
-        else
+        final Destination destination;
+        if (destinationName == null) {
             destination = null;
+        } else if (destinationId == null) {
+            destination = new Destination(
+                    new Location(LocationType.DIRECTION, null, null, destinationName),
+                    !isPublicLegDestinationCommonlyDirection());
+        } else {
+            destination = new Destination(
+                    new Location(LocationType.STATION, destinationId, null, destinationName),
+                    isPublicLegDestinationCommonlyDirection());
+        }
 
         final String motSymbol = XmlPullUtil.optAttr(pp, "symbol", null);
         final String motType = XmlPullUtil.optAttr(pp, "motType", null);

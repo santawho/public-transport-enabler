@@ -153,7 +153,7 @@ public final class Location implements Serializable, MessagePackUtils.Packable {
         return name != null;
     }
 
-    public final boolean isIdentified() {
+    public boolean isIdentified() {
         if (type == LocationType.STATION)
             return hasId();
 
@@ -173,7 +173,7 @@ public final class Location implements Serializable, MessagePackUtils.Packable {
         Arrays.sort(NON_UNIQUE_NAMES);
     }
 
-    public final String uniqueShortName() {
+    public String uniqueShortName() {
         if (place != null && name != null && Arrays.binarySearch(NON_UNIQUE_NAMES, name) >= 0)
             return place + ", " + name;
         else if (name != null)
@@ -182,6 +182,14 @@ public final class Location implements Serializable, MessagePackUtils.Packable {
             return id;
         else
             return null;
+    }
+
+    public String fullName(final boolean placeLast) {
+        return place == null || name == null
+                ? uniqueShortName()
+                : placeLast
+                ? name + ", " + place
+                : place + ", " + name;
     }
 
     @Override

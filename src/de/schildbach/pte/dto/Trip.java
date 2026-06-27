@@ -436,7 +436,7 @@ public final class Trip implements Serializable {
         public final Date loadedAt;
         public Date updateDelayedUntil;
         public final Line line;
-        public final @Nullable Location destination;
+        public final @Nullable Destination destination;
         public final Stop departureStop;
         public final Stop arrivalStop;
         public final @Nullable List<Stop> intermediateStops;
@@ -446,7 +446,7 @@ public final class Trip implements Serializable {
         public @Nullable Location exitLocation;
 
         public Public(
-                final Line line, final Location destination,
+                final Line line, final Destination destination,
                 final Stop departureStop, final Stop arrivalStop,
                 final List<Stop> intermediateStops, final String message,
                 final JourneyRef journeyRef, final Date loadedAt) {
@@ -466,13 +466,13 @@ public final class Trip implements Serializable {
         }
 
         public Public(
-                final Line line, final Location destination, final Stop departureStop, final Stop arrivalStop,
+                final Line line, final Destination destination, final Stop departureStop, final Stop arrivalStop,
                 final List<Stop> intermediateStops, final String message, final JourneyRef journeyRef) {
             this(line, destination, departureStop, arrivalStop, intermediateStops, message, journeyRef, new Date());
         }
 
         public Public(
-                final Line line, final Location destination, final Stop departureStop, final Stop arrivalStop,
+                final Line line, final Destination destination, final Stop departureStop, final Stop arrivalStop,
                 final List<Stop> intermediateStops, final String message) {
             this(line, destination, departureStop, arrivalStop, intermediateStops, message, null);
         }

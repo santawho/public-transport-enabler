@@ -42,6 +42,7 @@ import org.json.JSONObject;
 
 import de.schildbach.pte.NetworkId;
 import de.schildbach.pte.dto.Departure;
+import de.schildbach.pte.dto.Destination;
 import de.schildbach.pte.dto.Fare;
 import de.schildbach.pte.dto.Line;
 import de.schildbach.pte.dto.LineDestination;
@@ -480,8 +481,8 @@ public class NegentweeProvider extends AbstractNetworkProvider {
                             new Line(leg.getString("service"), (operator != null) ? operator.getString("name") : null,
                                     lineProduct, lineName.toString(), leg.optString("service"),
                                     Standard.STYLES.get(lineProduct), null, null),
-                            new Location(LocationType.STATION, null, null, leg.getString("destination")), firstStop,
-                            lastStop, foundStops, legMessage.length() > 0 ? legMessage.toString() : null);
+                            new Destination(new Location(LocationType.STATION, null, null, leg.getString("destination"))),
+                            firstStop, lastStop, foundStops, legMessage.length() > 0 ? legMessage.toString() : null);
                     newLeg.setPath(foundPoints);
                     foundLegs.add(newLeg);
                     break;
@@ -563,7 +564,7 @@ public class NegentweeProvider extends AbstractNetworkProvider {
                         !departure.isNull("service") ? departure.getString("service") : mode.getString("name"), null,
                         Standard.STYLES.get(lineProduct), null, null),
                 !departure.isNull("platform") ? new Position(departure.getString("platform")) : null, null,
-                new Location(LocationType.DIRECTION, null, null, departure.getString("destinationName")),
+                new Destination(new Location(LocationType.DIRECTION, null, null, departure.getString("destinationName"))),
                 false,
                 null,
                 !departure.isNull("realtimeText") ? departure.optString("realtimeText") : null,
@@ -842,8 +843,8 @@ public class NegentweeProvider extends AbstractNetworkProvider {
                         lineDestinationResult.add(new LineDestination(
                                 new Line(null, departure.getString("operatorName"), lineProduct, mode.getString("name"),
                                         null, Standard.STYLES.get(lineProduct), null, null),
-                                new Location(LocationType.STATION, null, null, null,
-                                        departure.getString("destinationName"), EnumSet.of(lineProduct))));
+                                new Destination(new Location(LocationType.STATION, null, null, null,
+                                        departure.getString("destinationName"), EnumSet.of(lineProduct)))));
                     }
 
                     // Add to result object

@@ -40,6 +40,7 @@ import java.util.regex.Pattern;
 import javax.annotation.Nullable;
 
 import de.schildbach.pte.NetworkId;
+import de.schildbach.pte.dto.Destination;
 import de.schildbach.pte.dto.PTDate;
 import de.schildbach.pte.provider.AbstractNetworkProvider;
 import de.schildbach.pte.util.ParserUtils;
@@ -544,8 +545,8 @@ public class VrsProvider extends AbstractNetworkProvider {
                             position = new Position(postName);
                         }
                     }
-                    final Location destination = new Location(LocationType.DIRECTION, null /* id */, null /* place */,
-                            lineObj.getString("direction"));
+                    final Destination destination = new Destination(new Location(LocationType.DIRECTION,
+                            null /* id */, null /* place */, lineObj.getString("direction")));
 
                     final LineDestination lineDestination = new LineDestination(line, destination);
                     if (!lines.contains(lineDestination)) {
@@ -910,7 +911,7 @@ public class VrsProvider extends AbstractNetworkProvider {
                         legs.add(newLeg);
                     } else if (type.equals("publicTransport")) {
                         final Trip.Public newLeg = new Trip.Public(line, direction != null
-                                ? new Location(LocationType.ANY, null /* id */, null /* place */, direction) : null,
+                                ? new Destination(new Location(LocationType.DIRECTION, null /* id */, null /* place */, direction)) : null,
                                 new Stop(segmentOrigin, true /* departure */, departurePlanned, departurePredicted,
                                         segmentOriginPosition, segmentOriginPosition),
                                 new Stop(segmentDestination, false /* departure */, arrivalPlanned, arrivalPredicted,

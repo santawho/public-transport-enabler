@@ -50,6 +50,7 @@ import javax.annotation.Nullable;
 
 import de.schildbach.pte.NetworkId;
 import de.schildbach.pte.dto.Departure;
+import de.schildbach.pte.dto.Destination;
 import de.schildbach.pte.dto.Fare;
 import de.schildbach.pte.dto.Line;
 import de.schildbach.pte.dto.Location;
@@ -391,11 +392,11 @@ public abstract class DbMovasProvider extends DbProvider {
                 bahnhofsInfoId);
     }
 
-    private Location parseDirection(final JSONObject dep, final LocationType type) {
+    private Destination parseDirection(final JSONObject dep, final LocationType type) {
         final String richtung = dep.optString("richtung", null);
         if (richtung == null)
             return null;
-        return createLocation(type, null, null, richtung, null, null);
+        return new Destination(createLocation(type, null, null, richtung, null, null));
     }
 
     private List<Location> parseLocations(final JSONArray locs) throws JSONException {
@@ -632,7 +633,7 @@ public abstract class DbMovasProvider extends DbProvider {
         final List<Point> path = parsePolylineGroup(journey);
         final Trip.Public leg = new Trip.Public(
                 journeyRef.line,
-                arrivalStop.location,
+                new Destination(arrivalStop.location),
                 departureStop, arrivalStop, intermediateStops,
                 message,
                 new DbJourneyRef(journeyRef.journeyId, null,
@@ -663,7 +664,7 @@ public abstract class DbMovasProvider extends DbProvider {
             if (produktGattung == null)
                 produktGattung = abschnitt.optString("produktGattungen", null);
             final Line line = parseLine(abschnitt, produktGattung);
-            final Location destination = parseDirection(abschnitt, LocationType.DIRECTION);
+            final Destination destination = parseDirection(abschnitt, LocationType.DIRECTION);
             final String message = parseJourneyMessages(abschnitt, null);
             final String journeyId = abschnitt.optString("zuglaufId", null);
             final String administrationId = abschnitt.optString("administrationId", null);

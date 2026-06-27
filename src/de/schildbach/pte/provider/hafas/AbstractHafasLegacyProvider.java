@@ -57,6 +57,7 @@ import org.xmlpull.v1.XmlPullParserFactory;
 
 import de.schildbach.pte.NetworkId;
 import de.schildbach.pte.dto.Departure;
+import de.schildbach.pte.dto.Destination;
 import de.schildbach.pte.dto.Line;
 import de.schildbach.pte.dto.Line.Attr;
 import de.schildbach.pte.dto.Location;
@@ -578,13 +579,17 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
                         else
                             destinationName = null;
 
-                        final Location destination;
+                        final Destination destination;
                         if (dirnr != null) {
                             final String[] destinationPlaceAndName = splitStationName(destinationName);
-                            destination = new Location(LocationType.STATION, dirnr, destinationPlaceAndName[0],
-                                    destinationPlaceAndName[1]);
+                            destination = new Destination(
+                                    new Location(LocationType.STATION, dirnr,
+                                            destinationPlaceAndName[0], destinationPlaceAndName[1]),
+                                    isStationBoardDestinationCommonlyDirection());
                         } else {
-                            destination = new Location(LocationType.DIRECTION, null, null, destinationName);
+                            destination = new Destination(
+                                    new Location(LocationType.DIRECTION, null, null, destinationName),
+                                    !isStationBoardDestinationCommonlyDirection());
                         }
 
                         final Line prodLine = parseLineAndType(prod);
@@ -1019,7 +1024,7 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
 
                         // journey
                         final Line line;
-                        Location destination = null;
+                        Destination destination = null;
 
                         List<Stop> intermediateStops = null;
 
@@ -1054,8 +1059,8 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
                                 } else if ("DIRECTION".equals(attrName)) {
                                     final String[] destinationPlaceAndName = splitStationName(
                                             attributeVariants.get("NORMAL"));
-                                    destination = new Location(LocationType.ANY, null, destinationPlaceAndName[0],
-                                            destinationPlaceAndName[1]);
+                                    destination = new Destination(new Location(LocationType.ANY, null,
+                                            destinationPlaceAndName[0], destinationPlaceAndName[1]));
                                 }
                             }
                             XmlPullUtil.skipExit(pp, "JourneyAttributeList");
@@ -1892,13 +1897,13 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
                             final Line line = newLine(lineNetwork, lineProduct, normalizeLineName(lineName),
                                     lineComment, lineAttrs.toArray(new Attr[0]));
 
-                            final Location direction;
+                            final Destination destination;
                             if (directionStr != null) {
                                 final String[] directionPlaceAndName = splitStationName(directionStr);
-                                direction = new Location(LocationType.ANY, null, directionPlaceAndName[0],
-                                        directionPlaceAndName[1]);
+                                destination = new Destination(new Location(LocationType.ANY, null,
+                                        directionPlaceAndName[0], directionPlaceAndName[1]));
                             } else {
-                                direction = null;
+                                destination = null;
                             }
 
                             final Stop departure = new Stop(departureLocation, true,
@@ -1910,7 +1915,7 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
                                     timestampFromMillis(predictedArrivalTime),
                                     plannedArrivalPosition, predictedArrivalPosition, arrivalCancelled);
 
-                            leg = new Trip.Public(line, direction, departure, arrival, intermediateStops,
+                            leg = new Trip.Public(line, destination, departure, arrival, intermediateStops,
                                     disruptionText);
                         } else {
                             throw new IllegalStateException("unhandled type: " + type);

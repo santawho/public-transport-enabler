@@ -38,7 +38,7 @@ public final class Departure implements Serializable {
     public final Line line;
     public final @Nullable Position plannedPosition;
     public final @Nullable Position predictedPosition;
-    public final @Nullable Location destination;
+    public final @Nullable Destination destination;
     public final boolean cancelled;
     public final @Nullable int[] capacity;
     public final @Nullable String message;
@@ -50,7 +50,7 @@ public final class Departure implements Serializable {
             final Line line,
             final Position plannedPosition,
             final Position predictedPosition,
-            final Location destination,
+            final Destination destination,
             final boolean cancelled,
             final int[] capacity,
             final String message,
