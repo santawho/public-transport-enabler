@@ -93,17 +93,33 @@ public class VbnProvider extends AbstractHafasClientInterfaceProvider {
         setStyles(STYLES);
     }
 
-    private static final String[] PLACES = { "Bremen", "Bremerhaven", "Hamburg", "Oldenburg(Oldb)", "Osnabrück",
-            "Göttingen", "Rostock", "Warnemünde" };
+//    private static final String[] PLACES = { "Bremen", "Bremerhaven", "Hamburg", "Oldenburg(Oldb)", "Osnabrück",
+//            "Göttingen", "Rostock", "Warnemünde" };
+//
+//    @Override
+//    protected String[] splitStationName(final String name) {
+//        for (final String place : PLACES) {
+//            if (name.startsWith(place + " ") || name.startsWith(place + "-"))
+//                return new String[] { place, name.substring(place.length() + 1) };
+//        }
+//
+//        return super.splitStationName(name);
+//    }
+
+    // list all places, which contain at least one space
+    // except: places with "Bad "-prefix and no further spaces
+    private static final String[] SPECIAL_PLACES = new String[]{
+            "Groß Schwaß"
+    };
 
     @Override
-    protected String[] splitStationName(final String name) {
-        for (final String place : PLACES) {
-            if (name.startsWith(place + " ") || name.startsWith(place + "-"))
-                return new String[] { place, name.substring(place.length() + 1) };
-        }
+    protected String[] splitDirectionName(final String placeAndName) {
+        return parseSpaceDelimitedPlaceAndStation(placeAndName, SPECIAL_PLACES);
+    }
 
-        return super.splitStationName(name);
+    @Override
+    protected String[] splitStationName(final String placeAndName) {
+        return parseSpaceDelimitedPlaceAndStation(placeAndName, SPECIAL_PLACES);
     }
 
     @Override
