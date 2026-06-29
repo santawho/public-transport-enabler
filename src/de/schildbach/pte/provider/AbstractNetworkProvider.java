@@ -359,7 +359,7 @@ public abstract class AbstractNetworkProvider extends AbstractLocationSearchProv
                         parenthesisLevel = 0;
                 }
 
-                if (ch == ' ') {
+                if (ch == ' ' && parenthesisLevel == 0) {
                     // word ends with space
                     if (wordStart < 0) {
                         ++pos;
@@ -382,7 +382,8 @@ public abstract class AbstractNetworkProvider extends AbstractLocationSearchProv
                 final String word = placeAndName.substring(wordStart, wordEnd);
                 inPrefixArea = false;
                 for (final String placePrefix : PLACE_PREFIXES) {
-                    if (word.equals(placePrefix)) {inPrefixArea = true;
+                    if (word.equals(placePrefix)) {
+                        inPrefixArea = true;
                         break;
                     }
                 }
