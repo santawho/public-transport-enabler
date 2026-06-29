@@ -57,14 +57,26 @@ public class OebbProvider extends AbstractHafasClientInterfaceProvider {
         setApiAuthorization(apiAuthorization);
     }
 
-    private static final String[] PLACES = { "Wien", "Graz", "Linz/Donau", "Salzburg", "Innsbruck" };
+//    private static final String[] PLACES = { "Wien", "Graz", "Linz/Donau", "Salzburg", "Innsbruck" };
+//
+//    @Override
+//    protected String[] splitStationName(final String name) {
+//        for (final String place : PLACES)
+//            if (name.startsWith(place + " "))
+//                return new String[] { place, name.substring(place.length() + 1) };
+//        return super.splitStationName(name);
+//    }
+
+
+    // list all places, which contain at least one space
+    // except: places with "Bad "-prefix and no further spaces
+    private static final String[] SPECIAL_PLACES = new String[]{
+// the following contain spaces and must be listed here
+    };
 
     @Override
-    protected String[] splitStationName(final String name) {
-        for (final String place : PLACES)
-            if (name.startsWith(place + " "))
-                return new String[] { place, name.substring(place.length() + 1) };
-        return super.splitStationName(name);
+    protected String[] splitStationName(final String placeAndName) {
+        return parseSpaceDelimitedPlaceAndStation(placeAndName, SPECIAL_PLACES);
     }
 
     @Override
