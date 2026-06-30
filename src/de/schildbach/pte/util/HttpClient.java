@@ -54,6 +54,7 @@ import de.schildbach.pte.exception.NotFoundException;
 import de.schildbach.pte.exception.SessionExpiredException;
 import de.schildbach.pte.exception.UnexpectedRedirectException;
 
+import de.schildbach.pte.provider.ApiProvider;
 import okhttp3.Call;
 import okhttp3.CertificatePinner;
 import okhttp3.CompressionInterceptor;
@@ -82,6 +83,21 @@ import static java.util.Objects.requireNonNull;
  * @author Andreas Schildbach
  */
 public final class HttpClient {
+    public interface UserAgentFactory {
+        String getUserAgent(ApiProvider.UserAgentType forType);
+    }
+    private static UserAgentFactory userAgentFactory;
+    public static void setUserAgentFactory(final UserAgentFactory userAgentFactory) {
+        HttpClient.userAgentFactory = userAgentFactory;
+    }
+    public static String getUserAgent(final ApiProvider.UserAgentType forType) {
+        if (forType == ApiProvider.UserAgentType.NONE)
+            return null;
+        if (userAgentFactory == null)
+            return null;
+        return userAgentFactory.getUserAgent(forType);
+    }
+
     @Nullable
     private String userAgent = null;
     private final Map<String, String> headers = new HashMap<>();

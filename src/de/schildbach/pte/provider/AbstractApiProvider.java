@@ -33,6 +33,7 @@ public abstract class AbstractApiProvider implements ApiProvider {
 
     protected AbstractApiProvider() {
          this.log = LoggerFactory.getLogger(this.getClass());
+         setUserAgent(HttpClient.getUserAgent(getUserAgentType()));
     }
 
     public Logger getLog() {

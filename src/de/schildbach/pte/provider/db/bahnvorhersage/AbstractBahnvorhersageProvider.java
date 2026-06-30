@@ -65,6 +65,11 @@ public abstract class AbstractBahnvorhersageProvider extends AbstractApiProvider
         this.dbProvider = dbProvider;
     }
 
+    @Override
+    public UserAgentType getUserAgentType() {
+        return UserAgentType.APP;
+    }
+
     protected static boolean checkPreconditions(final Trip trip) {
         // at least one transfer must be train to train.
         // otherwise the result would contain no transfer evaluation at all,
