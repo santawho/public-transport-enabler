@@ -106,7 +106,7 @@ public abstract class AbstractBahnvorhersageProvider extends AbstractApiProvider
             return null;
 
         if (!(tripRef instanceof BahnvorhersageTripRef))
-            throw new RuntimeException("trip is not compatible with Bahnvorhersage: tripRef=" + tripRef.getClass().getName());
+            throw new RuntimeException("trip is not compatible with Bahn-Vorhersage: tripRef=" + tripRef.getClass().getName());
 
         return ((BahnvorhersageTripRef) tripRef).getBahnvorhersageRefreshToken();
     }
@@ -125,12 +125,12 @@ public abstract class AbstractBahnvorhersageProvider extends AbstractApiProvider
         return new Description.Base() {
             @Override
             public String getName() {
-                return "Bahnvorhersage";
+                return "Bahn-Vorhersage";
             }
 
             @Override
             public String getDescriptionText() {
-                return "Bahnvorhersage provides transfer probabilities.";
+                return "Bahn-Vorhersage provides transfer probabilities.";
             }
 
             @Override
