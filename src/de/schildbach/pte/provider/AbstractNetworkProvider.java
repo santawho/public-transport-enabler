@@ -247,19 +247,24 @@ public abstract class AbstractNetworkProvider extends AbstractLocationSearchProv
                 && trip.transferDetails == null) {
             final TransferEvaluationProvider transferEvaluationProvider = getTransferEvaluationProvider();
             if (transferEvaluationProvider != null) {
-                final List<TransferDetails> transferDetails = transferEvaluationProvider.evaluateTransfersForTrip(trip);
-                if (transferDetails != null) {
-                    final int numTransfers = transferDetails.size();
-                    int numPublicLegs = 0;
-                    for (final Trip.Leg tripLeg : trip.legs) {
-                        if (tripLeg instanceof Trip.Public)
-                            numPublicLegs += 1;
+                try {
+                    final List<TransferDetails> transferDetails = transferEvaluationProvider.evaluateTransfersForTrip(trip);
+                    if (transferDetails != null) {
+                        final int numTransfers = transferDetails.size();
+                        int numPublicLegs = 0;
+                        for (final Trip.Leg tripLeg : trip.legs) {
+                            if (tripLeg instanceof Trip.Public)
+                                numPublicLegs += 1;
+                        }
+                        if (numTransfers == numPublicLegs - 1) {
+                            trip.transferDetails = transferDetails.toArray(new TransferDetails[0]);
+                        } else {
+                            log.warn("unexpected {} transfers for {} public legs", numTransfers, numPublicLegs);
+                        }
                     }
-                    if (numTransfers == numPublicLegs - 1) {
-                        trip.transferDetails = transferDetails.toArray(new TransferDetails[0]);
-                    } else {
-                        log.warn("unexpected {} transfers for {} public legs", numTransfers, numPublicLegs);
-                    }
+                } catch (final IOException ioe) {
+                    log.error("cannot evaluate transfers for trip", ioe);
+                    return null;
                 }
             }
         }

@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import de.schildbach.pte.dto.JourneyRef;
 import de.schildbach.pte.dto.Line;
 import de.schildbach.pte.dto.Location;
 import de.schildbach.pte.dto.PTDate;
@@ -62,8 +63,12 @@ public final class BahnvorhersageProviderV2 extends AbstractBahnvorhersageProvid
 
         String page = null;
         try {
-            final String request = buildRequestObject(trip).toString();
-            page = doRequest(url, request);
+            final JSONObject request = buildRequestObject(trip);
+            if (request == null) {
+                log.error("unable to build request for bahnvorhersage");
+                return null;
+            }
+            page = doRequest(url, request.toString());
             final JSONArray res = new JSONArray(page);
             if (res.length() < 1)
                 return null;
@@ -78,22 +83,33 @@ public final class BahnvorhersageProviderV2 extends AbstractBahnvorhersageProvid
         final JSONArray journeysArray = new JSONArray();
         journeysArray.put(buildJourneyObject(trip));
         oRequest.put("journeys", journeysArray);
-        oRequest.put("trips", buildTripsObject(trip));
+        final JSONObject trips = buildTripsObject(trip, true);
+        if (trips != null)
+            oRequest.put("trips", trips);
         return oRequest;
     }
 
-    private JSONObject buildTripsObject(final Trip trip) throws IOException, JSONException {
+    private JSONObject buildTripsObject(final Trip trip, final boolean nullOnAnyError) throws IOException, JSONException {
         final JSONObject oTrips = new JSONObject();
         for (final Trip.Leg leg : trip.legs) {
             if (!(leg instanceof Trip.Public))
                 continue;
             final DbProvider.DbJourneyRef journeyRef = (DbProvider.DbJourneyRef) ((Trip.Public) leg).journeyRef;
             final QueryJourneyResult result = dbProvider.queryJourneyWithCache(journeyRef);
-            if (result == null || result.status != QueryJourneyResult.Status.OK)
+            if (result == null || result.status != QueryJourneyResult.Status.OK) {
+                if (nullOnAnyError)
+                    return null;
                 continue;
+            }
             final Trip.Public journeyLeg = result.journeyLeg;
+            final JourneyRef ref = journeyLeg.journeyRef;
+            if (ref == null) {
+                if (nullOnAnyError)
+                    return null;
+                continue;
+            }
             final JSONObject oTrip = buildLegObject(journeyLeg, "id");
-            oTrips.put(journeyLeg.journeyRef.getUniqueId(), oTrip);
+            oTrips.put(ref.getUniqueId(), oTrip);
         }
         return oTrips;
     }
