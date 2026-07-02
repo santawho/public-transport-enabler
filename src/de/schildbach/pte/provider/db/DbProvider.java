@@ -141,8 +141,23 @@ public abstract class DbProvider extends AbstractNetworkProvider {
             final boolean loadPath) throws IOException;
 
     public static final String OPERATOR_DB_FERNVERKEHR = "DB Fernverkehr AG";
-    public static final int COLOR_BACKGROUND_NON_DB_HIGH_SPEED_TRAIN = Style.parseColor("#e8d1be");
-    public static final Style STYLE_NON_DB_HIGH_SPEED_TRAIN = new Style(Style.Shape.RECT, COLOR_BACKGROUND_NON_DB_HIGH_SPEED_TRAIN, Style.RED, Style.RED);
+    public static Style.Shape DB_DEFAULT_STYLE_SHAPE = Style.Shape.ROUNDED;
+    public static final Style STYLE_NON_DB_HIGH_SPEED_TRAIN = new Style(DB_DEFAULT_STYLE_SHAPE, Style.rgb(232,209,190), Style.RED, Style.RED);
+
+    private static final Map<Product, Style> PRODUCT_STYLES;
+
+    static {
+        PRODUCT_STYLES = new HashMap<>();
+        PRODUCT_STYLES.put(Product.HIGH_SPEED_TRAIN, new Style(DB_DEFAULT_STYLE_SHAPE, Style.rgb(70,75,85), Style.WHITE));
+        PRODUCT_STYLES.put(Product.REGIONAL_TRAIN, new Style(DB_DEFAULT_STYLE_SHAPE, Style.rgb(175,180,187), Style.BLACK, Style.rgb(135,140,150)));
+        PRODUCT_STYLES.put(Product.SUBURBAN_TRAIN, new Style(DB_DEFAULT_STYLE_SHAPE, Style.rgb(64,131,53), Style.WHITE));
+        PRODUCT_STYLES.put(Product.SUBWAY, new Style(DB_DEFAULT_STYLE_SHAPE, Style.rgb(20,85,192), Style.WHITE));
+        PRODUCT_STYLES.put(Product.TRAM, new Style(DB_DEFAULT_STYLE_SHAPE, Style.rgb(169,69,93), Style.WHITE));
+        PRODUCT_STYLES.put(Product.BUS, new Style(DB_DEFAULT_STYLE_SHAPE, Style.rgb(129,73,151), Style.WHITE));
+        PRODUCT_STYLES.put(Product.ON_DEMAND, new Style(DB_DEFAULT_STYLE_SHAPE, Style.rgb(255,216,0), Style.BLACK, Style.rgb(140,118,0)));
+        PRODUCT_STYLES.put(Product.REPLACEMENT_SERVICE, new Style(DB_DEFAULT_STYLE_SHAPE, Style.rgb(155,27,96), Style.WHITE));
+        PRODUCT_STYLES.put(Product.FERRY, new Style(DB_DEFAULT_STYLE_SHAPE, Style.rgb(48,159,209), Style.BLACK));
+    }
 
     public static Style lineStyle(
             final @Nullable Map<String, Style> styles,
@@ -150,13 +165,18 @@ public abstract class DbProvider extends AbstractNetworkProvider {
             @Nullable final Product product,
             @Nullable final String label) {
         Style styleFromNetwork = null;
-        if (product != null && product.equals(Product.HIGH_SPEED_TRAIN)) {
-            if (network != null) {
-                if (!OPERATOR_DB_FERNVERKEHR.equals(network))
-                    styleFromNetwork = STYLE_NON_DB_HIGH_SPEED_TRAIN;
-            } else {
-                if (label == null || !(label.startsWith("ICE ") || label.startsWith("IC ")))
-                    styleFromNetwork = STYLE_NON_DB_HIGH_SPEED_TRAIN;
+        if (product != null) {
+            if (product.equals(Product.HIGH_SPEED_TRAIN)) {
+                if (network != null) {
+                    if (!OPERATOR_DB_FERNVERKEHR.equals(network))
+                        styleFromNetwork = STYLE_NON_DB_HIGH_SPEED_TRAIN;
+                } else {
+                    if (label == null || !(label.startsWith("ICE ") || label.startsWith("IC ")))
+                        styleFromNetwork = STYLE_NON_DB_HIGH_SPEED_TRAIN;
+                }
+            }
+            if (styleFromNetwork == null) {
+                styleFromNetwork = PRODUCT_STYLES.get(product);
             }
         }
         return Standard.resolveLineStyle(styles, network, product, label, styleFromNetwork);
