@@ -65,10 +65,12 @@ public class SeProvider extends AbstractHafasClientInterfaceProvider {
 
     @Override
     protected String[] splitStationName(final String name) {
-        final Matcher mParen = P_SPLIT_NAME_PAREN.matcher(name);
-        if (mParen.matches())
-            return new String[] { mParen.group(2), mParen.group(1) };
-        return super.splitStationName(name);
+//        final Matcher mParen = P_SPLIT_NAME_PAREN.matcher(name);
+//        if (mParen.matches())
+//            return new String[] { mParen.group(2), mParen.group(1) };
+//        return super.splitStationName(name);
+
+        return new String[]{null, name};
     }
 
     @Override
