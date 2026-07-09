@@ -188,7 +188,7 @@ public enum NetworkId {
 
     // Luxembourg
     LU(Descriptor.from(LuProvider.class, "lb-LU", "LU;Luxemburg")),
-    CFL(Descriptor.from(CflProvider.class, "lb-LU", "LU;Luxemburg")),
+    CFL(Descriptor.from(CflProvider.class, "lb-LU", "LU;Luxemburg", State.defunct)),
 
     // United Kingdom
     TLEM(Descriptor.from(TlemProvider.class, "en-UK", "GB;Greater London;Derbyshire;Leicestershire;Rutland;Northamptonshire;Nottinghamshire;Lincolnshire;Berkshire;Buckinghamshire;East Sussex;Hampshire;Isle of Wight;Kent;Oxfordshire;Surrey;West Sussex;Essex;Hertfordshire;Bedfordshire;Cambridgeshire;Norfolk;Suffolk;Somerset;Gloucestershire;Wiltshire;Dorset;Devon;Cornwall;West Devon;Stowford;Eastleigh;Swindon;Gloucester;Plymouth;Torbay;Bournemouth;Poole;Birmingham")),
