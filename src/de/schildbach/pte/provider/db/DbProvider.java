@@ -220,7 +220,11 @@ public abstract class DbProvider extends AbstractNetworkProvider {
         }
 
         public DbTripRef(final DbTripRef simplifiedTripRef, final String ctxRecon) {
-            super(simplifiedTripRef);
+            this(simplifiedTripRef, ctxRecon, null);
+        }
+
+        public DbTripRef(final DbTripRef simplifiedTripRef, final String ctxRecon, final Location newTo) {
+            super(simplifiedTripRef, newTo);
             this.ctxRecon = ctxRecon;
             this.limitToDticket = simplifiedTripRef.limitToDticket;
             this.hasDticket = simplifiedTripRef.hasDticket;
@@ -319,11 +323,11 @@ public abstract class DbProvider extends AbstractNetworkProvider {
     }
 
     @Override
-    public TripRef createTripRefFromPreviousTripWithNewLegs(final Trip trip, final List<Trip.Leg> newLegs) {
+    public TripRef createTripRefFromPreviousTripWithNewLegs(final Trip trip, final List<Trip.Leg> newLegs, final Location newTo) {
         final TripRef prevTripRef = trip.tripRef;
         if (!(prevTripRef instanceof DbTripRef))
             return null;
-        return new DbTripRef((DbTripRef) prevTripRef, refreshTokenFromPublicLegs(newLegs));
+        return new DbTripRef((DbTripRef) prevTripRef, refreshTokenFromPublicLegs(newLegs), newTo);
     }
 
     public static String refreshTokenFromPublicLegs(final List<Trip.Leg> legs) {

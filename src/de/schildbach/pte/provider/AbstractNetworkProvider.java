@@ -237,7 +237,7 @@ public abstract class AbstractNetworkProvider extends AbstractLocationSearchProv
     }
 
     @Override
-    public TripRef createTripRefFromPreviousTripWithNewLegs(final Trip trip, final List<Trip.Leg> newLegs) {
+    public TripRef createTripRefFromPreviousTripWithNewLegs(final Trip trip, final List<Trip.Leg> newLegs, final Location newTo) {
         return null;
     }
 
