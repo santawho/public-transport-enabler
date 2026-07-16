@@ -66,6 +66,11 @@ public class ZvvProvider extends AbstractHafasClientInterfaceProvider {
     private static final String[] PLACES = { "Zürich", "Winterthur" };
 
     @Override
+    protected String[] splitDirectionName(final String name) {
+        return this.splitStationName(name);
+    }
+
+    @Override
     protected String[] splitStationName(String name) {
         for (final String operator : OPERATORS) {
             if (name.endsWith(" " + operator)) {
