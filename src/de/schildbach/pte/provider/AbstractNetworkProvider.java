@@ -31,18 +31,14 @@ import java.util.regex.Pattern;
 import javax.annotation.Nullable;
 
 import org.msgpack.core.MessageUnpacker;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import de.schildbach.pte.NetworkId;
 import de.schildbach.pte.Standard;
 import de.schildbach.pte.dto.JourneyRef;
+import de.schildbach.pte.dto.Line;
 import de.schildbach.pte.dto.Location;
-import de.schildbach.pte.dto.LocationType;
-import de.schildbach.pte.dto.NearbyLocationsResult;
 import de.schildbach.pte.dto.Position;
 import de.schildbach.pte.dto.Product;
-import de.schildbach.pte.dto.QueryDeparturesResult;
 import de.schildbach.pte.dto.QueryJourneyResult;
 import de.schildbach.pte.dto.QueryTripsResult;
 import de.schildbach.pte.dto.Style;
@@ -51,7 +47,6 @@ import de.schildbach.pte.dto.Trip;
 import de.schildbach.pte.dto.TripOptions;
 import de.schildbach.pte.dto.TripRef;
 import de.schildbach.pte.dto.TripShare;
-import de.schildbach.pte.provider.efa.AbstractEfaProvider;
 import de.schildbach.pte.provider.locationsearch.AbstractLocationSearchProvider;
 
 /**
@@ -298,6 +293,20 @@ public abstract class AbstractNetworkProvider extends AbstractLocationSearchProv
                 return "provides timetable information";
             }
         };
+    }
+
+    protected static String[] noPlaceStationName(final String name) {
+        return new String[] { null, name };
+    }
+
+    protected String[] parseSpaceDelimitedDirection(
+            final String placeAndName,
+            final String[] specialPlaces,
+            final Line line,
+            final Set<String> networksWithArbitraryDirections) {
+        if (line != null && line.network != null && networksWithArbitraryDirections.contains(line.network))
+            return noPlaceStationName(placeAndName);
+        return parseSpaceDelimitedPlaceAndStation(placeAndName, specialPlaces);
     }
 
     private static final String[] PLACE_PREFIXES = {

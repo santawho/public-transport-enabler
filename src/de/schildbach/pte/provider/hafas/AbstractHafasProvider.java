@@ -23,10 +23,8 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import de.schildbach.pte.NetworkId;
+import de.schildbach.pte.dto.Line;
 import de.schildbach.pte.dto.Location;
 import de.schildbach.pte.dto.Position;
 import de.schildbach.pte.dto.Product;
@@ -35,6 +33,8 @@ import de.schildbach.pte.provider.AbstractNetworkProvider;
 
 import static de.schildbach.pte.util.Preconditions.checkArgument;
 import static de.schildbach.pte.util.Preconditions.checkState;
+
+import javax.annotation.Nullable;
 
 /**
  * @author Andreas Schildbach
@@ -156,15 +156,11 @@ public abstract class AbstractHafasProvider extends AbstractNetworkProvider {
     protected static final Pattern P_SPLIT_NAME_NEXT_TO_LAST_COMMA = Pattern.compile("(.*), ([^,]*, [^,]*)");
     protected static final Pattern P_SPLIT_NAME_PAREN = Pattern.compile("(.*) \\((.{3,}?)\\)");
 
-    protected static String[] noPlaceStationName(final String name) {
-        return new String[] { null, name };
-    }
-
     protected String[] splitStationName(final String name) {
         return noPlaceStationName(name);
     }
 
-    protected String[] splitDirectionName(final String name) {
+    protected String[] splitDirectionName(final String name, @Nullable final Line line) {
         return noPlaceStationName(name);
     }
 

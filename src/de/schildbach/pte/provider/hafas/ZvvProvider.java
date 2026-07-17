@@ -22,7 +22,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 
+import javax.annotation.Nullable;
+
 import de.schildbach.pte.NetworkId;
+import de.schildbach.pte.dto.Line;
 import de.schildbach.pte.dto.Product;
 import de.schildbach.pte.dto.Style;
 import de.schildbach.pte.dto.Style.Shape;
@@ -66,7 +69,7 @@ public class ZvvProvider extends AbstractHafasClientInterfaceProvider {
     private static final String[] PLACES = { "Zürich", "Winterthur" };
 
     @Override
-    protected String[] splitDirectionName(final String name) {
+    protected String[] splitDirectionName(final String name, @Nullable final Line line) {
         return this.splitStationName(name);
     }
 

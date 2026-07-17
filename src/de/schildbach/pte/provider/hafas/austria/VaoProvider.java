@@ -17,13 +17,18 @@
 
 package de.schildbach.pte.provider.hafas.austria;
 
+import java.io.Serial;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.annotation.Nullable;
+
 import de.schildbach.pte.NetworkId;
+import de.schildbach.pte.dto.Line;
 import de.schildbach.pte.dto.Product;
 import de.schildbach.pte.dto.Style;
 
@@ -92,9 +97,19 @@ public class VaoProvider extends AbstractHafasClientInterfaceProvider {
 // the following contain spaces and must be listed here
     };
 
+    private static final Set<String> OPERATORS_WITH_ARBITRARY_DIRECTIONS = new HashSet<>() {
+        @Serial
+        private static final long serialVersionUID = -8190812617668364575L;
+
+        {
+            add("Rheintal Busverkehr GmbH");
+            add("Postbus Wolfurt");
+        }
+    };
+
     @Override
-    protected String[] splitDirectionName(final String placeAndName) {
-        return parseSpaceDelimitedPlaceAndStation(placeAndName, SPECIAL_PLACES);
+    protected String[] splitDirectionName(final String placeAndName, @Nullable final Line line) {
+        return parseSpaceDelimitedDirection(placeAndName, SPECIAL_PLACES, line, OPERATORS_WITH_ARBITRARY_DIRECTIONS);
     }
 
     @Override

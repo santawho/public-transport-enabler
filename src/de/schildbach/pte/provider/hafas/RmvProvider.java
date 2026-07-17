@@ -22,7 +22,10 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.annotation.Nullable;
+
 import de.schildbach.pte.NetworkId;
+import de.schildbach.pte.dto.Line;
 import de.schildbach.pte.dto.Product;
 import de.schildbach.pte.dto.Style;
 import de.schildbach.pte.Standard;
@@ -107,7 +110,7 @@ public class RmvProvider extends AbstractHafasClientInterfaceProvider {
     };
 
     @Override
-    protected String[] splitDirectionName(final String placeAndName) {
+    protected String[] splitDirectionName(final String placeAndName, @Nullable final Line line) {
         return parseSpaceDelimitedPlaceAndStation(placeAndName, SPECIAL_PLACES);
     }
 
