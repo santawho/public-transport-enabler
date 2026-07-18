@@ -888,11 +888,11 @@ public abstract class DbWebProvider extends DbProvider {
                 return new QueryTripsResult(this.resultHeader, QueryTripsResult.Status.NO_TRIPS);
             }
             return new QueryTripsResult(this.resultHeader, QueryTripsResult.Status.SERVICE_DOWN);
+        } catch (final JSONException x) {
+            throw new ParserException("cannot parse json: '" + page + "' on " + url, x);
         } catch (final IOException | RuntimeException e) {
             log.error("queryTrips", e);
             return new QueryTripsResult(this.resultHeader, QueryTripsResult.Status.SERVICE_DOWN);
-        } catch (final JSONException x) {
-            throw new ParserException("cannot parse json: '" + page + "' on " + url, x);
         }
     }
 
@@ -919,11 +919,11 @@ public abstract class DbWebProvider extends DbProvider {
                 return new QueryTripsResult(this.resultHeader, QueryTripsResult.Status.NO_TRIPS);
             }
             return new QueryTripsResult(this.resultHeader, QueryTripsResult.Status.SERVICE_DOWN);
+        } catch (final JSONException x) {
+            throw new ParserException("cannot parse json: '" + page + "' on " + url, x);
         } catch (final IOException | RuntimeException e) {
             log.error("queryReloadTrip", e);
             return new QueryTripsResult(this.resultHeader, QueryTripsResult.Status.SERVICE_DOWN);
-        } catch (final JSONException x) {
-            throw new ParserException("cannot parse json: '" + page + "' on " + url, x);
         }
     }
 
@@ -962,11 +962,11 @@ public abstract class DbWebProvider extends DbProvider {
             return new NearbyLocationsResult(this.resultHeader, locations);
         } catch (final InternalErrorException | BlockedException e) {
             return new NearbyLocationsResult(this.resultHeader, NearbyLocationsResult.Status.INVALID_ID);
+        } catch (final JSONException x) {
+            throw new ParserException("cannot parse json: '" + page + "' on " + url, x);
         } catch (final IOException | RuntimeException e) {
             log.error("queryNearbyLocations", e);
             return new NearbyLocationsResult(this.resultHeader, NearbyLocationsResult.Status.SERVICE_DOWN);
-        } catch (final JSONException x) {
-            throw new ParserException("cannot parse json: '" + page + "' on " + url, x);
         }
     }
 
@@ -1068,11 +1068,11 @@ public abstract class DbWebProvider extends DbProvider {
             return result;
         } catch (final InternalErrorException | BlockedException e) {
             return new QueryDeparturesResult(this.resultHeader, QueryDeparturesResult.Status.INVALID_STATION);
+        } catch (final JSONException x) {
+            throw new ParserException("cannot parse json: '" + page + "' on " + url, x);
         } catch (final IOException | RuntimeException e) {
             log.error("queryDepartures", e);
             return new QueryDeparturesResult(this.resultHeader, QueryDeparturesResult.Status.SERVICE_DOWN);
-        } catch (final JSONException x) {
-            throw new ParserException("cannot parse json: '" + page + "' on " + url, x);
         }
     }
 
@@ -1128,11 +1128,11 @@ public abstract class DbWebProvider extends DbProvider {
                 }
             }
             return new SuggestLocationsResult(this.resultHeader, locations);
+        } catch (final JSONException x) {
+            throw new ParserException("cannot parse json: '" + page + "' on " + url, x);
         } catch (final IOException | RuntimeException e) {
             log.error("error getting locations", e);
             return new SuggestLocationsResult(this.resultHeader, SuggestLocationsResult.Status.SERVICE_DOWN);
-        } catch (final JSONException x) {
-            throw new ParserException("cannot parse json: '" + page + "' on " + url, x);
         }
     }
 
@@ -1192,11 +1192,11 @@ public abstract class DbWebProvider extends DbProvider {
                 return new QueryJourneyResult(this.resultHeader, QueryJourneyResult.Status.NO_JOURNEY);
             }
             return new QueryJourneyResult(this.resultHeader, QueryJourneyResult.Status.SERVICE_DOWN);
+        } catch (final JSONException x) {
+            throw new ParserException("cannot parse json: '" + page + "' on " + url, x);
         } catch (final IOException | RuntimeException e) {
             log.error("queryJourney", e);
             return new QueryJourneyResult(this.resultHeader, QueryJourneyResult.Status.SERVICE_DOWN);
-        } catch (final JSONException x) {
-            throw new ParserException("cannot parse json: '" + page + "' on " + url, x);
         }
     }
 
@@ -1366,11 +1366,11 @@ public abstract class DbWebProvider extends DbProvider {
                 return new DbWebTripShare(simplifiedTripRef, vbid);
             } catch (final InternalErrorException | BlockedException e) {
                 return null;
+            } catch (final JSONException x) {
+                throw new ParserException("cannot parse json: '" + page + "' on " + url, x);
             } catch (final IOException | RuntimeException e) {
                 dbProvider.getLog().error("error on shareTrip request", e);
                 return null;
-            } catch (final JSONException x) {
-                throw new ParserException("cannot parse json: '" + page + "' on " + url, x);
             }
         }
 
@@ -1388,11 +1388,11 @@ public abstract class DbWebProvider extends DbProvider {
                 return res.optString("hinfahrtRecon");
             } catch (final InternalErrorException | BlockedException e) {
                 return null;
+            } catch (final JSONException x) {
+                throw new ParserException("cannot parse json: '" + page + "' on " + url, x);
             } catch (final IOException | RuntimeException e) {
                 dbProvider.getLog().error("error on loadSharedTrip request", e);
                 return null;
-            } catch (final JSONException x) {
-                throw new ParserException("cannot parse json: '" + page + "' on " + url, x);
             }
         }
     }
