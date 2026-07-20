@@ -2268,7 +2268,10 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
     }
 
     @Override
-    public QueryJourneyResult queryJourney(final JourneyRef journeyRef, final boolean loadPath) throws IOException {
+    public QueryJourneyResult queryJourney(
+            final JourneyRef journeyRef,
+            final boolean splitSubJourneys,
+            final boolean loadPath) throws IOException {
         return queryJourneyUsingTripStopTimes((EfaJourneyRef) journeyRef, loadPath);
     }
 

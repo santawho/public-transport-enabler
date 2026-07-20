@@ -90,7 +90,10 @@ public class VvmProvider extends AbstractEfaProvider {
     }
 
     @Override
-    public QueryJourneyResult queryJourney(final JourneyRef aJourneyRef, final boolean loadPath) throws IOException {
+    public QueryJourneyResult queryJourney(
+            final JourneyRef aJourneyRef,
+            final boolean splitSubJourneys,
+            final boolean loadPath) throws IOException {
         return queryJourneyMobile((EfaJourneyRef) aJourneyRef, loadPath);
     }
 

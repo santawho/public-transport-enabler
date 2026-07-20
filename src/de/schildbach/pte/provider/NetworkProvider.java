@@ -207,7 +207,7 @@ public interface NetworkProvider extends Provider, LocationSearchProvider {
 
     QueryTripsResult queryReloadTrip(final TripRef tripRef, boolean loadPath) throws IOException;
 
-    QueryJourneyResult queryJourney(final JourneyRef journeyRef, boolean loadPath) throws IOException;
+    QueryJourneyResult queryJourney(final JourneyRef journeyRef, boolean splitSubJourneys, boolean loadPath) throws IOException;
 
     /**
      * Get style of line

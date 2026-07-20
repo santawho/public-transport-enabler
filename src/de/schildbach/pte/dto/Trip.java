@@ -58,7 +58,7 @@ public final class Trip implements Serializable {
     public Trip(
             final Date loadedAt,
             final String id, final TripRef tripRef,
-            final Location from, final Location to, final List<Leg> legs,
+            final Location from, final Location to, final List<? extends Leg> legs,
             final List<Fare> fares, final int[] capacity, final Integer numChanges) {
         this.loadedAt = loadedAt;
         this.updatedAt = loadedAt;
@@ -66,7 +66,7 @@ public final class Trip implements Serializable {
         this.tripRef = tripRef;
         this.from = requireNonNull(from);
         this.to = requireNonNull(to);
-        this.legs = requireNonNull(legs);
+        this.legs = (List<Leg>) requireNonNull(legs);
         this.fares = fares;
         this.capacity = capacity;
         this.numChanges = numChanges;
@@ -235,13 +235,16 @@ public final class Trip implements Serializable {
             return;
 
         for (int i = 1; i < numLegs; i++) {
-            final Trip.Leg leg = legs.get(i);
+            final Leg leg = legs.get(i);
 
             if (leg instanceof Trip.Individual) {
-                final Trip.Leg previous = legs.get(i - 1);
+                final Individual individualLeg = (Individual) leg;
+                final Leg previous = legs.get(i - 1);
 
-                if (leg.getDepartureTime().before(previous.getArrivalTime()))
-                    legs.set(i, ((Trip.Individual) leg).movedClone(previous.getArrivalTime()));
+                if (leg.getDepartureTime().before(previous.getArrivalTime())) {
+                    final Individual movedIndividual = individualLeg.movedClone(previous.getArrivalTime());
+                    legs.set(i, (Leg) movedIndividual);
+                    }
             }
         }
     }
@@ -443,7 +446,9 @@ public final class Trip implements Serializable {
         public final @Nullable String message;
         public final @Nullable JourneyRef journeyRef;
         public @Nullable Location entryLocation;
+        public @Nullable Date entryTime;
         public @Nullable Location exitLocation;
+        public @Nullable Date exitTime;
 
         public Public(
                 final Line line, final Destination destination,
@@ -477,34 +482,53 @@ public final class Trip implements Serializable {
             this(line, destination, departureStop, arrivalStop, intermediateStops, message, null);
         }
 
-        public void setEntryAndExit(final Location entryLocation, final Location exitLocation) {
+        public void setEntryAndExit(
+                final Location entryLocation, final Date entryTime,
+                final Location exitLocation, final Date exitTime) {
             // some providers (like some Hafas) return different location IDs in the original trip leg and the journey
             // try to find by ID or fallback to name comparison
             if (entryLocation != null) {
-                Location realEntry = findRealStopLocation(entryLocation, departureStop.location);
+                Location realEntry = findRealStopLocationAndTime(entryLocation, entryTime, false, departureStop);
                 if (exitLocation == null && realEntry == null)
-                    realEntry = findRealStopLocation(entryLocation, arrivalStop.location);
+                    realEntry = findRealStopLocationAndTime(entryLocation, entryTime, true, arrivalStop);
                 this.entryLocation = (realEntry != null) ? realEntry : entryLocation;
+                this.entryTime = entryTime;
             }
             if (exitLocation != null) {
-                Location realExit = findRealStopLocation(exitLocation, arrivalStop.location);
+                final Location realExit = findRealStopLocationAndTime(exitLocation, exitTime, true, arrivalStop);
                 this.exitLocation = (realExit != null) ? realExit : exitLocation;
+                this.exitTime = exitTime;
             }
         }
 
-        public Stop findStopByLocation(final Location location) {
-            String locId = location.id;
-            if (locId.equals(departure.id))
-                return departureStop;
+        public Stop findStopByLocationAndTime(final Location location, final Date time, final boolean isArrival) {
+            if (location == null)
+                return null;
+            final String locId = location.id;
+            if (locId != null) {
+                if (!isArrival
+                        && locId.equals(departure.id)
+                        && (time == null || time.getTime() == departureStop.plannedDepartureTime.getTime())) {
+                    return departureStop;
+                }
 
-            if (locId.equals(arrival.id))
-                return arrivalStop;
+                if (isArrival
+                        && locId.equals(arrival.id)
+                        && (time == null || time.getTime() == arrivalStop.plannedArrivalTime.getTime())) {
+                    return arrivalStop;
+                }
 
-            for (final Stop stop: intermediateStops) {
-                if (locId.equals(stop.location.id))
-                    return stop;
+                if (intermediateStops != null) {
+                    for (final Stop stop : intermediateStops) {
+                        if (locId.equals(stop.location.id)
+                            && (time == null || time.getTime() == (isArrival
+                                ? stop.plannedArrivalTime
+                                : stop.plannedDepartureTime).getTime())) {
+                            return stop;
+                        }
+                    }
+                }
             }
-
             return null;
         }
 
@@ -537,16 +561,21 @@ public final class Trip implements Serializable {
             return false;
         }
 
-        private Location findRealStopLocation(final Location location, final Location additionalLocation) {
-            final String locId = location.id;
-            if (locId == null) {
+        private Location findRealStopLocationAndTime(
+                final Location location,
+                final Date time, final boolean isArrival,
+                final Stop additionalStop) {
+            if (location == null)
                 return null;
-            }
+            final String locId = location.id;
+            if (locId == null)
+                return null;
+            final Location additionalLocation = additionalStop.location;
             if (locId.equals(additionalLocation.id))
                 return additionalLocation;
             if (intermediateStops != null) {
                 for (final Stop iStop: intermediateStops) {
-                    Location loc = iStop.location;
+                    final Location loc = iStop.location;
                     if (locId.equals(loc.id))
                         return loc;
                 }
@@ -556,10 +585,12 @@ public final class Trip implements Serializable {
             if (java.util.Objects.equals(locName, additionalLocation.name)
                     && java.util.Objects.equals(locPlace, additionalLocation.place))
                 return additionalLocation;
-            for (final Stop iStop: intermediateStops) {
-                Location iLoc = iStop.location;
-                if (java.util.Objects.equals(locName, iLoc.name) && java.util.Objects.equals(locPlace, iLoc.place))
-                    return iLoc;
+            if (intermediateStops != null) {
+                for (final Stop iStop : intermediateStops) {
+                    final Location iLoc = iStop.location;
+                    if (java.util.Objects.equals(locName, iLoc.name) && java.util.Objects.equals(locPlace, iLoc.place))
+                        return iLoc;
+                }
             }
             return null;
         }

@@ -111,7 +111,7 @@ public abstract class AbstractNetworkProvider extends AbstractLocationSearchProv
     }
 
     @Override
-    public QueryJourneyResult queryJourney(final JourneyRef journeyRef, final boolean loadPath) throws IOException {
+    public QueryJourneyResult queryJourney(final JourneyRef journeyRef, final boolean splitSubJourneys, final boolean loadPath) throws IOException {
         throw new UnsupportedOperationException("queryJourney(\"" + journeyRef + "\")");
     }
 

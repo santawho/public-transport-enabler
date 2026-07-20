@@ -853,6 +853,7 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
     @Override
     public QueryJourneyResult queryJourney(
             final JourneyRef journeyRef,
+            final boolean splitSubJourneys,
             final boolean loadPath) throws IOException {
         final HttpUrl.Builder endpointBuilder = apiBase.newBuilder()
                 .addPathSegment("api")

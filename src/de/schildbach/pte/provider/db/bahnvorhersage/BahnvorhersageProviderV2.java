@@ -101,7 +101,7 @@ public final class BahnvorhersageProviderV2 extends AbstractBahnvorhersageProvid
                     return null;
                 continue;
             }
-            final Trip.Public journeyLeg = result.journeyLeg;
+            final Trip.Public journeyLeg = result.journeyLegs.get(0);
             final JourneyRef ref = journeyLeg.journeyRef;
             if (ref == null) {
                 if (nullOnAnyError)

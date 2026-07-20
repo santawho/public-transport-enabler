@@ -20,6 +20,8 @@ package de.schildbach.pte.dto;
 import static java.util.Objects.requireNonNull;
 
 import java.io.Serializable;
+import java.util.Collections;
+import java.util.List;
 
 import javax.annotation.Nullable;
 
@@ -38,15 +40,27 @@ public final class QueryJourneyResult implements Serializable {
 
     public final String queryUri;
     public final JourneyRef journeyRef;
-    public final Trip.Public journeyLeg;
+    public final List<Trip.Public> journeyLegs;
 
-    public QueryJourneyResult(final ResultHeader header, final String queryUri,
-                              final JourneyRef journeyRef, final Trip.Public journeyLeg) {
+    public QueryJourneyResult(
+            final ResultHeader header, final String queryUri,
+            final JourneyRef journeyRef, final Trip.Public journeyLeg) {
         this.header = header;
         this.status = Status.OK;
         this.queryUri = queryUri;
         this.journeyRef = journeyRef;
-        this.journeyLeg = requireNonNull(journeyLeg);
+        this.journeyLegs = Collections.singletonList(requireNonNull(journeyLeg));
+    }
+
+    public QueryJourneyResult(
+            final ResultHeader header, final String queryUri,
+            final JourneyRef journeyRef, final List<Trip.Public> journeyLegs) {
+        assert(!requireNonNull(journeyLegs).isEmpty());
+        this.header = header;
+        this.status = Status.OK;
+        this.queryUri = queryUri;
+        this.journeyRef = journeyRef;
+        this.journeyLegs = journeyLegs;
     }
 
     public QueryJourneyResult(final ResultHeader header, final Status status) {
@@ -55,15 +69,15 @@ public final class QueryJourneyResult implements Serializable {
 
         this.queryUri = null;
         this.journeyRef = null;
-        this.journeyLeg = null;
+        this.journeyLegs = null;
     }
 
     @Override
     public String toString() {
         return getClass().getSimpleName() + "{" +
                 status + "," +
-                (status == Status.OK && journeyLeg != null ?
-                        "journeyLeg=" + journeyLeg : "") +
+                (status == Status.OK && journeyLegs != null ?
+                        "journeyLegs=[" + journeyLegs : "]") +
                 "}";
     }
 

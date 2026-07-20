@@ -418,8 +418,11 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
     }
 
     @Override
-    public QueryJourneyResult queryJourney(final JourneyRef journeyRef, final boolean loadPath) throws IOException {
-        return jsonJourney((HafasJourneyRef) journeyRef, loadPath);
+    public QueryJourneyResult queryJourney(
+            final JourneyRef journeyRef,
+            final boolean splitSubJourneys,
+            final boolean loadPath) throws IOException {
+        return jsonJourney((HafasJourneyRef) journeyRef, splitSubJourneys, loadPath);
     }
 
     protected final NearbyLocationsResult jsonLocGeoPos(
@@ -820,48 +823,14 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
         return null;
     }
 
-    protected final Trip.Public jsonPublicLeg(
+    protected final List<Trip.Public> jsonPublicLeg(
             final JSONObject jny,
+            final boolean splitSubJourneys,
             final Stop aDepartureStop, final Stop aArrivalStop,
-            final List<Line> lines, final JSONArray locList, final JSONArray crdSysList,
+            final JSONObject common, final List<Line> lines, final JSONArray locList, final JSONArray crdSysList,
             final List<String> encodedPolylines,
             final List<Remark> remarks, final List<Remark> hims,
             final Calendar cal, final Date baseDate) throws JSONException {
-        Stop departureStop = aDepartureStop;
-        Stop arrivalStop = aArrivalStop;
-
-        final Line line = lines.get(jny.getInt("prodX"));
-        final String dirTxt = jny.optString("dirTxt", null);
-
-        final Destination destination;
-        if (dirTxt != null) {
-            final String[] splitDirTxt = splitDirectionName(dirTxt, line);
-            destination = new Destination(new Location(LocationType.DIRECTION, null, splitDirTxt[0], splitDirTxt[1]));
-        } else {
-            destination = null;
-        }
-
-        final JSONArray stopList = jny.optJSONArray("stopL");
-        final List<Stop> intermediateStops;
-        if (stopList != null && stopList.length() >= 2) {
-            // just treat stop-list of size 0 or 1 as not existing
-            // Hafas sometimes happens to produce this bullshit
-            // at least we don't understand the meaning yet
-            // checkState(stopList.length() >= 2);
-            if (departureStop == null)
-                departureStop = parseJsonStop(stopList.getJSONObject(0), locList, crdSysList, cal, baseDate);
-            if (arrivalStop == null)
-                arrivalStop = parseJsonStop(stopList.getJSONObject(stopList.length() - 1), locList, crdSysList, cal, baseDate);
-            intermediateStops = new ArrayList<>(stopList.length());
-            for (int iStop = 1; iStop < stopList.length() - 1; iStop++) {
-                final JSONObject stop = stopList.getJSONObject(iStop);
-                final Stop intermediateStop = parseJsonStop(stop, locList, crdSysList, cal, baseDate);
-                intermediateStops.add(intermediateStop);
-            }
-        } else {
-            intermediateStops = null;
-        }
-
         final List<Point> path;
         final JSONObject polyG = jny.optJSONObject("polyG");
         if (polyG != null && encodedPolylines != null) {
@@ -883,12 +852,89 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
         }
 
         final String message = buildMessageFromRemarks(jny, remarks, hims);
-
         final String jid = jny.optString("jid", null);
-        final Trip.Public newTrip = new Trip.Public(line, destination, departureStop, arrivalStop, intermediateStops,
-                message, jid == null ? null : new HafasJourneyRef(jid));
-        newTrip.setPath(path);
-        return newTrip;
+        final JourneyRef journeyRef = jid == null ? null : new HafasJourneyRef(jid);
+        final JSONArray stopList = jny.optJSONArray("stopL");
+        final JSONArray dirL = splitSubJourneys ? jny.optJSONArray("dirL") : null;
+        final List<Trip.Public> legs = new ArrayList<>();
+
+        if (dirL != null) {
+            // split leg into multiple according to direction list
+            final JSONArray prodL = jny.getJSONArray("prodL");
+            final JSONArray commonDirL = common.getJSONArray("dirL");
+            for (int index = 0; index < dirL.length(); index += 1) {
+                final JSONObject prodEntry = prodL.getJSONObject(index);
+                final JSONObject dirEntry = dirL.getJSONObject(index);
+                final String dirTxt = commonDirL.getJSONObject(dirEntry.getInt("dirX")).getString("txt");
+                final Line line = lines.get(prodEntry.getInt("prodX"));
+
+                final String[] splitDirTxt = splitDirectionName(dirTxt, line);
+                final Destination destination = new Destination(new Location(LocationType.DIRECTION, null, splitDirTxt[0], splitDirTxt[1]));
+
+                final int departureStopIndex = prodEntry.getInt("fIdx");
+                final int arrivalStopIndex = prodEntry.getInt("tIdx");
+
+                final List<Stop> intermediateStops = new ArrayList<>(arrivalStopIndex - departureStopIndex - 2);
+                final Stop departureStop = parseJsonStop(stopList.getJSONObject(departureStopIndex), locList, crdSysList, cal, baseDate);
+                final Stop arrivalStop = parseJsonStop(stopList.getJSONObject(arrivalStopIndex), locList, crdSysList, cal, baseDate);
+                for (int iStop = departureStopIndex + 1; iStop < arrivalStopIndex; iStop++) {
+                    final JSONObject stop = stopList.getJSONObject(iStop);
+                    final Stop intermediateStop = parseJsonStop(stop, locList, crdSysList, cal, baseDate);
+                    intermediateStops.add(intermediateStop);
+                }
+
+                final Trip.Public newLeg = new Trip.Public(
+                        line, destination,
+                        departureStop, arrivalStop, intermediateStops,
+                        message, journeyRef);
+                newLeg.setPath(path);
+                legs.add(newLeg);
+            }
+        } else {
+            // treat whole leg as one
+            Stop departureStop = aDepartureStop;
+            Stop arrivalStop = aArrivalStop;
+
+            final Line line = lines.get(jny.getInt("prodX"));
+            final String dirTxt = jny.optString("dirTxt", null);
+
+            final Destination destination;
+            if (dirTxt != null) {
+                final String[] splitDirTxt = splitDirectionName(dirTxt, line);
+                destination = new Destination(new Location(LocationType.DIRECTION, null, splitDirTxt[0], splitDirTxt[1]));
+            } else {
+                destination = null;
+            }
+
+            final List<Stop> intermediateStops;
+            if (stopList != null && stopList.length() >= 2) {
+                // just treat stop-list of size 0 or 1 as not existing
+                // Hafas sometimes happens to produce this bullshit
+                // at least we don't understand the meaning yet
+                // checkState(stopList.length() >= 2);
+                if (departureStop == null)
+                    departureStop = parseJsonStop(stopList.getJSONObject(0), locList, crdSysList, cal, baseDate);
+                if (arrivalStop == null)
+                    arrivalStop = parseJsonStop(stopList.getJSONObject(stopList.length() - 1), locList, crdSysList, cal, baseDate);
+                intermediateStops = new ArrayList<>(stopList.length());
+                for (int iStop = 1; iStop < stopList.length() - 1; iStop++) {
+                    final JSONObject stop = stopList.getJSONObject(iStop);
+                    final Stop intermediateStop = parseJsonStop(stop, locList, crdSysList, cal, baseDate);
+                    intermediateStops.add(intermediateStop);
+                }
+            } else {
+                intermediateStops = null;
+            }
+
+            final Trip.Public newLeg = new Trip.Public(
+                    line, destination,
+                    departureStop, arrivalStop, intermediateStops,
+                    message, journeyRef);
+            newLeg.setPath(path);
+            legs.add(newLeg);
+        }
+
+        return legs;
     }
 
     protected final QueryTripsResult jsonTripRequest(
@@ -994,7 +1040,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                 final Location tripTo = loc(parseLoc(locList, outCon.getJSONObject("arr").getInt("locX"),
                         new HashMap<>(), true, crdSysList, locList));
 
-                        c.clear();
+                c.clear();
                 ParserUtils.parseIsoDate(c, outCon.getString("date"));
                 final Date baseDate = c.getTime();
 
@@ -1013,8 +1059,11 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                     final Trip.Leg leg;
                     if (SECTION_TYPE_JOURNEY.equals(secType) || SECTION_TYPE_TELE_TAXI.equals(secType)) {
                         final JSONObject jny = sec.getJSONObject("jny");
-                        leg = jsonPublicLeg(jny, departureStop, arrivalStop,
-                                lines, locList, crdSysList, encodedPolylines, remarks, hims, c, baseDate);
+                        final List<Trip.Public> onlyOnePublic = jsonPublicLeg(
+                                jny, false, departureStop, arrivalStop,
+                                common, lines, locList, crdSysList,
+                                encodedPolylines, remarks, hims, c, baseDate);
+                        leg = onlyOnePublic.get(0);
                     } else if (SECTION_TYPE_WALK.equals(secType)) {
                         final JSONObject gis = sec.getJSONObject("gis");
                         final int distance = gis.optInt("dist", -1);
@@ -1268,6 +1317,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
 
     private QueryJourneyResult jsonJourney(
             final HafasJourneyRef journeyRef,
+            final boolean splitSubJourneys,
             final boolean loadPath) throws IOException {
         final String request = wrapJsonApiRequest("JourneyDetails", "{" //
                         + "\"jid\":\"" + journeyRef.jid + "\"," //
@@ -1335,12 +1385,15 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
             final JSONObject journey = res.optJSONObject("journey");
 
             final Calendar c = new GregorianCalendar(timeZone);
+            c.clear();
             ParserUtils.parseIsoDate(c, journey.getString("date"));
             final Date baseDate = c.getTime();
 
-            final Trip.Public journeyLeg = jsonPublicLeg(journey, null, null,
-                    lines, locList, crdSysList, encodedPolylines, remarks, hims, c, baseDate);
-            return new QueryJourneyResult(header, null, journeyRef, journeyLeg);
+            final List<Trip.Public> journeyLegs = jsonPublicLeg(
+                    journey, splitSubJourneys, null, null,
+                    common, lines, locList, crdSysList,
+                    encodedPolylines, remarks, hims, c, baseDate);
+            return new QueryJourneyResult(header, null, journeyRef, journeyLegs);
         } catch (final JSONException x) {
             throw new ParserException("cannot parse json: '" + page + "' on " + url, x);
         }
@@ -1491,7 +1544,8 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
         return null;
     }
 
-    private Stop parseJsonStop(final JSONObject json, final JSONArray locList, final JSONArray crdSysList,
+    private Stop parseJsonStop(
+            final JSONObject json, final JSONArray locList, final JSONArray crdSysList,
             final Calendar c, final Date baseDate) throws JSONException {
         final Location location = loc(parseLoc(locList, json.getInt("locX"), new HashMap<>(), true, crdSysList, locList));
 

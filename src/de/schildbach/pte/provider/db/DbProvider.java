@@ -105,6 +105,7 @@ public abstract class DbProvider extends AbstractNetworkProvider {
     @Override
     public QueryJourneyResult queryJourney(
             final JourneyRef journeyRef,
+            final boolean splitSubJourneys,
             final boolean loadPath) throws IOException {
         cleanupJourneyCache();
         return doQueryJourneyAndCache((DbJourneyRef) journeyRef, loadPath);
@@ -133,7 +134,7 @@ public abstract class DbProvider extends AbstractNetworkProvider {
     private void cleanupJourneyCache() {
         final long loadedAtLimit = System.currentTimeMillis() - MAX_CACHE_KEEP_MILLIS;
         journeyCache.entrySet().removeIf(entry ->
-                entry.getValue().journeyLeg.loadedAt.getTime() < loadedAtLimit);
+                entry.getValue().journeyLegs.get(0).loadedAt.getTime() < loadedAtLimit);
     }
 
     protected abstract QueryJourneyResult doQueryJourney(
