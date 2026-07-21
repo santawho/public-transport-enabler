@@ -17,8 +17,11 @@
 
 package de.schildbach.pte.provider.hafas;
 
+import java.io.Serial;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -109,9 +112,18 @@ public class RmvProvider extends AbstractHafasClientInterfaceProvider {
 //            "Fulda"
     };
 
+    private static final Set<String> OPERATORS_WITH_ARBITRARY_DIRECTIONS = new HashSet<>() {
+        @Serial
+        private static final long serialVersionUID = -8190812617668364575L;
+
+        {
+            add("RhönEnergie Bus GmbH");
+        }
+    };
+
     @Override
     protected String[] splitDirectionName(final String placeAndName, @Nullable final Line line) {
-        return parseSpaceDelimitedPlaceAndStation(placeAndName, SPECIAL_PLACES);
+        return parseSpaceDelimitedDirection(placeAndName, SPECIAL_PLACES, line, OPERATORS_WITH_ARBITRARY_DIRECTIONS);
     }
 
     @Override

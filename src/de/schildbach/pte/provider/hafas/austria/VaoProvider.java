@@ -104,6 +104,7 @@ public class VaoProvider extends AbstractHafasClientInterfaceProvider {
         {
             add("Rheintal Busverkehr GmbH");
             add("Postbus Wolfurt");
+            add("Wiener Linien GmbH & Co KG");
         }
     };
 
