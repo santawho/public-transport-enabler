@@ -855,6 +855,16 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
         final String jid = jny.optString("jid", null);
         final JourneyRef journeyRef = jid == null ? null : new HafasJourneyRef(jid);
         final JSONArray stopList = jny.optJSONArray("stopL");
+        // there often is field "idx" which tells the reference index of this listed object
+        // here we build a lookup map
+        final Map<Integer, Integer> stopLIndexMap = new HashMap<>();
+        if (stopList != null) {
+            for (int index = 0; index < stopList.length(); index += 1) {
+                final JSONObject stopObject = stopList.getJSONObject(index);
+                final int idx = stopObject.optInt("idx", index);
+                stopLIndexMap.put(idx, index);
+            }
+        }
         final JSONArray dirL = splitSubJourneys ? jny.optJSONArray("dirL") : null;
         final List<Trip.Public> legs = new ArrayList<>();
 
@@ -874,13 +884,20 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                 final int departureStopIndex = prodEntry.getInt("fIdx");
                 final int arrivalStopIndex = prodEntry.getInt("tIdx");
 
-                final List<Stop> intermediateStops = new ArrayList<>(arrivalStopIndex - departureStopIndex - 2);
-                final Stop departureStop = parseJsonStop(stopList.getJSONObject(departureStopIndex), locList, crdSysList, cal, baseDate);
-                final Stop arrivalStop = parseJsonStop(stopList.getJSONObject(arrivalStopIndex), locList, crdSysList, cal, baseDate);
-                for (int iStop = departureStopIndex + 1; iStop < arrivalStopIndex; iStop++) {
-                    final JSONObject stop = stopList.getJSONObject(iStop);
-                    final Stop intermediateStop = parseJsonStop(stop, locList, crdSysList, cal, baseDate);
-                    intermediateStops.add(intermediateStop);
+                final Stop departureStop = parseJsonStop(stopList.getJSONObject(stopLIndexMap.get(departureStopIndex)), locList, crdSysList, cal, baseDate);
+                final Stop arrivalStop = parseJsonStop(stopList.getJSONObject(stopLIndexMap.get(arrivalStopIndex)), locList, crdSysList, cal, baseDate);
+
+                final List<Stop> intermediateStops;
+                final int numIntermediates = arrivalStopIndex - departureStopIndex - 1;
+                if (numIntermediates > 0) {
+                    intermediateStops = new ArrayList<>(numIntermediates);
+                    for (int iStop = departureStopIndex + 1; iStop < arrivalStopIndex; iStop++) {
+                        final JSONObject stop = stopList.getJSONObject(stopLIndexMap.get(iStop));
+                        final Stop intermediateStop = parseJsonStop(stop, locList, crdSysList, cal, baseDate);
+                        intermediateStops.add(intermediateStop);
+                    }
+                } else {
+                    intermediateStops = null;
                 }
 
                 final Trip.Public newLeg = new Trip.Public(
