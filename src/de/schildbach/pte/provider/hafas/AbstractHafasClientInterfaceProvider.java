@@ -881,18 +881,20 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                 final String[] splitDirTxt = splitDirectionName(dirTxt, line);
                 final Destination destination = new Destination(new Location(LocationType.DIRECTION, null, splitDirTxt[0], splitDirTxt[1]));
 
-                final int departureStopIndex = prodEntry.getInt("fIdx");
-                final int arrivalStopIndex = prodEntry.getInt("tIdx");
+                final int fIdx = prodEntry.getInt("fIdx");
+                final int departureStopIndex = stopLIndexMap.get(fIdx);
+                final int tIdx = prodEntry.getInt("tIdx");
+                final int arrivalStopIndex = stopLIndexMap.get(tIdx);
 
-                final Stop departureStop = parseJsonStop(stopList.getJSONObject(stopLIndexMap.get(departureStopIndex)), locList, crdSysList, cal, baseDate);
-                final Stop arrivalStop = parseJsonStop(stopList.getJSONObject(stopLIndexMap.get(arrivalStopIndex)), locList, crdSysList, cal, baseDate);
+                final Stop departureStop = parseJsonStop(stopList.getJSONObject(departureStopIndex), locList, crdSysList, cal, baseDate);
+                final Stop arrivalStop = parseJsonStop(stopList.getJSONObject(arrivalStopIndex), locList, crdSysList, cal, baseDate);
 
                 final List<Stop> intermediateStops;
                 final int numIntermediates = arrivalStopIndex - departureStopIndex - 1;
                 if (numIntermediates > 0) {
                     intermediateStops = new ArrayList<>(numIntermediates);
                     for (int iStop = departureStopIndex + 1; iStop < arrivalStopIndex; iStop++) {
-                        final JSONObject stop = stopList.getJSONObject(stopLIndexMap.get(iStop));
+                        final JSONObject stop = stopList.getJSONObject(iStop);
                         final Stop intermediateStop = parseJsonStop(stop, locList, crdSysList, cal, baseDate);
                         intermediateStops.add(intermediateStop);
                     }
