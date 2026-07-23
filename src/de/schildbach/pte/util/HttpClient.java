@@ -58,6 +58,7 @@ import de.schildbach.pte.provider.ApiProvider;
 import okhttp3.Call;
 import okhttp3.CertificatePinner;
 import okhttp3.CompressionInterceptor;
+import okhttp3.ConnectionSpec;
 import okhttp3.Cookie;
 import okhttp3.Gzip;
 import okhttp3.Headers;
@@ -107,6 +108,8 @@ public final class HttpClient {
     private Cookie sessionCookie = null;
     @Nullable
     private Proxy proxy = null;
+    @Nullable
+    private ConnectionSpec connectionSpec = null;
     private boolean trustAllCertificates = false;
     private boolean useClientCertificate = false;
     @Nullable
@@ -157,6 +160,10 @@ public final class HttpClient {
 
     public void setProxy(@Nullable final Proxy proxy) {
         this.proxy = proxy;
+    }
+
+    public void setConnectionSpec(final ConnectionSpec connectionSpec) {
+        this.connectionSpec = connectionSpec;
     }
 
     public void setTrustAllCertificates(final boolean trustAllCertificates) {
@@ -308,9 +315,11 @@ public final class HttpClient {
                     .addInterceptor(xmlEncodingInterceptor)
                     .addInterceptor(compressionInterceptor);
 
-            if (proxy != null || trustAllCertificates || certificatePinner != null || useClientCertificate) {
+            if (proxy != null || connectionSpec != null || trustAllCertificates || certificatePinner != null || useClientCertificate) {
                 if (proxy != null)
                     builder.proxy(proxy);
+                if (connectionSpec != null)
+                    builder.connectionSpecs(List.of(connectionSpec));
                 if (trustAllCertificates || useClientCertificate)
                     configureSSL(builder);
                 if (certificatePinner != null)
