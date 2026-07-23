@@ -1596,8 +1596,9 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
             final Remark remark = new Remark();
             remark.type = rem.optString("type", null);
             remark.code = rem.optString("code", null);
-            remark.title = rem.optString("txtS", null);
-            remark.text = rem.optString("txtN", null);
+            remark.title = null; // rem.optString("txtS", null);
+            final String txtL = rem.optString("txtL", null);
+            remark.text = txtL != null ? txtL : rem.optString("txtN", null);
             remark.url = rem.optString("url", null);
             remarks.add(remark);
         }
