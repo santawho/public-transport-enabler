@@ -642,25 +642,36 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                         continue;
 
                     final String jnyDirTxt = jny.optString("dirTxt", null);
-                    final Location directionLocation;
+                    final Location splitDirectionLocation;
+                    final Location plainDirectionLocation;
                     if (jnyDirTxt != null) {
-                        final String[] splitJnyDirTxt = splitDirectionName(jnyDirTxt, line);
-                        directionLocation = new Location(LocationType.DIRECTION, null, splitJnyDirTxt[0], splitJnyDirTxt[1]);
+                        String[] splitJnyDirTxt;
+                        splitJnyDirTxt = splitDirectionName(jnyDirTxt, line);
+                        splitDirectionLocation = new Location(LocationType.DIRECTION, null, splitJnyDirTxt[0], splitJnyDirTxt[1]);
+                        splitJnyDirTxt = noPlaceStationName(jnyDirTxt);
+                        plainDirectionLocation = new Location(LocationType.DIRECTION, null, splitJnyDirTxt[0], splitJnyDirTxt[1]);
                     } else {
-                        directionLocation = null;
+                        splitDirectionLocation = null;
+                        plainDirectionLocation = null;
                     }
                     Destination destination = null;
                     final JSONArray prodL = jny.optJSONArray("prodL");
+                    final boolean destinationIsCommonlyDirection = isStationBoardDestinationCommonlyDirection();
                     if (prodL != null && prodL.length() > 0) {
                         // use terminal of first product
                         final int tLocX = prodL.getJSONObject(0).getInt("tLocX");
                         final LocationAndName lineTerminalAndName = parseLoc(locList, tLocX, null, false, crdSysList, locList);
                         final Location lineTerminal = loc(lineTerminalAndName);
                         if (lineTerminal != null && lineTerminal.hasName()) {
-                            if (directionLocation == null
+                            if (splitDirectionLocation == null
                                     || lineTerminalAndName.originalName.equals(jnyDirTxt)
-                                    || lineTerminal.name.equals(directionLocation.name))
-                                destination = new Destination(lineTerminal, isStationBoardDestinationCommonlyDirection());
+                                    || (lineTerminal.name != null && lineTerminal.name.equals(splitDirectionLocation.name))) {
+                                destination = new Destination(lineTerminal, destinationIsCommonlyDirection);
+                            } else if (lineTerminal.place != null && lineTerminal.place.equals(splitDirectionLocation.place)){
+                                destination = new Destination(splitDirectionLocation, !destinationIsCommonlyDirection);
+                            } else {
+                                destination = new Destination(plainDirectionLocation, !destinationIsCommonlyDirection);
+                            }
                         }
                     }
                     if (destination == null) {
@@ -671,16 +682,29 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                             final LocationAndName lastStopAndName = parseLoc(locList, lastStopIdx, null, false, crdSysList, locList);
                             final Location lastStop = loc(lastStopAndName);
                             if (lastStop != null && lastStop.hasName()) {
-                                if (directionLocation == null
+                                if (splitDirectionLocation == null
                                         || lastStopAndName.originalName.equals(jnyDirTxt)
-                                        || lastStop.name.equals(directionLocation.name))
-                                    destination = new Destination(lastStop, isStationBoardDestinationCommonlyDirection());
+                                        || (lastStop.name != null && lastStop.name.equals(splitDirectionLocation.name))) {
+                                    destination = new Destination(lastStop, destinationIsCommonlyDirection);
+                                } else if (lastStop.place != null && lastStop.place.equals(splitDirectionLocation.place)){
+                                    destination = new Destination(splitDirectionLocation, !destinationIsCommonlyDirection);
+                                } else {
+                                    destination = new Destination(plainDirectionLocation, !destinationIsCommonlyDirection);
+                                }
                             }
                         }
                     }
                     if (destination == null) {
                         // otherwise use given direction
-                        destination = new Destination(directionLocation, !isStationBoardDestinationCommonlyDirection());
+                        if (destinationIsCommonlyDirection) {
+                            if (plainDirectionLocation != null) {
+                                destination = new Destination(plainDirectionLocation, !destinationIsCommonlyDirection);
+                            }
+                        } else {
+                            if (splitDirectionLocation != null) {
+                                destination = new Destination(splitDirectionLocation, !destinationIsCommonlyDirection);
+                            }
+                        }
                     }
 
                     final String message = buildMessageFromRemarks(jny, remarks, hims);

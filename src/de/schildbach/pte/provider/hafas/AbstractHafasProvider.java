@@ -156,6 +156,11 @@ public abstract class AbstractHafasProvider extends AbstractNetworkProvider {
     protected static final Pattern P_SPLIT_NAME_NEXT_TO_LAST_COMMA = Pattern.compile("(.*), ([^,]*, [^,]*)");
     protected static final Pattern P_SPLIT_NAME_PAREN = Pattern.compile("(.*) \\((.{3,}?)\\)");
 
+    @Override
+    protected boolean isStationBoardDestinationCommonlyDirection() {
+        return true;
+    }
+
     protected String[] splitDirectionName(final String name, @Nullable final Line line) {
         if (isStationBoardDestinationCommonlyDirection())
             return noPlaceStationName(name);

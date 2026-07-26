@@ -113,11 +113,6 @@ public class VbnProvider extends AbstractHafasClientInterfaceProvider {
     };
 
     @Override
-    protected boolean isStationBoardDestinationCommonlyDirection() {
-        return true;
-    }
-
-    @Override
     protected String[] splitStationName(final String placeAndName) {
         return parseSpaceDelimitedPlaceAndStation(placeAndName, SPECIAL_PLACES);
     }

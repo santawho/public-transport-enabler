@@ -109,6 +109,11 @@ public class VaoProvider extends AbstractHafasClientInterfaceProvider {
     };
 
     @Override
+    protected boolean isStationBoardDestinationCommonlyDirection() {
+        return false;
+    }
+
+    @Override
     protected String[] splitDirectionName(final String placeAndName, @Nullable final Line line) {
         return parseSpaceDelimitedDirection(placeAndName, SPECIAL_PLACES, line, OPERATORS_WITH_ARBITRARY_DIRECTIONS);
     }
