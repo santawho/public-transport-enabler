@@ -655,6 +655,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                         plainDirectionLocation = null;
                     }
                     Destination destination = null;
+                    Destination altDestination = null;
                     final JSONArray prodL = jny.optJSONArray("prodL");
                     final boolean destinationIsCommonlyDirection = isStationBoardDestinationCommonlyDirection();
                     if (prodL != null && prodL.length() > 0) {
@@ -667,6 +668,10 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                                     || lineTerminalAndName.originalName.equals(jnyDirTxt)
                                     || (lineTerminal.name != null && lineTerminal.name.equals(splitDirectionLocation.name))) {
                                 destination = new Destination(lineTerminal, destinationIsCommonlyDirection);
+                            } else if (lineTerminal.place != null && lineTerminal.place.equals(splitDirectionLocation.place)){
+                                altDestination = new Destination(splitDirectionLocation, !destinationIsCommonlyDirection);
+                            } else {
+                                altDestination = new Destination(plainDirectionLocation, !destinationIsCommonlyDirection);
                             }
                         }
                     }
@@ -690,6 +695,8 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                             }
                         }
                     }
+                    if (destination == null && altDestination != null)
+                        destination = altDestination;
 //                    if (destination == null) {
 //                        // otherwise use given direction
 //                        if (!destinationIsCommonlyDirection && splitDirectionLocation != null) {
