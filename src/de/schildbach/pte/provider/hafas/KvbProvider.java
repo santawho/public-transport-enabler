@@ -35,13 +35,14 @@ public class KvbProvider extends AbstractHafasClientInterfaceProvider {
     private static final Product[] PRODUCTS_MAP = {
             Product.SUBURBAN_TRAIN,
             Product.SUBWAY,
-            Product.BUS,
+            Product.UNKNOWN,
             Product.BUS,
             Product.REGIONAL_TRAIN,
             Product.HIGH_SPEED_TRAIN,
-            Product.BUS,
+            Product.UNKNOWN,
             Product.FERRY,
             Product.ON_DEMAND,
+            Product.REPLACEMENT_SERVICE,
     };
     private static final String DEFAULT_API_CLIENT = "{\"id\":\"HAFAS\",\"type\":\"WEB\",\"name\":\"webapp\",\"l\":\"vs_webapp\"}";
     private static final String WEBAPP_CONFIG_URL = "https://auskunft.kvb.koeln/config/webapp.config.json";
