@@ -667,10 +667,6 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                                     || lineTerminalAndName.originalName.equals(jnyDirTxt)
                                     || (lineTerminal.name != null && lineTerminal.name.equals(splitDirectionLocation.name))) {
                                 destination = new Destination(lineTerminal, destinationIsCommonlyDirection);
-                            } else if (lineTerminal.place != null && lineTerminal.place.equals(splitDirectionLocation.place)){
-                                destination = new Destination(splitDirectionLocation, !destinationIsCommonlyDirection);
-                            } else {
-                                destination = new Destination(plainDirectionLocation, !destinationIsCommonlyDirection);
                             }
                         }
                     }
@@ -694,16 +690,15 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                             }
                         }
                     }
+//                    if (destination == null) {
+//                        // otherwise use given direction
+//                        if (!destinationIsCommonlyDirection && splitDirectionLocation != null) {
+//                            destination = new Destination(splitDirectionLocation, !destinationIsCommonlyDirection);
+//                        }
+//                    }
                     if (destination == null) {
-                        // otherwise use given direction
-                        if (destinationIsCommonlyDirection) {
-                            if (plainDirectionLocation != null) {
-                                destination = new Destination(plainDirectionLocation, !destinationIsCommonlyDirection);
-                            }
-                        } else {
-                            if (splitDirectionLocation != null) {
-                                destination = new Destination(splitDirectionLocation, !destinationIsCommonlyDirection);
-                            }
+                        if (plainDirectionLocation != null) {
+                            destination = new Destination(plainDirectionLocation, !destinationIsCommonlyDirection);
                         }
                     }
 
