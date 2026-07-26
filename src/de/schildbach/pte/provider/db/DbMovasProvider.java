@@ -435,12 +435,20 @@ public abstract class DbMovasProvider extends DbProvider {
     private String parseJourneyMessages(final JSONObject jny, final String operatorName) throws JSONException {
         final List<String> messages = new ArrayList<>();
         parseMessages(jny.optJSONArray("echtzeitNotizen"), messages, null, null);
+        final int numImportant = messages.size();
+        if (this.messagesAsSimpleHtml)
+            messages.add(LESS_IMPORTANT_HTML_SPLIT_MARKER);
         parseMessages(jny.optJSONArray("himNotizen"), messages, null, null);
         // show very important static messages (e.g. on demand tel)
         if (operatorName != null)
             messages.add("&#8226; " + operatorName);
         parseMessages(jny.optJSONArray("attributNotizen"), messages, this.messagesAsSimpleHtml ? "&#8226; " : null, 100);
-        return messages.isEmpty() ? null : join(this.messagesAsSimpleHtml ? "<br>" : " - ", messages);
+        if (messages.isEmpty())
+            return null;
+        final String s = join(this.messagesAsSimpleHtml ? "<br>" : " - ", messages);
+        if (numImportant == 0)
+            return s.replace(LESS_IMPORTANT_HTML_SPLIT_MARKER + "<br>", LESS_IMPORTANT_HTML_SPLIT_MARKER);
+        return s.replace("<br>" + LESS_IMPORTANT_HTML_SPLIT_MARKER, LESS_IMPORTANT_HTML_SPLIT_MARKER);
     }
 
     // replace with String.join() at some point

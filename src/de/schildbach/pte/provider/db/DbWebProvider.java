@@ -434,12 +434,20 @@ public abstract class DbWebProvider extends DbProvider {
         final List<String> messages = new ArrayList<>();
         parseMessages(jny.optJSONArray("meldungen"), messages, null, defaultTeilstreckenHinweis);
         parseMessages(jny.optJSONArray("risNotizen"), messages, null, defaultTeilstreckenHinweis);
+        final int numImportant = messages.size();
+        if (this.messagesAsSimpleHtml)
+            messages.add(LESS_IMPORTANT_HTML_SPLIT_MARKER);
         parseMessages(jny.optJSONArray("himMeldungen"), messages, null, defaultTeilstreckenHinweis);
         if (operatorName != null)
             messages.add("&#8226; " + operatorName);
         if (zugattribute != null)
             parseMessages(zugattribute, messages, this.messagesAsSimpleHtml ? "&#8226; " : null, defaultTeilstreckenHinweis);
-        return messages.isEmpty() ? null : join(this.messagesAsSimpleHtml ? "<br>" : " - ", messages);
+        if (messages.isEmpty())
+            return null;
+        final String s = join(this.messagesAsSimpleHtml ? "<br>" : " - ", messages);
+        if (numImportant == 0)
+            return s.replace(LESS_IMPORTANT_HTML_SPLIT_MARKER + "<br>", LESS_IMPORTANT_HTML_SPLIT_MARKER);
+        return s.replace("<br>" + LESS_IMPORTANT_HTML_SPLIT_MARKER, LESS_IMPORTANT_HTML_SPLIT_MARKER);
     }
 
     // replace with String.join() at some point

@@ -29,4 +29,6 @@ public interface ApiProvider {
     ApiProvider setProxy(final Proxy proxy);
     ApiProvider setTrustAllCertificates(final boolean trustAllCertificates);
     void setMessagesAsSimpleHtml(boolean messagesAsSimpleHtml);
+
+    String LESS_IMPORTANT_HTML_SPLIT_MARKER = "<lessimportant/>";
 }

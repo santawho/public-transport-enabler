@@ -1667,18 +1667,43 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
         if (msgList == null || msgList.length() == 0) {
             return null;
         }
+        final String remMessage = buildMessageFromRemarks(msgList, false, remarks);
+        final String himMessage = buildMessageFromRemarks(msgList, true, hims);
+        if (messagesAsSimpleHtml) {
+            if (himMessage.isEmpty())
+                return remMessage;
+            if (remMessage.isEmpty())
+                return LESS_IMPORTANT_HTML_SPLIT_MARKER + himMessage;
+            return remMessage + LESS_IMPORTANT_HTML_SPLIT_MARKER + "<br>" + himMessage;
+        } else {
+            if (himMessage.isEmpty())
+                return remMessage;
+            if (remMessage.isEmpty())
+                return himMessage;
+            return remMessage + " - " + himMessage;
+        }
+    }
+
+    private String buildMessageFromRemarks(
+            final JSONArray msgList,
+            final boolean useHims,
+            final List<Remark> remarks) throws JSONException {
         final StringBuilder sb = new StringBuilder();
         for (int iRem = 0; iRem < msgList.length(); iRem++) {
             final JSONObject rem = msgList.getJSONObject(iRem);
             Remark remark = null;
-            final int remX = rem.optInt("remX", -1);
-            if (remX >= 0 && remarks != null && remX < remarks.size())
-                remark = remarks.get(remX);
-            final int himX = rem.optInt("himX", -1);
-            if (himX >= 0 && hims != null && himX < hims.size())
-                remark = hims.get(himX);
+            final int remX;
+            if (useHims) {
+                remX = rem.optInt("himX", -1);
+            } else {
+                remX = rem.optInt("remX", -1);
+            }
+            if (remX >= 0) {
+                if (remarks != null && remX < remarks.size())
+                    remark = remarks.get(remX);
+            }
             if (remark != null) {
-                if (iRem > 0) {
+                if (sb.length() > 0) {
                     sb.append(messagesAsSimpleHtml ? "<br>" : " - ");
                 }
                 if (remark.title != null) {
