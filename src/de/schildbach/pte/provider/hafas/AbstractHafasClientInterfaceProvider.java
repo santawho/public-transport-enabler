@@ -898,19 +898,14 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
             // split leg into multiple according to direction list
             final JSONArray prodL = jny.getJSONArray("prodL");
             final JSONArray commonDirL = common.getJSONArray("dirL");
-            for (int index = 0; index < dirL.length(); index += 1) {
-                final JSONObject prodEntry = prodL.getJSONObject(index);
-                final JSONObject dirEntry = dirL.getJSONObject(index);
+            for (int dirIndex = 0; dirIndex < dirL.length(); dirIndex += 1) {
+                final JSONObject dirEntry = dirL.getJSONObject(dirIndex);
                 final String dirTxt = commonDirL.getJSONObject(dirEntry.getInt("dirX")).getString("txt");
-                final Line line = lines.get(prodEntry.getInt("prodX"));
 
-                final String[] splitDirTxt = splitDirectionName(dirTxt, line);
-                final Destination destination = new Destination(new Location(LocationType.DIRECTION, null, splitDirTxt[0], splitDirTxt[1]));
-
-                final int fIdx = prodEntry.getInt("fIdx");
-                final int departureStopIndex = stopLIndexMap.get(fIdx);
-                final int tIdx = prodEntry.getInt("tIdx");
-                final int arrivalStopIndex = stopLIndexMap.get(tIdx);
+                final int dirFIdx = dirEntry.getInt("fIdx");
+                final int departureStopIndex = stopLIndexMap.get(dirFIdx);
+                final int dirTIdx = dirEntry.getInt("tIdx");
+                final int arrivalStopIndex = stopLIndexMap.get(dirTIdx);
 
                 final Stop departureStop = parseJsonStop(stopList.getJSONObject(departureStopIndex), locList, crdSysList, cal, baseDate);
                 final Stop arrivalStop = parseJsonStop(stopList.getJSONObject(arrivalStopIndex), locList, crdSysList, cal, baseDate);
@@ -927,6 +922,22 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                 } else {
                     intermediateStops = null;
                 }
+
+                // use first product section that intersects with the direction section ... best we can do
+                Line line = null;
+                for (int prodIndex = 0; prodIndex < dirL.length(); prodIndex += 1) {
+                    final JSONObject prodEntry = prodL.getJSONObject(prodIndex);
+                    final int prodFIdx = prodEntry.getInt("fIdx");
+                    final int prodTIdx = prodEntry.getInt("tIdx");
+                    if (prodFIdx < dirTIdx && dirFIdx < prodTIdx) {
+                        line = lines.get(prodEntry.getInt("prodX"));
+                        break;
+                    }
+                }
+                if (line == null)
+                    line = lines.get(prodL.getJSONObject(0).getInt("prodX"));
+                final String[] splitDirTxt = splitDirectionName(dirTxt, line);
+                final Destination destination = new Destination(new Location(LocationType.DIRECTION, null, splitDirTxt[0], splitDirTxt[1]));
 
                 final Trip.Public newLeg = new Trip.Public(
                         line, destination,
