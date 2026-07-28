@@ -56,6 +56,11 @@ public class VmtProvider extends AbstractHafasClientInterfaceProvider {
     private static final String[] PLACES = { "Erfurt", "Jena", "Gera", "Weimar", "Gotha" };
 
     @Override
+    protected boolean isStationBoardDestinationCommonlyDirection() {
+        return false;
+    }
+
+    @Override
     protected String[] splitStationName(String name) {
         if (name.endsWith(" [Zug]"))
             name = name.substring(0, name.length() - 6);
