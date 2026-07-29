@@ -48,6 +48,7 @@ public final class Location implements Serializable, MessagePackUtils.Packable {
     public final @Nullable String place;
     public final @Nullable String name;
     public final @Nullable Set<Product> products;
+    public final @Nullable String language;
 
     public Location(
             final LocationType type,
@@ -57,7 +58,8 @@ public final class Location implements Serializable, MessagePackUtils.Packable {
             final @Nullable Point coord,
             final @Nullable String place,
             final @Nullable String name,
-            final @Nullable Set<Product> products) {
+            final @Nullable Set<Product> products,
+            final @Nullable String language) {
         this.type = requireNonNull(type);
         this.id = id;
         this.identityId = identityId == null ? id : identityId;
@@ -66,6 +68,7 @@ public final class Location implements Serializable, MessagePackUtils.Packable {
         this.place = place;
         this.name = name;
         this.products = products;
+        this.language = language;
 
         checkArgument(id == null || !id.isEmpty(), () ->
                 "ID cannot be the empty string");
@@ -79,17 +82,22 @@ public final class Location implements Serializable, MessagePackUtils.Packable {
         }
     }
 
-    public Location(final LocationType type, final String id, final Point coord, final String place, final String name,
-                    final Set<Product> products) {
-        this(type, id, id, id, coord, place, name, products);
+    public Location(
+            final LocationType type, final String id, final Point coord,
+            final String place, final String name,
+            final Set<Product> products) {
+        this(type, id, id, id, coord, place, name, products, "de");
     }
 
-    public Location(final LocationType type, final String id, final Point coord, final String place,
-            final String name) {
+    public Location(
+            final LocationType type, final String id, final Point coord,
+            final String place, final String name) {
         this(type, id, coord, place, name, null);
     }
 
-    public Location(final LocationType type, final String id, final String place, final String name) {
+    public Location(
+            final LocationType type, final String id,
+            final String place, final String name) {
         this(type, id, null, place, name);
     }
 

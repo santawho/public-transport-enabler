@@ -1923,9 +1923,16 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
         }
 
         final LocationAndName ret = new LocationAndName();
-        ret.loc = new Location(locationType, id, identityId, displayId, coord, placeAndName[0], placeAndName[1], products);
+        ret.loc = new Location(
+                locationType, id, identityId, displayId, coord,
+                placeAndName[0], placeAndName[1],
+                products, getDefaultLocationNameLanguage());
         ret.originalName = name;
         return ret;
+    }
+
+    protected String getDefaultLocationNameLanguage() {
+        return "de";
     }
 
     private static final Set<String> validLidNames = new HashSet<>(Arrays.asList("A", "O", "X", "Y", "U", "L"));
