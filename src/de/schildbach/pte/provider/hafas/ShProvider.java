@@ -17,11 +17,17 @@
 
 package de.schildbach.pte.provider.hafas;
 
+import java.io.Serial;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 
+import javax.annotation.Nullable;
+
 import de.schildbach.pte.NetworkId;
+import de.schildbach.pte.dto.Line;
 import de.schildbach.pte.dto.Product;
 import de.schildbach.pte.dto.Style;
 
@@ -58,15 +64,34 @@ public class ShProvider extends AbstractHafasClientInterfaceProvider {
         setStyles(STYLES);
     }
 
-    private static final String[] PLACES = { "Hamburg", "Kiel", "Lübeck", "Flensburg", "Neumünster" };
+    // list all places, which contain at least one space
+    // except: places with "Bad "-prefix and no further spaces
+    private static final String[] SPECIAL_PLACES = new String[]{
+// the following contain spaces and must be listed here
+    };
+
+    private static final Set<String> OPERATORS_WITH_ARBITRARY_DIRECTIONS = new HashSet<>() {
+        @Serial
+        private static final long serialVersionUID = -8190812617668364575L;
+
+        {
+//            add("...");
+        }
+    };
 
     @Override
-    protected String[] splitStationName(final String name) {
-        for (final String place : PLACES)
-            if (name.startsWith(place + " ") || name.startsWith(place + "-"))
-                return new String[] { place, name.substring(place.length() + 1) };
+    protected boolean isStationBoardDestinationCommonlyDirection() {
+        return false;
+    }
 
-        return super.splitStationName(name);
+    @Override
+    protected String[] splitDirectionName(final String placeAndName, @Nullable final Line line) {
+        return parseSpaceDelimitedDirection(placeAndName, SPECIAL_PLACES, line, OPERATORS_WITH_ARBITRARY_DIRECTIONS);
+    }
+
+    @Override
+    protected String[] splitStationName(final String placeAndName) {
+        return parseSpaceDelimitedPlaceAndStation(placeAndName, SPECIAL_PLACES);
     }
 
     @Override
