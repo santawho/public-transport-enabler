@@ -50,6 +50,7 @@ import de.schildbach.pte.provider.AbstractNetworkProvider;
 import de.schildbach.pte.Standard;
 import de.schildbach.pte.provider.TransferEvaluationProvider;
 import de.schildbach.pte.provider.db.bahnvorhersage.AbstractBahnvorhersageProvider;
+import de.schildbach.pte.provider.hafas.AbstractHafasClientInterfaceProvider.HafasJourneyRef;
 import de.schildbach.pte.util.MessagePackUtils;
 
 /**
@@ -290,7 +291,7 @@ public abstract class DbProvider extends AbstractNetworkProvider {
                 final String productName,
                 final String serviceNumber,
                 final Line line) {
-            this.journeyId = journeyId;
+            this.journeyId = HafasJourneyRef.makeEverlastingJourneyId(journeyId);
             this.journeyRequestId = journeyRequestId;
             this.adminCode = adminCode;
             this.productName = productName;

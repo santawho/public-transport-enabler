@@ -392,10 +392,18 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
     public static class HafasJourneyRef extends JourneyRef {
         private static final long serialVersionUID = -3103436830992954576L;
 
+        public static String makeEverlastingJourneyId(final String journeyId) {
+            // The journey ID looks like this: "2|#VN#1#ST#1785779279#PI#0#ZI#1523...".
+            // The field "ST" contains a timestamp which might be the time of the timetable.
+            // This may change from day to day, although we still identify the same journey.
+            // Solution: replace it by zero timestamp
+            return journeyId.replaceFirst("#ST#[^#]*#", "#ST#0#");
+        }
+
         public final String jid;
 
         public HafasJourneyRef(final String jid) {
-            this.jid = jid;
+            this.jid = makeEverlastingJourneyId(jid);
         }
 
         @Override
