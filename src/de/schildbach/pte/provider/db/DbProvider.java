@@ -21,6 +21,7 @@ import org.msgpack.core.MessagePacker;
 import org.msgpack.core.MessageUnpacker;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -459,6 +460,23 @@ public abstract class DbProvider extends AbstractNetworkProvider {
         return splitPlaceAndName(address, P_SPLIT_NAME_FIRST_COMMA, 1, 2);
     }
 
+    public static class LocationAdditionalData implements MessagePackUtils.PackableSerializable {
+        @Serial
+        private static final long serialVersionUID = -7262617899260898194L;
+
+        public final @Nullable String bahnhofsInfoId;
+
+        public LocationAdditionalData(
+                final @Nullable String bahnhofsInfoId) {
+            this.bahnhofsInfoId = bahnhofsInfoId;
+        }
+
+        @Override
+        public void packToMessage(final MessagePacker packer) throws IOException {
+            // TODO
+        }
+    }
+
     protected Location createLocation(
             final LocationType type, final String id, final Point coord, final String name,
             final Set<Product> products, final String bahnhofsInfoId) {
@@ -466,15 +484,22 @@ public abstract class DbProvider extends AbstractNetworkProvider {
                 type == LocationType.STATION ? splitStationName(name)
                 : type == LocationType.DIRECTION ? splitStationName(name)
                 : splitAddress(name);
-        return new Location(type, id, coord, placeAndName[0], placeAndName[1], products);
+        return new Location(type, id, coord, placeAndName[0], placeAndName[1], products,
+                bahnhofsInfoId == null ? null : new LocationAdditionalData(bahnhofsInfoId));
     }
 
     @Override
     public String getLocationInfoUrl(final Location location) {
-        return getLocationInfoUrl(location.id, null);
+        return getLocationInfoUrl(
+                location.id,
+                location.additionalData instanceof LocationAdditionalData
+                        ? ((LocationAdditionalData) location.additionalData).bahnhofsInfoId
+                        : null);
     }
 
     protected String getLocationInfoUrl(final String id, final String bahnhofsInfoId) {
+        if (bahnhofsInfoId == null)
+            return null;
         final String infoId = bahnhofsInfoId != null ? bahnhofsInfoId : (id != null && id.length() <= 10) ? id : null;
         return infoId == null ? null : (
                 "https://www.bahnhof.de"

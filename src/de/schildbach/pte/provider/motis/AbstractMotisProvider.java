@@ -151,7 +151,7 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
         CAPABILITIES.add(Capability.TRIP_RELOAD);
     }
     
-    public static class MotisTripRef extends TripRef implements QueryTripsContext, Serializable, MessagePackUtils.Packable {
+    public static class MotisTripRef extends TripRef implements QueryTripsContext, MessagePackUtils.PackableSerializable {
         @Serial
         private static final long serialVersionUID = 7250525175653739883L;
 

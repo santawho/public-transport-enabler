@@ -30,7 +30,7 @@ import de.schildbach.pte.util.MessagePackUtils;
 /**
  * @author Andreas Schildbach
  */
-public final class Point implements Serializable, MessagePackUtils.Packable {
+public final class Point implements MessagePackUtils.PackableSerializable {
     private static final long serialVersionUID = -256077054671402897L;
 
     private final double lat, lon;

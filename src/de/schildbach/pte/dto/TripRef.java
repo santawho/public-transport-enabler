@@ -30,7 +30,7 @@ import de.schildbach.pte.util.MessagePackUtils;
 /**
  * @author Andreas Schildbach
  */
-public abstract class TripRef implements Serializable, MessagePackUtils.Packable {
+public abstract class TripRef implements MessagePackUtils.PackableSerializable {
     private static final long serialVersionUID = -7675828917328992747L;
 
     public final NetworkId network;

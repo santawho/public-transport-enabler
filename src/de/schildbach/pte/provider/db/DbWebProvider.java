@@ -361,7 +361,8 @@ public abstract class DbWebProvider extends DbProvider {
         final String bahnhofsInfoId;
         if (lid.type == LocationType.STATION) {
             id = Optional.ofNullable(loc.optString("extId", null)).orElse(lid.id);
-            bahnhofsInfoId = Optional.ofNullable(loc.optString("bahnhofsInfoId", null)).orElse(id);
+            // bahnhofsInfoId = Optional.ofNullable(loc.optString("bahnhofsInfoId", null)).orElse(id);
+            bahnhofsInfoId = loc.optString("bahnhofsInfoId", null);
         } else {
             id = lidStr;
             bahnhofsInfoId = null;

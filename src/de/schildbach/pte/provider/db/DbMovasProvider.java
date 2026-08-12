@@ -367,7 +367,8 @@ public abstract class DbMovasProvider extends DbProvider {
         final String bahnhofsInfoId;
         if (lid.type == LocationType.STATION) {
             id = Optional.ofNullable(loc.optString("evaNr", null)).orElse(lid.id);
-            bahnhofsInfoId = Optional.ofNullable(loc.optString("stationId", null)).orElse(id);
+            // bahnhofsInfoId = Optional.ofNullable(loc.optString("stationId", null)).orElse(id);
+            bahnhofsInfoId = loc.optString("stationId", null);
         } else {
             id = lidStr;
             bahnhofsInfoId = null;

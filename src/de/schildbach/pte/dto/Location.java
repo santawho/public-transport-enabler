@@ -37,7 +37,7 @@ import de.schildbach.pte.util.MessagePackUtils;
 /**
  * @author Andreas Schildbach
  */
-public final class Location implements Serializable, MessagePackUtils.Packable {
+public final class Location implements MessagePackUtils.PackableSerializable {
     private static final long serialVersionUID = -2124775933106309127L;
 
     public final LocationType type;
@@ -49,6 +49,7 @@ public final class Location implements Serializable, MessagePackUtils.Packable {
     public final @Nullable String name;
     public final @Nullable Set<Product> products;
     public final @Nullable String language;
+    public final @Nullable MessagePackUtils.PackableSerializable additionalData;
 
     public Location(
             final LocationType type,
@@ -59,7 +60,8 @@ public final class Location implements Serializable, MessagePackUtils.Packable {
             final @Nullable String place,
             final @Nullable String name,
             final @Nullable Set<Product> products,
-            final @Nullable String language) {
+            final @Nullable String language,
+            final @Nullable MessagePackUtils.PackableSerializable additionalData) {
         this.type = requireNonNull(type);
         this.id = id;
         this.identityId = identityId == null ? id : identityId;
@@ -69,6 +71,7 @@ public final class Location implements Serializable, MessagePackUtils.Packable {
         this.name = name;
         this.products = products;
         this.language = language;
+        this.additionalData = additionalData;
 
         checkArgument(id == null || !id.isEmpty(), () ->
                 "ID cannot be the empty string");
@@ -85,8 +88,16 @@ public final class Location implements Serializable, MessagePackUtils.Packable {
     public Location(
             final LocationType type, final String id, final Point coord,
             final String place, final String name,
+            final Set<Product> products,
+            final @Nullable MessagePackUtils.PackableSerializable additionalData) {
+        this(type, id, id, id, coord, place, name, products, "de", additionalData);
+    }
+
+    public Location(
+            final LocationType type, final String id, final Point coord,
+            final String place, final String name,
             final Set<Product> products) {
-        this(type, id, id, id, coord, place, name, products, "de");
+        this(type, id, id, id, coord, place, name, products, "de", null);
     }
 
     public Location(

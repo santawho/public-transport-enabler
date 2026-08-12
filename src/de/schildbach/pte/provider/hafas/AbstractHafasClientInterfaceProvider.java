@@ -1934,7 +1934,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
         ret.loc = new Location(
                 locationType, id, identityId, displayId, coord,
                 placeAndName[0], placeAndName[1],
-                products, getDefaultLocationNameLanguage());
+                products, getDefaultLocationNameLanguage(), null);
         ret.originalName = name;
         return ret;
     }

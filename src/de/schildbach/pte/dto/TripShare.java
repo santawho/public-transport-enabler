@@ -25,7 +25,7 @@ import java.io.Serializable;
 
 import de.schildbach.pte.util.MessagePackUtils;
 
-public class TripShare implements Serializable, MessagePackUtils.Packable {
+public class TripShare implements MessagePackUtils.PackableSerializable {
     private static final long serialVersionUID = 4482294794417818748L;
 
     public final TripRef simplifiedTripRef;
