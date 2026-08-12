@@ -19,6 +19,8 @@ package de.schildbach.pte.dto;
 
 import java.io.Serializable;
 
+import javax.annotation.Nullable;
+
 /**
  * @author Andreas Schildbach
  */
@@ -26,4 +28,8 @@ public abstract class JourneyRef implements Serializable {
     private static final long serialVersionUID = -2538131312898228807L;
 
     public abstract String getUniqueId();
+
+    public boolean equalsWithLog(@Nullable final JourneyRef other) {
+        return this.equals(other);
+    }
 }

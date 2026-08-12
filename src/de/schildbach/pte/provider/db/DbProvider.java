@@ -19,6 +19,8 @@ package de.schildbach.pte.provider.db;
 
 import org.msgpack.core.MessagePacker;
 import org.msgpack.core.MessageUnpacker;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.Serial;
@@ -308,6 +310,21 @@ public abstract class DbProvider extends AbstractNetworkProvider {
         @Override
         public String getBahnvorhersageRefreshJourneyId() {
             return journeyRequestId;
+        }
+
+        private static Logger log = LoggerFactory.getLogger(DbJourneyRef.class);
+        @Override
+        public boolean equalsWithLog(@Nullable final JourneyRef o) {
+            if (o instanceof DbJourneyRef) {
+                final DbJourneyRef that = (DbJourneyRef) o;
+                log.debug("this id={}", this.journeyId);
+                log.debug("that id={}", that.journeyId);
+                log.debug("this line {}", this.line.toString());
+                log.debug("that line {}", that.line.toString());
+            } else {
+                log.warn("comparing different type {}", o == null ? "null" : o.getClass().getName());
+            }
+            return this.equals(o);
         }
 
         @Override
