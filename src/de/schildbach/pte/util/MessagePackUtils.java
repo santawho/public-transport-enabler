@@ -22,6 +22,7 @@ import org.msgpack.core.MessageUnpacker;
 import org.msgpack.value.ImmutableValue;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -39,6 +40,8 @@ public class MessagePackUtils {
         // constructor(final MessageUnpacker unpacker);
         void packToMessage(final MessagePacker packer) throws IOException;
     }
+
+    public interface PackableSerializable extends Packable, Serializable {};
 
     public static void packNullableString(final MessagePacker packer, final String value) throws IOException {
         if (value == null)
@@ -84,7 +87,7 @@ public class MessagePackUtils {
             final C collection,
             final Consumer<E> packElement
     ) throws IOException {
-        int count = collection.size();
+        final int count = collection.size();
         packer.packArrayHeader(count);
         for (final E e : collection) {
             packElement.accept(e);
