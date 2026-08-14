@@ -397,7 +397,10 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
             // The field "ST" contains a timestamp which might be the time of the timetable.
             // This may change from day to day, although we still identify the same journey.
             // Solution: replace it by zero timestamp
-            return journeyId.replaceFirst("#ST#[^#]*#", "#ST#0#");
+            // same is true for the field "ZI"
+            return journeyId
+                    .replaceFirst("#ST#[^#]*#", "#ST#0#")
+                    .replaceFirst("#ZI#[^#]*#", "#ZI#0#");
         }
 
         public final String jid;
