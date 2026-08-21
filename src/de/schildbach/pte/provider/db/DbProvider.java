@@ -214,6 +214,10 @@ public abstract class DbProvider extends AbstractNetworkProvider {
         public final boolean limitToDticket;
         public final boolean hasDticket;
 
+        public DbTripRef(final NetworkId network) {
+            this(network, null, null, null, null, false, false);
+        }
+
         public DbTripRef(
                 final NetworkId network, final String ctxRecon,
                 final Location from, final Location via, final Location to,

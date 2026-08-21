@@ -245,6 +245,8 @@ public interface NetworkProvider extends Provider, LocationSearchProvider {
 
     TripShare shareTrip(final Trip trip) throws IOException;
 
+    TripShare getTripShareFromSharedTextMessage(final String textMessage) throws IOException;
+
     QueryTripsResult loadSharedTrip(final TripShare tripShare, final boolean loadPath) throws IOException;
 
     TripRef createTripRefFromPreviousTripWithNewLegs(final Trip trip, final List<Trip.Leg> newLegs, final Location newTo);

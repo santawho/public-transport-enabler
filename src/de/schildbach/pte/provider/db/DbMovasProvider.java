@@ -1242,6 +1242,11 @@ public abstract class DbMovasProvider extends DbProvider {
     }
 
     @Override
+    public TripShare getTripShareFromSharedTextMessage(final String textMessage) throws IOException {
+        return linkSharing.getTripShareFromSharedTextMessage(network, textMessage);
+    }
+
+    @Override
     public QueryTripsResult loadSharedTrip(final TripShare tripShare, final boolean loadPath) throws IOException {
         final DbWebProvider.DbWebTripShare dbWebTripShare = (DbWebProvider.DbWebTripShare) tripShare;
         final String recon = linkSharing.loadSharedTrip(this, dbWebTripShare);

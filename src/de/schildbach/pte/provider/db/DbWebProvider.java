@@ -45,6 +45,8 @@ import java.util.StringJoiner;
 import java.util.TimeZone;
 import java.util.UUID;
 import java.util.function.Supplier;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
@@ -1279,6 +1281,11 @@ public abstract class DbWebProvider extends DbProvider {
     }
 
     @Override
+    public TripShare getTripShareFromSharedTextMessage(final String textMessage) throws IOException {
+        return linkSharing.getTripShareFromSharedTextMessage(network, textMessage);
+    }
+
+    @Override
     public QueryTripsResult loadSharedTrip(
             final TripShare tripShare,
             final boolean loadPath) throws IOException {
@@ -1381,6 +1388,16 @@ public abstract class DbWebProvider extends DbProvider {
                 dbProvider.getLog().error("error on shareTrip request", e);
                 return null;
             }
+        }
+
+        private static final Pattern VBID_URL_PATTERN = Pattern.compile("https://.*bahn\\.de/.*[?&]vbid=([^&]*)(&.*)?");
+
+        public DbWebTripShare getTripShareFromSharedTextMessage(final NetworkId network, final String textMessage) throws IOException {
+            final Matcher matcher = VBID_URL_PATTERN.matcher(textMessage);
+            if (!matcher.find())
+                return null;
+            final String vbid = matcher.group(1);
+            return new DbWebTripShare(new DbTripRef(network), vbid);
         }
 
         public String loadSharedTrip(

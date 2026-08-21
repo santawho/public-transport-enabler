@@ -38,6 +38,10 @@ public abstract class TripRef implements MessagePackUtils.PackableSerializable {
     public final Location via;
     public final Location to;
 
+    public TripRef(final NetworkId network) {
+        this(network, null, null, null);
+    }
+
     public TripRef(
             final NetworkId network,
             final Location from, final Location via, final Location to) {

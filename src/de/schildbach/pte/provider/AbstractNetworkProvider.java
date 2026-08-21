@@ -226,6 +226,11 @@ public abstract class AbstractNetworkProvider extends AbstractLocationSearchProv
     }
 
     @Override
+    public TripShare getTripShareFromSharedTextMessage(final String textMessage) throws IOException {
+        return null;
+    }
+
+    @Override
     public QueryTripsResult loadSharedTrip(
             final TripShare tripShare, final boolean loadPath) throws IOException {
         throw new UnsupportedOperationException("loadSharedTrip");
