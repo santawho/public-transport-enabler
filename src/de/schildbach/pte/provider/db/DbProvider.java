@@ -208,6 +208,7 @@ public abstract class DbProvider extends AbstractNetworkProvider {
 
     public static class DbTripRef extends TripRef
             implements AbstractBahnvorhersageProvider.BahnvorhersageTripRef {
+        @Serial
         private static final long serialVersionUID = -1951536102104578242L;
 
         public final String ctxRecon;
@@ -282,6 +283,7 @@ public abstract class DbProvider extends AbstractNetworkProvider {
 
     public static class DbJourneyRef extends JourneyRef
             implements AbstractBahnvorhersageProvider.BahnvorhersageJourneyRef {
+        @Serial
         private static final long serialVersionUID = 7738174208212249291L;
 
         public final String journeyId;
@@ -316,15 +318,15 @@ public abstract class DbProvider extends AbstractNetworkProvider {
             return journeyRequestId;
         }
 
-        private static Logger log = LoggerFactory.getLogger(DbJourneyRef.class);
+        private static final Logger log = LoggerFactory.getLogger(DbJourneyRef.class);
         @Override
         public boolean equalsWithLog(@Nullable final JourneyRef o) {
             if (o instanceof DbJourneyRef) {
-                final DbJourneyRef that = (DbJourneyRef) o;
-                log.debug("this id={}", this.journeyId);
-                log.debug("that id={}", that.journeyId);
-                log.debug("this line {}", this.line.toString());
-                log.debug("that line {}", that.line.toString());
+//                final DbJourneyRef that = (DbJourneyRef) o;
+//                log.debug("this id={}", this.journeyId);
+//                log.debug("that id={}", that.journeyId);
+//                log.debug("this line {}", this.line.toString());
+//                log.debug("that line {}", that.line.toString());
             } else {
                 log.warn("comparing different type {}", o == null ? "null" : o.getClass().getName());
             }
@@ -564,6 +566,7 @@ public abstract class DbProvider extends AbstractNetworkProvider {
     }
 
     private static final Map<String, LocationType> ID_LOCATION_TYPE_MAP = new HashMap<String, LocationType>() {
+        @Serial
         private static final long serialVersionUID = 295592979187174489L;
 
         {
