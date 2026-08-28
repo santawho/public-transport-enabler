@@ -644,7 +644,6 @@ public abstract class DbWebProvider extends DbProvider {
         final String message = parseJourneyMessages(
                 journey, journey.optJSONArray("zugattribute"), journeyRef.line.network,
                 defaultTeilstreckenHinweis);
-        final List<Point> path = parsePolylineGroup(journey);
         final Trip.Public leg = new Trip.Public(
                 journeyRef.line,
                 new Destination(arrivalStop.location),
@@ -653,7 +652,9 @@ public abstract class DbWebProvider extends DbProvider {
                 new DbJourneyRef(journeyRef.journeyId, null,
                         journeyRef.adminCode, journeyRef.productName, journeyRef.serviceNumber,
                         journeyRef.line));
-        leg.setPath(path);
+        final List<Point> path = parsePolylineGroup(journey);
+        if (path != null && path.size() > (intermediateStops == null ? 0 : intermediateStops.size()) + 2)
+            leg.setPath(path);
         return leg;
     }
 

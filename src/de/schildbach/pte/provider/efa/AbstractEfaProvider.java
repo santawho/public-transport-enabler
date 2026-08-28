@@ -3197,7 +3197,8 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                 arrivalPosition, null);
 
         final Trip.Public leg = new Trip.Public(styledLine, destination, departure, arrival, intermediateStops, message, journeyRef);
-        leg.setPath(path);
+        if (path != null && path.size() > (intermediateStops == null ? 0 : intermediateStops.size()) + 2)
+            leg.setPath(path);
         legs.add(leg);
 
         return cancelled;
@@ -3418,7 +3419,8 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                                 intermediateStops, message.length() > 0 ? message.toString() : null,
                                 new EfaJourneyRef(parseMobileMResult.transportationId, departure.location.id,
                                         parseMobileMResult.tripCode, departure.plannedDepartureTime));
-                        leg.setPath(path);
+                        if (path != null && path.size() > (intermediateStops == null ? 0 : intermediateStops.size()) + 2)
+                            leg.setPath(path);
                         legs.add(leg);
                     }
                 }

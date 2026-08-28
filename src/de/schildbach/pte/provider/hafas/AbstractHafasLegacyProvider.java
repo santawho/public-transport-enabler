@@ -1172,7 +1172,8 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
                                     arrivalPos, null);
 
                             final Trip.Public leg = new Trip.Public(line, destination, departure, arrival, intermediateStops, null);
-                            leg.setPath(path);
+                            if (path != null && path.size() > (intermediateStops == null ? 0 : intermediateStops.size()) + 2)
+                                leg.setPath(path);
                             legs.add(leg);
                         } else {
                             if (legs.size() > 0 && legs.get(legs.size() - 1) instanceof Trip.Individual) {

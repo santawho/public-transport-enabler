@@ -954,7 +954,8 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                         line, destination,
                         departureStop, arrivalStop, intermediateStops,
                         message, journeyRef);
-                newLeg.setPath(path);
+                if (path != null && path.size() > (intermediateStops == null ? 0 : intermediateStops.size()) + 2)
+                    newLeg.setPath(path);
                 legs.add(newLeg);
             }
         } else {
@@ -997,7 +998,8 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                     line, destination,
                     departureStop, arrivalStop, intermediateStops,
                     message, journeyRef);
-            newLeg.setPath(path);
+            if (path != null && path.size() > (intermediateStops == null ? 0 : intermediateStops.size()) + 2)
+                newLeg.setPath(path);
             legs.add(newLeg);
         }
 
