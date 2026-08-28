@@ -171,7 +171,7 @@ public enum NetworkId {
     // Switzerland
     VBL(Descriptor.from(VblProvider.class, "de-CH", "Luzern", State.deprecated)),
     ZVV(Descriptor.from(ZvvProvider.class, "de-CH", "Zürich")),
-    BLS(Descriptor.from(BlsProvider.class, "de-CH", "Bern")),
+    BLS(Descriptor.from(BlsProvider.class, "de-CH", "Bern", State.defunct)),
     TPG(Descriptor.from(TpgProvider.class, "de-CH", "Genève")),
     SEARCHCH(Descriptor.from(CHSearchProvider.class, "de-CH", "CH;Bern;Zürich;Luzern;Genève", State.alpha)),
 
