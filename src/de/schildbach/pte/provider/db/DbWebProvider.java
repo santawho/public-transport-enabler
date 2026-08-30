@@ -631,7 +631,10 @@ public abstract class DbWebProvider extends DbProvider {
     private Trip.Public parseJourney(final JSONObject journey, final DbJourneyRef journeyRef) throws JSONException {
         Stop departureStop = null;
         Stop arrivalStop = null;
-        final List<Stop> intermediateStops = parseStops(journey.optJSONArray("halte"));
+        final JSONArray halte = journey.optJSONArray("halte");
+        final String adminID = halte == null ? journeyRef.adminCode
+                : halte.getJSONObject(0).optString("adminID", null);
+        final List<Stop> intermediateStops = parseStops(halte);
         if (intermediateStops != null && intermediateStops.size() >= 2) {
             final int size = intermediateStops.size();
             departureStop = intermediateStops.get(0);
@@ -650,7 +653,7 @@ public abstract class DbWebProvider extends DbProvider {
                 departureStop, arrivalStop, intermediateStops,
                 message,
                 new DbJourneyRef(journeyRef.journeyId, null,
-                        journeyRef.adminCode, journeyRef.productName, journeyRef.serviceNumber,
+                        adminID, journeyRef.productName, journeyRef.serviceNumber,
                         journeyRef.line));
         final List<Point> path = parsePolylineGroup(journey);
         if (path != null && path.size() > (intermediateStops == null ? 0 : intermediateStops.size()) + 2)
@@ -669,7 +672,9 @@ public abstract class DbWebProvider extends DbProvider {
         final JSONObject verkehrsmittel = abschnitt.getJSONObject("verkehrsmittel");
         final String typ = verkehrsmittel.optString("typ", null);
         final boolean isPublicTransportLeg = "PUBLICTRANSPORT".equals(typ);
-        final List<Stop> intermediateStops = parseStops(abschnitt.optJSONArray("halte"));
+        final JSONArray halte = abschnitt.optJSONArray("halte");
+        final String adminID = !isPublicTransportLeg || halte == null ? null : halte.getJSONObject(0).optString("adminID", null);
+        final List<Stop> intermediateStops = parseStops(halte);
         if (intermediateStops != null && intermediateStops.size() >= 2 && isPublicTransportLeg) {
             final int size = intermediateStops.size();
             departureStop = intermediateStops.get(0);
@@ -698,7 +703,7 @@ public abstract class DbWebProvider extends DbProvider {
             while (journeyRequestId == null || !journeyRequestId.startsWith("T$"))
                 journeyRequestId = journeyRequestIdSupplier.get();
             return new Trip.Public(line, destination, departureStop, arrivalStop, intermediateStops, message,
-                    journeyId == null ? null : new DbJourneyRef(journeyId, journeyRequestId, null, productName, serviceNumber, line));
+                    journeyId == null ? null : new DbJourneyRef(journeyId, journeyRequestId, adminID, productName, serviceNumber, line));
         } else {
             final int dist = abschnitt.optInt("distanz");
             return new Trip.Individual(
