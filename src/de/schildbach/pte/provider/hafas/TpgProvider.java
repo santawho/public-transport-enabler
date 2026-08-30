@@ -67,6 +67,11 @@ public class TpgProvider extends AbstractHafasClientInterfaceProvider {
     private static final String[] PLACES = { "Zürich", "Winterthur" };
 
     @Override
+    protected boolean isStationBoardDestinationCommonlyDirection() {
+        return false;
+    }
+
+    @Override
     protected String[] splitStationName(String name) {
         for (final String operator : OPERATORS) {
             if (name.endsWith(" " + operator)) {
