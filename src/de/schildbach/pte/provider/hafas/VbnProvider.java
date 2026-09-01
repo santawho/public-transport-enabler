@@ -93,6 +93,11 @@ public class VbnProvider extends AbstractHafasClientInterfaceProvider {
         setStyles(STYLES);
     }
 
+    @Override
+    protected boolean isStationBoardDestinationCommonlyDirection() {
+        return false;
+    }
+
 //    private static final String[] PLACES = { "Bremen", "Bremerhaven", "Hamburg", "Oldenburg(Oldb)", "Osnabrück",
 //            "Göttingen", "Rostock", "Warnemünde" };
 //
@@ -111,6 +116,11 @@ public class VbnProvider extends AbstractHafasClientInterfaceProvider {
     private static final String[] SPECIAL_PLACES = new String[]{
             "Groß Schwaß"
     };
+
+    @Override
+    protected String[] splitDirectionName(final String name, @androidx.annotation.Nullable final Line line) {
+        return noPlaceStationName(name);
+    }
 
     @Override
     protected String[] splitStationName(final String placeAndName) {
