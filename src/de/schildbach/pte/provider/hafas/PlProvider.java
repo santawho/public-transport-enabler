@@ -55,6 +55,11 @@ public class PlProvider extends AbstractHafasClientInterfaceProvider {
         return UserAgentType.PROVIDER_SPECIFIC;
     }
 
+    @Override
+    protected boolean isStationBoardDestinationCommonlyDirection() {
+        return false;
+    }
+
     private static final String[] PLACES = { "Warszawa", "Kraków" };
 
     @Override

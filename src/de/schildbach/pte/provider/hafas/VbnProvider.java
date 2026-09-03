@@ -118,7 +118,7 @@ public class VbnProvider extends AbstractHafasClientInterfaceProvider {
     };
 
     @Override
-    protected String[] splitDirectionName(final String name, @androidx.annotation.Nullable final Line line) {
+    protected String[] splitDirectionName(final String name, @Nullable final Line line) {
         return noPlaceStationName(name);
     }
 

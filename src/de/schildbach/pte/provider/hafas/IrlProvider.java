@@ -68,6 +68,11 @@ public class IrlProvider extends AbstractHafasClientInterfaceProvider {
     }
 
     @Override
+    protected boolean isStationBoardDestinationCommonlyDirection() {
+        return false;
+    }
+
+    @Override
     protected String[] splitStationName(final String name) {
         final Matcher m = P_SPLIT_NAME_FIRST_COMMA.matcher(name);
         if (m.matches())
