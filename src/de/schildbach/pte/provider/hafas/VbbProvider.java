@@ -17,12 +17,15 @@
 
 package de.schildbach.pte.provider.hafas;
 
+import androidx.annotation.Nullable;
+
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import de.schildbach.pte.NetworkId;
 import de.schildbach.pte.dto.Fare;
+import de.schildbach.pte.dto.Line;
 import de.schildbach.pte.dto.Product;
 
 import okhttp3.HttpUrl;
@@ -59,6 +62,11 @@ public class VbbProvider extends AbstractHafasClientInterfaceProvider {
 
     private static final Pattern P_SPLIT_NAME_SU = Pattern.compile("(.*?)(?:\\s+\\((S|U|S\\+U)\\))?");
     private static final Pattern P_SPLIT_NAME_BUS = Pattern.compile("(.*?)(\\s+\\[[^\\]]+\\])?");
+
+    @Override
+    protected boolean isStationBoardDestinationCommonlyDirection() {
+        return false;
+    }
 
     @Override
     protected String[] splitStationName(String name) {
