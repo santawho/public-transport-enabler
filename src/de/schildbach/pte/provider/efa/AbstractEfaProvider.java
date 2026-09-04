@@ -2245,7 +2245,8 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
         @Override
         public String getUniqueId() {
             if (uniqueId == null) {
-                uniqueId = transportationID + "~" + stopID + "~" + tripCode + "~" + targetTime.getTime();
+//                uniqueId = transportationID + "~" + stopID + "~" + tripCode + "~" + targetTime.getTime();
+                uniqueId = transportationID + "~" + tripCode;
             }
             return uniqueId;
         }
@@ -2256,14 +2257,15 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
             if (!(o instanceof EfaJourneyRef)) return false;
             final EfaJourneyRef that = (EfaJourneyRef) o;
             return Objects.equals(transportationID, that.transportationID)
-                    && Objects.equals(stopID, that.stopID)
-                    && Objects.equals(tripCode, that.tripCode)
-                    && Objects.equals(targetTime, that.targetTime);
+//                    && Objects.equals(stopID, that.stopID)
+//                    && Objects.equals(targetTime, that.targetTime)
+                    && Objects.equals(tripCode, that.tripCode);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(transportationID, stopID, tripCode, targetTime);
+//            return Objects.hash(transportationID, stopID, tripCode, targetTime);
+            return Objects.hash(transportationID, tripCode);
         }
     }
 
