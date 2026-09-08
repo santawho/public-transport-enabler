@@ -58,7 +58,7 @@ public class VbbProvider extends AbstractHafasClientInterfaceProvider {
     }
 
     private static final Pattern P_SPLIT_NAME_SU = Pattern.compile("(.*?)(?:\\s+\\((S|U|S\\+U)\\))?");
-    private static final Pattern P_SPLIT_NAME_BUS = Pattern.compile("(.*?)(\\s+\\[[^\\]]+\\])?");
+    private static final Pattern P_SPLIT_NAME_BUS = Pattern.compile("(.*?)(\\s+\\[([^\\]]+)\\])?");
 
     @Override
     protected boolean isStationBoardDestinationCommonlyDirection() {
@@ -77,10 +77,17 @@ public class VbbProvider extends AbstractHafasClientInterfaceProvider {
         if (!mBus.matches())
             throw new IllegalStateException(name);
         name = mBus.group(1);
+        final String ext = mBus.group(3);
 
         final Matcher mParen = P_SPLIT_NAME_PAREN.matcher(name);
-        if (mParen.matches())
-            return new String[] { normalizePlace(mParen.group(2)), (su != null ? su + " " : "") + mParen.group(1) };
+        if (mParen.matches()) {
+            final String stop = mParen.group(1);
+            final String city = mParen.group(2);
+            return new String[]{
+                    normalizePlace(city),
+                    (su != null ? su + " " : "") + stop + (ext == null || ext.equals(stop) ? "" : "/" + ext)
+            };
+        }
 
         final Matcher mComma = P_SPLIT_NAME_FIRST_COMMA.matcher(name);
         if (mComma.matches())
