@@ -681,8 +681,10 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                                 destination = new Destination(lineTerminal, destinationIsCommonlyDirection);
                             } else if (lineTerminal.place != null && lineTerminal.place.equals(splitDirectionLocation.place)){
                                 altDestination = new Destination(splitDirectionLocation, !destinationIsCommonlyDirection);
+                            } else if (destinationIsCommonlyDirection) {
+                                altDestination = new Destination(plainDirectionLocation, false);
                             } else {
-                                altDestination = new Destination(plainDirectionLocation, !destinationIsCommonlyDirection);
+                                altDestination = new Destination(splitDirectionLocation, true);
                             }
                         }
                     }
@@ -700,8 +702,10 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                                     destination = new Destination(lastStop, destinationIsCommonlyDirection);
                                 } else if (lastStop.place != null && lastStop.place.equals(splitDirectionLocation.place)){
                                     destination = new Destination(splitDirectionLocation, !destinationIsCommonlyDirection);
+                                } else if (destinationIsCommonlyDirection) {
+                                    destination = new Destination(plainDirectionLocation, false);
                                 } else {
-                                    destination = new Destination(plainDirectionLocation, !destinationIsCommonlyDirection);
+                                    destination = new Destination(splitDirectionLocation, true);
                                 }
                             }
                         }
@@ -716,7 +720,11 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
 //                    }
                     if (destination == null) {
                         if (plainDirectionLocation != null) {
-                            destination = new Destination(plainDirectionLocation, !destinationIsCommonlyDirection);
+                            if (destinationIsCommonlyDirection) {
+                                destination = new Destination(plainDirectionLocation, false);
+                            } else {
+                                destination = new Destination(splitDirectionLocation, true);
+                            }
                         }
                     }
 
