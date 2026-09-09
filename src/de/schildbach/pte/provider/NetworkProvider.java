@@ -104,6 +104,10 @@ public interface NetworkProvider extends Provider, LocationSearchProvider {
         USE_META,
     }
 
+    boolean requiresCredentials();
+
+    void setCredentials(String credentials);
+
     /**
      * Find locations near to given location. At least one of lat/lon pair or station id must be present in
      * that location.

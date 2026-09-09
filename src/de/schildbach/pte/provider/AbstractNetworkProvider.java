@@ -71,6 +71,16 @@ public abstract class AbstractNetworkProvider extends AbstractLocationSearchProv
     }
 
     @Override
+    public boolean requiresCredentials() {
+        return false;
+    }
+
+    @Override
+    public void setCredentials(final String credentials) {
+        // nothing here
+    }
+
+    @Override
     public final boolean hasCapabilities(final Capability... capabilities) {
         return getCapabilities().containsAll(Set.of(capabilities));
     }

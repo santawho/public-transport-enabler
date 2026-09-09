@@ -38,6 +38,7 @@ import de.schildbach.pte.provider.hafas.TpgProvider;
 import de.schildbach.pte.provider.hafas.UestraProvider;
 import de.schildbach.pte.provider.hafas.austria.StvProvider;
 import de.schildbach.pte.provider.hafas.austria.VkgProvider;
+import de.schildbach.pte.provider.openjourneyplanner.SwissOtdOjp;
 import de.schildbach.pte.provider.other.CHSearchProvider;
 import de.schildbach.pte.provider.other.DeutschlandTicketProvider;
 import de.schildbach.pte.provider.efa.DingProvider;
@@ -169,6 +170,7 @@ public enum NetworkId {
     VMOBIL(Descriptor.from(VmobilProvider.class, "de-AT", "Vorarlberg;Bregenz")),
 
     // Switzerland
+    SWISSOTD(Descriptor.from(SwissOtdOjp.class, "de-CH", "CH;Bern;Zürich;Luzern;Genève", State.unselectable)),
     VBL(Descriptor.from(VblProvider.class, "de-CH", "Luzern", State.deprecated)),
     ZVV(Descriptor.from(ZvvProvider.class, "de-CH", "Zürich")),
     BLS(Descriptor.from(BlsProvider.class, "de-CH", "Bern", State.defunct)),
