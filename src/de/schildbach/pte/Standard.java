@@ -102,47 +102,49 @@ public class Standard {
             final @Nullable String network,
             final @Nullable Product product,
             final @Nullable String label) {
-        if (!doNotUseSpecialLineStyles && styles != null && product != null) {
-            if (network != null) {
-                // check for line match
-                final String lineString = network + STYLES_SEP + product.code + Objects.toString(label, "");
-                final Style lineStyle = styles.get(lineString);
-                if (lineStyle != null)
-                    return lineStyle;
+        if (doNotUseSpecialLineStyles || styles == null || product == null)
+            return null;
 
-                // check for night bus, as that's a common special case
-                if (product == Product.BUS && label != null && label.startsWith("N")) {
-                    final String nightBusString = network + STYLES_SEP + "BN";
-                    final Style nightStyle = styles.get(nightBusString);
-                    if (nightStyle != null)
-                        return nightStyle;
-                }
+        Style style;
 
-                // check for product match
-                final String productString = network + STYLES_SEP + product.code;
-                final Style productStyle = styles.get(productString);
-                if (productStyle != null)
-                    return productStyle;
-            }
-
+        if (label != null) {
             // check for line match
-            final String lineString = product.code + Objects.toString(label, "");
-            final Style lineStyle = styles.get(lineString);
-            if (lineStyle != null)
-                return lineStyle;
+            style = specialLineStyle(styles, network, product.code + Objects.toString(label, ""));
+            if (style != null)
+                return style;
 
-            // check for night bus, as that's a common special case
-            if (product == Product.BUS && label != null && label.startsWith("N")) {
-                final Style nightStyle = styles.get("BN");
-                if (nightStyle != null)
-                    return nightStyle;
+            // check for bus prefix (like "N" for night-bus)
+            if (product == Product.BUS && label.length() > 1 && Character.isLetter(label.charAt(0))) {
+                for (int n = 1; n < label.length(); ++n) {
+                    if (!Character.isLetter(label.charAt(n))) {
+                        // first attempt: try all prefix letters
+                        if (n > 1) { // a single letter prefix is already handled below
+                            style = specialLineStyle(styles, network, "B:" + label.substring(0, n));
+                            if (style != null)
+                                return style;
+                        }
+                    }
+                }
+                // second attempt: try first letter only
+                style = specialLineStyle(styles, network, "B:" + label.charAt(0));
+                if (style != null)
+                    return style;
             }
-
-            // check for product match
-            final Style productStyle = styles.get(Character.toString(product.code));
-            if (productStyle != null)
-                return productStyle;
         }
-        return null;
+
+        // check for product match
+        return specialLineStyle(styles, network, Character.toString(product.code));
+    }
+
+    private static Style specialLineStyle(
+            final Map<String, Style> styles,
+            final @Nullable String network,
+            final String key) {
+        if (network != null) {
+            final Style style = styles.get(network + STYLES_SEP + key);
+            if (style != null)
+                return style;
+        }
+        return styles.get(key);
     }
 }

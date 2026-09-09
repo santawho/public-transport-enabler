@@ -287,7 +287,7 @@ public abstract class BvgProvider extends AbstractHafasClientInterfaceProvider {
         STYLES.put("T68", new Style(Shape.RECT, Style.parseColor("#108449"), Style.WHITE));
 
         STYLES.put("B", new Style(Shape.RECT, Style.parseColor("#993399"), Style.WHITE));
-        STYLES.put("BN", new Style(Shape.RECT, Style.BLACK, Style.WHITE));
+        STYLES.put("B:N", new Style(Shape.RECT, Style.BLACK, Style.WHITE));
 
         STYLES.put("FF1", new Style(Style.BLUE, Style.WHITE)); // Potsdam
         STYLES.put("FF10", new Style(Style.BLUE, Style.WHITE));

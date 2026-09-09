@@ -516,7 +516,7 @@ public class SydneyProvider extends AbstractEfaProvider {
         STYLES.put("BM50", new Style(Style.parseColor("#92278f"), Style.WHITE));
         STYLES.put("BM52", new Style(Style.parseColor("#9c8dc3"), Style.WHITE));
         STYLES.put("BM54", new Style(Style.parseColor("#0070ba"), Style.WHITE));
-        STYLES.put("BN", new Style(Style.parseColor("#051925"), Style.WHITE));
+        STYLES.put("B:N", new Style(Style.parseColor("#051925"), Style.WHITE));
 
         STYLES.put("FF1", new Style(Style.parseColor("#0c754b"), Style.WHITE));
         STYLES.put("FF2", new Style(Style.parseColor("#1e4230"), Style.WHITE));
