@@ -18,6 +18,7 @@
 package de.schildbach.pte.provider.openjourneyplanner;
 
 import de.schildbach.pte.NetworkId;
+import de.schildbach.pte.provider.AbstractApiProvider;
 import okhttp3.HttpUrl;
 
 /*
@@ -33,5 +34,12 @@ public class SwissOtdOjp extends AbstractOpenJourneyPlannerProvider {
     @Override
     public UserAgentType getUserAgentType() {
         return UserAgentType.APP;
+    }
+
+    @Override
+    public AbstractApiProvider setUserAgent(final String userAgent) {
+        super.setUserAgent(userAgent);
+        setRequestorRef(userAgent);
+        return this;
     }
 }
