@@ -170,7 +170,7 @@ public enum NetworkId {
     VMOBIL(Descriptor.from(VmobilProvider.class, "de-AT", "Vorarlberg;Bregenz")),
 
     // Switzerland
-    SWISSOTD(Descriptor.from(SwissOtdOjp.class, "de-CH", "CH;Bern;Zürich;Luzern;Genève", State.unselectable)),
+    SWISSOTD(Descriptor.from(SwissOtdOjp.class, "de-CH", "CH;Bern;Zürich;Luzern;Genève", true, State.workInProgress)),
     VBL(Descriptor.from(VblProvider.class, "de-CH", "Luzern", State.deprecated)),
     ZVV(Descriptor.from(ZvvProvider.class, "de-CH", "Zürich")),
     BLS(Descriptor.from(BlsProvider.class, "de-CH", "Bern", State.defunct)),
@@ -230,7 +230,7 @@ public enum NetworkId {
         beta(1),
         dead(2),
         alpha(3),
-        wip(4),
+        workInProgress(4), // work in progress
         unselectable(5),
         hide(6),
         unoperational(7),
@@ -299,13 +299,45 @@ public enum NetworkId {
                 final Class<? extends NetworkProvider> networkProviderClass,
                 final String group,
                 final String coverage,
+                final boolean credentialsRequired,
+                final State state) {
+            return from(
+                    networkProviderClass,
+                    group,
+                    coverage,
+                    null,
+                    credentialsRequired,
+                    state);
+        }
+
+        static Descriptor from(
+                final Class<? extends NetworkProvider> networkProviderClass,
+                final String group,
+                final String coverage,
                 final Point[] area,
+                final State state) {
+            return from(
+                    networkProviderClass,
+                    group,
+                    coverage,
+                    area,
+                    false,
+                    state);
+        }
+
+        static Descriptor from(
+                final Class<? extends NetworkProvider> networkProviderClass,
+                final String group,
+                final String coverage,
+                final Point[] area,
+                final boolean credentialsRequired,
                 final State state) {
             return new BasicDescriptor(
                     networkProviderClass,
                     group,
                     coverage,
                     area,
+                    credentialsRequired,
                     state);
         }
 
@@ -314,12 +346,14 @@ public enum NetworkId {
                 final Class<? extends NetworkProvider> networkProviderClass,
                 final String group,
                 final String coverage,
+                final boolean credentialsRequired,
                 final State state) {
             final Descriptor d = from(
                     networkProviderClass,
                     group,
                     coverage,
                     null,
+                    credentialsRequired,
                     state);
             d.setNetworkId(networkId);
             return d;
@@ -329,6 +363,7 @@ public enum NetworkId {
         String getCoverage();
         Point[] getArea();
         State getState();
+        boolean isCredentialsRequired();
     }
 
     public static class BasicDescriptor implements Descriptor {
@@ -338,17 +373,20 @@ public enum NetworkId {
         private final String coverage;
         private final Point[] area;
         private final State state;
+        private final boolean credentialsRequired;
 
         public BasicDescriptor(
                 final Class<? extends NetworkProvider> networkProviderClass,
                 final String group,
                 final String coverage,
                 final Point[] area,
+                final boolean credentialsRequired,
                 final State state) {
             this.networkProviderClass = networkProviderClass;
             this.group = group;
             this.coverage = coverage;
             this.area = area;
+            this.credentialsRequired = credentialsRequired;
             this.state = state;
         }
 
@@ -362,24 +400,34 @@ public enum NetworkId {
             return networkProviderClass;
         }
 
+        @Override
         public NetworkId getNetworkId() {
             return networkId;
         }
 
+        @Override
         public String getGroup() {
             return group;
         }
 
+        @Override
         public String getCoverage() {
             return coverage;
         }
 
+        @Override
         public Point[] getArea() {
             return area;
         }
 
+        @Override
         public State getState() {
             return state;
+        }
+
+        @Override
+        public boolean isCredentialsRequired() {
+            return credentialsRequired;
         }
     }
 }

@@ -34,9 +34,4 @@ public class SwissOtdOjp extends AbstractOpenJourneyPlannerProvider {
     public UserAgentType getUserAgentType() {
         return UserAgentType.APP;
     }
-
-    @Override
-    public boolean requiresCredentials() {
-        return true;
-    }
 }

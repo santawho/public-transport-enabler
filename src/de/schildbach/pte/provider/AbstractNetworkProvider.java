@@ -72,7 +72,7 @@ public abstract class AbstractNetworkProvider extends AbstractLocationSearchProv
 
     @Override
     public boolean requiresCredentials() {
-        return false;
+        return network.getDescriptor().isCredentialsRequired();
     }
 
     @Override

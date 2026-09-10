@@ -125,6 +125,7 @@ public class NetworkProviderFactory {
                     descriptor.getNetworkProviderClass(),
                     descriptor.getGroup(),
                     descriptor.getCoverage(),
+                    descriptor.isCredentialsRequired(),
                     state));
         }
 
