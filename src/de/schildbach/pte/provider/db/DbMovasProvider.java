@@ -505,7 +505,7 @@ public abstract class DbMovasProvider extends DbProvider {
                 product,
                 getSaneLineShortName(product, shortName),
                 name,
-                lineStyle(styles, operator, product, name),
+                lineStyle(operator, product, name),
                 lineAttrs,
                 null);
     }
