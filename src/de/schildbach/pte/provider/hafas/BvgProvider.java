@@ -382,7 +382,7 @@ public abstract class BvgProvider extends AbstractHafasClientInterfaceProvider {
         STYLES.put("B197", new Style(Shape.RECT, Style.rgb(166, 19, 128), Style.WHITE));
         STYLES.put("B200", new Style(Shape.RECT, Style.rgb(232, 77, 24), Style.WHITE));
         STYLES.put("B204", new Style(Shape.RECT, Style.rgb(0, 160, 153), Style.WHITE));
-        STYLES.put("B215", new Style(Shape.RECT, Style.rgb(99, 99, 99), Style.WHITE));
+        // STYLES.put("B215", new Style(Shape.RECT, Style.rgb(99, 99, 99), Style.WHITE));
         STYLES.put("B218", new Style(Shape.RECT, Style.rgb(26, 112, 183), Style.WHITE));
         STYLES.put("B220", new Style(Shape.RECT, Style.rgb(100, 179, 44), Style.WHITE));
         STYLES.put("B221", new Style(Shape.RECT, Style.rgb(155, 42, 72), Style.WHITE));
@@ -416,7 +416,7 @@ public abstract class BvgProvider extends AbstractHafasClientInterfaceProvider {
         STYLES.put("B300", new Style(Shape.RECT, Style.rgb(131, 108, 170), Style.WHITE));
         STYLES.put("B309", new Style(Shape.RECT, Style.rgb(54, 168, 52), Style.WHITE));
         STYLES.put("B310", new Style(Shape.RECT, Style.rgb(51, 168, 224), Style.WHITE));
-        STYLES.put("B312", new Style(Shape.RECT, Style.rgb(99, 99, 99), Style.WHITE));
+        // STYLES.put("B312", new Style(Shape.RECT, Style.rgb(99, 99, 99), Style.WHITE));
         STYLES.put("B316", new Style(Shape.RECT, Style.rgb(146, 94, 54), Style.WHITE));
         STYLES.put("B318", new Style(Shape.RECT, Style.rgb(0, 102, 50), Style.WHITE));
         STYLES.put("B320", new Style(Shape.RECT, Style.rgb(129, 81, 55), Style.WHITE));
@@ -426,12 +426,12 @@ public abstract class BvgProvider extends AbstractHafasClientInterfaceProvider {
         STYLES.put("B327", new Style(Shape.RECT, Style.rgb(248, 177, 50), Style.WHITE));
         STYLES.put("B334", new Style(Shape.RECT, Style.rgb(0, 157, 226), Style.WHITE));
         STYLES.put("B337", new Style(Shape.RECT, Style.rgb(221, 107, 166), Style.WHITE));
-        STYLES.put("B339", new Style(Shape.RECT, Style.rgb(99, 99, 99), Style.WHITE));
+        // STYLES.put("B339", new Style(Shape.RECT, Style.rgb(99, 99, 99), Style.WHITE));
         STYLES.put("B347", new Style(Shape.RECT, Style.rgb(147, 25, 128), Style.WHITE));
         STYLES.put("B349", new Style(Shape.RECT, Style.rgb(0, 160, 153), Style.WHITE));
         STYLES.put("B350", new Style(Shape.RECT, Style.rgb(147, 192, 28), Style.WHITE));
         STYLES.put("B353", new Style(Shape.RECT, Style.rgb(0, 123, 60), Style.WHITE));
-        STYLES.put("B358", new Style(Shape.RECT, Style.rgb(99, 99, 99), Style.WHITE));
+        // STYLES.put("B358", new Style(Shape.RECT, Style.rgb(99, 99, 99), Style.WHITE));
         STYLES.put("B363", new Style(Shape.RECT, Style.rgb(96, 173, 43), Style.WHITE));
         STYLES.put("B365", new Style(Shape.RECT, Style.rgb(147, 25, 128), Style.WHITE));
         STYLES.put("B369", new Style(Shape.RECT, Style.rgb(121, 104, 88), Style.WHITE));
