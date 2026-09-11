@@ -71,6 +71,7 @@ public class BayernProvider extends AbstractEfaProvider {
         setAllInterchangesAsLegs(true);
         setNumTripsRequested(12);
         setStyles(STYLES);
+        httpClient.setContentEncodingFromXmlPragma(true);
     }
 
     @Override

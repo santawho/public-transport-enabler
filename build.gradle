@@ -16,13 +16,13 @@ dependencies {
     implementation 'com.squareup.okhttp3:okhttp-brotli:5.4.0'
     implementation 'com.squareup.okhttp3:okhttp-zstd:5.4.0'
     implementation 'com.squareup.okhttp3:logging-interceptor:5.4.0'
-    implementation 'org.slf4j:slf4j-api:2.0.18'
+    implementation 'org.slf4j:slf4j-api:2.0.19'
     implementation 'com.google.code.findbugs:jsr305:3.0.2'
     implementation 'org.json:json:20260522' // provided by Android
     implementation 'net.sf.kxml:kxml2:2.3.0' // provided by Android
     implementation 'org.msgpack:msgpack-core:0.9.12'
     testImplementation 'junit:junit:4.13.2'
-    testImplementation 'org.slf4j:slf4j-jdk14:2.0.18'
+    testImplementation 'org.slf4j:slf4j-jdk14:2.0.19'
 }
 
 sourceSets {

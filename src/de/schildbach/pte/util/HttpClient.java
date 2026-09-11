@@ -102,6 +102,7 @@ public final class HttpClient {
     @Nullable
     private String userAgent = null;
     private final Map<String, String> headers = new HashMap<>();
+    private boolean contentEncodingFromXmlPragma = false;
     @Nullable
     private String sessionCookieName = null;
     @Nullable
@@ -152,6 +153,10 @@ public final class HttpClient {
 
     public void setHeader(final String headerName, final String headerValue) {
         this.headers.put(headerName, headerValue);
+    }
+
+    public void setContentEncodingFromXmlPragma(final boolean contentEncodingFromXmlPragma) {
+        this.contentEncodingFromXmlPragma = contentEncodingFromXmlPragma;
     }
 
     public void setSessionCookieName(@Nullable final String sessionCookieName) {
@@ -234,7 +239,7 @@ public final class HttpClient {
                     });
             loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BASIC);
 
-            final Interceptor xmlEncodingInterceptor = new Interceptor() {
+            final Interceptor xmlEncodingInterceptor = !contentEncodingFromXmlPragma ? null : new Interceptor() {
                 private final Pattern P_XML_PRAGMA = Pattern.compile("<\\?xml.*?encoding=\"(.*?)\".*?\\?>");
                 private final String HEADER_CONTENT_TYPE = "Content-Type";
 
@@ -312,8 +317,9 @@ public final class HttpClient {
                     .callTimeout(10, TimeUnit.SECONDS)
                     .addNetworkInterceptor(loggingInterceptor)
                     .addInterceptor(retryInterceptor)
-                    .addInterceptor(xmlEncodingInterceptor)
                     .addInterceptor(compressionInterceptor);
+            if (xmlEncodingInterceptor != null)
+                builder.addInterceptor(xmlEncodingInterceptor);
 
             if (proxy != null || connectionSpec != null || trustAllCertificates || certificatePinner != null || useClientCertificate) {
                 if (proxy != null)
