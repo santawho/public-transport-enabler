@@ -926,8 +926,8 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                 final int dirTIdx = dirEntry.getInt("tIdx");
                 final int arrivalStopIndex = stopLIndexMap.get(dirTIdx);
 
-                final Stop departureStop = parseJsonStop(stopList.getJSONObject(departureStopIndex), locList, crdSysList, cal, baseDate);
-                final Stop arrivalStop = parseJsonStop(stopList.getJSONObject(arrivalStopIndex), locList, crdSysList, cal, baseDate);
+                final Stop departureStop = parseJsonStop(stopList.getJSONObject(departureStopIndex), locList, crdSysList, cal, baseDate, true);
+                final Stop arrivalStop = parseJsonStop(stopList.getJSONObject(arrivalStopIndex), locList, crdSysList, cal, baseDate, true);
 
                 final List<Stop> intermediateStops;
                 final int numIntermediates = arrivalStopIndex - departureStopIndex - 1;
@@ -935,7 +935,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                     intermediateStops = new ArrayList<>(numIntermediates);
                     for (int iStop = departureStopIndex + 1; iStop < arrivalStopIndex; iStop++) {
                         final JSONObject stop = stopList.getJSONObject(iStop);
-                        final Stop intermediateStop = parseJsonStop(stop, locList, crdSysList, cal, baseDate);
+                        final Stop intermediateStop = parseJsonStop(stop, locList, crdSysList, cal, baseDate, false);
                         intermediateStops.add(intermediateStop);
                     }
                 } else {
@@ -989,13 +989,13 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                 // at least we don't understand the meaning yet
                 // checkState(stopList.length() >= 2);
                 if (departureStop == null)
-                    departureStop = parseJsonStop(stopList.getJSONObject(0), locList, crdSysList, cal, baseDate);
+                    departureStop = parseJsonStop(stopList.getJSONObject(0), locList, crdSysList, cal, baseDate, false);
                 if (arrivalStop == null)
-                    arrivalStop = parseJsonStop(stopList.getJSONObject(stopList.length() - 1), locList, crdSysList, cal, baseDate);
+                    arrivalStop = parseJsonStop(stopList.getJSONObject(stopList.length() - 1), locList, crdSysList, cal, baseDate, false);
                 intermediateStops = new ArrayList<>(stopList.length());
                 for (int iStop = 1; iStop < stopList.length() - 1; iStop++) {
                     final JSONObject stop = stopList.getJSONObject(iStop);
-                    final Stop intermediateStop = parseJsonStop(stop, locList, crdSysList, cal, baseDate);
+                    final Stop intermediateStop = parseJsonStop(stop, locList, crdSysList, cal, baseDate, false);
                     intermediateStops.add(intermediateStop);
                 }
             } else {
@@ -1128,10 +1128,10 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                     final String secType = sec.getString("type");
 
                     final JSONObject secDep = sec.getJSONObject("dep");
-                    final Stop departureStop = parseJsonStop(secDep, locList, crdSysList, c, baseDate);
+                    final Stop departureStop = parseJsonStop(secDep, locList, crdSysList, c, baseDate, false);
 
                     final JSONObject secArr = sec.getJSONObject("arr");
-                    final Stop arrivalStop = parseJsonStop(secArr, locList, crdSysList, c, baseDate);
+                    final Stop arrivalStop = parseJsonStop(secArr, locList, crdSysList, c, baseDate, false);
 
                     final Trip.Leg leg;
                     if (SECTION_TYPE_JOURNEY.equals(secType) || SECTION_TYPE_TELE_TAXI.equals(secType)) {
@@ -1623,20 +1623,34 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
 
     private Stop parseJsonStop(
             final JSONObject json, final JSONArray locList, final JSONArray crdSysList,
-            final Calendar c, final Date baseDate) throws JSONException {
+            final Calendar c, final Date baseDate,
+            final boolean fixMissingTimes) throws JSONException {
         final Location location = loc(parseLoc(locList, json.getInt("locX"), new HashMap<>(), true, crdSysList, locList));
 
         final boolean arrivalCancelled = json.optBoolean("aCncl", false);
-        final PTDate plannedArrivalTime = parseJsonTime(c, baseDate, json.optString("aTimeS", null));
-        final PTDate predictedArrivalTime = parseJsonTime(c, baseDate, json.optString("aTimeR", null));
+        PTDate plannedArrivalTime = parseJsonTime(c, baseDate, json.optString("aTimeS", null));
+        PTDate predictedArrivalTime = parseJsonTime(c, baseDate, json.optString("aTimeR", null));
         final Position plannedArrivalPosition = parseJsonPosition(json, "aPlatfS", "aPltfS");
         final Position predictedArrivalPosition = parseJsonPosition(json, "aPlatfR", "aPltfR");
 
         final boolean departureCancelled = json.optBoolean("dCncl", false);
-        final PTDate plannedDepartureTime = parseJsonTime(c, baseDate, json.optString("dTimeS", null));
-        final PTDate predictedDepartureTime = parseJsonTime(c, baseDate, json.optString("dTimeR", null));
+        PTDate plannedDepartureTime = parseJsonTime(c, baseDate, json.optString("dTimeS", null));
+        PTDate predictedDepartureTime = parseJsonTime(c, baseDate, json.optString("dTimeR", null));
         final Position plannedDeparturePosition = parseJsonPosition(json, "dPlatfS", "dPltfS");
         final Position predictedDeparturePosition = parseJsonPosition(json, "dPlatfR", "dPltfR");
+
+        if (fixMissingTimes) {
+            if (plannedDepartureTime == null) {
+                plannedDepartureTime = plannedArrivalTime;
+                if (predictedDepartureTime == null)
+                    predictedDepartureTime = predictedArrivalTime;
+            }
+            if (plannedArrivalTime == null) {
+                plannedArrivalTime = plannedDepartureTime;
+                if (predictedArrivalTime == null)
+                    predictedArrivalTime = predictedDepartureTime;
+            }
+        }
 
         return new Stop(location, plannedArrivalTime, predictedArrivalTime, plannedArrivalPosition,
                 predictedArrivalPosition, arrivalCancelled, plannedDepartureTime, predictedDepartureTime,
