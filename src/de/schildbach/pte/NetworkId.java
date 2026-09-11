@@ -38,7 +38,9 @@ import de.schildbach.pte.provider.hafas.TpgProvider;
 import de.schildbach.pte.provider.hafas.UestraProvider;
 import de.schildbach.pte.provider.hafas.austria.StvProvider;
 import de.schildbach.pte.provider.hafas.austria.VkgProvider;
-import de.schildbach.pte.provider.openjourneyplanner.SwissOtdOjp;
+import de.schildbach.pte.provider.openjourneyplanner.BlsOjpProvider;
+import de.schildbach.pte.provider.openjourneyplanner.OevInfoChProvider;
+import de.schildbach.pte.provider.openjourneyplanner.SwissOtdOjpProvider;
 import de.schildbach.pte.provider.other.CHSearchProvider;
 import de.schildbach.pte.provider.other.DeutschlandTicketProvider;
 import de.schildbach.pte.provider.efa.DingProvider;
@@ -170,10 +172,12 @@ public enum NetworkId {
     VMOBIL(Descriptor.from(VmobilProvider.class, "de-AT", "Vorarlberg;Bregenz")),
 
     // Switzerland
-    SWISSOTD(Descriptor.from(SwissOtdOjp.class, "de-CH", "CH;Bern;Zürich;Luzern;Genève", true, State.workInProgress)),
+    SWISSOTD(Descriptor.from(SwissOtdOjpProvider.class, "de-CH", "CH;Bern;Zürich;Luzern;Genève", true, State.workInProgress)),
+    OEVINFOCH(Descriptor.from(OevInfoChProvider.class, "de-CH", "CH;Bern;Zürich;Luzern;Genève", State.special_use)),
     VBL(Descriptor.from(VblProvider.class, "de-CH", "Luzern", State.deprecated)),
     ZVV(Descriptor.from(ZvvProvider.class, "de-CH", "Zürich")),
     BLS(Descriptor.from(BlsProvider.class, "de-CH", "Bern", State.defunct)),
+    BLSOJP(Descriptor.from(BlsOjpProvider.class, "de-CH", "Bern", State.special_use)),
     TPG(Descriptor.from(TpgProvider.class, "de-CH", "Genève")),
     SEARCHCH(Descriptor.from(CHSearchProvider.class, "de-CH", "CH;Bern;Zürich;Luzern;Genève", State.alpha)),
 
@@ -230,22 +234,25 @@ public enum NetworkId {
         beta(1),
         dead(2),
         alpha(3),
-        workInProgress(4), // work in progress
-        unselectable(5),
-        hide(6),
-        unoperational(7),
-        disabled(8),
-        deprecated(9),
-        defunct(10);
+        limit_selectable_regular(4),
+        workInProgress(5), // work in progress
+        limit_selectable_dev(6),
+        special_use(7),
+        limit_selectable_all(8),
+        hide(9),
+        unoperational(10),
+        disabled(11),
+        deprecated(12),
+        defunct(13);
 
-        private final int order;
+//        private final int order;
 
         State(final int order) {
-            this.order = order;
+//            this.order = order;
         }
 
         public boolean lessThan(final State other) {
-            return order < other.order;
+            return ordinal() < other.ordinal();
         }
     }
 

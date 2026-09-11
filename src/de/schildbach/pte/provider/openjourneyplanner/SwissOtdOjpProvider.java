@@ -24,11 +24,31 @@ import okhttp3.HttpUrl;
 /*
  *  Open Journey Planner provided by opentransportdata.swiss
  */
-public class SwissOtdOjp extends AbstractOpenJourneyPlannerProvider {
-    private static final HttpUrl API_BASE = HttpUrl.parse("https://api.opentransportdata.swiss/ojp20");
+public class SwissOtdOjpProvider extends AbstractOpenJourneyPlannerProvider {
+    private static final HttpUrl API_ENDPOINT = HttpUrl.parse("https://api.opentransportdata.swiss/ojp20");
 
-    public SwissOtdOjp() {
-        super(NetworkId.SWISSOTD, API_BASE);
+    private String authorization;
+
+    public SwissOtdOjpProvider() {
+        this(NetworkId.SWISSOTD);
+    }
+
+    protected SwissOtdOjpProvider(final NetworkId networkId) {
+        super(networkId, API_ENDPOINT);
+    }
+
+    protected void setAuthorization(final String authorization) {
+        this.authorization = authorization;
+    }
+
+    @Override
+    public void setCredentials(final String credentials) {
+        setAuthorization("Bearer " + credentials);
+    }
+
+    @Override
+    protected String getAuthorization() {
+        return authorization;
     }
 
     @Override

@@ -92,19 +92,17 @@ public abstract class AbstractOpenJourneyPlannerProvider extends AbstractNetwork
 
     private final ResultHeader resultHeader;
 
-    private HttpUrl apiBase;
-    private String apiToken;
+    private HttpUrl apiEndpoint;
     private String requestorRef;
 
     private final DocumentBuilder documentBuilder;
     private final Transformer transformer;
 
-
     protected AbstractOpenJourneyPlannerProvider(
             final NetworkId network,
-            final HttpUrl apiBase) {
+            final HttpUrl apiEndpoint) {
         super(network);
-        this.apiBase = requireNonNull(apiBase);
+        this.apiEndpoint = requireNonNull(apiEndpoint);
 
         try {
             final DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
@@ -120,13 +118,12 @@ public abstract class AbstractOpenJourneyPlannerProvider extends AbstractNetwork
         this.resultHeader = new ResultHeader(network, "OJP");
     }
 
-    public HttpUrl getApiBase() {
-        return apiBase;
+    public HttpUrl getEndpoint() {
+        return apiEndpoint;
     }
 
-    @Override
-    public void setCredentials(final String credentials) {
-        apiToken = credentials;
+    protected String getAuthorization() {
+        return null;
     }
 
     public void setRequestorRef(final String requestorRef) {
@@ -330,9 +327,10 @@ public abstract class AbstractOpenJourneyPlannerProvider extends AbstractNetwork
     protected OJPResponse doRequest(final OJPRequest request, final long callTimeoutSecs) throws IOException {
         final String xmlRequest = request.toXml();
         httpClient.setHeader("Content-Type", "application/xml");
-        if (apiToken != null)
-            httpClient.setHeader("Authorization", "Bearer " + apiToken);
-        final CharSequence xmlResponse = httpClient.get(apiBase, xmlRequest, null, callTimeoutSecs);
+        final String authorization = getAuthorization();
+        if (authorization != null)
+            httpClient.setHeader("Authorization", authorization);
+        final CharSequence xmlResponse = httpClient.get(apiEndpoint, xmlRequest, null, callTimeoutSecs);
         return new OJPResponse(xmlResponse.toString());
     }
 
