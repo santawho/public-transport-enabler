@@ -122,6 +122,11 @@ public abstract class BvgProvider extends AbstractHafasClientInterfaceProvider {
         return BVG_CAPABILITIES;
     }
 
+    @Override
+    protected boolean isStationBoardDestinationCommonlyDirection() {
+        return false;
+    }
+
     private static final Pattern P_SPLIT_NAME_SU = Pattern.compile("(.*?)(?:\\s+\\((S|U|S\\+U)\\))?");
     private static final Pattern P_SPLIT_NAME_BUS = Pattern.compile("(.*?)(\\s+\\[([^\\]]+)\\])?");
 
