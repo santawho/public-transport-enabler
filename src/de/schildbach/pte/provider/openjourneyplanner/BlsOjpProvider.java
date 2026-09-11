@@ -21,8 +21,10 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.util.Set;
 
 import de.schildbach.pte.NetworkId;
+import de.schildbach.pte.dto.Product;
 import okhttp3.HttpUrl;
 
 /*
@@ -38,6 +40,11 @@ public class BlsOjpProvider extends AbstractOpenJourneyPlannerProvider {
     public BlsOjpProvider() {
         super(NetworkId.BLSOJP, API_ENDPOINT);
         setRequestorRef("fahrplan");
+    }
+
+    @Override
+    public Set<Product> defaultProducts() {
+        return Product.ALL_INCLUDING_HIGHSPEED;
     }
 
     @Override

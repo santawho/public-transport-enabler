@@ -17,7 +17,10 @@
 
 package de.schildbach.pte.provider.openjourneyplanner;
 
+import java.util.Set;
+
 import de.schildbach.pte.NetworkId;
+import de.schildbach.pte.dto.Product;
 
 /*
  *  oev-info.ch
@@ -27,6 +30,11 @@ public class OevInfoChProvider extends SwissOtdOjpProvider {
         super(NetworkId.OEVINFOCH);
         setAuthorization(authorization);
         setRequestorRef("SBBQuovadislayout");
+    }
+
+    @Override
+    public Set<Product> defaultProducts() {
+        return Product.ALL_INCLUDING_HIGHSPEED;
     }
 
     @Override

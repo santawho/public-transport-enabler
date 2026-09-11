@@ -17,7 +17,10 @@
 
 package de.schildbach.pte.provider.openjourneyplanner;
 
+import java.util.Set;
+
 import de.schildbach.pte.NetworkId;
+import de.schildbach.pte.dto.Product;
 import de.schildbach.pte.provider.AbstractApiProvider;
 import okhttp3.HttpUrl;
 
@@ -35,6 +38,11 @@ public class SwissOtdOjpProvider extends AbstractOpenJourneyPlannerProvider {
 
     protected SwissOtdOjpProvider(final NetworkId networkId) {
         super(networkId, API_ENDPOINT);
+    }
+
+    @Override
+    public Set<Product> defaultProducts() {
+        return Product.ALL_INCLUDING_HIGHSPEED;
     }
 
     protected void setAuthorization(final String authorization) {
