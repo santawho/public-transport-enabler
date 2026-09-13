@@ -239,21 +239,22 @@ public abstract class BvgProvider extends AbstractHafasClientInterfaceProvider {
     private static final Map<String, Style> STYLES = new HashMap<>();
 
     static {
-        STYLES.put("SS1", new Style(Style.rgb(221, 77, 174), Style.WHITE));
-        STYLES.put("SS2", new Style(Style.rgb(16, 132, 73), Style.WHITE));
-        STYLES.put("SS25", new Style(Style.rgb(16, 132, 73), Style.WHITE));
-        STYLES.put("SS3", new Style(Style.rgb(22, 106, 184), Style.WHITE));
-        STYLES.put("SS41", new Style(Style.rgb(162, 63, 48), Style.WHITE));
-        STYLES.put("SS42", new Style(Style.rgb(191, 90, 42), Style.WHITE));
-        STYLES.put("SS45", new Style(Style.WHITE, Style.rgb(191, 128, 55), Style.rgb(191, 128, 55)));
-        STYLES.put("SS46", new Style(Style.rgb(191, 128, 55), Style.WHITE));
-        STYLES.put("SS47", new Style(Style.rgb(191, 128, 55), Style.WHITE));
-        STYLES.put("SS5", new Style(Style.rgb(243, 103, 23), Style.WHITE));
-        STYLES.put("SS7", new Style(Style.rgb(119, 96, 176), Style.WHITE));
-        STYLES.put("SS75", new Style(Style.rgb(119, 96, 176), Style.WHITE));
-        STYLES.put("SS8", new Style(Style.rgb(85, 184, 49), Style.WHITE));
-        STYLES.put("SS85", new Style(Style.WHITE, Style.rgb(85, 184, 49), Style.rgb(85, 184, 49)));
-        STYLES.put("SS9", new Style(Style.rgb(148, 36, 64), Style.WHITE));
+        STYLES.put("SS1", new Style(Shape.CIRCLE, Style.rgb(221, 108, 166), Style.WHITE));
+        STYLES.put("SS2", new Style(Shape.CIRCLE, Style.rgb(0, 123, 61), Style.WHITE));
+        STYLES.put("SS3", new Style(Shape.CIRCLE, Style.rgb(0, 101, 174), Style.WHITE));
+        STYLES.put("SS5", new Style(Shape.CIRCLE, Style.rgb(238, 114, 3), Style.WHITE));
+        STYLES.put("SS7", new Style(Shape.CIRCLE, Style.rgb(132, 109, 170), Style.WHITE));
+        STYLES.put("SS8", new Style(Shape.CIRCLE, Style.rgb(98, 173, 45), Style.WHITE));
+        STYLES.put("SS9", new Style(Shape.CIRCLE, Style.rgb(155, 43, 72), Style.WHITE));
+        STYLES.put("SS15", new Style(Shape.CIRCLE, Style.rgb(221, 108, 166), Style.WHITE));
+        STYLES.put("SS25", new Style(Shape.CIRCLE, Style.rgb(0, 123, 61), Style.WHITE));
+        STYLES.put("SS26", new Style(Shape.CIRCLE, Style.rgb(0, 123, 61), Style.WHITE));
+        STYLES.put("SS41", new Style(Shape.CIRCLE, Style.rgb(175, 89, 55), Style.WHITE));
+        STYLES.put("SS42", new Style(Shape.CIRCLE, Style.rgb(203, 98, 26), Style.WHITE));
+        STYLES.put("SS46", new Style(Shape.CIRCLE, Style.rgb(205, 156, 84), Style.WHITE));
+        STYLES.put("SS47", new Style(Shape.CIRCLE, Style.rgb(205, 156, 84), Style.WHITE));
+        STYLES.put("SS75", new Style(Shape.CIRCLE, Style.rgb(132, 109, 170), Style.WHITE));
+        STYLES.put("SS85", new Style(Shape.CIRCLE, Style.rgb(98, 173, 45), Style.WHITE));
 
         STYLES.put("UU1", new Style(Shape.RECT, Style.rgb(98, 173, 45), Style.WHITE));
         STYLES.put("UU2", new Style(Shape.RECT, Style.rgb(233, 78, 15), Style.WHITE));
