@@ -164,8 +164,7 @@ public abstract class DbProvider extends AbstractNetworkProvider {
         PRODUCT_STYLES.put(Product.FERRY, new Style(DB_DEFAULT_STYLE_SHAPE, Style.rgb(48,159,209), Style.BLACK));
     }
 
-    public static Style lineStyle(
-            final @Nullable Map<String, Style> styles,
+    public static Style deutscheBahnLineStyle(
             @Nullable final String network,
             @Nullable final Product product,
             @Nullable final String label) {
@@ -184,7 +183,7 @@ public abstract class DbProvider extends AbstractNetworkProvider {
                 styleFromNetwork = PRODUCT_STYLES.get(product);
             }
         }
-        return Standard.resolveLineStyle(styles, network, product, label, styleFromNetwork);
+        return Standard.resolveLineStyle(null, network, product, label, styleFromNetwork);
     }
 
     public static Description getDbDescription() {

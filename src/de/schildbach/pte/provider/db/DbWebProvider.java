@@ -510,7 +510,7 @@ public abstract class DbWebProvider extends DbProvider {
                 product,
                 getSaneLineShortName(product, shortName),
                 name,
-                lineStyle(operator, product, name),
+                deutscheBahnLineStyle(operator, product, name),
                 lineAttrs,
                 null);
     }
