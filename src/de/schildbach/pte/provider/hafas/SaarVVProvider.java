@@ -17,9 +17,13 @@
 
 package de.schildbach.pte.provider.hafas;
 
+import androidx.annotation.Nullable;
+
+import java.util.Set;
 import java.util.regex.Matcher;
 
 import de.schildbach.pte.NetworkId;
+import de.schildbach.pte.dto.Line;
 import de.schildbach.pte.dto.Product;
 
 import okhttp3.HttpUrl;
@@ -50,6 +54,19 @@ public class SaarVVProvider extends AbstractHafasClientInterfaceProvider {
         setApiVersion("1.63");
         setApiClient(apiClient);
         setApiAuthorization(apiAuthorization);
+    }
+
+    private Set<Product> PRODUCTS_HAVING_DESTINATION_AS_DIRECTION = Set.of(
+            Product.HIGH_SPEED_TRAIN,
+            Product.REGIONAL_TRAIN,
+            Product.SUBURBAN_TRAIN);
+
+    @Override
+    protected String[] splitDirectionName(final String name, @Nullable final Line line) {
+        if (line != null && PRODUCTS_HAVING_DESTINATION_AS_DIRECTION.contains(line.product))
+            return splitStationName(name);
+        else
+            return noPlaceStationName(name);
     }
 
     @Override
