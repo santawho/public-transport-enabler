@@ -17,11 +17,14 @@
 
 package de.schildbach.pte.provider.hafas;
 
+import androidx.annotation.Nullable;
+
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import de.schildbach.pte.NetworkId;
+import de.schildbach.pte.dto.Line;
 import de.schildbach.pte.dto.Product;
 
 import okhttp3.HttpUrl;
@@ -61,7 +64,17 @@ public class SeProvider extends AbstractHafasClientInterfaceProvider {
         return "sv".equals(lang) ? "s" : super.getHafasLanguage("en");
     }
 
+    @Override
+    protected boolean isStationBoardDestinationCommonlyDirection() {
+        return false;
+    }
+
     private static final Pattern P_SPLIT_NAME_PAREN = Pattern.compile("(.*) \\((.{3,}?) kn\\)");
+
+    @Override
+    protected String[] splitDirectionName(final String name, @Nullable final Line line) {
+        return super.splitStationName(name);
+    }
 
     @Override
     protected String[] splitStationName(final String name) {
