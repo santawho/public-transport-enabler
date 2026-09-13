@@ -96,7 +96,7 @@ import de.schildbach.pte.provider.hafas.ZvvProvider;
  */
 public enum NetworkId {
     // World
-    TRANSITOUS(Descriptor.from(TransitousProvider.class, Descriptor.GROUP_WORLD, "AE;AL;AT;AU;BA;BE;BG;BM;BR;CA;CH;CL;CO;CY;CZ;DE;DK;EE;EG;ES;ET;EU;FI;FR;GB;GE;GR;HK;HR;HU;ID;IE;IL;IN;IS;IT;JP;KR;LT;LU;LV;MA;MC;MD;ME;MK;MX;MY;NL;NO;NZ;OM;PL;PR;PT;RO;RS;SE;SG;SI;SK;TH;TR;UA;US;XK", State.alpha)),
+    TRANSITOUS(Descriptor.from(TransitousProvider.class, Descriptor.GROUP_WORLD, "AE;AL;AT;AU;BA;BE;BG;BM;BR;CA;CH;CL;CO;CY;CZ;DE;DK;EE;EG;ES;ET;EU;FI;FR;GB;GE;GR;HK;HR;HU;ID;IE;IL;IN;IS;IT;JP;KR;LT;LU;LV;MA;MC;MD;ME;MK;MX;MY;NL;NO;NZ;OM;PL;PR;PT;RO;RS;SE;SG;SI;SK;TH;TR;UA;US;XK")),
 
     // Europe
     RT(Descriptor.from(RtProvider.class, Descriptor.GROUP_EUROPE, "DE;AT;CH;BE;LU;NL;DK;SE;NO;FI;GB;SI;HU;RO;BG;PL;SK;IT;ES;PT")),
@@ -125,7 +125,7 @@ public enum NetworkId {
     BAYERN(Descriptor.from(BayernProvider.class, "de-DE", "Bayern;Würzburg;Regensburg")),
     MVV(Descriptor.from(MvvProvider.class, "de-DE", "Bayern;München",
             new Point[] { Point.fromDouble(48.140377, 11.560643) })),
-    SBMMVV(Descriptor.from(SbmMvvProvider.class, "de-DE", "Bayern;München", State.beta)),
+    SBMMVV(Descriptor.from(SbmMvvProvider.class, "de-DE", "Bayern;München")),
     INVG(Descriptor.from(InvgProvider.class, "de-DE", "Ingolstadt")),
     // AVV_AUGSBURG(Descriptor.from(AvvAugsburgProvider.class, "de-DE", "Augsburg", State.deprecated)), // AVV uses Efa now
     VGN(Descriptor.from(VgnProvider.class, "de-DE", "Nürnberg;Fürth;Erlangen")),
@@ -150,7 +150,7 @@ public enum NetworkId {
     AVV_AACHEN(Descriptor.from(AvvAachenProvider.class, "de-DE", "Aachen")),
     MVG(Descriptor.from(MvgProvider.class, "de-DE", "Märkischer Kreis;Lüdenscheid")),
     VRN(Descriptor.from(VrnProvider.class, "de-DE", "Baden-Württemberg;Rheinland-Pfalz;Mannheim;Mainz;Trier")),
-    NWEXRNV(Descriptor.from(NwexDirectionsRheinNeckarVerkehrProvider.class, "de-DE", "Baden-Württemberg;Rheinland-Pfalz;Mannheim;Ludwigshafen;Heidelberg", State.alpha)),
+    NWEXRNV(Descriptor.from(NwexDirectionsRheinNeckarVerkehrProvider.class, "de-DE", "Baden-Württemberg;Rheinland-Pfalz;Mannheim;Ludwigshafen;Heidelberg")),
     VVS(Descriptor.from(VvsProvider.class, "de-DE", "Baden-Württemberg;Stuttgart",
             new Point[] { Point.fromDouble(48.784068, 9.181713) })),
     DING(Descriptor.from(DingProvider.class, "de-DE", "Baden-Württemberg;Ulm;Neu-Ulm")),
@@ -174,16 +174,16 @@ public enum NetworkId {
     // Switzerland
     SWISSOTD(Descriptor.from(SwissOtdOjpProvider.class, "de-CH", "CH;Bern;Zürich;Luzern;Genève", true, State.workInProgress)),
     OEVINFOCH(Descriptor.from(OevInfoChProvider.class, "de-CH", "CH;Bern;Zürich;Luzern;Genève", State.special_use)),
-    VBL(Descriptor.from(VblProvider.class, "de-CH", "Luzern", State.deprecated)),
+    VBL(Descriptor.from(VblProvider.class, "de-CH", "Luzern", State.defunct)),
     ZVV(Descriptor.from(ZvvProvider.class, "de-CH", "Zürich")),
     BLS(Descriptor.from(BlsProvider.class, "de-CH", "Bern", State.defunct)),
     BLSOJP(Descriptor.from(BlsOjpProvider.class, "de-CH", "Bern", State.special_use)),
     TPG(Descriptor.from(TpgProvider.class, "de-CH", "Genève")),
-    SEARCHCH(Descriptor.from(CHSearchProvider.class, "de-CH", "CH;Bern;Zürich;Luzern;Genève", State.alpha)),
+    SEARCHCH(Descriptor.from(CHSearchProvider.class, "de-CH", "CH;Bern;Zürich;Luzern;Genève", State.beta)),
 
     // Netherlands
     NS(Descriptor.from(NsProvider.class, "nl-NL", "NL;Amsterdam", State.alpha)),
-    RIVIER(Descriptor.from(RivierProvider.class, "nl-NL", "NL;Amsterdam", State.beta)),
+    RIVIER(Descriptor.from(RivierProvider.class, "nl-NL", "NL;Amsterdam")),
     NEGENTWEE(Descriptor.from(NegentweeProvider.class, "nl-NL", "NL;Amsterdam", State.disabled)),
 
     // Denmark
@@ -201,7 +201,7 @@ public enum NetworkId {
     MERSEY(Descriptor.from(MerseyProvider.class, "en-UK", "GB;Liverpool", State.beta)),
 
     // Ireland
-    IRL(Descriptor.from(IrlProvider.class, "en-IE", "IE;Dublin", State.alpha)),
+    IRL(Descriptor.from(IrlProvider.class, "en-IE", "IE;Dublin")),
 
     // Poland
     PL(Descriptor.from(PlProvider.class, "pl-PL", "PL;Warschau")),
