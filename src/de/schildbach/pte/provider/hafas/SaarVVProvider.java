@@ -17,10 +17,10 @@
 
 package de.schildbach.pte.provider.hafas;
 
-import androidx.annotation.Nullable;
-
 import java.util.Set;
 import java.util.regex.Matcher;
+
+import javax.annotation.Nullable;
 
 import de.schildbach.pte.NetworkId;
 import de.schildbach.pte.dto.Line;

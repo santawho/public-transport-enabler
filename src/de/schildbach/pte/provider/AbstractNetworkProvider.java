@@ -107,7 +107,7 @@ public abstract class AbstractNetworkProvider extends AbstractLocationSearchProv
     @Override
     public QueryDeparturesResult queryStationBoard(
             final String stationId,
-            @androidx.annotation.Nullable final Date time,
+            @Nullable final Date time,
             final boolean arrivals,
             final int maxEvents,
             final EquivalentStationsMode equivsMode,
