@@ -1056,6 +1056,7 @@ public abstract class DbMovasProvider extends DbProvider {
                 final String verkehrsmittelNummer = dep.optString("verkehrsmittelNummer", null);
                 final String zugNummer = dep.optString("zugNummer", null);
                 final Departure departure = new Departure(
+                        arrivals,
                         arrivals ? stop.plannedArrivalTime : stop.plannedDepartureTime,
                         arrivals ? stop.predictedArrivalTime : stop.predictedDepartureTime,
                         line,

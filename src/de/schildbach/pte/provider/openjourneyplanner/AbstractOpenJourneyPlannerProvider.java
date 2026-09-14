@@ -800,6 +800,7 @@ public abstract class AbstractOpenJourneyPlannerProvider extends AbstractNetwork
                 final String messages = null; // TODO: parse "situations"
 
                 final Departure departure = new Departure(
+                        arrivals,
                         plannedTime, predictedTime,
                         line,
                         plannedPosition, predictedPosition,

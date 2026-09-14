@@ -222,7 +222,7 @@ public class CHSearchProvider extends AbstractNetworkProvider {
                 final Line line = new Line(sbEntry.Z, sbEntry.operator, type2Product(sbEntry.G), getTrainName(sbEntry.G, sbEntry.Z, sbEntry.L), new Style(Style.Shape.RECT, sbEntry.bgColor, sbEntry.fgColor));
                 final Destination destination = new Destination(new Location(LocationType.STATION, sbEntry.terminal.stationID, Point.fromDouble(sbEntry.terminal.lat, sbEntry.terminal.lon), null, sbEntry.terminal.name));
                 final TrackEntry track = sbEntry.track;
-                departures.add(new Departure(sbEntry.time, predictedTime, line, track.planned, track.predicted, destination, false, null, null, null));
+                departures.add(new Departure(false, sbEntry.time, predictedTime, line, track.planned, track.predicted, destination, false, null, null, null));
             }
             final StationDepartures sd = new StationDepartures(boardLocation, departures, null);
             final QueryDeparturesResult QDres = new QueryDeparturesResult(resultHeader);

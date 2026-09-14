@@ -643,6 +643,7 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
 
                     final TimeZone timeZone = getMotisTimeZone(place);
                     sd.departures.add(new Departure(
+                            arrivals,
                             parseMotisDateTime(place.getString(scheduledX), timeZone),
                             parseMotisDateTime(place.getString(estimatedX), timeZone),
                             line,

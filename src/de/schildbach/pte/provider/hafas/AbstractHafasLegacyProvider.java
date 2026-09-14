@@ -650,6 +650,7 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
                         }
 
                         final Departure departure = new Departure(
+                                false,
                                 PTDate.fromCalendar(plannedTime),
                                 predictedTime != null ? PTDate.fromCalendar(predictedTime) : null,
                                 line,

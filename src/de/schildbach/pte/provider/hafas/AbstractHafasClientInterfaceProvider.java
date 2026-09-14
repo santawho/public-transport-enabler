@@ -784,6 +784,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                     if (line != null) {
                         final String journeyId = jny.optString("jid", null);
                         final Departure departure = new Departure(
+                                arrivals,
                                 plannedTime,
                                 predictedTime,
                                 line,

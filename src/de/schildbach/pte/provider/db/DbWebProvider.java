@@ -1069,6 +1069,7 @@ public abstract class DbWebProvider extends DbProvider {
                 final Position plannedPosition = parsePosition(dep.optString("gleis", null));
                 final Position predictedPosition = parsePosition(dep.optString("ezGleis", null));
                 final Departure departure = new Departure(
+                        arrivals,
                         parseIso8601NoOffset(dep.optString("zeit", null)),
                         parseIso8601NoOffset(dep.optString("ezZeit", null)),
                         line,

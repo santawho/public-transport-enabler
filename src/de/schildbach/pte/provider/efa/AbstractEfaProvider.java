@@ -1698,6 +1698,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
 
 //                        if (!lineDestinationAndCancelled.cancelled) {
                             final Departure departure = new Departure(
+                                    false,
                                     PTDate.fromCalendar(plannedDepartureTime),
                                     predictedDepartureTime.isSet(Calendar.HOUR_OF_DAY)
                                             ? PTDate.fromCalendar(predictedDepartureTime) : null,
@@ -1796,6 +1797,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                         }
 
                         stationDepartures.departures.add(new Departure(
+                                false,
                                 PTDate.fromCalendar(plannedDepartureTime),
                                 predictedDepartureTime.isSet(Calendar.HOUR_OF_DAY)
                                         ? PTDate.fromCalendar(predictedDepartureTime) : null,

@@ -553,6 +553,7 @@ public class VrsProvider extends AbstractNetworkProvider {
                         lines.add(lineDestination);
                     }
                     final Departure d = new Departure(
+                            false,
                             plannedTime,
                             predictedTime,
                             line,

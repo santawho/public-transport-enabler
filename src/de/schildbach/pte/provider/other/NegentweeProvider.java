@@ -558,6 +558,7 @@ public class NegentweeProvider extends AbstractNetworkProvider {
         /* String lineName = */ departure.optString("service");
         Product lineProduct = productFromMode(mode.getString("type"), mode.getString("name"));
         return new Departure(
+                false,
                 timeFromJSONObject(departure, "time"),
                 timeFromJSONObject(departure, "time"),
                 new Line(null, departure.getString("operatorName"), lineProduct,

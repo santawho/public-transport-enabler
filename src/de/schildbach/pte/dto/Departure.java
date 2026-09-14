@@ -28,10 +28,14 @@ import java.util.Objects;
 import javax.annotation.Nullable;
 
 /**
+ * a departure OR ARRIVAL event
+ * the name is still "departure" for backwards compatibility
  * @author Andreas Schildbach
  */
 public final class Departure implements Serializable {
     private static final long serialVersionUID = -9104517779537062795L;
+
+    public final boolean isArrival;
 
     public final @Nullable PTDate plannedTime;
     public final @Nullable PTDate predictedTime;
@@ -45,6 +49,7 @@ public final class Departure implements Serializable {
     public final @Nullable JourneyRef journeyRef;
 
     public Departure(
+            final boolean isArrival,
             final PTDate plannedTime,
             final PTDate predictedTime,
             final Line line,
@@ -55,6 +60,7 @@ public final class Departure implements Serializable {
             final int[] capacity,
             final String message,
             final JourneyRef journeyRef) {
+        this.isArrival = isArrival;
         this.plannedTime = plannedTime;
         this.predictedTime = predictedTime;
         checkArgument(plannedTime != null || predictedTime != null);
