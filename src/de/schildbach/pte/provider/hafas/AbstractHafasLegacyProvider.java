@@ -169,6 +169,24 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
         this.apiLanguage = apiLanguage;
     }
 
+    protected static final Set<Capability> CAPABILITIES = Set.of(
+            Capability.SUGGEST_LOCATIONS,
+            Capability.NEARBY_LOCATIONS,
+            Capability.DEPARTURES,
+            Capability.TRIPS,
+            Capability.TRIPS_VIA,
+            Capability.MIN_TRANSFER_TIMES,
+            Capability.JOURNEY,
+            Capability.TRIP_RELOAD,
+            Capability.DIRECT_OPTION,
+            Capability.BIKE_OPTION
+    );
+
+    @Override
+    protected Set<Capability> getCapabilities() {
+        return CAPABILITIES;
+    }
+
     protected AbstractHafasProvider setStationBoardEndpoint(final HttpUrl stationBoardEndpoint) {
         this.stationBoardEndpoint = stationBoardEndpoint;
         return this;
@@ -410,7 +428,7 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
         if (stationBoardCanDoEquivs)
             url.addQueryParameter("disableEquivs", equivs ? "0" : "1");
         url.addQueryParameter("maxJourneys",
-                Integer.toString(maxDepartures > 0 ? maxDepartures : DEFAULT_MAX_DEPARTURES));
+                Integer.toString(maxDepartures > 0 ? maxDepartures : DEFAULT_MAX_BOARD_EVENTS));
         url.addEncodedQueryParameter("input", ParserUtils.urlEncode(normalizeStationId(stationId), requestUrlEncoding));
         appendDateTimeParameters(url, time, "date", "time");
         if (clientType != null)

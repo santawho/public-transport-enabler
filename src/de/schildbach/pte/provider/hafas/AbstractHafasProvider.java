@@ -41,34 +41,16 @@ import javax.annotation.Nullable;
  */
 public abstract class AbstractHafasProvider extends AbstractNetworkProvider {
     protected static final String SERVER_PRODUCT = "hafas";
-    protected static final int DEFAULT_MAX_DEPARTURES = 100;
+    protected static final int DEFAULT_MAX_BOARD_EVENTS = 100;
     protected static final int DEFAULT_MAX_LOCATIONS = 50;
     protected static final int DEFAULT_MAX_DISTANCE_CIRCLE = 20000;
     protected static final int DEFAULT_MAX_DISTANCE_RECTANGLE = 2000;
-
-    protected static final Set<Capability> CAPABILITIES = Set.of(
-            Capability.SUGGEST_LOCATIONS,
-            Capability.NEARBY_LOCATIONS,
-            Capability.DEPARTURES,
-            Capability.TRIPS,
-            Capability.TRIPS_VIA,
-            Capability.MIN_TRANSFER_TIMES,
-            Capability.JOURNEY,
-            Capability.TRIP_RELOAD,
-            Capability.DIRECT_OPTION,
-            Capability.BIKE_OPTION
-    );
 
     private final Product[] productsMap;
 
     protected AbstractHafasProvider(final NetworkId network, final Product[] productsMap) {
         super(network);
         this.productsMap = productsMap;
-    }
-
-    @Override
-    protected Set<Capability> getCapabilities() {
-        return CAPABILITIES;
     }
 
     protected final String productsString(final Set<Product> products) {

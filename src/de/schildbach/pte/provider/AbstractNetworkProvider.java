@@ -39,6 +39,7 @@ import de.schildbach.pte.dto.Line;
 import de.schildbach.pte.dto.Location;
 import de.schildbach.pte.dto.Position;
 import de.schildbach.pte.dto.Product;
+import de.schildbach.pte.dto.QueryDeparturesResult;
 import de.schildbach.pte.dto.QueryJourneyResult;
 import de.schildbach.pte.dto.QueryTripsResult;
 import de.schildbach.pte.dto.Style;
@@ -101,6 +102,33 @@ public abstract class AbstractNetworkProvider extends AbstractLocationSearchProv
 
     protected boolean isJourneyDestinationCommonlyDirection() {
         return false;
+    }
+
+    @Override
+    public QueryDeparturesResult queryStationBoard(
+            final String stationId,
+            @androidx.annotation.Nullable final Date time,
+            final boolean arrivals,
+            final int maxEvents,
+            final EquivalentStationsMode equivsMode,
+            final Set<Product> products) throws IOException {
+        assertStationBoardMode(arrivals);
+        return queryDepartures(stationId, time, maxEvents, equivsMode, products);
+    }
+
+    protected void assertStationBoardMode(final boolean arrivals) {
+        if (!getCapabilities().contains(arrivals ? Capability.ARRIVALS : Capability.DEPARTURES))
+            throw new IllegalArgumentException((arrivals ? "arrivals" : "departures") + " board not supported");
+    }
+
+    @Override
+    public QueryDeparturesResult queryDepartures(
+            final String stationId,
+            @Nullable final Date time,
+            final int maxDepartures,
+            final EquivalentStationsMode equivsMode,
+            final Set<Product> products) throws IOException {
+        return queryStationBoard(stationId, time, false, maxDepartures, equivsMode, products);
     }
 
     @Deprecated

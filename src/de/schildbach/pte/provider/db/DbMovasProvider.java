@@ -136,6 +136,7 @@ public abstract class DbMovasProvider extends DbProvider {
             Capability.SUGGEST_LOCATIONS,
             Capability.NEARBY_LOCATIONS,
             Capability.DEPARTURES,
+            Capability.ARRIVALS,
             Capability.TRIPS,
             Capability.TRIPS_VIA,
             Capability.JOURNEY,
@@ -208,6 +209,7 @@ public abstract class DbMovasProvider extends DbProvider {
     private static final int DEFAULT_MAX_DISTANCE = 10000;
 
     private final HttpUrl departureEndpoint;
+    private final HttpUrl arrivalEndpoint;
     private final HttpUrl tripEndpoint;
     private final HttpUrl tripReconEndpoint;
     private final HttpUrl journeyEndpoint;
@@ -237,6 +239,7 @@ public abstract class DbMovasProvider extends DbProvider {
     protected DbMovasProvider(final NetworkId networkId) {
         super(networkId);
         this.departureEndpoint = API_BASE.newBuilder().addPathSegments("bahnhofstafel/abfahrt").build();
+        this.arrivalEndpoint = API_BASE.newBuilder().addPathSegments("bahnhofstafel/ankunft").build();
         this.tripEndpoint = API_BASE.newBuilder().addPathSegments("angebote/fahrplan").build();
         this.tripReconEndpoint = API_BASE.newBuilder().addPathSegments("angebote/recon").build();
         this.journeyEndpoint = API_BASE.newBuilder().addPathSegments("zuglauf").build();
@@ -393,11 +396,21 @@ public abstract class DbMovasProvider extends DbProvider {
                 bahnhofsInfoId);
     }
 
-    private Destination parseDirection(final JSONObject dep, final LocationType type) {
-        final String richtung = dep.optString("richtung", null);
-        if (richtung == null)
-            return null;
-        return new Destination(createLocation(type, null, null, richtung, null, null));
+    private Destination parseDirection(final JSONObject dep, final boolean arrival, final LocationType type) throws JSONException {
+        if (arrival) {
+            final JSONObject abgangsOrt = dep.getJSONObject("abgangsOrt");
+            if (abgangsOrt == null)
+                return null;
+            final String name = abgangsOrt.optString("name", null);
+            if (name == null)
+                return null;
+            return new Destination(createLocation(type, null, null, name, null, null));
+        } else {
+            final String richtung = dep.optString("richtung", null);
+            if (richtung == null)
+                return null;
+            return new Destination(createLocation(type, null, null, richtung, null, null));
+        }
     }
 
     private List<Location> parseLocations(final JSONArray locs) throws JSONException {
@@ -674,7 +687,7 @@ public abstract class DbMovasProvider extends DbProvider {
             if (produktGattung == null)
                 produktGattung = abschnitt.optString("produktGattungen", null);
             final Line line = parseLine(abschnitt, produktGattung);
-            final Destination destination = parseDirection(abschnitt, LocationType.DIRECTION);
+            final Destination destination = parseDirection(abschnitt, false, LocationType.DIRECTION);
             final String message = parseJourneyMessages(abschnitt, null);
             final String journeyId = abschnitt.optString("zuglaufId", null);
             final String administrationId = abschnitt.optString("administrationId", null);
@@ -988,12 +1001,14 @@ public abstract class DbMovasProvider extends DbProvider {
     }
 
     @Override
-    public QueryDeparturesResult queryDepartures(
+    public QueryDeparturesResult queryStationBoard(
             final String stationId,
             final @Nullable Date time,
+            final boolean arrivals,
             int maxDepartures,
             final EquivalentStationsMode equivsMode,
             final Set<Product> products) throws IOException {
+        assertStationBoardMode(arrivals);
         // TODO only 1 hour of results returned, find secret parameter?
         if (maxDepartures == 0)
             maxDepartures = DEFAULT_MAX_DEPARTURES;
@@ -1005,7 +1020,7 @@ public abstract class DbMovasProvider extends DbProvider {
                 + "\"ursprungsBahnhofId\": \"" + formatLid(stationId) + "\"," //
                 + "\"verkehrsmittel\":[\"ALL\"]}";
 
-        final HttpUrl url = this.departureEndpoint;
+        final HttpUrl url = arrivals ? this.arrivalEndpoint : this.departureEndpoint;
         final String contentType = "application/x.db.vendo.mob.bahnhofstafeln.v2+json";
 
         String page = null;
@@ -1013,7 +1028,7 @@ public abstract class DbMovasProvider extends DbProvider {
             page = doRequest(url, request, contentType);
             final QueryDeparturesResult result = new QueryDeparturesResult(this.resultHeader);
             final JSONObject head = new JSONObject(page);
-            final JSONArray deps = head.getJSONArray("bahnhofstafelAbfahrtPositionen");
+            final JSONArray deps = head.getJSONArray(arrivals ? "bahnhofstafelAnkunftPositionen" : "bahnhofstafelAbfahrtPositionen");
             int added = 0;
             for (int iDep = 0; iDep < deps.length(); iDep++) {
                 final JSONObject dep = deps.getJSONObject(iDep);
@@ -1041,11 +1056,11 @@ public abstract class DbMovasProvider extends DbProvider {
                 final String verkehrsmittelNummer = dep.optString("verkehrsmittelNummer", null);
                 final String zugNummer = dep.optString("zugNummer", null);
                 final Departure departure = new Departure(
-                        stop.plannedDepartureTime,
-                        stop.predictedDepartureTime,
+                        arrivals ? stop.plannedArrivalTime : stop.plannedDepartureTime,
+                        arrivals ? stop.predictedArrivalTime : stop.predictedDepartureTime,
                         line,
                         stop.plannedDeparturePosition, stop.predictedDeparturePosition,
-                        parseDirection(dep, LocationType.STATION),
+                        parseDirection(dep, arrivals, LocationType.STATION),
                         cancelled,
                         null,
                         parseJourneyMessages(dep, null),

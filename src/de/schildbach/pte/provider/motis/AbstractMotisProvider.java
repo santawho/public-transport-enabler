@@ -142,6 +142,7 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
         CAPABILITIES.add(Capability.SUGGEST_LOCATIONS);
         CAPABILITIES.add(Capability.NEARBY_LOCATIONS);
         CAPABILITIES.add(Capability.DEPARTURES);
+        CAPABILITIES.add(Capability.ARRIVALS);
         CAPABILITIES.add(Capability.TRIPS);
         CAPABILITIES.add(Capability.TRIPS_VIA);
         CAPABILITIES.add(Capability.BIKE_OPTION);
@@ -548,16 +549,19 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
     }
 
     @Override
-    public QueryDeparturesResult queryDepartures(
+    public QueryDeparturesResult queryStationBoard(
             final String stationId,
             @Nullable final Date time,
+            final boolean arrivals,
             final int maxDepartures,
             final EquivalentStationsMode equivsMode,
             @Nullable final Set<Product> products) throws IOException {
+        assertStationBoardMode(arrivals);
         final HttpUrl.Builder endpointBuilder = apiBase.newBuilder()
                 .addPathSegment("api")
                 .addPathSegment("v5")
                 .addPathSegment("stoptimes")
+                .addQueryParameter("arriveBy", Boolean.toString(arrivals))
                 .addQueryParameter("stopId", stationId)
                 .addQueryParameter("exactRadius", "false")
                 .addQueryParameter("radius", "200");
@@ -599,6 +603,19 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
                     return new QueryDeparturesResult(new ResultHeader(network, "MOTIS"), QueryDeparturesResult.Status.INVALID_STATION);
                 }
 
+                final String tripX;
+                final String scheduledX;
+                final String estimatedX;
+                if (arrivals) {
+                    tripX = "tripFrom";
+                    scheduledX = "scheduledArrival";
+                    estimatedX = "arrival";
+                } else {
+                    tripX = "tripTo";
+                    scheduledX = "scheduledDeparture";
+                    estimatedX = "departure";
+                }
+
                 final JSONArray stopTimes = data.getJSONArray("stopTimes");
                 for (int i = 0; i < stopTimes.length(); i++) {
                     final JSONObject stopTime = stopTimes.getJSONObject(i);
@@ -622,12 +639,12 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
 
                     final Line line = parseMotisLine(stopTime);
 
-                    final Destination destination = new Destination(parseMotisPlace(stopTime.getJSONObject("tripTo")));
+                    final Destination destination = new Destination(parseMotisPlace(stopTime.getJSONObject(tripX)));
 
                     final TimeZone timeZone = getMotisTimeZone(place);
                     sd.departures.add(new Departure(
-                            parseMotisDateTime(place.getString("scheduledDeparture"), timeZone),
-                            parseMotisDateTime(place.getString("departure"), timeZone),
+                            parseMotisDateTime(place.getString(scheduledX), timeZone),
+                            parseMotisDateTime(place.getString(estimatedX), timeZone),
                             line,
                             place.has("scheduledTrack") ? new Position(place.getString("scheduledTrack")) : null,
                             place.has("track") ? new Position(place.getString("track")) : null,

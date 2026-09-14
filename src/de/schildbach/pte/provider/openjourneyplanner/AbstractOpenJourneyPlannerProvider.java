@@ -93,6 +93,7 @@ public abstract class AbstractOpenJourneyPlannerProvider extends AbstractNetwork
         Capability.SUGGEST_LOCATIONS,
         Capability.NEARBY_LOCATIONS,
         Capability.DEPARTURES,
+        Capability.ARRIVALS,
         Capability.TRIPS,
         Capability.TRIPS_VIA,
         Capability.BIKE_OPTION,
@@ -704,12 +705,14 @@ public abstract class AbstractOpenJourneyPlannerProvider extends AbstractNetwork
     }
 
     @Override
-    public QueryDeparturesResult queryDepartures(
+    public QueryDeparturesResult queryStationBoard(
             final String stationId,
             @Nullable final Date time,
+            final boolean arrivals,
             final int maxDepartures,
             final EquivalentStationsMode equivsMode,
             final Set<Product> products) throws IOException {
+        assertStationBoardMode(arrivals);
         try {
             final OJPRequest document = new OJPRequest();
             final Element request = document.createRequest("OJPStopEventRequest");
@@ -720,7 +723,7 @@ public abstract class AbstractOpenJourneyPlannerProvider extends AbstractNetwork
             document.createTextElement(locationElement, "DepArrTime", time);
             final Element params = document.createElement(request, "Params");
             // document.createTextElement(params, "IncludeAllRestrictedLines", false);
-            document.createTextElement(params, "StopEventType", "departure");
+            document.createTextElement(params, "StopEventType", arrivals ? "arrival" : "departure");
             document.createTextElement(params, "NumberOfResults", maxDepartures);
 //            document.createTextElement(params, "IncludePreviousCalls", false);
 //            document.createTextElement(params, "IncludeOnwardCalls", false);

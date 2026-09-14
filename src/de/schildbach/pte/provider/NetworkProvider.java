@@ -57,6 +57,8 @@ public interface NetworkProvider extends Provider, LocationSearchProvider {
         NEARBY_LOCATIONS,
         /* can query for departures */
         DEPARTURES,
+        /* can query for arrivals */
+        ARRIVALS,
         /* can query trips */
         TRIPS,
         /* supports trip queries passing by a specific location */
@@ -136,7 +138,34 @@ public interface NetworkProvider extends Provider, LocationSearchProvider {
             Set<Product> products) throws IOException;
 
     /**
+     * Get departures/arrivals at a given station, probably live
+     *
+     * @param stationId
+     *            id of the station
+     * @param time
+     *            desired time for departing, or {@code null} for the provider default
+     * @param arrivals
+     *            true to get arrivals, false to get departures {@code false}
+     * @param maxEvents
+     *            maximum number of events to get or {@code 0}
+     * @param equivsMode
+     *            how to handle equivalent stations
+     * @param products
+     *            filter to stations serving listed products, or {@code null}
+     * @return result object containing the departures
+     * @throws IOException
+     */
+    QueryDeparturesResult queryStationBoard(
+            String stationId,
+            @Nullable Date time,
+            boolean arrivals,
+            int maxEvents,
+            EquivalentStationsMode equivsMode,
+            Set<Product> products) throws IOException;
+
+    /**
      * Get departures at a given station, probably live
+     * (legacy interface for queryStationBoard with arrivals=false)
      *
      * @param stationId
      *            id of the station

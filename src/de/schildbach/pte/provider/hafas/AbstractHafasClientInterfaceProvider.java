@@ -163,6 +163,25 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
         this.apiBase = requireNonNull(apiBase);
     }
 
+    protected static final Set<Capability> CAPABILITIES = Set.of(
+            Capability.SUGGEST_LOCATIONS,
+            Capability.NEARBY_LOCATIONS,
+            Capability.DEPARTURES,
+            Capability.ARRIVALS,
+            Capability.TRIPS,
+            Capability.TRIPS_VIA,
+            Capability.MIN_TRANSFER_TIMES,
+            Capability.JOURNEY,
+            Capability.TRIP_RELOAD,
+            Capability.DIRECT_OPTION,
+            Capability.BIKE_OPTION
+    );
+
+    @Override
+    protected Set<Capability> getCapabilities() {
+        return CAPABILITIES;
+    }
+
     @Override
     public TripRef unpackTripRefFromMessage(final MessageUnpacker unpacker) throws IOException {
         return new HafasTripRef(network, unpacker);
@@ -299,13 +318,15 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
     }
 
     @Override
-    public QueryDeparturesResult queryDepartures(
+    public QueryDeparturesResult queryStationBoard(
             final String stationId,
             final @Nullable Date time,
-            final int maxDepartures,
+            final boolean arrivals,
+            final int maxEvents,
             final EquivalentStationsMode equivsMode,
             final Set<Product> products) throws IOException {
-        return jsonStationBoard(stationId, time, maxDepartures, equivsMode, products);
+        assertStationBoardMode(arrivals);
+        return jsonStationBoard(stationId, time, arrivals, maxEvents, equivsMode, products);
     }
 
     @Override
@@ -533,12 +554,13 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
     protected final QueryDeparturesResult jsonStationBoard(
             final String stationId,
             final @Nullable Date time,
-            int maxDepartures,
+            final boolean arrivals,
+            int maxEvents,
             final EquivalentStationsMode equivsMode,
             final Set<Product> products) throws IOException {
         final boolean canStbFltrEquiv = apiLevel <= 18;
-        if (maxDepartures == 0)
-            maxDepartures = DEFAULT_MAX_DEPARTURES;
+        if (maxEvents == 0)
+            maxEvents = DEFAULT_MAX_BOARD_EVENTS;
         final boolean stbFltrEquiv;
         if (equivsMode != EquivalentStationsMode.USE_META) {
             stbFltrEquiv = false;
@@ -546,10 +568,10 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
             stbFltrEquiv = true;
         } else {
             stbFltrEquiv = false;
-            final int raisedMaxDepartures = maxDepartures * 4;
+            final int raisedMaxEvents = maxEvents * 4;
             log.info("stbFltrEquiv workaround in effect: querying for {} departures rather than {}",
-                    raisedMaxDepartures, maxDepartures);
-            maxDepartures = raisedMaxDepartures;
+                    raisedMaxEvents, maxEvents);
+            maxEvents = raisedMaxEvents;
         }
 
         final Calendar c = new GregorianCalendar(timeZone);
@@ -557,8 +579,9 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
         final String jsonDate = jsonDate(c);
         final String jsonTime = jsonTime(c);
         final String normalizedStationId = normalizeStationId(stationId);
-        final String maxJny = Integer.toString(maxDepartures);
-        final String request = wrapJsonApiRequest("StationBoard", "{\"type\":\"DEP\"," //
+        final String maxJny = Integer.toString(maxEvents);
+        final String request = wrapJsonApiRequest("StationBoard",
+                "{\"type\":\"" + (arrivals ? "ARR" : "DEP") + "\"," //
                 + "\"date\":\"" + jsonDate + "\"," //
                 + "\"time\":\"" + jsonTime + "\"," //
                 + "\"stbLoc\":{\"type\":\"S\"," + "\"state\":\"F\"," // F/M
@@ -620,29 +643,57 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
             final JSONArray crdSysList = common.optJSONArray("crdSysL");
             final JSONArray locList = common.getJSONArray("locL");
 
+            final String xCncl;
+            final String xPlatfS;
+            final String xPltfS;
+            final String xPlatfR;
+            final String xPltfR;
+            final String xTimeS;
+            final String xTimeR;
+            final String xProdX;
+
+            if (arrivals) {
+                xCncl = "aCncl";
+                xPlatfS = "aPlatfS";
+                xPltfS = "aPltfS";
+                xPlatfR = "aPlatfR";
+                xPltfR = "aPltfR";
+                xTimeS = "aTimeS";
+                xTimeR = "aTimeR";
+                xProdX = "aProdX";
+            } else {
+                xCncl = "dCncl";
+                xPlatfS = "dPlatfS";
+                xPltfS = "dPltfS";
+                xPlatfR = "dPlatfR";
+                xPltfR = "dPltfR";
+                xTimeS = "dTimeS";
+                xTimeR = "dTimeR";
+                xProdX = "dProdX";
+            }
+
             final JSONArray jnyList = res.optJSONArray("jnyL");
             if (jnyList != null) {
                 for (int iJny = 0; iJny < jnyList.length(); iJny++) {
                     final JSONObject jny = jnyList.getJSONObject(iJny);
                     final JSONObject stbStop = jny.getJSONObject("stbStop");
 
-                    final boolean cancelled = stbStop.optBoolean("dCncl", false);
+                    final boolean cancelled = stbStop.optBoolean(xCncl, false);
 //                    if (cancelled)
 //                        continue;
 
-                    final Position plannedPosition = parseJsonPosition(stbStop, "dPlatfS", "dPltfS");
-                    final Position predictedPosition = parseJsonPosition(stbStop, "dPlatfR", "dPltfR");
+                    final Position plannedPosition = parseJsonPosition(stbStop, xPlatfS, xPltfS);
+                    final Position predictedPosition = parseJsonPosition(stbStop, xPlatfR, xPltfR);
 
                     c.clear();
                     ParserUtils.parseIsoDate(c, jny.getString("date"));
                     final Date baseDate = c.getTime();
 
-                    final PTDate plannedTime = parseJsonTime(c, baseDate, stbStop.getString("dTimeS"));
+                    final PTDate plannedTime = parseJsonTime(c, baseDate, stbStop.getString(xTimeS));
+                    final PTDate predictedTime = parseJsonTime(c, baseDate, stbStop.optString(xTimeR, null));
 
-                    final PTDate predictedTime = parseJsonTime(c, baseDate, stbStop.optString("dTimeR", null));
-
-                    final int dProdX = stbStop.optInt("dProdX", -1);
-                    final Line line = dProdX != -1 ? lines.get(dProdX) : null;
+                    final int prodX = stbStop.optInt(xProdX, -1);
+                    final Line line = prodX != -1 ? lines.get(prodX) : null;
 
                     final HashMap<Integer, MetaLocation> metaLocsByIndex = equivsMode == EquivalentStationsMode.KEEP_DISTINCT ? null : new HashMap<>();
                     final boolean alwaysUseMeta = equivsMode == EquivalentStationsMode.USE_META;

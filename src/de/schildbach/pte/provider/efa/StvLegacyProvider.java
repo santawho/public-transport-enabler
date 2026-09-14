@@ -71,15 +71,17 @@ public class StvLegacyProvider extends AbstractEfaProvider {
     }
 
     @Override
-    public QueryDeparturesResult queryDepartures(
+    public QueryDeparturesResult queryStationBoard(
             final String stationId,
             final @Nullable Date time,
-            final int maxDepartures,
+            final boolean arrivals,
+            final int maxEvents,
             final EquivalentStationsMode equivsMode,
             final Set<Product> products) throws IOException {
+        assertStationBoardMode(arrivals);
         requireNonNull(stationId);
 
-        return queryDeparturesMobile(stationId, time, maxDepartures, equivsMode);
+        return queryDeparturesMobile(stationId, time, maxEvents, equivsMode);
     }
 
     @Override

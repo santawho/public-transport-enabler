@@ -138,6 +138,7 @@ public abstract class DbWebProvider extends DbProvider {
             Capability.SUGGEST_LOCATIONS,
             Capability.NEARBY_LOCATIONS,
             Capability.DEPARTURES,
+            Capability.ARRIVALS,
             Capability.TRIPS,
             Capability.TRIPS_VIA,
             Capability.JOURNEY,
@@ -178,6 +179,7 @@ public abstract class DbWebProvider extends DbProvider {
     private static final int DEFAULT_MAX_DISTANCE = 10000;
 
     private final HttpUrl departureEndpoint;
+    private final HttpUrl arrivalEndpoint;
     private final HttpUrl tripEndpoint;
     private final HttpUrl tripReconEndpoint;
     private final HttpUrl journeyEndpoint;
@@ -207,6 +209,7 @@ public abstract class DbWebProvider extends DbProvider {
     protected DbWebProvider(final NetworkId networkId) {
         super(networkId);
         this.departureEndpoint = WEB_API_BASE.newBuilder().addPathSegments("reiseloesung/abfahrten").build();
+        this.arrivalEndpoint = WEB_API_BASE.newBuilder().addPathSegments("reiseloesung/ankuenfte").build();
         this.tripEndpoint = WEB_API_BASE.newBuilder().addPathSegments("angebote/fahrplan").build();
         this.tripReconEndpoint = WEB_API_BASE.newBuilder().addPathSegments("angebote/recon").build();
         this.journeyEndpoint = WEB_API_BASE.newBuilder().addPathSegments("reiseloesung/fahrt").build();
@@ -988,20 +991,23 @@ public abstract class DbWebProvider extends DbProvider {
     }
 
     @Override
-    public QueryDeparturesResult queryDepartures(
+    public QueryDeparturesResult queryStationBoard(
             final String stationId,
             @Nullable final Date time,
+            final boolean arrivals,
             int maxDepartures,
             final EquivalentStationsMode equivsMode,
             final Set<Product> products)
             throws IOException {
+        assertStationBoardMode(arrivals);
         // TODO only 1 hour of results returned, find secret parameter?
         if (maxDepartures == 0)
             maxDepartures = DEFAULT_MAX_DEPARTURES;
         final Calendar c = new GregorianCalendar(timeZone);
         c.setTime(time);
 
-        final HttpUrl.Builder builder = this.departureEndpoint.newBuilder()
+        final HttpUrl.Builder builder =
+                (arrivals ? this.arrivalEndpoint : this.departureEndpoint).newBuilder()
                 .addQueryParameter("datum", formatDate(c).toString())
                 .addQueryParameter("zeit", formatTime(c).toString())
                 .addQueryParameter("ortExtId", stationId)
