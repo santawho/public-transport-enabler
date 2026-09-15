@@ -718,11 +718,14 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                     }
                     Destination destination = null;
                     Destination altDestination = null;
-                    final JSONArray prodL = jny.optJSONArray("prodL");
                     final boolean destinationIsCommonlyDirection = isStationBoardDestinationCommonlyDirection();
+                    final JSONArray prodL = jny.optJSONArray("prodL");
                     if (prodL != null && prodL.length() > 0) {
                         // use terminal of first product
-                        final int tLocX = prodL.getJSONObject(0).getInt("tLocX");
+                        // for arrivals use the "fLocX" (from-location index)
+                        // however, this points to the station just before the current station, not the first of that line
+                        // so this will not work as expected
+                        final int tLocX = prodL.getJSONObject(0).getInt(arrivals ? "fLocX" : "tLocX");
                         final LocationAndName lineTerminalAndName = parseLoc(locList, tLocX, null, false, crdSysList, locList);
                         final Location lineTerminal = loc(lineTerminalAndName);
                         if (lineTerminal != null && lineTerminal.hasName()) {
@@ -730,7 +733,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                                     || lineTerminalAndName.originalName.equals(jnyDirTxt)
                                     || (lineTerminal.name != null && lineTerminal.name.equals(splitDirectionLocation.name))) {
                                 destination = new Destination(lineTerminal, destinationIsCommonlyDirection);
-                            } else if (lineTerminal.place != null && lineTerminal.place.equals(splitDirectionLocation.place)){
+                            } else if (lineTerminal.place != null && lineTerminal.place.equals(splitDirectionLocation.place)) {
                                 altDestination = new Destination(splitDirectionLocation, !destinationIsCommonlyDirection);
                             } else if (destinationIsCommonlyDirection) {
                                 altDestination = new Destination(plainDirectionLocation, false);
@@ -743,7 +746,10 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                         // if last entry in stopL happens to be our destination, use it
                         final JSONArray stopList = jny.optJSONArray("stopL");
                         if (stopList != null) {
-                            final int lastStopIdx = stopList.getJSONObject(stopList.length() - 1).getInt("locX");
+                            final int lastStopIdx = stopList.getJSONObject(
+                                    arrivals ? 0 // for arrivals use first stop
+                                            :stopList.length() - 1)
+                                    .getInt("locX");
                             final LocationAndName lastStopAndName = parseLoc(locList, lastStopIdx, null, false, crdSysList, locList);
                             final Location lastStop = loc(lastStopAndName);
                             if (lastStop != null && lastStop.hasName()) {
