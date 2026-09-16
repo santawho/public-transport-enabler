@@ -25,11 +25,11 @@ import java.util.List;
 
 import javax.annotation.Nullable;
 
-public final class QueryJourneyResult implements Serializable {
+public final class QueryVehicleInformationResult implements Serializable {
     private static final long serialVersionUID = -6893303645828170447L;
 
     public enum Status {
-        OK, NO_JOURNEY, SERVICE_DOWN
+        OK, NO_INFORMATION, SERVICE_DOWN
     }
 
     public final @Nullable ResultHeader header;
@@ -37,44 +37,38 @@ public final class QueryJourneyResult implements Serializable {
 
     public final String queryUri;
     public final JourneyRef journeyRef;
-    public final List<Trip.Public> journeyLegs;
+    public final Location location;
 
-    public QueryJourneyResult(
+    public final VehicleInformation vehicleInformation;
+
+    public QueryVehicleInformationResult(
             final ResultHeader header, final String queryUri,
-            final JourneyRef journeyRef, final Trip.Public journeyLeg) {
+            final JourneyRef journeyRef, final Location location,
+            final VehicleInformation vehicleInformation) {
         this.header = header;
         this.status = Status.OK;
         this.queryUri = queryUri;
         this.journeyRef = journeyRef;
-        this.journeyLegs = Collections.singletonList(requireNonNull(journeyLeg));
+        this.location = location;
+        this.vehicleInformation = vehicleInformation;
     }
 
-    public QueryJourneyResult(
-            final ResultHeader header, final String queryUri,
-            final JourneyRef journeyRef, final List<Trip.Public> journeyLegs) {
-        assert(!requireNonNull(journeyLegs).isEmpty());
-        this.header = header;
-        this.status = Status.OK;
-        this.queryUri = queryUri;
-        this.journeyRef = journeyRef;
-        this.journeyLegs = journeyLegs;
-    }
-
-    public QueryJourneyResult(final ResultHeader header, final Status status) {
+    public QueryVehicleInformationResult(final ResultHeader header, final Status status) {
         this.header = header;
         this.status = requireNonNull(status);
 
         this.queryUri = null;
         this.journeyRef = null;
-        this.journeyLegs = null;
+        this.location = null;
+        this.vehicleInformation = null;
     }
 
     @Override
     public String toString() {
         return getClass().getSimpleName() + "{" +
                 status + "," +
-                (status == Status.OK && journeyLegs != null ?
-                        "journeyLegs=[" + journeyLegs : "]") +
+                (status == Status.OK && vehicleInformation != null ?
+                        "vehicleInformation=[" + vehicleInformation : "]") +
                 "}";
     }
 

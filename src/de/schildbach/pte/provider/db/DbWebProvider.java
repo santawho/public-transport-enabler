@@ -76,9 +76,11 @@ import de.schildbach.pte.dto.Trip;
 import de.schildbach.pte.dto.TripOptions;
 import de.schildbach.pte.dto.TripRef;
 import de.schildbach.pte.dto.TripShare;
+import de.schildbach.pte.dto.VehicleInformation;
 import de.schildbach.pte.exception.AbstractHttpException;
 import de.schildbach.pte.exception.BlockedException;
 import de.schildbach.pte.exception.InternalErrorException;
+import de.schildbach.pte.exception.NotFoundException;
 import de.schildbach.pte.exception.ParserException;
 import de.schildbach.pte.util.GeoUtils;
 import de.schildbach.pte.util.HttpClient;
@@ -148,7 +150,8 @@ public abstract class DbWebProvider extends DbProvider {
             Capability.BIKE_OPTION,
             Capability.TRIP_SHARING,
             Capability.TRIP_LINKING,
-            Capability.TRIP_DETAILS
+            Capability.TRIP_DETAILS,
+            Capability.VEHICLE_INFORMATION
         );
 
     private static final String BASE_URL = "https://www.bahn.de";
@@ -185,6 +188,7 @@ public abstract class DbWebProvider extends DbProvider {
     private final HttpUrl journeyEndpoint;
     private final HttpUrl locationsEndpoint;
     private final HttpUrl nearbyEndpoint;
+    private final HttpUrl vehicleSequenceEndpoint;
 
     private static final int[] VALID_MIN_TRANSFER_TIMES = { 0, 10, 15, 20, 25, 30, 35, 40, 45 };
 
@@ -215,6 +219,7 @@ public abstract class DbWebProvider extends DbProvider {
         this.journeyEndpoint = WEB_API_BASE.newBuilder().addPathSegments("reiseloesung/fahrt").build();
         this.locationsEndpoint = WEB_API_BASE.newBuilder().addPathSegments("reiseloesung/orte").build();
         this.nearbyEndpoint = WEB_API_BASE.newBuilder().addPathSegments("reiseloesung/orte/nearby").build();
+        this.vehicleSequenceEndpoint = WEB_API_BASE.newBuilder().addPathSegments("reisebegleitung/wagenreihung/vehicle-sequence").build();
         this.resultHeader = new ResultHeader(network, "dbweb");
 
         this.linkSharing = new DbWebLinkSharing();
@@ -634,9 +639,21 @@ public abstract class DbWebProvider extends DbProvider {
     private Trip.Public parseJourney(final JSONObject journey, final DbJourneyRef journeyRef) throws JSONException {
         Stop departureStop = null;
         Stop arrivalStop = null;
+        final String reisetag = journey.getString("reisetag");
         final JSONArray halte = journey.optJSONArray("halte");
-        final String adminID = halte == null ? journeyRef.adminCode
-                : halte.getJSONObject(0).optString("adminID", null);
+        final String adminID;
+        final String kategorie;
+        final String nummer;
+        if (halte == null) {
+            adminID = journeyRef.adminCode;
+            kategorie = journeyRef.productShortName;
+            nummer = journeyRef.serviceNumber;
+        } else {
+            final JSONObject firstHalt = halte.getJSONObject(0);
+            adminID = firstHalt.optString("adminID", journeyRef.adminCode);
+            kategorie = firstHalt.optString("kategorie", journeyRef.productShortName);
+            nummer = firstHalt.optString("nummer", journeyRef.serviceNumber);
+        }
         final List<Stop> intermediateStops = parseStops(halte);
         if (intermediateStops != null && intermediateStops.size() >= 2) {
             final int size = intermediateStops.size();
@@ -656,7 +673,8 @@ public abstract class DbWebProvider extends DbProvider {
                 departureStop, arrivalStop, intermediateStops,
                 message,
                 new DbJourneyRef(journeyRef.journeyId, null,
-                        adminID, journeyRef.productName, journeyRef.serviceNumber,
+                        adminID, journeyRef.productName,
+                        kategorie, nummer, reisetag,
                         journeyRef.line));
         final List<Point> path = parsePolylineGroup(journey);
         if (path != null && path.size() > (intermediateStops == null ? 0 : intermediateStops.size()) + 2)
@@ -706,7 +724,10 @@ public abstract class DbWebProvider extends DbProvider {
             while (journeyRequestId == null || !journeyRequestId.startsWith("T$"))
                 journeyRequestId = journeyRequestIdSupplier.get();
             return new Trip.Public(line, destination, departureStop, arrivalStop, intermediateStops, message,
-                    journeyId == null ? null : new DbJourneyRef(journeyId, journeyRequestId, adminID, productName, serviceNumber, line));
+                    journeyId == null ? null : new DbJourneyRef(
+                            journeyId, journeyRequestId,
+                            adminID, productName,
+                            productName, serviceNumber, null, line));
         } else {
             final int dist = abschnitt.optInt("distanz");
             return new Trip.Individual(
@@ -1049,6 +1070,7 @@ public abstract class DbWebProvider extends DbProvider {
                 final String journeyId = dep.optString("journeyId", null);
                 final JSONObject verkehrmittel = dep.getJSONObject("verkehrmittel");
                 final String produktGattung = verkehrmittel.optString("produktGattung", null);
+                final String kurzText = verkehrmittel.optString("kurzText", null);
                 final Line line = parseLine(verkehrmittel, produktGattung);
                 String destinationName = dep.optString("terminus", null);
                 if (destinationName == null && vias != null) {
@@ -1078,7 +1100,10 @@ public abstract class DbWebProvider extends DbProvider {
                         cancelled,
                         null,
                         parseJourneyMessages(dep, null, null, null),
-                        journeyId == null ? null : new DbJourneyRef(journeyId, null, null, produktGattung,null, line));
+                        journeyId == null ? null : new DbJourneyRef(
+                                journeyId, null,
+                                null, produktGattung,
+                                kurzText, null, null, line));
 
                 stationDepartures.departures.add(departure);
                 added += 1;
@@ -1199,7 +1224,9 @@ public abstract class DbWebProvider extends DbProvider {
     }
 
     @Override
-    protected QueryJourneyResult doQueryJourney(final DbJourneyRef journeyRef, final boolean loadPath) throws IOException {
+    protected QueryJourneyResult doQueryJourney(
+            final DbJourneyRef journeyRef,
+            final boolean loadPath) throws IOException {
         final HttpUrl url = this.journeyEndpoint.newBuilder()
                 .addQueryParameter("journeyId", journeyRef.journeyId)
                 .addQueryParameter("poly", loadPath ? "true" : "false")
@@ -1433,6 +1460,120 @@ public abstract class DbWebProvider extends DbProvider {
                 dbProvider.getLog().error("error on loadSharedTrip request", e);
                 return null;
             }
+        }
+    }
+
+    @Override
+    protected VehicleInformation queryVehicleInformationForJourneyAtStop(
+            final DbJourneyRef journeyRef,
+            final Location location, final Date plannedTime) throws IOException {
+        final HttpUrl url = this.vehicleSequenceEndpoint.newBuilder()
+                .addQueryParameter("administrationId", journeyRef.adminCode)
+                .addQueryParameter("category", journeyRef.productShortName)
+                .addQueryParameter("date", journeyRef.serviceDate)
+                .addQueryParameter("evaNumber", location.id)
+                .addQueryParameter("number", journeyRef.serviceNumber)
+                .addQueryParameter("time", ISO_DATE_TIME_UTC_FORMAT.format(plannedTime))
+                .build();
+        String page = null;
+        try {
+            page = doRequest(url);
+
+            final VehicleInformation vehicleInformation = new VehicleInformation();
+            final JSONObject response = new JSONObject(page);
+
+            final JSONObject platform = response.optJSONObject("platform");
+            if (platform != null) {
+                vehicleInformation.platformName = platform.getString("name");
+                final VehicleInformation.PlatformSection platformSection = new VehicleInformation.PlatformSection();
+                platformSection.startMeters = platform.getDouble("start");
+                platformSection.endMeters = platform.getDouble("end");
+                vehicleInformation.platformSection = platformSection;
+            }
+
+            final JSONArray groups = response.optJSONArray("groups");
+            if (groups != null) {
+                for (int groupIndex = 0; groupIndex < groups.length(); ++groupIndex) {
+                    final JSONObject group = groups.getJSONObject(groupIndex);
+
+                    final VehicleInformation.VehicleGroup vehicleGroup = vehicleInformation.addVehicleGroup();
+                    final JSONArray vehicles = group.getJSONArray("vehicles");
+                    for (int vehicleIndex = 0; vehicleIndex < vehicles.length(); ++vehicleIndex) {
+                        final JSONObject vehicle = vehicles.getJSONObject(vehicleIndex);
+
+                        final VehicleInformation.VehicleData vehicleData = vehicleGroup.addVehicle();
+
+                        final JSONObject platformPosition = vehicle.optJSONObject("platformPosition");
+                        if (platformPosition != null) {
+                            final VehicleInformation.PlatformSection platformSection = new VehicleInformation.PlatformSection();
+                            platformSection.startMeters = platformPosition.getDouble("start");
+                            platformSection.endMeters = platformPosition.getDouble("end");
+                            vehicleData.platformSection = platformSection;
+                        }
+
+                        final JSONObject vehicleType = vehicle.optJSONObject("type");
+                        if (vehicleType != null) {
+                            vehicleData.economyClass = vehicleType.optBoolean("hasEconomyClass");
+                            vehicleData.firstClass = vehicleType.optBoolean("hasFirstClass");
+                        }
+
+                        final JSONArray amenities = vehicle.optJSONArray("amenities");
+                        if (amenities != null) {
+                            for (int amenityIndex = 0; amenityIndex < amenities.length(); ++amenityIndex) {
+                                final JSONObject amenity = amenities.getJSONObject(amenityIndex);
+                                final String amenityType = amenity.getString("type");
+                                final String status = amenity.optString("status", "UNDEFINED");
+                                final boolean statusUndefined = "UNDEFINED".equals(status);
+                                final boolean statusAvailable = "AVAILABLE".equals(status);
+
+                                int amount = amenity.optInt("amount", 0);
+                                if (statusUndefined && amount == 0)
+                                    amount = 1;
+
+                                if ("AIR_CONDITION".equals(amenityType)) {
+                                    vehicleData.airCondition = amount > 0;
+                                } else if ("TOILET_WHEELCHAIR".equals(amenityType)) {
+                                    vehicleData.toiletForWheelChair = amount > 0;
+                                } else if ("SEATS_SEVERELY_DISABLED".equals(amenityType)) {
+                                    vehicleData.seatsForDisabled = amount > 0;
+                                } else if ("ZONE_QUIET".equals(amenityType)) {
+                                    vehicleData.quietZone = amount > 0;
+                                } else if ("ZONE_FAMILY".equals(amenityType)) {
+                                    vehicleData.familyZone = amount > 0;
+                                } else if ("CABIN_INFANT".equals(amenityType)) {
+                                    vehicleData.childrenSpace = amount > 0;
+                                } else if ("SEATS_BAHN_COMFORT".equals(amenityType)) {
+                                    vehicleData.valuedCustomer = amount > 0;
+                                } else if ("INFO".equals(amenityType)) {
+                                    vehicleData.infoZone = amount > 0;
+                                } else if ("BIKE_SPACE".equals(amenityType)) {
+                                    VehicleInformation.FeatureCounts bicycleSpaces = vehicleData.bicycleSpaces;
+                                    if (bicycleSpaces == null) vehicleData.bicycleSpaces = bicycleSpaces = new VehicleInformation.FeatureCounts();
+                                    if (statusAvailable) {
+                                        bicycleSpaces.available = amount;
+                                        if (bicycleSpaces.total == 0)
+                                            bicycleSpaces.total = amount;
+                                    }
+                                } else if ("WHEELCHAIR_SPACE".equals(amenityType)) {
+                                    VehicleInformation.FeatureCounts wheelChairSpaces = vehicleData.wheelChairSpaces;
+                                    if (wheelChairSpaces == null) vehicleData.wheelChairSpaces = wheelChairSpaces = new VehicleInformation.FeatureCounts();
+                                    if (statusAvailable) {
+                                        wheelChairSpaces.available = amount;
+                                        if (wheelChairSpaces.total == 0)
+                                            wheelChairSpaces.total = amount;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            return vehicleInformation;
+        } catch (final NotFoundException x) {
+            return null;
+        } catch (final JSONException x) {
+            throw new ParserException("cannot parse json: '" + page + "' on " + url, x);
         }
     }
 }

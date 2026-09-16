@@ -42,6 +42,8 @@ import de.schildbach.pte.dto.Product;
 import de.schildbach.pte.dto.QueryDeparturesResult;
 import de.schildbach.pte.dto.QueryJourneyResult;
 import de.schildbach.pte.dto.QueryTripsResult;
+import de.schildbach.pte.dto.QueryVehicleInformationResult;
+import de.schildbach.pte.dto.Stop;
 import de.schildbach.pte.dto.Style;
 import de.schildbach.pte.dto.TransferDetails;
 import de.schildbach.pte.dto.Trip;
@@ -151,6 +153,16 @@ public abstract class AbstractNetworkProvider extends AbstractLocationSearchProv
     @Override
     public QueryJourneyResult queryJourney(final JourneyRef journeyRef, final boolean splitSubJourneys, final boolean loadPath) throws IOException {
         throw new UnsupportedOperationException("queryJourney(\"" + journeyRef + "\")");
+    }
+
+    @Override
+    public QueryVehicleInformationResult queryVehicleInformation(final JourneyRef journeyRef, final Stop stop) throws IOException {
+        throw new UnsupportedOperationException("queryVehicleInformation(\"" + journeyRef + "\")");
+    }
+
+    @Override
+    public boolean mayProvideVehicleInformation(final Line line) {
+        return false;
     }
 
     @Override

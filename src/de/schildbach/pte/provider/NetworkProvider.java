@@ -29,6 +29,7 @@ import javax.annotation.Nullable;
 
 import de.schildbach.pte.NetworkId;
 import de.schildbach.pte.dto.JourneyRef;
+import de.schildbach.pte.dto.Line;
 import de.schildbach.pte.dto.Location;
 import de.schildbach.pte.dto.LocationType;
 import de.schildbach.pte.dto.NearbyLocationsResult;
@@ -37,6 +38,8 @@ import de.schildbach.pte.dto.QueryDeparturesResult;
 import de.schildbach.pte.dto.QueryJourneyResult;
 import de.schildbach.pte.dto.QueryTripsContext;
 import de.schildbach.pte.dto.QueryTripsResult;
+import de.schildbach.pte.dto.QueryVehicleInformationResult;
+import de.schildbach.pte.dto.Stop;
 import de.schildbach.pte.dto.Style;
 import de.schildbach.pte.dto.Trip;
 import de.schildbach.pte.dto.TripOptions;
@@ -71,6 +74,7 @@ public interface NetworkProvider extends Provider, LocationSearchProvider {
         TRIP_SHARING,
         TRIP_LINKING,
         TRIP_DETAILS,
+        VEHICLE_INFORMATION,
     }
 
     enum Optimize {
@@ -238,9 +242,13 @@ public interface NetworkProvider extends Provider, LocationSearchProvider {
      */
     QueryTripsResult queryMoreTrips(QueryTripsContext context, boolean later, boolean loadPath) throws IOException;
 
-    QueryTripsResult queryReloadTrip(final TripRef tripRef, boolean loadPath) throws IOException;
+    QueryTripsResult queryReloadTrip(TripRef tripRef, boolean loadPath) throws IOException;
 
-    QueryJourneyResult queryJourney(final JourneyRef journeyRef, boolean splitSubJourneys, boolean loadPath) throws IOException;
+    QueryJourneyResult queryJourney(JourneyRef journeyRef, boolean splitSubJourneys, boolean loadPath) throws IOException;
+
+    QueryVehicleInformationResult queryVehicleInformation(JourneyRef journeyRef, Stop stop) throws IOException;
+
+    boolean mayProvideVehicleInformation(Line line);
 
     /**
      * Get style of line

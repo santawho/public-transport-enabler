@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.Serial;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,12 +44,16 @@ import de.schildbach.pte.dto.JourneyRef;
 import de.schildbach.pte.dto.Line;
 import de.schildbach.pte.dto.Location;
 import de.schildbach.pte.dto.LocationType;
+import de.schildbach.pte.dto.PTDate;
 import de.schildbach.pte.dto.Point;
 import de.schildbach.pte.dto.Product;
 import de.schildbach.pte.dto.QueryJourneyResult;
+import de.schildbach.pte.dto.QueryVehicleInformationResult;
+import de.schildbach.pte.dto.Stop;
 import de.schildbach.pte.dto.Style;
 import de.schildbach.pte.dto.Trip;
 import de.schildbach.pte.dto.TripRef;
+import de.schildbach.pte.dto.VehicleInformation;
 import de.schildbach.pte.provider.AbstractNetworkProvider;
 import de.schildbach.pte.Standard;
 import de.schildbach.pte.provider.TransferEvaluationProvider;
@@ -112,7 +117,7 @@ public abstract class DbProvider extends AbstractNetworkProvider {
             final boolean splitSubJourneys,
             final boolean loadPath) throws IOException {
         cleanupJourneyCache();
-        return doQueryJourneyAndCache((DbJourneyRef) journeyRef, loadPath);
+        return doQueryJourneyAndCache((DbJourneyRef) journeyRef, loadPath, null, null);
     }
 
     private Map<DbJourneyRef, QueryJourneyResult> journeyCache = new ConcurrentHashMap<>();
@@ -123,16 +128,116 @@ public abstract class DbProvider extends AbstractNetworkProvider {
         final QueryJourneyResult result = journeyCache.get(journeyRef);
         if (result != null)
             return result;
-        return doQueryJourneyAndCache(journeyRef, false);
+        return doQueryJourneyAndCache(journeyRef, false, null, null);
     }
 
     private QueryJourneyResult doQueryJourneyAndCache(
             final DbJourneyRef journeyRef,
-            final boolean loadPath) throws IOException {
+            final boolean loadPath,
+            final Location entryLocation, final Date entryTime) throws IOException {
         final QueryJourneyResult result = doQueryJourney(journeyRef, loadPath);
-        if (result != null && result.status == QueryJourneyResult.Status.OK)
+        if (result == null)
+            return null;
+        if (result.status == QueryJourneyResult.Status.OK) {
             journeyCache.put(journeyRef, result);
+
+            for (final Trip.Public leg : result.journeyLegs) {
+                addVehicleInformationToLeg(leg, entryLocation, entryTime, false);
+                // addVehicleInformationToLeg(leg, exitLocation, exitTime, true);
+            }
+        }
+
         return result;
+    }
+
+    private void addVehicleInformationToLeg(
+            final Trip.Public leg,
+            final Location location,
+            final Date time,
+            final boolean arrival) throws IOException {
+        if (location == null)
+            return;
+        final Stop stop = findStopInLeg(leg, location, time.getTime(), arrival);
+        if (stop != null) {
+            final VehicleInformation vehicleInformation = queryVehicleInformationForJourneyAtStop(
+                    (DbJourneyRef) leg.journeyRef,
+                    stop.location,
+                    stop.getDepartureTime(true));
+            if (vehicleInformation != null)
+                stop.setVehicleInformation(vehicleInformation);
+        }
+    }
+
+    private Stop findStopInLeg(
+            final Trip.Public leg,
+            final Location location,
+            final long time,
+            final boolean arrival) {
+        if (!arrival && isSameStop(leg.departureStop, location, time, arrival))
+            return leg.departureStop;
+        if (arrival && isSameStop(leg.arrivalStop, location, time, arrival))
+            return leg.arrivalStop;
+        if (leg.intermediateStops != null) {
+            for (final Stop stop : leg.intermediateStops) {
+                if (isSameStop(stop, location, time, arrival))
+                    return stop;
+            }
+        }
+        return null;
+    }
+
+    private boolean isSameStop(
+            final Stop testedStop,
+            final Location location,
+            final long time,
+            final boolean arrival) {
+        if (!testedStop.location.equals(location))
+            return false;
+        final Date testedTime;
+        if (arrival) {
+            testedTime = testedStop.getArrivalTime(true);
+        } else {
+            testedTime = testedStop.getDepartureTime(true);
+        }
+        if (testedTime == null)
+            return false;
+        return testedTime.getTime() == time;
+    }
+
+    private static final Set<Product> VEHICLE_SEQUENCE_PRODUCTS = Set.of(
+            Product.HIGH_SPEED_TRAIN,
+            Product.REGIONAL_TRAIN,
+            Product.SUBURBAN_TRAIN);
+
+    @Override
+    public boolean mayProvideVehicleInformation(final Line line) {
+        return line != null && line.product != null && VEHICLE_SEQUENCE_PRODUCTS.contains(line.product);
+    }
+
+    @Override
+    public QueryVehicleInformationResult queryVehicleInformation(
+            final JourneyRef journeyRef, final Stop stop) throws IOException {
+        final Location location = stop.location;
+        final PTDate departureTime = stop.getDepartureTime(true);
+        final QueryJourneyResult journeyResult = doQueryJourneyAndCache((DbJourneyRef) journeyRef, false,
+                location, departureTime);
+        if (journeyResult.status != QueryJourneyResult.Status.OK) {
+            return new QueryVehicleInformationResult(journeyResult.header,
+                    journeyResult.status == QueryJourneyResult.Status.NO_JOURNEY
+                        ? QueryVehicleInformationResult.Status.NO_INFORMATION
+                        : QueryVehicleInformationResult.Status.SERVICE_DOWN);
+        }
+
+        for (final Trip.Public leg : journeyResult.journeyLegs) {
+            final Stop resultStop = findStopInLeg(leg, location, departureTime.getTime(), false);
+            if (resultStop != null && resultStop.vehicleInformation != null) {
+                return new QueryVehicleInformationResult(journeyResult.header, null,
+                        journeyRef, location, resultStop.vehicleInformation);
+            }
+        }
+
+        return new QueryVehicleInformationResult(journeyResult.header,
+                QueryVehicleInformationResult.Status.NO_INFORMATION);
     }
 
     private void cleanupJourneyCache() {
@@ -289,7 +394,9 @@ public abstract class DbProvider extends AbstractNetworkProvider {
         public final String journeyRequestId;
         public final String adminCode;
         public final String productName;
+        public final String productShortName;
         public final String serviceNumber;
+        public final String serviceDate;
         public final Line line;
 
         public DbJourneyRef(
@@ -297,13 +404,17 @@ public abstract class DbProvider extends AbstractNetworkProvider {
                 final String journeyRequestId,
                 final String adminCode,
                 final String productName,
+                final String productShortName,
                 final String serviceNumber,
+                final String serviceDate,
                 final Line line) {
             this.journeyId = HafasJourneyRef.makeEverlastingJourneyId(journeyId);
             this.journeyRequestId = journeyRequestId;
             this.adminCode = adminCode;
             this.productName = productName;
+            this.productShortName = productShortName;
             this.serviceNumber = serviceNumber;
+            this.serviceDate = serviceDate;
             this.line = line;
         }
 
@@ -594,5 +705,11 @@ public abstract class DbProvider extends AbstractNetworkProvider {
                 coord,
                 null,
                 props.get("O"));
+    }
+
+    protected VehicleInformation queryVehicleInformationForJourneyAtStop(
+            final DbJourneyRef journeyRef,
+            final Location location, final Date time) throws IOException {
+        return null;
     }
 }

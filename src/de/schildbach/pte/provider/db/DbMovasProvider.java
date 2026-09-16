@@ -652,13 +652,17 @@ public abstract class DbMovasProvider extends DbProvider {
             }
         }
         final String message = parseJourneyMessages(journey, operator);
+        final String produktGattung = journey.optString("produktGattung", journeyRef.productShortName);
+        final String zugnummer = journey.optString("zugnummer", journeyRef.serviceNumber);
+        final String reisetag = journey.optString("reisetag", null);
         final Trip.Public leg = new Trip.Public(
                 journeyRef.line,
                 new Destination(arrivalStop.location),
                 departureStop, arrivalStop, intermediateStops,
                 message,
                 new DbJourneyRef(journeyRef.journeyId, null,
-                        journeyRef.adminCode, journeyRef.productName, journeyRef.serviceNumber,
+                        journeyRef.adminCode, journeyRef.productName,
+                        produktGattung, zugnummer, reisetag,
                         journeyRef.line));
         final List<Point> path = parsePolylineGroup(journey);
         if (path != null && path.size() > (intermediateStops == null ? 0 : intermediateStops.size()) + 2)
@@ -698,7 +702,10 @@ public abstract class DbMovasProvider extends DbProvider {
             while (journeyRequestId == null || !journeyRequestId.startsWith("T$"))
                 journeyRequestId = journeyRequestIdSupplier.get();
             return new Trip.Public(line, destination, departureStop, arrivalStop, intermediateStops, message,
-                    journeyId == null ? null : new DbJourneyRef(journeyId, journeyRequestId, administrationId, productName, zugNummer, line));
+                    journeyId == null ? null : new DbJourneyRef(
+                            journeyId, journeyRequestId,
+                            administrationId, productName,
+                            productName, zugNummer, null, line));
         } else {
             final int dist = abschnitt.optInt("distanz");
             if (dist == 0 && departureStop.location.id.equals(arrivalStop.location.id)) {
@@ -1065,7 +1072,10 @@ public abstract class DbMovasProvider extends DbProvider {
                         cancelled,
                         null,
                         parseJourneyMessages(dep, null),
-                        journeyId == null ? null : new DbJourneyRef(journeyId, null, administrationId, produktGattung, zugNummer, line));
+                        journeyId == null ? null : new DbJourneyRef(
+                                journeyId, null,
+                                administrationId, produktGattung,
+                                produktGattung, zugNummer, null, line));
 
                 stationDepartures.departures.add(departure);
                 added += 1;

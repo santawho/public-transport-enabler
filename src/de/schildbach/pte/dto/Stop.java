@@ -42,6 +42,7 @@ public final class Stop implements Serializable {
     public final @Nullable Position plannedDeparturePosition;
     public final @Nullable Position predictedDeparturePosition;
     public final boolean departureCancelled;
+    public VehicleInformation vehicleInformation;
 
     public Stop(final Location location, final PTDate plannedArrivalTime, final PTDate predictedArrivalTime,
                 final Position plannedArrivalPosition, final Position predictedArrivalPosition,
@@ -103,6 +104,10 @@ public final class Stop implements Serializable {
         this.plannedDeparturePosition = plannedDeparturePosition;
         this.predictedDeparturePosition = null;
         this.departureCancelled = false;
+    }
+
+    public void setVehicleInformation(final VehicleInformation vehicleInformation) {
+        this.vehicleInformation = vehicleInformation;
     }
 
     public PTDate getArrivalTime() {
