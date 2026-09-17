@@ -26,12 +26,25 @@ public final class VehicleInformation implements Serializable {
     @Serial
     private static final long serialVersionUID = -4680574868586102255L;
 
-    public static class PlatformSection implements Serializable {
+    public static class PlatformSegment implements Serializable {
         @Serial
         private static final long serialVersionUID = -4680574868586102255L;
 
-        public double startMeters;
-        public double endMeters;
+        public double fromMeters;
+        public double toMeters;
+
+        protected void swap() {
+            final double h = fromMeters;
+            fromMeters = toMeters;
+            toMeters = h;
+        }
+    }
+
+    public static class PlatformSection extends PlatformSegment {
+        @Serial
+        private static final long serialVersionUID = -4680574868586102255L;
+
+        public String name;
     }
 
     public static class FeatureCounts implements Serializable {
@@ -42,14 +55,17 @@ public final class VehicleInformation implements Serializable {
         public double available;
     }
 
-    public String platformName;
-    public PlatformSection platformSection;
-
     public static class VehicleData implements Serializable {
         @Serial
         private static final long serialVersionUID = -4680574868586102255L;
 
-        public PlatformSection platformSection;
+        public VehicleGroup group;
+        public int indexInGroup;
+        public String wagonLabel;
+        public String vehicleIdentification;
+
+        public PlatformSegment platformSegment;
+        public String platformSectorName;
 
         public boolean economyClass;
         public boolean firstClass;
@@ -70,24 +86,51 @@ public final class VehicleInformation implements Serializable {
         @Serial
         private static final long serialVersionUID = -4680574868586102255L;
 
+        public int indexInFormation;
         public List<VehicleData> vehicles = new ArrayList<>();
 
         public VehicleData addVehicle() {
             final VehicleData vehicleData = new VehicleData();
+            vehicleData.group = this;
+            vehicleData.indexInGroup = vehicles.size();
             vehicles.add(vehicleData);
             return vehicleData;
         }
     }
 
+    public PlatformSection platform;
+    public List<PlatformSection> platformSections;
     public List<VehicleGroup> vehicleGroups = new ArrayList<>();
+    public boolean reverseOrientationAtPlatform;
+    public boolean differsFromSchedule;
 
     public VehicleInformation() {
     }
 
     public VehicleGroup addVehicleGroup() {
         final VehicleGroup vehicleGroup = new VehicleGroup();
+        vehicleGroup.indexInFormation = vehicleGroups.size();
         vehicleGroups.add(vehicleGroup);
         return vehicleGroup;
+    }
+
+    public void sanitize() {
+        // reverse start/end if train starts at higher positions and ends at lower ones
+        final VehicleInformation.VehicleGroup headGroup = vehicleGroups.get(0);
+        final VehicleInformation.VehicleGroup tailGroup = vehicleGroups.get(vehicleGroups.size() - 1);
+        final VehicleInformation.VehicleData headVehicle = headGroup.vehicles.get(0);
+        final VehicleInformation.VehicleData tailVehicle = tailGroup.vehicles.get(tailGroup.vehicles.size() - 1);
+        if (headVehicle.platformSegment != null && tailVehicle.platformSegment != null
+                && headVehicle.platformSegment.fromMeters > tailVehicle.platformSegment.fromMeters) {
+            reverseOrientationAtPlatform = true;
+            for (final VehicleInformation.VehicleGroup vehicleGroup : vehicleGroups) {
+                for (final VehicleInformation.VehicleData vehicle : vehicleGroup.vehicles) {
+                    final VehicleInformation.PlatformSegment platformSegment = vehicle.platformSegment;
+                    if (platformSegment != null)
+                        platformSegment.swap();
+                }
+            }
+        }
     }
 
     @Override

@@ -1482,13 +1482,19 @@ public abstract class DbWebProvider extends DbProvider {
             final VehicleInformation vehicleInformation = new VehicleInformation();
             final JSONObject response = new JSONObject(page);
 
+            vehicleInformation.differsFromSchedule = "DIFFERS_FROM_SCHEDULE".equals(response.optString("sequenceStatus"));
+
             final JSONObject platform = response.optJSONObject("platform");
             if (platform != null) {
-                vehicleInformation.platformName = platform.getString("name");
-                final VehicleInformation.PlatformSection platformSection = new VehicleInformation.PlatformSection();
-                platformSection.startMeters = platform.getDouble("start");
-                platformSection.endMeters = platform.getDouble("end");
-                vehicleInformation.platformSection = platformSection;
+                vehicleInformation.platform = jsonPlatformSection(platform);
+                final JSONArray sectors = platform.optJSONArray("sectors");
+                if (sectors != null) {
+                    vehicleInformation.platformSections = new ArrayList<>();
+                    for (int sectorIndex = 0; sectorIndex < sectors.length(); ++sectorIndex) {
+                        vehicleInformation.platformSections.add(
+                                jsonPlatformSection(sectors.getJSONObject(sectorIndex)));
+                    }
+                }
             }
 
             final JSONArray groups = response.optJSONArray("groups");
@@ -1503,12 +1509,15 @@ public abstract class DbWebProvider extends DbProvider {
 
                         final VehicleInformation.VehicleData vehicleData = vehicleGroup.addVehicle();
 
+                        final int wagonIdentificationNumber = vehicle.optInt("wagonIdentificationNumber", -1);
+                        vehicleData.wagonLabel = wagonIdentificationNumber <= 0 ? null : Integer.toString(wagonIdentificationNumber);
+
+                        vehicleData.vehicleIdentification = vehicle.optString("vehicleID", null);
+
                         final JSONObject platformPosition = vehicle.optJSONObject("platformPosition");
                         if (platformPosition != null) {
-                            final VehicleInformation.PlatformSection platformSection = new VehicleInformation.PlatformSection();
-                            platformSection.startMeters = platformPosition.getDouble("start");
-                            platformSection.endMeters = platformPosition.getDouble("end");
-                            vehicleData.platformSection = platformSection;
+                            vehicleData.platformSegment = jsonPlatformSegment(platformPosition);
+                            vehicleData.platformSectorName = platformPosition.optString("sector", null);
                         }
 
                         final JSONObject vehicleType = vehicle.optJSONObject("type");
@@ -1569,11 +1578,31 @@ public abstract class DbWebProvider extends DbProvider {
                 }
             }
 
+            vehicleInformation.sanitize();
             return vehicleInformation;
         } catch (final NotFoundException x) {
             return null;
         } catch (final JSONException x) {
             throw new ParserException("cannot parse json: '" + page + "' on " + url, x);
         }
+    }
+
+    private VehicleInformation.PlatformSection jsonPlatformSection(final JSONObject section) throws JSONException {
+        final VehicleInformation.PlatformSection platformSection = new VehicleInformation.PlatformSection();
+        platformSection.name = section.getString("name");
+        jsonPlatformSegment(platformSection, section);
+        return platformSection;
+    }
+
+    private VehicleInformation.PlatformSegment jsonPlatformSegment(final JSONObject segment) throws JSONException {
+        return jsonPlatformSegment(new VehicleInformation.PlatformSegment(), segment);
+    }
+
+    private VehicleInformation.PlatformSegment jsonPlatformSegment(
+            final VehicleInformation.PlatformSegment platformSegment,
+            final JSONObject segment) throws JSONException {
+        platformSegment.fromMeters = segment.getDouble("start");
+        platformSegment.toMeters = segment.getDouble("end");
+        return platformSegment;
     }
 }
