@@ -51,8 +51,8 @@ public final class VehicleInformation implements Serializable {
         @Serial
         private static final long serialVersionUID = -4680574868586102255L;
 
-        public double total;
-        public double available;
+        public int total;
+        public int available;
     }
 
     public static class VehicleData implements Serializable {

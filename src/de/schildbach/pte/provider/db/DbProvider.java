@@ -210,7 +210,7 @@ public abstract class DbProvider extends AbstractNetworkProvider {
             Product.SUBURBAN_TRAIN);
 
     @Override
-    public boolean mayProvideVehicleInformation(final Line line) {
+    public boolean mayProvideVehicleInformation(final JourneyRef journeyRef, final Line line) {
         return line != null && line.product != null && VEHICLE_SEQUENCE_PRODUCTS.contains(line.product);
     }
 

@@ -248,7 +248,7 @@ public interface NetworkProvider extends Provider, LocationSearchProvider {
 
     QueryVehicleInformationResult queryVehicleInformation(JourneyRef journeyRef, Stop stop) throws IOException;
 
-    boolean mayProvideVehicleInformation(Line line);
+    boolean mayProvideVehicleInformation(JourneyRef journeyRef, Line line);
 
     /**
      * Get style of line

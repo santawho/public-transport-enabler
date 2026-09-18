@@ -161,7 +161,7 @@ public abstract class AbstractNetworkProvider extends AbstractLocationSearchProv
     }
 
     @Override
-    public boolean mayProvideVehicleInformation(final Line line) {
+    public boolean mayProvideVehicleInformation(final JourneyRef journeyRef, final Line line) {
         return false;
     }
 
