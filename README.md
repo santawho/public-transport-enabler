@@ -2,7 +2,7 @@ Public Transport Enabler
 ========================
 
 This is a Java library allowing you to get data from public transport providers.
-Look into [NetworkProvider.java](https://github.com/schildbach/public-transport-enabler/blob/master/src/de/schildbach/pte/NetworkProvider.java) for an overview of the API.
+Look into [NetworkProvider.java](src/de/schildbach/pte/provider/NetworkProvider.java) for an overview of the API.
 
 The library uses Java 8 language and requires Java 8 API or Android 7 API (level 24).
 
@@ -24,7 +24,7 @@ Once you have the secret or if your provider does not need one, you can run the 
 Both IntelliJ and Eclipse have excellent support for JUnit tests.
 
 If you prefer to run tests from the command line, you can comment out the test exclude at the end of
-[build.gradle](https://github.com/schildbach/public-transport-enabler/blob/master/build.gradle#L30)
+[build.gradle](build.gradle#L51)
 and use this command to only execute a test for a single provider:
 
     $ gradle -Dtest.single=BvgProviderLive test
