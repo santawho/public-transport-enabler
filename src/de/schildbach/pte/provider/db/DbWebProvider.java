@@ -396,7 +396,7 @@ public abstract class DbWebProvider extends DbProvider {
         final String richtung = verkehrsmittel.optString("richtung", null);
         if (richtung == null)
             return null;
-        return new Destination(createLocation(type, null, null, richtung, null, null));
+        return new Destination(richtung, createLocation(type, null, null, richtung, null, null));
     }
 
     private List<Location> parseLocations(final JSONArray locs) throws JSONException {
@@ -669,7 +669,7 @@ public abstract class DbWebProvider extends DbProvider {
                 defaultTeilstreckenHinweis);
         final Trip.Public leg = new Trip.Public(
                 journeyRef.line,
-                new Destination(arrivalStop.location),
+                new Destination(null, arrivalStop.location),
                 departureStop, arrivalStop, intermediateStops,
                 message,
                 new DbJourneyRef(journeyRef.journeyId, null,
@@ -1096,7 +1096,7 @@ public abstract class DbWebProvider extends DbProvider {
                         parseIso8601NoOffset(dep.optString("ezZeit", null)),
                         line,
                         plannedPosition, predictedPosition,
-                        new Destination(createLocation(LocationType.STATION, null, null, destinationName, null, null)),
+                        new Destination(destinationName, createLocation(LocationType.STATION, null, null, destinationName, null, null)),
                         cancelled,
                         null,
                         parseJourneyMessages(dep, null, null, null),

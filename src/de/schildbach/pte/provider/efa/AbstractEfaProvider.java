@@ -1864,7 +1864,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
             XmlPullUtil.optValueTag(pp, "trainType", null);
             final String destinationName = normalizeLocationName(XmlPullUtil.optValueTag(pp, "des", null));
             final String destID = XmlPullUtil.optValueTag(pp, "destID", null);
-            destination = destinationName == null ? null : new Destination(new Location(LocationType.DIRECTION, null, null, destinationName));
+            destination = destinationName == null ? null : new Destination(destinationName, new Location(LocationType.DIRECTION, null, null, destinationName));
             XmlPullUtil.optValueTag(pp, "dy", null);
             final String de = XmlPullUtil.optValueTag(pp, "de", null);
             final String productName = n != null ? n : de;
@@ -2033,10 +2033,12 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
             destination = null;
         } else if (destinationId == null) {
             destination = new Destination(
+                    destinationName,
                     new Location(LocationType.DIRECTION, null, null, destinationName),
                     !isStationBoardDestinationCommonlyDirection());
         } else {
             destination = new Destination(
+                    destinationName,
                     new Location(LocationType.STATION, destinationId, null, destinationName),
                     isStationBoardDestinationCommonlyDirection());
         }
@@ -2395,7 +2397,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
 
         final String message = null;
         final Trip.Public journeyLeg = new Trip.Public(styledLine,
-                new Destination(arrivalStop.location),
+                new Destination(null, arrivalStop.location),
                 departureStop, arrivalStop, intermediateStops, message, journeyRef);
         return new QueryJourneyResult(header, url.toString(), journeyRef, journeyLeg);
     }
@@ -2539,7 +2541,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
 
         final String message = null;
         final Trip.Public journeyLeg = new Trip.Public(parseMobileMResult.line,
-                new Destination(arrivalStop.location),
+                new Destination(null, arrivalStop.location),
                 departureStop, arrivalStop, intermediateStops, message, journeyRef);
         return new QueryJourneyResult(header, url.toString(), journeyRef, journeyLeg);
     }
@@ -3060,10 +3062,12 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
             destination = null;
         } else if (destinationId == null) {
             destination = new Destination(
+                    destinationName,
                     new Location(LocationType.DIRECTION, null, null, destinationName),
                     !isPublicLegDestinationCommonlyDirection());
         } else {
             destination = new Destination(
+                    destinationName,
                     new Location(LocationType.STATION, destinationId, null, destinationName),
                     isPublicLegDestinationCommonlyDirection());
         }

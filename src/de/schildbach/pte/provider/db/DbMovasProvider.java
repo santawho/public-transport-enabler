@@ -404,12 +404,12 @@ public abstract class DbMovasProvider extends DbProvider {
             final String name = abgangsOrt.optString("name", null);
             if (name == null)
                 return null;
-            return new Destination(createLocation(type, null, null, name, null, null));
+            return new Destination(name, createLocation(type, null, null, name, null, null));
         } else {
             final String richtung = dep.optString("richtung", null);
             if (richtung == null)
                 return null;
-            return new Destination(createLocation(type, null, null, richtung, null, null));
+            return new Destination(richtung, createLocation(type, null, null, richtung, null, null));
         }
     }
 
@@ -657,7 +657,7 @@ public abstract class DbMovasProvider extends DbProvider {
         final String reisetag = journey.optString("reisetag", null);
         final Trip.Public leg = new Trip.Public(
                 journeyRef.line,
-                new Destination(arrivalStop.location),
+                new Destination(null, arrivalStop.location),
                 departureStop, arrivalStop, intermediateStops,
                 message,
                 new DbJourneyRef(journeyRef.journeyId, null,

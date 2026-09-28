@@ -462,7 +462,7 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
 
                 legs.add(new Trip.Public(
                         line,
-                        new Destination(parseMotisPlace(motisLeg.getJSONObject("tripTo"))),
+                        new Destination(null, parseMotisPlace(motisLeg.getJSONObject("tripTo"))),
                         parseMotisStop(motisLeg.getJSONObject("from"), realtime),
                         parseMotisStop(motisLeg.getJSONObject("to"), realtime),
                         intermediateStops,
@@ -639,7 +639,7 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
 
                     final Line line = parseMotisLine(stopTime);
 
-                    final Destination destination = new Destination(parseMotisPlace(stopTime.getJSONObject(tripX)));
+                    final Destination destination = new Destination(null, parseMotisPlace(stopTime.getJSONObject(tripX)));
 
                     final TimeZone timeZone = getMotisTimeZone(place);
                     sd.departures.add(new Departure(

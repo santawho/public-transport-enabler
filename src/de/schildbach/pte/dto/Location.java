@@ -185,15 +185,23 @@ public final class Location implements MessagePackUtils.PackableSerializable {
         return false;
     }
 
-    private static final String[] NON_UNIQUE_NAMES = { "Hauptbahnhof", "Hbf", "Bahnhof", "Bf", "Busbahnhof", "ZOB",
-            "Schiffstation", "Schiffst.", "Zentrum", "Markt", "Dorf", "Kirche", "Nord", "Ost", "Süd", "West" };
+    private static final Set<String> NON_UNIQUE_NAMES = Set.of(
+            "Hauptbahnhof", "Hbf", "Bahnhof", "Bf",
+            "Busbahnhof", "ZOB",
+            "Schiffstation", "Schiffst.",
+            "Zentrum", "Zentrum Bhf", "Markt", "Dorf", "Kirche", "Friedhof", "Friedhof Bhf",
+            "Nord", "Ost", "Süd", "West",
+            "Nord Bhf", "Ost Bhf", "Süd Bhf", "West Bhf"
+    );
 
-    static {
-        Arrays.sort(NON_UNIQUE_NAMES);
+    public static boolean isUniqueName(final String name) {
+        if (name == null || name.isEmpty())
+            return false;
+        return !NON_UNIQUE_NAMES.contains(name);
     }
 
     public String uniqueShortName() {
-        if (place != null && name != null && Arrays.binarySearch(NON_UNIQUE_NAMES, name) >= 0)
+        if (place != null && !isUniqueName(name))
             return place + ", " + name;
         else if (name != null)
             return name;

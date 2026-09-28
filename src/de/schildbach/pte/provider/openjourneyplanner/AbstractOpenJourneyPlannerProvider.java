@@ -804,7 +804,7 @@ public abstract class AbstractOpenJourneyPlannerProvider extends AbstractNetwork
                         plannedTime, predictedTime,
                         line,
                         plannedPosition, predictedPosition,
-                        new Destination(createLocation(LocationType.DIRECTION, null, null, destinationText)),
+                        new Destination(destinationText, createLocation(LocationType.DIRECTION, null, null, destinationText)),
                         cancelled,
                         null,
                         messages,

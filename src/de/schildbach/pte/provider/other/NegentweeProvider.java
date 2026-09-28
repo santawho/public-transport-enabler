@@ -477,11 +477,12 @@ public class NegentweeProvider extends AbstractNetworkProvider {
                         lineName.append(leg.getString("service"));
                     }
 
+                    final String destination = leg.getString("destination");
                     final Trip.Public newLeg = new Trip.Public(
                             new Line(leg.getString("service"), (operator != null) ? operator.getString("name") : null,
                                     lineProduct, lineName.toString(), leg.optString("service"),
                                     Standard.STYLES.get(lineProduct), null, null),
-                            new Destination(new Location(LocationType.STATION, null, null, leg.getString("destination"))),
+                            new Destination(destination, new Location(LocationType.STATION, null, null, destination)),
                             firstStop, lastStop, foundStops, legMessage.length() > 0 ? legMessage.toString() : null);
                     newLeg.setPath(foundPoints);
                     foundLegs.add(newLeg);
@@ -557,6 +558,7 @@ public class NegentweeProvider extends AbstractNetworkProvider {
 
         /* String lineName = */ departure.optString("service");
         Product lineProduct = productFromMode(mode.getString("type"), mode.getString("name"));
+        final String destinationName = departure.getString("destinationName");
         return new Departure(
                 false,
                 timeFromJSONObject(departure, "time"),
@@ -565,7 +567,7 @@ public class NegentweeProvider extends AbstractNetworkProvider {
                         !departure.isNull("service") ? departure.getString("service") : mode.getString("name"), null,
                         Standard.STYLES.get(lineProduct), null, null),
                 !departure.isNull("platform") ? new Position(departure.getString("platform")) : null, null,
-                new Destination(new Location(LocationType.DIRECTION, null, null, departure.getString("destinationName"))),
+                new Destination(destinationName, new Location(LocationType.DIRECTION, null, null, destinationName)),
                 false,
                 null,
                 !departure.isNull("realtimeText") ? departure.optString("realtimeText") : null,
@@ -841,11 +843,12 @@ public class NegentweeProvider extends AbstractNetworkProvider {
                         departuresResult.add(departureFromJSONObject(departure));
 
                         Product lineProduct = productFromMode(mode.getString("type"), mode.getString("name"));
+                        final String destinationName = departure.getString("destinationName");
                         lineDestinationResult.add(new LineDestination(
                                 new Line(null, departure.getString("operatorName"), lineProduct, mode.getString("name"),
                                         null, Standard.STYLES.get(lineProduct), null, null),
-                                new Destination(new Location(LocationType.STATION, null, null, null,
-                                        departure.getString("destinationName"), EnumSet.of(lineProduct)))));
+                                new Destination(destinationName, new Location(LocationType.STATION, null, null, null,
+                                        destinationName, EnumSet.of(lineProduct)))));
                     }
 
                     // Add to result object

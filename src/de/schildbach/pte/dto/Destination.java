@@ -27,14 +27,21 @@ public final class Destination implements Serializable {
     @Serial
     private static final long serialVersionUID = -8861838672174069406L;
 
+    final public String directionText;
     final public Location location;
     final public boolean isNotCommonType;
 
-    public Destination(final Location location) {
-        this(location, false);
+    public Destination(
+            final String directionText,
+            final Location location) {
+        this(directionText, location, false);
     }
 
-    public Destination(final Location location, final boolean isNotCommonType) {
+    public Destination(
+            final String directionText,
+            final Location location,
+            final boolean isNotCommonType) {
+        this.directionText = directionText;
         this.location = requireNonNull(location);
         this.isNotCommonType = isNotCommonType;
     }

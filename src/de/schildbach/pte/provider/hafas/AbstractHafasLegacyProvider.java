@@ -601,11 +601,13 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
                         if (dirnr != null) {
                             final String[] destinationPlaceAndName = splitStationName(destinationName);
                             destination = new Destination(
+                                    destinationName,
                                     new Location(LocationType.STATION, dirnr,
                                             destinationPlaceAndName[0], destinationPlaceAndName[1]),
                                     isStationBoardDestinationCommonlyDirection());
                         } else {
                             destination = new Destination(
+                                    destinationName,
                                     new Location(LocationType.DIRECTION, null, null, destinationName),
                                     !isStationBoardDestinationCommonlyDirection());
                         }
@@ -1076,9 +1078,9 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
                                     category = attributeVariants.get("NORMAL");
                                     // longCategory = attributeVariants.get("LONG");
                                 } else if ("DIRECTION".equals(attrName)) {
-                                    final String[] destinationPlaceAndName = splitStationName(
-                                            attributeVariants.get("NORMAL"));
-                                    destination = new Destination(new Location(LocationType.ANY, null,
+                                    final String destinationName = attributeVariants.get("NORMAL");
+                                    final String[] destinationPlaceAndName = splitStationName(destinationName);
+                                    destination = new Destination(destinationName, new Location(LocationType.ANY, null,
                                             destinationPlaceAndName[0], destinationPlaceAndName[1]));
                                 }
                             }
@@ -1920,7 +1922,7 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
                             final Destination destination;
                             if (directionStr != null) {
                                 final String[] directionPlaceAndName = splitStationName(directionStr);
-                                destination = new Destination(new Location(LocationType.ANY, null,
+                                destination = new Destination(directionStr, new Location(LocationType.ANY, null,
                                         directionPlaceAndName[0], directionPlaceAndName[1]));
                             } else {
                                 destination = null;

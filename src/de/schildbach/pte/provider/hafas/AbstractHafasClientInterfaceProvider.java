@@ -729,17 +729,19 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                         final int tLocX = prodL.getJSONObject(0).getInt(arrivals ? "fLocX" : "tLocX");
                         final LocationAndName lineTerminalAndName = parseLoc(locList, tLocX, null, false, crdSysList, locList);
                         final Location lineTerminal = loc(lineTerminalAndName);
-                        if (lineTerminal != null && lineTerminal.hasName()) {
+                        if (arrivals) {
+                            // do not use this, see above, the fLocX is incorrectly set by Hafas
+                        } else if (lineTerminal != null && lineTerminal.hasName()) {
                             if (splitDirectionLocation == null
                                     || lineTerminalAndName.originalName.equals(jnyDirTxt)
-                                    || (lineTerminal.name != null && lineTerminal.name.equals(splitDirectionLocation.name))) {
-                                destination = new Destination(lineTerminal, destinationIsCommonlyDirection);
+                                    || (Location.isUniqueName(lineTerminal.name) && lineTerminal.name.equals(splitDirectionLocation.name))) {
+                                destination = new Destination(jnyDirTxt, lineTerminal, destinationIsCommonlyDirection);
                             } else if (lineTerminal.place != null && lineTerminal.place.equals(splitDirectionLocation.place)) {
-                                altDestination = new Destination(splitDirectionLocation, !destinationIsCommonlyDirection);
+                                altDestination = new Destination(jnyDirTxt, splitDirectionLocation, !destinationIsCommonlyDirection);
                             } else if (destinationIsCommonlyDirection) {
-                                altDestination = new Destination(plainDirectionLocation, false);
+                                altDestination = new Destination(jnyDirTxt, plainDirectionLocation, false);
                             } else {
-                                altDestination = new Destination(splitDirectionLocation, true);
+                                altDestination = new Destination(jnyDirTxt, splitDirectionLocation, true);
                             }
                         }
                     }
@@ -756,14 +758,14 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                             if (lastStop != null && lastStop.hasName()) {
                                 if (splitDirectionLocation == null
                                         || lastStopAndName.originalName.equals(jnyDirTxt)
-                                        || (lastStop.name != null && lastStop.name.equals(splitDirectionLocation.name))) {
-                                    destination = new Destination(lastStop, destinationIsCommonlyDirection);
+                                        || (Location.isUniqueName(lastStop.name) && lastStop.name.equals(splitDirectionLocation.name))) {
+                                    destination = new Destination(jnyDirTxt, lastStop, destinationIsCommonlyDirection);
                                 } else if (lastStop.place != null && lastStop.place.equals(splitDirectionLocation.place)){
-                                    destination = new Destination(splitDirectionLocation, !destinationIsCommonlyDirection);
+                                    destination = new Destination(jnyDirTxt, splitDirectionLocation, !destinationIsCommonlyDirection);
                                 } else if (destinationIsCommonlyDirection) {
-                                    destination = new Destination(plainDirectionLocation, false);
+                                    destination = new Destination(jnyDirTxt, plainDirectionLocation, false);
                                 } else {
-                                    destination = new Destination(splitDirectionLocation, true);
+                                    destination = new Destination(jnyDirTxt, splitDirectionLocation, true);
                                 }
                             }
                         }
@@ -779,9 +781,9 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                     if (destination == null) {
                         if (plainDirectionLocation != null) {
                             if (destinationIsCommonlyDirection) {
-                                destination = new Destination(plainDirectionLocation, false);
+                                destination = new Destination(jnyDirTxt, plainDirectionLocation, false);
                             } else {
-                                destination = new Destination(splitDirectionLocation, true);
+                                destination = new Destination(jnyDirTxt, splitDirectionLocation, true);
                             }
                         }
                     }
@@ -1015,7 +1017,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                 if (line == null)
                     line = lines.get(prodL.getJSONObject(0).getInt("prodX"));
                 final String[] splitDirTxt = splitDirectionName(dirTxt, line);
-                final Destination destination = new Destination(new Location(LocationType.DIRECTION, null, splitDirTxt[0], splitDirTxt[1]));
+                final Destination destination = new Destination(dirTxt, new Location(LocationType.DIRECTION, null, splitDirTxt[0], splitDirTxt[1]));
 
                 final Trip.Public newLeg = new Trip.Public(
                         line, destination,
@@ -1036,7 +1038,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
             final Destination destination;
             if (dirTxt != null) {
                 final String[] splitDirTxt = splitDirectionName(dirTxt, line);
-                destination = new Destination(new Location(LocationType.DIRECTION, null, splitDirTxt[0], splitDirTxt[1]));
+                destination = new Destination(dirTxt, new Location(LocationType.DIRECTION, null, splitDirTxt[0], splitDirTxt[1]));
             } else {
                 destination = null;
             }

@@ -545,8 +545,9 @@ public class VrsProvider extends AbstractNetworkProvider {
                             position = new Position(postName);
                         }
                     }
-                    final Destination destination = new Destination(new Location(LocationType.DIRECTION,
-                            null /* id */, null /* place */, lineObj.getString("direction")));
+                    final String direction = lineObj.getString("direction");
+                    final Destination destination = new Destination(direction, new Location(LocationType.DIRECTION,
+                            null /* id */, null /* place */, direction));
 
                     final LineDestination lineDestination = new LineDestination(line, destination);
                     if (!lines.contains(lineDestination)) {
@@ -912,7 +913,7 @@ public class VrsProvider extends AbstractNetworkProvider {
                         legs.add(newLeg);
                     } else if (type.equals("publicTransport")) {
                         final Trip.Public newLeg = new Trip.Public(line, direction != null
-                                ? new Destination(new Location(LocationType.DIRECTION, null /* id */, null /* place */, direction)) : null,
+                                ? new Destination(direction, new Location(LocationType.DIRECTION, null /* id */, null /* place */, direction)) : null,
                                 new Stop(segmentOrigin, true /* departure */, departurePlanned, departurePredicted,
                                         segmentOriginPosition, segmentOriginPosition),
                                 new Stop(segmentDestination, false /* departure */, arrivalPlanned, arrivalPredicted,
