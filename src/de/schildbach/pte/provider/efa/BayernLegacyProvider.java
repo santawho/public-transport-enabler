@@ -17,20 +17,32 @@
 
 package de.schildbach.pte.provider.efa;
 
+import static java.util.Objects.requireNonNull;
+
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 import javax.annotation.Nullable;
 
 import de.schildbach.pte.NetworkId;
+import de.schildbach.pte.dto.JourneyRef;
 import de.schildbach.pte.dto.Line;
 import de.schildbach.pte.dto.Location;
+import de.schildbach.pte.dto.LocationType;
+import de.schildbach.pte.dto.NearbyLocationsResult;
 import de.schildbach.pte.dto.Product;
+import de.schildbach.pte.dto.QueryDeparturesResult;
+import de.schildbach.pte.dto.QueryJourneyResult;
+import de.schildbach.pte.dto.QueryTripsContext;
+import de.schildbach.pte.dto.QueryTripsResult;
 import de.schildbach.pte.dto.Style;
 import de.schildbach.pte.dto.Style.Shape;
+import de.schildbach.pte.dto.SuggestLocationsResult;
 import de.schildbach.pte.dto.TripOptions;
 
 import okhttp3.HttpUrl;
@@ -38,8 +50,8 @@ import okhttp3.HttpUrl;
 /**
  * @author Andreas Schildbach
  */
-public class BayernProvider extends AbstractEfaProvider {
-    private static final HttpUrl API_BASE = HttpUrl.parse("https://bahnland-bayern.de/efa/");
+public class BayernLegacyProvider extends AbstractEfaProvider {
+    private static final HttpUrl API_BASE = HttpUrl.parse("https://mobile.defas-fgi.de/beg/");
     // https://bahnland-bayern.de/efa/ -- new MoBY web app,
     //     but as of Sept 2026 XML_DM_REQUEST only functional with new output format rapidJSON,
     //     which is not implemented by PTE (uses XML only)
@@ -50,11 +62,11 @@ public class BayernProvider extends AbstractEfaProvider {
     private static final String TRIP_ENDPOINT = "XML_TRIP_REQUEST2";
     private static final String STOP_FINDER_ENDPOINT = "XML_STOPFINDER_REQUEST";
 
-    public BayernProvider() {
+    public BayernLegacyProvider() {
         this(API_BASE);
     }
 
-    public BayernProvider(final HttpUrl apiBase) {
+    public BayernLegacyProvider(final HttpUrl apiBase) {
         super(NetworkId.BAYERN, apiBase, DEPARTURE_MONITOR_ENDPOINT, TRIP_ENDPOINT, STOP_FINDER_ENDPOINT, null, null, null);
 
         setRequestUrlEncoding(StandardCharsets.UTF_8);
@@ -122,40 +134,42 @@ public class BayernProvider extends AbstractEfaProvider {
         return super.parseLine(id, network, mot, symbol, name, longName, trainType, trainNum, trainName);
     }
 
-//    @Override
-//    public NearbyLocationsResult queryNearbyLocations(
-//            final Set<LocationType> types,
-//            final Location location,
-//            final boolean equivs,
-//            final int maxDistance,
-//            final int maxLocations,
-//            final Set<Product> products) throws IOException {
-//        if (location.hasCoord())
-//            return mobileCoordRequest(types, location.coord, maxDistance, maxLocations);
-//
-//        if (location.type != LocationType.STATION)
-//            throw new IllegalArgumentException("cannot handle: " + location.type);
-//
-//        throw new IllegalArgumentException("station"); // TODO
-//    }
-//
-//    @Override
-//    public QueryDeparturesResult queryDepartures(
-//            final String stationId,
-//            final @Nullable Date time,
-//            final int maxDepartures,
-//            final boolean equivs,
-//            final Set<Product> products) throws IOException {
-//        requireNonNull(stationId);
-//
-//        return queryDeparturesMobile(stationId, time, maxDepartures, equivs);
-//    }
-//
-//    @Override
-//    public SuggestLocationsResult suggestLocations(final CharSequence constraint,
-//            final @Nullable Set<LocationType> types, final int maxLocations) throws IOException {
-//        return mobileStopfinderRequest(constraint, types, maxLocations);
-//    }
+    @Override
+    public NearbyLocationsResult queryNearbyLocations(
+            final Set<LocationType> types,
+            final Location location,
+            final EquivalentStationsMode equivsMode,
+            final int maxDistance,
+            final int maxLocations,
+            final Set<Product> products) throws IOException {
+        if (location.hasCoord())
+            return mobileCoordRequest(types, location.coord, maxDistance, maxLocations);
+
+        if (location.type != LocationType.STATION)
+            throw new IllegalArgumentException("cannot handle: " + location.type);
+
+        throw new IllegalArgumentException("station"); // TODO
+    }
+
+    @Override
+    public QueryDeparturesResult queryStationBoard(
+            final String stationId,
+            final @Nullable Date time,
+            final boolean arrivals,
+            final int maxEvents,
+            final EquivalentStationsMode equivsMode,
+            final Set<Product> products) throws IOException {
+        assertStationBoardMode(arrivals);
+        requireNonNull(stationId);
+
+        return queryDeparturesMobile(stationId, time, maxEvents, equivsMode);
+    }
+
+    @Override
+    public SuggestLocationsResult suggestLocations(final CharSequence constraint,
+                                                   final @Nullable Set<LocationType> types, final int maxLocations) throws IOException {
+        return mobileStopfinderRequest(constraint, types, maxLocations);
+    }
 
     @Override
     protected void appendTripRequestParameters(final HttpUrl.Builder url, final Location from,
@@ -166,21 +180,28 @@ public class BayernProvider extends AbstractEfaProvider {
         url.addEncodedQueryParameter("calcOneDirection", "1");
     }
 
-//    @Override
-//    public QueryJourneyResult queryJourney(final JourneyRef aJourneyRef) throws IOException {
-//        return queryJourneyMobile((EfaJourneyRef) aJourneyRef);
-//    }
-//
-//    @Override
-//    public QueryTripsResult queryTrips(final Location from, final @Nullable Location via, final Location to,
-//            final Date date, final boolean dep, final @Nullable TripOptions options) throws IOException {
-//        return queryTripsMobile(from, via, to, date, dep, options);
-//    }
-//
-//    @Override
-//    public QueryTripsResult queryMoreTrips(final QueryTripsContext contextObj, final boolean later) throws IOException {
-//        return queryMoreTripsMobile(contextObj, later);
-//    }
+    @Override
+    public QueryJourneyResult queryJourney(
+            final JourneyRef aJourneyRef,
+            final boolean splitSubJourneys,
+            final boolean loadPath) throws IOException {
+        return queryJourneyMobile((EfaJourneyRef) aJourneyRef, loadPath);
+    }
+
+    @Override
+    public QueryTripsResult queryTrips(
+            final Location from, final @Nullable Location via, final Location to,
+            final Date date, final boolean dep, final @Nullable TripOptions options,
+            final boolean loadPath) throws IOException {
+        return queryTripsMobile(from, via, to, date, dep, options, loadPath);
+    }
+
+    @Override
+    public QueryTripsResult queryMoreTrips(
+            final QueryTripsContext contextObj, final boolean later,
+            final boolean loadPath) throws IOException {
+        return queryMoreTripsMobile(contextObj, later, loadPath);
+    }
 
     private static final Map<String, Style> STYLES = new HashMap<>();
 

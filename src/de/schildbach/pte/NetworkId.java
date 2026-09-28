@@ -18,6 +18,7 @@
 package de.schildbach.pte;
 
 import de.schildbach.pte.dto.Point;
+import de.schildbach.pte.provider.efa.BayernLegacyProvider;
 import de.schildbach.pte.provider.hafas.CflProvider;
 import de.schildbach.pte.provider.hafas.IrlProvider;
 import de.schildbach.pte.provider.motis.NwexDirectionsRheinNeckarVerkehrProvider;
@@ -123,6 +124,7 @@ public enum NetworkId {
     NVV(Descriptor.from(NvvProvider.class, "de-DE", "Hessen;Kassel")),
     RMV(Descriptor.from(RmvProvider.class, "de-DE", "Rhein-Main;Frankfurt;Wiesbaden;Darmstadt;Fulda")),
     BAYERN(Descriptor.from(BayernProvider.class, "de-DE", "Bayern;Würzburg;Regensburg")),
+    // BAYERN(Descriptor.from(BayernLegacyProvider.class, "de-DE", "Bayern;Würzburg;Regensburg")),
     MVV(Descriptor.from(MvvProvider.class, "de-DE", "Bayern;München",
             new Point[] { Point.fromDouble(48.140377, 11.560643) })),
     SBMMVV(Descriptor.from(SbmMvvProvider.class, "de-DE", "Bayern;München")),
