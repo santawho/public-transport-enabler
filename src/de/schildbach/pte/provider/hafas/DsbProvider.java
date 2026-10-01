@@ -31,14 +31,24 @@ import okhttp3.HttpUrl;
  * @author Andreas Schildbach
  */
 public class DsbProvider extends AbstractHafasClientInterfaceProvider {
-//    private static final HttpUrl API_BASE = HttpUrl.parse("https://mobilapps.rejseplanen.dk/bin/");
-    private static final HttpUrl API_BASE = HttpUrl.parse("https://rkrp.hafas.cloud/");
-    private static final Product[] PRODUCTS_MAP = { Product.HIGH_SPEED_TRAIN, Product.HIGH_SPEED_TRAIN,
-            Product.REGIONAL_TRAIN, Product.REGIONAL_TRAIN, Product.SUBURBAN_TRAIN, Product.BUS, Product.BUS,
-            Product.BUS, Product.BUS, Product.FERRY, Product.SUBWAY, Product.SUBURBAN_TRAIN /* Light Rail */ };
-//    private static final String DEFAULT_API_CLIENT = "{\"id\":\"DK\",\"type\":\"AND\"}";
-    private static final String DEFAULT_API_CLIENT = "{\"id\":\"DK\",\"type\":\"WEB\",\"name\":\"webapp\",\"l\":\"vs_webapp\"}";
-    private static final String WEBAPP_CONFIG_URL = "https://rkrp.hafas.cloud/webapp-lyra/config/webapp.config.json";
+    private static final HttpUrl API_BASE = HttpUrl.parse("https://rejseplanen.dk/");
+
+    private static final Product[] PRODUCTS_MAP = {
+            Product.HIGH_SPEED_TRAIN,
+            Product.HIGH_SPEED_TRAIN,
+            Product.REGIONAL_TRAIN,
+            Product.REGIONAL_TRAIN,
+            Product.SUBURBAN_TRAIN,
+            Product.BUS,
+            Product.BUS,
+            Product.BUS,
+            Product.BUS,
+            Product.FERRY,
+            Product.SUBWAY,
+            Product.SUBURBAN_TRAIN /* Light Rail */
+    };
+    private static final String DEFAULT_API_CLIENT = "{\"id\":\"HAFAS\",\"type\":\"WEB\",\"name\":\"Rejseplan\",\"l\":\"vs_webapp\"}";
+    private static final String WEBAPP_CONFIG_URL = "https://rejseplanen.dk/web/config/webapp.config.json";
 
     public DsbProvider() {
         this(DEFAULT_API_CLIENT, WEBAPP_CONFIG_URL);
