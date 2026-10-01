@@ -1522,6 +1522,7 @@ public abstract class DbWebProvider extends DbProvider {
 
                         final JSONObject vehicleType = vehicle.optJSONObject("type");
                         if (vehicleType != null) {
+                            vehicleData.restaurant |= vehicleType.optString("category").contains("DININGCAR");
                             vehicleData.economyClass = vehicleType.optBoolean("hasEconomyClass");
                             vehicleData.firstClass = vehicleType.optBoolean("hasFirstClass");
                         }

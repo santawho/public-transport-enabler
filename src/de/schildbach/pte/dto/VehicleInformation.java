@@ -75,6 +75,7 @@ public final class VehicleInformation implements Serializable {
         public boolean quietZone;
         public boolean familyZone;
         public boolean infoZone;
+        public boolean restaurant;
         public boolean childrenSpace;
         public boolean valuedCustomer;
 
