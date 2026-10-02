@@ -164,7 +164,10 @@ public final class BahnvorhersageProviderV2 extends AbstractBahnvorhersageProvid
 
         oLeg.put(idName, leg.journeyRef.getUniqueId());
         oLeg.put("line", buildLineObject(leg));
-        oLeg.put("direction", leg.destination == null ? null : leg.destination.location.fullName(true));
+        oLeg.put("direction", leg.destination == null ? null :
+                // leg.destination.location.fullName(true)
+                leg.destination.directionText
+        );
 
         final JSONArray stopOvers = new JSONArray();
         JSONObject oStopOver;
