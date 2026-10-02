@@ -30,7 +30,7 @@ import okhttp3.HttpUrl;
 /*
  *  Open Journey Planner provided by BLS
  */
-public class BlsOjpProvider extends AbstractOpenJourneyPlannerProvider {
+public class BlsOjpProvider extends SwissOtdOjpProvider {
     private static final HttpUrl API_ENDPOINT = HttpUrl.parse("https://api.bls.ch/mmzd/rest/ojp/v2.0/servicerequest");
     private static final HttpUrl TOKEN_ENDPOINT = HttpUrl.parse("https://fahrplan.bls.ch/token");
 
@@ -43,8 +43,13 @@ public class BlsOjpProvider extends AbstractOpenJourneyPlannerProvider {
     }
 
     @Override
-    public Set<Product> defaultProducts() {
-        return Product.ALL_INCLUDING_HIGHSPEED;
+    public UserAgentType getUserAgentType() {
+        return UserAgentType.BROWSER;
+    }
+
+    @Override
+    public void setCredentials(final String credentials) {
+        // do nothing, authorization updated by token
     }
 
     @Override
@@ -59,11 +64,6 @@ public class BlsOjpProvider extends AbstractOpenJourneyPlannerProvider {
             }
         }
         return authorization;
-    }
-
-    @Override
-    public UserAgentType getUserAgentType() {
-        return UserAgentType.BROWSER;
     }
 
     private void updateToken(final long now) throws JSONException, IOException {

@@ -33,17 +33,12 @@ public class OevInfoChProvider extends SwissOtdOjpProvider {
     }
 
     @Override
-    public Set<Product> defaultProducts() {
-        return Product.ALL_INCLUDING_HIGHSPEED;
+    public UserAgentType getUserAgentType() {
+        return UserAgentType.BROWSER;
     }
 
     @Override
     public void setCredentials(final String credentials) {
         // do nothing, authorization already set constantly
-    }
-
-    @Override
-    public UserAgentType getUserAgentType() {
-        return UserAgentType.BROWSER;
     }
 }

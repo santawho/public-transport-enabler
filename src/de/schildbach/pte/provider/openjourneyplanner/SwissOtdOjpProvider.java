@@ -37,12 +37,30 @@ public class SwissOtdOjpProvider extends AbstractOpenJourneyPlannerProvider {
     }
 
     protected SwissOtdOjpProvider(final NetworkId networkId) {
-        super(networkId, API_ENDPOINT);
+        this(networkId, API_ENDPOINT);
+    }
+
+    protected SwissOtdOjpProvider(
+            final NetworkId networkId,
+            final HttpUrl apiEndpoint) {
+        super(networkId, apiEndpoint);
     }
 
     @Override
     public Set<Product> defaultProducts() {
         return Product.ALL_INCLUDING_HIGHSPEED;
+    }
+
+    @Override
+    public UserAgentType getUserAgentType() {
+        return UserAgentType.APP;
+    }
+
+    @Override
+    public AbstractApiProvider setUserAgent(final String userAgent) {
+        super.setUserAgent(userAgent);
+        setRequestorRef(userAgent);
+        return this;
     }
 
     protected void setAuthorization(final String authorization) {
@@ -57,17 +75,5 @@ public class SwissOtdOjpProvider extends AbstractOpenJourneyPlannerProvider {
     @Override
     protected String getAuthorization() {
         return authorization;
-    }
-
-    @Override
-    public UserAgentType getUserAgentType() {
-        return UserAgentType.APP;
-    }
-
-    @Override
-    public AbstractApiProvider setUserAgent(final String userAgent) {
-        super.setUserAgent(userAgent);
-        setRequestorRef(userAgent);
-        return this;
     }
 }

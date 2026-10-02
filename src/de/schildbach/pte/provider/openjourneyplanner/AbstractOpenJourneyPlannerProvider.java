@@ -19,6 +19,8 @@ package de.schildbach.pte.provider.openjourneyplanner;
 
 import static java.util.Objects.requireNonNull;
 
+import org.msgpack.core.MessagePacker;
+import org.msgpack.core.MessageUnpacker;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -41,6 +43,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.regex.Matcher;
@@ -60,6 +63,7 @@ import javax.xml.transform.stream.StreamResult;
 import de.schildbach.pte.NetworkId;
 import de.schildbach.pte.dto.Departure;
 import de.schildbach.pte.dto.Destination;
+import de.schildbach.pte.dto.Fare;
 import de.schildbach.pte.dto.JourneyRef;
 import de.schildbach.pte.dto.Line;
 import de.schildbach.pte.dto.Location;
@@ -70,15 +74,19 @@ import de.schildbach.pte.dto.Point;
 import de.schildbach.pte.dto.Position;
 import de.schildbach.pte.dto.Product;
 import de.schildbach.pte.dto.QueryDeparturesResult;
+import de.schildbach.pte.dto.QueryJourneyResult;
 import de.schildbach.pte.dto.QueryTripsContext;
 import de.schildbach.pte.dto.QueryTripsResult;
 import de.schildbach.pte.dto.ResultHeader;
 import de.schildbach.pte.dto.StationDepartures;
 import de.schildbach.pte.dto.SuggestLocationsResult;
 import de.schildbach.pte.dto.SuggestedLocation;
+import de.schildbach.pte.dto.Trip;
 import de.schildbach.pte.dto.TripOptions;
+import de.schildbach.pte.dto.TripRef;
 import de.schildbach.pte.exception.ParserException;
 import de.schildbach.pte.provider.AbstractNetworkProvider;
+import de.schildbach.pte.provider.hafas.AbstractHafasClientInterfaceProvider;
 import okhttp3.HttpUrl;
 
 public abstract class AbstractOpenJourneyPlannerProvider extends AbstractNetworkProvider {
@@ -455,8 +463,8 @@ public abstract class AbstractOpenJourneyPlannerProvider extends AbstractNetwork
         final String authorization = getAuthorization();
         if (authorization != null)
             httpClient.setHeader("Authorization", authorization);
-        final CharSequence xmlResponse = httpClient.get(apiEndpoint, xmlRequest, null, callTimeoutSecs);
-        return new OJPResponse(xmlResponse.toString());
+        final String xmlResponse = httpClient.get(apiEndpoint, xmlRequest, null, callTimeoutSecs).toString();
+        return new OJPResponse(xmlResponse);
     }
 
     protected String[] splitPlaceAndName(final String placeAndName, final Pattern p, final int place, final int name) {
@@ -505,6 +513,7 @@ public abstract class AbstractOpenJourneyPlannerProvider extends AbstractNetwork
             put("rail/local", Product.REGIONAL_TRAIN);
             put("rail/regionalRail", Product.REGIONAL_TRAIN);
             put("rail/suburbanRailway", Product.SUBURBAN_TRAIN);
+            put("urbanRail", Product.SUBURBAN_TRAIN);
             put("metro", Product.SUBWAY);
             put("subway", Product.SUBWAY);
             put("tram", Product.TRAM);
@@ -529,6 +538,7 @@ public abstract class AbstractOpenJourneyPlannerProvider extends AbstractNetwork
         {
             put("rail", "RailSubmode");
             put("bus", "BusSubmode");
+            put("coach", "CoachSubmode"); // value may be "internationalCoach"
         }
     };
 
@@ -544,6 +554,65 @@ public abstract class AbstractOpenJourneyPlannerProvider extends AbstractNetwork
             }
         }
         return PTMODE_MAP.get(ptMode);
+    }
+
+    private Element createModeElement(
+            final OJPRequest document, final Element parent,
+            final String elementName, final Set<Product> products) {
+        if (products == null)
+            return null;
+        final Element element = document.createElement(parent, elementName);
+        document.createTextElement(element, "Exclude", false);
+//        PTMODE_MAP.forEach((ptMode, product) -> {
+//            if (!products.contains(product))
+//                return;
+//            final int slash = ptMode.indexOf('/');
+//            if (slash >= 0) {
+//                final String submode = ptMode.substring(slash + 1);
+//                final String submodeElementName = SUBMODE_MAP.get(ptMode.substring(0, slash));
+//                document.createTextElement(element, NS_SIRI, "siri:" + submodeElementName, submode);
+//            } else {
+//                document.createTextElement(element, "PtMode", ptMode);
+//            }
+//        });
+        if (products.contains(Product.HIGH_SPEED_TRAIN)) {
+            document.createTextElement(element, NS_SIRI, "siri:RailSubMode", "international");
+            document.createTextElement(element, NS_SIRI, "siri:RailSubMode", "highSpeedRail");
+        }
+        if (products.contains(Product.REGIONAL_TRAIN)) {
+            document.createTextElement(element, NS_SIRI, "siri:RailSubMode", "interregionalRail");
+            document.createTextElement(element, NS_SIRI, "siri:RailSubMode", "local");
+        }
+        if (products.contains(Product.SUBURBAN_TRAIN)) {
+            document.createTextElement(element, "PtMode", "urbanRail");
+            document.createTextElement(element, NS_SIRI, "siri:RailSubMode", "railShuttle");
+        }
+        if (products.contains(Product.BUS)) {
+            document.createTextElement(element, "PtMode", "bus");
+        }
+        if (products.contains(Product.COACH)) {
+            document.createTextElement(element, "PtMode", "coach");
+        }
+        if (products.contains(Product.SUBWAY)) {
+            document.createTextElement(element, "PtMode", "metro");
+        }
+        if (products.contains(Product.TRAM)) {
+            document.createTextElement(element, "PtMode", "tram");
+        }
+        if (products.contains(Product.FERRY)) {
+            document.createTextElement(element, "PtMode", "water");
+            document.createTextElement(element, "PtMode", "ferry");
+        }
+        if (products.contains(Product.REPLACEMENT_SERVICE)) {
+            document.createTextElement(element, "PtMode", "replacementRailService");
+        }
+        if (products.contains(Product.CABLECAR)) {
+            document.createTextElement(element, "PtMode", "funicular");
+            document.createTextElement(element, "PtMode", "telecabin");
+//            document.createTextElement(element, "PtMode", "gondola");
+//            document.createTextElement(element, "PtMode", "cableCar");
+        }
+        return element;
     }
 
     private List<Location> findLocations(
@@ -704,6 +773,32 @@ public abstract class AbstractOpenJourneyPlannerProvider extends AbstractNetwork
         }
     }
 
+    private Element createPlaceElement(
+            final OJPRequest document, final Element request,
+            final String elementName, final String stationId) {
+        final Element element = document.createElement(request, elementName);
+        final Element placeRef = document.createElement(element, "PlaceRef");
+        // document.createTextElement(placeRef, "StopPlaceRef", stationId);
+        document.createTextElement(placeRef, NS_SIRI, "siri:StopPointRef", stationId);
+        document.createTranslatedTextElement(placeRef, "Name", "n/a");
+        return element;
+    }
+
+    private Element createPlaceElement(
+            final OJPRequest document, final Element parent,
+            final String elementName, final Location location) {
+        final Element element = document.createElement(parent, elementName);
+        final Element placeRef = document.createElement(element, "PlaceRef");
+        if (location.hasId()) {
+            document.createTextElement(placeRef, "StopPlaceRef", location.id);
+            // document.createTextElement(placeRef, NS_SIRI, "siri:StopPointRef", location.id);
+        } else if (location.hasCoord()) {
+            document.createGeoPoint(placeRef, "GeoPosition", location.coord);
+        }
+        document.createTranslatedTextElement(placeRef, "Name", "n/a");
+        return element;
+    }
+
     @Override
     public QueryDeparturesResult queryStationBoard(
             final String stationId,
@@ -716,10 +811,7 @@ public abstract class AbstractOpenJourneyPlannerProvider extends AbstractNetwork
         try {
             final OJPRequest document = new OJPRequest();
             final Element request = document.createRequest("OJPStopEventRequest");
-            final Element locationElement = document.createElement(request, "Location");
-            final Element placeRef = document.createElement(locationElement, "PlaceRef");
-            document.createTextElement(placeRef, NS_SIRI, "siri:StopPointRef", stationId);
-            document.createTranslatedTextElement(placeRef, "Name", "n/a");
+            final Element locationElement = createPlaceElement(document, request, "Location", stationId);
             document.createTextElement(locationElement, "DepArrTime", time);
             final Element params = document.createElement(request, "Params");
             // document.createTextElement(params, "IncludeAllRestrictedLines", false);
@@ -728,22 +820,7 @@ public abstract class AbstractOpenJourneyPlannerProvider extends AbstractNetwork
 //            document.createTextElement(params, "IncludePreviousCalls", false);
 //            document.createTextElement(params, "IncludeOnwardCalls", false);
             document.createTextElement(params, "UseRealtimeData", "explanatory");
-            if (products != null) {
-                final Element modeFilter = document.createElement(params, "ModeFilter");
-                document.createTextElement(modeFilter, "Exclude", false);
-                PTMODE_MAP.forEach((ptMode, product) -> {
-                    if (!products.contains(product))
-                        return;
-                    final int slash = ptMode.indexOf('/');
-                    if (slash >= 0) {
-                        final String submode = ptMode.substring(slash + 1);
-                        final String submodeElementName = SUBMODE_MAP.get(ptMode);
-                        document.createTextElement(modeFilter, NS_SIRI, "siri:" + submodeElementName, submode);
-                    } else {
-                        document.createTextElement(modeFilter, "PtMode", ptMode);
-                    }
-                });
-            }
+            createModeElement(document, params, "ModeFilter", products);
 
             final OJPResponse response = doRequest(document);
             final Element stopEventDelivery = response.getResponse("OJPStopEventDelivery");
@@ -820,6 +897,73 @@ public abstract class AbstractOpenJourneyPlannerProvider extends AbstractNetwork
         }
     }
 
+    public static class OJPTripsContext implements QueryTripsContext {
+        @Serial
+        private static final long serialVersionUID = 3369508237895354567L;
+
+        @Override
+        public boolean canQueryLater() {
+            return false;
+        }
+
+        @Override
+        public boolean canQueryEarlier() {
+            return false;
+        }
+    }
+
+    public static class OJPTripRef extends TripRef {
+        @Serial
+        private static final long serialVersionUID = 1807986075078252014L;
+
+        public final String tripResultXML;
+
+        public OJPTripRef(
+                final NetworkId network,
+                final Location from, final Location via, final Location to,
+                final String tripResultXML) {
+            super(network, from, via, to);
+            this.tripResultXML = tripResultXML;
+        }
+
+        public OJPTripRef(final NetworkId network, final MessageUnpacker unpacker) throws IOException {
+            super(network, unpacker);
+            this.tripResultXML = unpacker.unpackString();
+        }
+
+        @Override
+        public void packToMessage(final MessagePacker packer) throws IOException {
+            super.packToMessage(packer);
+            packer.packString(tripResultXML);
+        }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) return true;
+            if (!(o instanceof OJPTripRef)) return false;
+            final OJPTripRef that = (OJPTripRef) o;
+            return super.equals(that)
+                    && Objects.equals(tripResultXML, that.tripResultXML);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(super.hashCode(), tripResultXML);
+        }
+    }
+
+    private void createMaxDistanceElement(
+            final OJPRequest document, final Element parent,
+            final int maxWalkDistanceMeters) {
+        final Element individualTransportOption = document.createElement(parent, "IndividualTransportOption");
+
+        final Element itModeAndModeOfOperation = document.createElement(individualTransportOption, "ItModeAndModeOfOperation");
+        document.createTextElement(itModeAndModeOfOperation, "PersonalMode", "other");
+        document.createTextElement(itModeAndModeOfOperation, "PersonalModeOfOperation", "own");
+
+        document.createTextElement(individualTransportOption, "MaxDistance", maxWalkDistanceMeters);
+    }
+
     @Override
     public QueryTripsResult queryTrips(
             final Location from,
@@ -829,6 +973,104 @@ public abstract class AbstractOpenJourneyPlannerProvider extends AbstractNetwork
             final boolean dep,
             @Nullable final TripOptions options,
             final boolean loadPath) throws IOException {
+        try {
+            final OJPRequest document = new OJPRequest();
+            final Element request = document.createRequest("OJPTripRequest");
+
+            final Element origin = createPlaceElement(document, request, "Origin", from);
+            final Element destination = createPlaceElement(document, request, "Destination", to);
+            if (via != null)
+                createPlaceElement(document, request, "Via", via);
+            document.createTextElement(dep ? origin : destination, "DepArrTime", date);
+            final Element params = document.createElement(request, "Params");
+            document.createTextElement(params, "NumberOfResults", 10);
+            document.createTextElement(params, "UseRealtimeData", "explanatory");
+            document.createTextElement(params, "IncludeIntermediateStops", true);
+            // document.createTextElement(params, "IncludeTrackSections", true);
+            // document.createTextElement(params, "IncludeLegProjection", true);
+            if (options != null) {
+                createModeElement(document, params, "ModeAndModeOfOperationFilter", options.products);
+                if (options.maxWalkDistanceMeters != null) {
+                    createMaxDistanceElement(document, origin, options.maxWalkDistanceMeters);
+                    createMaxDistanceElement(document, destination, options.maxWalkDistanceMeters);
+                }
+                if (options.walkSpeed != null) {
+                    final String speed;
+                    switch (options.walkSpeed) {
+                        case SLOW: speed = "66"; break;
+                        case FAST: speed = "150"; break;
+                        case NORMAL:
+                        default:
+                            speed = "100"; break;
+                    }
+                    document.createTextElement(params, "WalkSpeed", speed);
+                }
+                if (options.flags != null) {
+                    if (options.flags.contains(TripFlag.DIRECT))
+                        document.createTextElement(params, "TransferLimit", 0);
+                    if (options.flags.contains(TripFlag.BIKE))
+                        document.createTextElement(params, "BikeTransport", true);
+                }
+                if (Optimize.LEAST_CHANGES.equals(options.optimize))
+                    document.createTextElement(params, "OptimisationMethod", "minChanges");
+                // options.minTransferTimeMinutes; --> there is no option for this in OJP
+                // options.accessibility; --> none of the OJP options are supported yet
+            }
+
+            final OJPResponse response = doRequest(document);
+            final Element stopEventDelivery = response.getResponse("OJPTripDelivery");
+            final Date now = new Date();
+
+            final Element tripResponseContext = response.getElement(stopEventDelivery, "TripResponseContext");
+            final StopPlaceMap stopPlaceMap = new StopPlaceMap(response, response.getElement(tripResponseContext, "Places"));
+
+            final List<Trip> trips = new ArrayList<>();
+            final NodeList tripResults = response.getElements(stopEventDelivery, "TripResult");
+            for (int eventIndex = 0; eventIndex < tripResults.getLength(); ++eventIndex) {
+                final Element tripResult = (Element) tripResults.item(eventIndex);
+                final Element tripData = response.getElement(tripResult, "Trip");
+                final String tripId = response.getTextElement(tripData, "Id");
+
+                final List<Trip.Leg> legs = new ArrayList<>();
+
+                final NodeList legsList = response.getElements(tripData, "Leg");
+                for (int legIndex = 0; legIndex < legsList.getLength(); ++legIndex) {
+                    final Element legData = (Element) legsList.item(legIndex);
+
+                    final Element timedLeg = response.getElement(legData, "TimedLeg");
+                    if (timedLeg != null) {
+                        final Trip.Public publicLeg = parseTimedLeg(document, timedLeg);
+                        legs.add(publicLeg);
+                    } else {
+                        final Element transferLeg = response.getElement(legData, "TransferLeg");
+                        final Trip.Individual individualLeg = parseTransferLeg(document, transferLeg);
+                        legs.add(individualLeg);
+                    }
+                }
+
+                // final String tripResultXML = null; -- see TripRefineRequest -- https://opentransportdata.swiss/de/cookbook/open-journey-planner-ojp-landing-page/ojptriprefinerequest-2-0/
+                // final OJPTripRef tripRef = new OJPTripRef(network, from, to, via, tripResultXML);
+                final OJPTripRef tripRef = null;
+                final Trip trip = new Trip(now, tripId, tripRef, from, to, legs, null, null, null);
+                trips.add(trip);
+            }
+
+            return new QueryTripsResult(
+                    this.resultHeader, null,
+                    from, via, to,
+                    new OJPTripsContext(),
+                    trips);
+        } catch (final IOException | RuntimeException e) {
+            log.error("error getting trips", e);
+            return new QueryTripsResult(this.resultHeader, QueryTripsResult.Status.SERVICE_DOWN);
+        }
+    }
+
+    private Trip.Public parseTimedLeg(final OJPRequest document, final Element timedLeg) {
+        return null;
+    }
+
+    private Trip.Individual parseTransferLeg(final OJPRequest document, final Element transferLeg) {
         return null;
     }
 
@@ -836,6 +1078,14 @@ public abstract class AbstractOpenJourneyPlannerProvider extends AbstractNetwork
     public QueryTripsResult queryMoreTrips(
             final QueryTripsContext context,
             final boolean later,
+            final boolean loadPath) throws IOException {
+        return null;
+    }
+
+    @Override
+    public QueryJourneyResult queryJourney(
+            final JourneyRef journeyRef,
+            final boolean splitSubJourneys,
             final boolean loadPath) throws IOException {
         return null;
     }
