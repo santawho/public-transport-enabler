@@ -779,11 +779,21 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
 //                        }
 //                    }
                     if (destination == null) {
-                        if (plainDirectionLocation != null) {
-                            if (destinationIsCommonlyDirection) {
+                        if (destinationIsCommonlyDirection) {
+                            if (plainDirectionLocation != null) {
                                 destination = new Destination(jnyDirTxt, plainDirectionLocation, false);
-                            } else {
-                                destination = new Destination(jnyDirTxt, splitDirectionLocation, true);
+                            }
+                        } else {
+                            if (splitDirectionLocation != null) {
+                                // destination = new Destination(jnyDirTxt, splitDirectionLocation, true);
+                                destination = new Destination(
+                                        jnyDirTxt,
+                                        new Location(
+                                                LocationType.STATION,
+                                                splitDirectionLocation.id,
+                                                splitDirectionLocation.place,
+                                                splitDirectionLocation.name),
+                                        false);
                             }
                         }
                     }
