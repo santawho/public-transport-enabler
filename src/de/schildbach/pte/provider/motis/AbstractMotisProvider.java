@@ -60,7 +60,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.Serial;
-import java.io.Serializable;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -110,7 +109,7 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
         MOTIS_MODE_MAP.put("FERRY", Product.FERRY);
         MOTIS_MODE_MAP.put("BUS", Product.BUS);
         MOTIS_MODE_MAP.put("COACH", Product.COACH);
-        MOTIS_MODE_MAP.put("RAIL", Product.REGIONAL_TRAIN);
+        MOTIS_MODE_MAP.put("RAIL", Product.REGIONAL_TRAIN); // meta-class, should never appear
         MOTIS_MODE_MAP.put("HIGHSPEED_RAIL", Product.HIGH_SPEED_TRAIN);
         MOTIS_MODE_MAP.put("LONG_DISTANCE", Product.HIGH_SPEED_TRAIN);
         MOTIS_MODE_MAP.put("NIGHT_RAIL", Product.HIGH_SPEED_TRAIN);
@@ -119,7 +118,7 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
         MOTIS_MODE_MAP.put("FUNICULAR", Product.CABLECAR);
         MOTIS_MODE_MAP.put("AERIAL_LIFT", Product.CABLECAR);
         MOTIS_MODE_MAP.put("AREAL_LIFT", Product.CABLECAR);
-        MOTIS_MODE_MAP.put("METRO", Product.SUBURBAN_TRAIN);
+        MOTIS_MODE_MAP.put("METRO", Product.SUBURBAN_TRAIN); // deprecated
         MOTIS_MODE_MAP.put("CABLE_CAR", Product.CABLECAR);
 
         MOTIS_INDIVIDUAL_MODE_MAP = new HashMap<>();
@@ -134,7 +133,7 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
         MODE_MOTIS_MAP.put(Product.FERRY, new String[]{"FERRY"});
         MODE_MOTIS_MAP.put(Product.HIGH_SPEED_TRAIN, new String[]{"HIGHSPEED_RAIL", "LONG_DISTANCE", "NIGHT_RAIL"});
         MODE_MOTIS_MAP.put(Product.REGIONAL_TRAIN, new String[]{"REGIONAL_RAIL"});
-        MODE_MOTIS_MAP.put(Product.SUBURBAN_TRAIN, new String[]{"SUBURBAN", "METRO"});
+        MODE_MOTIS_MAP.put(Product.SUBURBAN_TRAIN, new String[]{"SUBURBAN"}); // , "METRO" (is deprectated now)
         MODE_MOTIS_MAP.put(Product.ON_DEMAND, new String[]{"ODM"});
         MODE_MOTIS_MAP.put(Product.SUBWAY, new String[]{"SUBWAY"});
         MODE_MOTIS_MAP.put(Product.TRAM, new String[]{"TRAM"});
@@ -151,7 +150,23 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
         CAPABILITIES.add(Capability.JOURNEY);
         CAPABILITIES.add(Capability.TRIP_RELOAD);
     }
-    
+
+    private static String productsToMotisModes(final Set<Product> products) {
+        if (products == null || products.isEmpty())
+            return null;
+        final List<String> motisModes = new ArrayList<>();
+// NO, DON'T: "RAIL" is a meta-class even containing SUBWAY. That's not what we want.
+//        if (products.contains(Product.HIGH_SPEED_TRAIN) && products.contains(Product.REGIONAL_TRAIN)) {
+//            // All train types included, so include the catch-all category as well
+//            motisModes.add("RAIL");
+//        }
+        for (final Product p : products) {
+            Collections.addAll(motisModes, MODE_MOTIS_MAP.get(p));
+        }
+
+        return String.join(",", motisModes);
+    }
+
     public static class MotisTripRef extends TripRef implements QueryTripsContext, MessagePackUtils.PackableSerializable {
         @Serial
         private static final long serialVersionUID = 7250525175653739883L;
@@ -574,19 +589,10 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
         if (time != null) {
             endpointBuilder.addQueryParameter("time", DateTimeFormatter.ISO_DATE_TIME.format(time.toInstant().atZone(ZoneId.of("UTC"))));
         }
-        
-        if (products != null && !products.isEmpty()) {
-            final List<String> motisModes = new ArrayList<>();
-            if (products.contains(Product.HIGH_SPEED_TRAIN) && products.contains(Product.REGIONAL_TRAIN)) {
-                // All train types included, so include the catch-all category as well
-                motisModes.add("RAIL");
-            }
-            for (final Product p : products) {
-                Collections.addAll(motisModes, MODE_MOTIS_MAP.get(p));
-            }
 
-            endpointBuilder.addQueryParameter("mode", String.join(",", motisModes));
-        }
+        final String motisModes = productsToMotisModes(products);
+        if (motisModes != null)
+            endpointBuilder.addQueryParameter("mode", motisModes);
 
         final HttpUrl endpoint = endpointBuilder.build();
 
@@ -774,19 +780,13 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
                     endpointBuilder.addQueryParameter("maxTransfers", "0");
                 }
             }
-            // TODO: Figure out how to map walking speed enum to API walking speeds
-            if (options.products != null) {
-                final List<String> motisModes = new ArrayList<>();
-                if (options.products.contains(Product.HIGH_SPEED_TRAIN) && options.products.contains(Product.REGIONAL_TRAIN)) {
-                    // All train types included, so include the catch-all category as well
-                    motisModes.add("RAIL");
-                }
-                for (final Product p : options.products) {
-                    Collections.addAll(motisModes, MODE_MOTIS_MAP.get(p));
-                }
 
-                endpointBuilder.addQueryParameter("transitModes", String.join(",", motisModes));
-            }
+            // TODO: Figure out how to map walking speed enum to API walking speeds
+
+            final String motisModes = productsToMotisModes(options.products);
+            if (motisModes != null)
+                endpointBuilder.addQueryParameter("transitModes", motisModes);
+
             if (options.minTransferTimeMinutes != null) {
                 endpointBuilder.addQueryParameter("additionalTransferTime", String.valueOf(options.minTransferTimeMinutes));
                 if (via != null) {
@@ -796,9 +796,7 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
         }
 
         final HttpUrl endpoint = endpointBuilder.build();
-
         return actualQueryTrips(endpoint, from, via, to, loadPath);
-
     }
 
     @Override
@@ -852,6 +850,12 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
                     throw (JSONException) e.getCause();
                 }
                 throw e;
+            }
+
+            if (trips.isEmpty()) {
+                return new QueryTripsResult(
+                        new ResultHeader(network, "MOTIS"),
+                        QueryTripsResult.Status.NO_TRIPS);
             }
 
             return new QueryTripsResult(
