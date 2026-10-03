@@ -1080,6 +1080,9 @@ public abstract class AbstractOpenJourneyPlannerProvider extends AbstractNetwork
             final boolean later,
             final boolean loadPath) throws IOException {
         return null;
+
+//        NumberOfResultsBefore
+//        NumberOfResultsAfter
     }
 
     @Override
