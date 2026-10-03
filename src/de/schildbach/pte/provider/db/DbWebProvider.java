@@ -446,8 +446,6 @@ public abstract class DbWebProvider extends DbProvider {
         parseMessages(jny.optJSONArray("meldungen"), messages, null, defaultTeilstreckenHinweis);
         parseMessages(jny.optJSONArray("risNotizen"), messages, null, defaultTeilstreckenHinweis);
         final int numImportant = messages.size();
-        if (this.messagesAsSimpleHtml)
-            messages.add(LESS_IMPORTANT_HTML_SPLIT_MARKER);
         parseMessages(jny.optJSONArray("himMeldungen"), messages, null, defaultTeilstreckenHinweis);
         if (operatorName != null)
             messages.add("&#8226; " + operatorName);
@@ -455,6 +453,8 @@ public abstract class DbWebProvider extends DbProvider {
             parseMessages(zugattribute, messages, this.messagesAsSimpleHtml ? "&#8226; " : null, defaultTeilstreckenHinweis);
         if (messages.isEmpty())
             return null;
+        if (this.messagesAsSimpleHtml)
+            messages.add(0, LESS_IMPORTANT_HTML_SPLIT_MARKER);
         final String s = join(this.messagesAsSimpleHtml ? "<br>" : " - ", messages);
         if (numImportant == 0)
             return s.replace(LESS_IMPORTANT_HTML_SPLIT_MARKER + "<br>", LESS_IMPORTANT_HTML_SPLIT_MARKER);

@@ -450,8 +450,6 @@ public abstract class DbMovasProvider extends DbProvider {
         final List<String> messages = new ArrayList<>();
         parseMessages(jny.optJSONArray("echtzeitNotizen"), messages, null, null);
         final int numImportant = messages.size();
-        if (this.messagesAsSimpleHtml)
-            messages.add(LESS_IMPORTANT_HTML_SPLIT_MARKER);
         parseMessages(jny.optJSONArray("himNotizen"), messages, null, null);
         // show very important static messages (e.g. on demand tel)
         if (operatorName != null)
@@ -459,6 +457,8 @@ public abstract class DbMovasProvider extends DbProvider {
         parseMessages(jny.optJSONArray("attributNotizen"), messages, this.messagesAsSimpleHtml ? "&#8226; " : null, 100);
         if (messages.isEmpty())
             return null;
+        if (this.messagesAsSimpleHtml)
+            messages.add(0, LESS_IMPORTANT_HTML_SPLIT_MARKER);
         final String s = join(this.messagesAsSimpleHtml ? "<br>" : " - ", messages);
         if (numImportant == 0)
             return s.replace(LESS_IMPORTANT_HTML_SPLIT_MARKER + "<br>", LESS_IMPORTANT_HTML_SPLIT_MARKER);
