@@ -174,7 +174,7 @@ public enum NetworkId {
     VMOBIL(Descriptor.from(VmobilProvider.class, "de-AT", "Vorarlberg;Bregenz")),
 
     // Switzerland
-    SWISSOTD(Descriptor.from(SwissOtdOjpProvider.class, "de-CH", "CH;Bern;Zürich;Luzern;Genève", true, State.workInProgress)),
+    SWISSOTD(Descriptor.from(SwissOtdOjpProvider.class, "de-CH", "CH;Bern;Zürich;Luzern;Genève", true, State.alpha)),
     OEVINFOCH(Descriptor.from(OevInfoChProvider.class, "de-CH", "CH;Bern;Zürich;Luzern;Genève", State.special_use)),
     VBL(Descriptor.from(VblProvider.class, "de-CH", "Luzern", State.defunct)),
     ZVV(Descriptor.from(ZvvProvider.class, "de-CH", "Zürich")),
