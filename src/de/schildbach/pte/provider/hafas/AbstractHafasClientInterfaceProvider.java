@@ -1328,7 +1328,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                     if (fares.isEmpty()) {
                         // find the first fare with same price as suggested by total price
                         final Price totalPrice = parsePriceObject(trfRes.optJSONObject("totalPrice"));
-                        if (totalPrice != null) {
+                        if (totalPrice != null && fareSetList != null) {
                             FareSetLoop:
                             for (int iFareSet = 0; iFareSet < fareSetList.length(); iFareSet++) {
                                 final JSONObject jsonFareSet = fareSetList.getJSONObject(iFareSet);
