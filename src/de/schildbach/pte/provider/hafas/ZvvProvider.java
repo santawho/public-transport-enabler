@@ -87,6 +87,10 @@ public class ZvvProvider extends AbstractHafasClientInterfaceProvider {
             }
         }
 
+        final Matcher m = P_SPLIT_NAME_FIRST_COMMA.matcher(name);
+        if (m.matches())
+            return new String[] { m.group(1), m.group(2) };
+
         for (final String place : PLACES) {
             if (name.startsWith(place + " "))
                 return new String[] { place, name.substring(place.length() + 1) };
@@ -94,9 +98,6 @@ public class ZvvProvider extends AbstractHafasClientInterfaceProvider {
                 return new String[] { place, name.substring(place.length() + 2) };
         }
 
-        final Matcher m = P_SPLIT_NAME_FIRST_COMMA.matcher(name);
-        if (m.matches())
-            return new String[] { m.group(1), m.group(2) };
         return super.splitStationName(name);
     }
 
