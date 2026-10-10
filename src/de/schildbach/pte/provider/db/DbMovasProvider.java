@@ -523,44 +523,55 @@ public abstract class DbMovasProvider extends DbProvider {
                 null);
     }
 
-    private boolean parseCancelled(final JSONObject stop) throws JSONException {
+    private int parseCancelled(final JSONObject stop) throws JSONException {
         final boolean cancelled = stop.optBoolean("cancelled", false);
         if (cancelled)
-            return true;
+            return 3;
         final JSONObject ersatzhaltNotiz = stop.optJSONObject("ersatzhaltNotiz");
         if (ersatzhaltNotiz != null) {
             final String typ = ersatzhaltNotiz.getString("typ");
             if ("GECANCELT".equals(typ)) {
-                return true;
+                return 3;
             }
         }
-        final JSONArray notices = stop.optJSONArray("echtzeitNotizen");
-        if (notices != null) {
-            for (int iNotice = 0; iNotice < notices.length(); iNotice++) {
-                final JSONObject notice = notices.optJSONObject(iNotice);
-                if (notice != null) {
-                    final String text = notice.optString("text", null);
-                    if ("Halt entfällt".equals(text) || "Stop cancelled".equals(text)) {
-                        return true;
-                    }
-                }
+//        final JSONArray notices = stop.optJSONArray("echtzeitNotizen");
+//        if (notices != null) {
+//            for (int iNotice = 0; iNotice < notices.length(); iNotice++) {
+//                final JSONObject notice = notices.optJSONObject(iNotice);
+//                if (notice != null) {
+//                    final String text = notice.optString("text", null);
+//                    if ("Halt entfällt".equals(text) || "Stop cancelled".equals(text)) {
+//                        return true;
+//                    }
+//                }
+//            }
+//        }
+        final JSONObject notice = stop.optJSONObject("serviceNotiz");
+        if (notice != null) {
+            final String key = notice.optString("key", null);
+            if ("text.realtime.stop.cancelled".equals(key)) {
+                return 3;
+            } else if ("text.realtime.stop.entry.disabled".equals(key)) {
+                return 2;
+            } else if ("text.realtime.stop.exit.disabled".equals(key)) {
+                return 1;
             }
         }
-        return false;
+        return 0;
     }
 
     private Stop parseStop(final JSONObject stop, final Location fallbackLocation) throws JSONException {
         final Position gleis = parsePosition(stop.optString("gleis", null));
         final Position ezGleis = parsePosition(stop.optString("ezGleis", null));
-        final boolean cancelled = parseCancelled(stop);
+        final int cancelled = parseCancelled(stop);
         return new Stop(
                 Optional.ofNullable(parseLocation(stop.optJSONObject("ort"))).orElse(fallbackLocation),
                 parseIso8601WOffset(stop.optString("ankunftsDatum", null)),
                 parseIso8601WOffset(stop.optString("ezAnkunftsDatum", null)),
-                gleis, ezGleis, cancelled,
+                gleis, ezGleis, (cancelled & 1) != 0,
                 parseIso8601WOffset(stop.optString("abgangsDatum", null)),
                 parseIso8601WOffset(stop.optString("ezAbgangsDatum", null)),
-                gleis, ezGleis, cancelled);
+                gleis, ezGleis, (cancelled & 2) != 0);
     }
 
     private List<Stop> parseStops(final JSONArray stops) throws JSONException {
@@ -1039,7 +1050,7 @@ public abstract class DbMovasProvider extends DbProvider {
             int added = 0;
             for (int iDep = 0; iDep < deps.length(); iDep++) {
                 final JSONObject dep = deps.getJSONObject(iDep);
-                final boolean cancelled = parseCancelled(dep);
+                final boolean cancelled = (parseCancelled(dep) & (arrivals ? 1 : 2)) != 0;
 //                if (cancelled) {
 //                    continue;
 //                }

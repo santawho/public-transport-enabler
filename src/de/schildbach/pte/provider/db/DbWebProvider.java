@@ -523,7 +523,7 @@ public abstract class DbWebProvider extends DbProvider {
                 null);
     }
 
-    private boolean parseCancelled(final JSONObject stop) throws JSONException {
+    private int parseCancelled(final JSONObject stop) throws JSONException {
         final JSONArray notices = stop.optJSONArray("risNotizen");
         if (notices != null) {
             for (int iNotice = 0; iNotice < notices.length(); iNotice++) {
@@ -531,18 +531,22 @@ public abstract class DbWebProvider extends DbProvider {
                 if (notice != null) {
                     final String key = notice.optString("key", null);
                     if ("text.realtime.stop.cancelled".equals(key)) {
-                        return true;
+                        return 3;
+                    } else if ("text.realtime.stop.entry.disabled".equals(key)) {
+                        return 2;
+                    } else if ("text.realtime.stop.exit.disabled".equals(key)) {
+                        return 1;
                     }
                 }
             }
         }
-        return false;
+        return 0;
     }
 
     private Stop parseStop(final JSONObject stop, final Location fallbackLocation) throws JSONException {
         final Position gleis = parsePosition(stop.optString("gleis", null));
         final Position ezGleis = parsePosition(stop.optString("ezGleis", null));
-        final boolean cancelled = parseCancelled(stop);
+        final int cancelled = parseCancelled(stop);
         final Location stopLocation = parseLocation(stop);
         final String ankunftSollzeit, ankunftEchtzeit;
         final JSONObject ankunft = stop.optJSONObject("ankunft");
@@ -566,10 +570,10 @@ public abstract class DbWebProvider extends DbProvider {
                 stopLocation != null && stopLocation.id != null ? stopLocation : fallbackLocation,
                 parseIso8601NoOffset(ankunftSollzeit),
                 parseIso8601NoOffset(ankunftEchtzeit),
-                gleis, ezGleis, cancelled,
+                gleis, ezGleis, (cancelled & 1) != 0,
                 parseIso8601NoOffset(abfahrtSollzeit),
                 parseIso8601NoOffset(abfahrtEchtzeit),
-                gleis, ezGleis, cancelled);
+                gleis, ezGleis, (cancelled & 2) != 0);
     }
 
     private List<Stop> parseStops(final JSONArray stops) throws JSONException {
@@ -1051,7 +1055,7 @@ public abstract class DbWebProvider extends DbProvider {
             int added = 0;
             for (int iDep = 0; iDep < deps.length(); iDep++) {
                 final JSONObject dep = deps.getJSONObject(iDep);
-                if (parseCancelled(dep)) {
+                if ((parseCancelled(dep) & (arrivals ? 1 : 2)) != 0) {
                     continue;
                 }
                 final String bahnhofsId = dep.getString("bahnhofsId");
