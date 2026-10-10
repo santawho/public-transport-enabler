@@ -140,6 +140,9 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
     private static final String SECTION_TYPE_JOURNEY = "JNY";
     private static final String SECTION_TYPE_WALK = "WALK";
     private static final String SECTION_TYPE_BIKE = "BIKE";
+    private static final String SECTION_TYPE_TAXI = "TAXI";
+    private static final String SECTION_TYPE_PARK = "PARK";
+    private static final String SECTION_TYPE_KISS = "KISS";
     private static final String SECTION_TYPE_TRANSFER = "TRSF";
     private static final String SECTION_TYPE_TELE_TAXI = "TETA";
     private static final String SECTION_TYPE_DEVI = "DEVI";
@@ -1229,6 +1232,16 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                             leg = null;
                         } else {
                             leg = new Trip.Individual(Trip.Individual.Type.BIKE, departureStop.location,
+                                    departureStop.getDepartureTime(), arrivalStop.location, arrivalStop.getArrivalTime(),
+                                    distance);
+                        }
+                    } else if (SECTION_TYPE_TAXI.equals(secType) || SECTION_TYPE_PARK.equals(secType) || SECTION_TYPE_KISS.equals(secType)) {
+                        final JSONObject gis = sec.getJSONObject("gis");
+                        final int distance = gis.optInt("dist", -1);
+                        if (distance < 0) {
+                            leg = null;
+                        } else {
+                            leg = new Trip.Individual(Trip.Individual.Type.CAR, departureStop.location,
                                     departureStop.getDepartureTime(), arrivalStop.location, arrivalStop.getArrivalTime(),
                                     distance);
                         }
