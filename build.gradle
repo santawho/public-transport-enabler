@@ -4,8 +4,11 @@ plugins {
 }
 
 group = 'de.schildbach.pte'
-archivesBaseName = 'public-transport-enabler'
 version = 'SNAPSHOT'
+
+base {
+    archivesName = 'public-transport-enabler'
+}
 
 repositories {
     mavenCentral()
@@ -37,14 +40,14 @@ sourceSets {
 }
 
 compileJava {
-    sourceCompatibility '1.8'
-    targetCompatibility '1.8'
+    sourceCompatibility '11'
+    targetCompatibility '11'
     options.encoding = 'UTF-8'
 }
 
 compileTestJava {
-    sourceCompatibility '1.8'
-    targetCompatibility '1.8'
+    sourceCompatibility '11'
+    targetCompatibility '11'
     options.encoding = 'UTF-8'
 }
 
