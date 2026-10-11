@@ -106,11 +106,11 @@ public class NominatimLocationSearchProvider extends AbstractLocationSearchProvi
                 }
             }
             return new SuggestLocationsResult(null, locations);
-        } catch (IOException | RuntimeException e) {
-            log.error("error getting locations", e);
-            return new SuggestLocationsResult(null, SuggestLocationsResult.Status.SERVICE_DOWN);
         } catch (final JSONException x) {
             throw new ParserException("cannot parse json: '" + page + "' on " + builder, x);
+        } catch (final IOException | RuntimeException e) {
+            log.error("error getting locations", e);
+            return new SuggestLocationsResult(null, SuggestLocationsResult.Status.SERVICE_DOWN);
         }
     }
 
@@ -122,7 +122,7 @@ public class NominatimLocationSearchProvider extends AbstractLocationSearchProvi
         Point coords = null;
         try {
             coords = Point.fromDouble(Double.parseDouble(lat), Double.parseDouble(lon));
-        } catch (NumberFormatException nfe) {
+        } catch (final NumberFormatException nfe) {
             // ignore, coords not available
         }
         final String place = null;
@@ -134,10 +134,10 @@ public class NominatimLocationSearchProvider extends AbstractLocationSearchProvi
     private static String doRequest(
             final HttpClient httpClient, final String userInterfaceLanguage,
             final HttpUrl url, final String body, final String contentType) throws IOException {
-        String cType = contentType != null ? contentType : "application/json";
+        final String cType = contentType != null ? contentType : "application/json";
         httpClient.setHeader("Accept", cType);
-        if (body != null) httpClient.setHeader("Content-Type", cType);
-        httpClient.setHeader("Accept", cType);
+        if (body != null)
+            httpClient.setHeader("Content-Type", cType);
         if (userInterfaceLanguage != null)
             httpClient.setHeader("Accept-Language", userInterfaceLanguage);
         return httpClient.get(url, body, null).toString();
