@@ -40,14 +40,14 @@ sourceSets {
 }
 
 compileJava {
-    sourceCompatibility '11'
-    targetCompatibility '11'
+    sourceCompatibility '17'
+    targetCompatibility '17'
     options.encoding = 'UTF-8'
 }
 
 compileTestJava {
-    sourceCompatibility '11'
-    targetCompatibility '11'
+    sourceCompatibility '17'
+    targetCompatibility '17'
     options.encoding = 'UTF-8'
 }
 
