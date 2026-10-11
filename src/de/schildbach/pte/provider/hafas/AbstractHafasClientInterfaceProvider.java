@@ -65,6 +65,7 @@ import de.schildbach.pte.dto.Destination;
 import de.schildbach.pte.dto.Fare;
 import de.schildbach.pte.dto.JourneyRef;
 import de.schildbach.pte.dto.Line;
+import de.schildbach.pte.dto.LineDestination;
 import de.schildbach.pte.dto.Location;
 import de.schildbach.pte.dto.LocationType;
 import de.schildbach.pte.dto.NearbyLocationsResult;
@@ -819,7 +820,9 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
 
                         StationDepartures stationDepartures = findStationDepartures(result.stationDepartures, location);
                         if (stationDepartures == null) {
-                            stationDepartures = new StationDepartures(location, new ArrayList<Departure>(8), null);
+                            final List<LineDestination> stationLines = new LinkedList<>();
+                            final QueryDeparturesResult.Status status = jsonLocationLines(location, stationLines);
+                            stationDepartures = new StationDepartures(location, new ArrayList<Departure>(8), stationLines);
                             result.stationDepartures.add(stationDepartures);
                         }
 
@@ -2214,6 +2217,90 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
             label = addName != null ? addName : shortName != null ? shortName : name;
         }
         return new Line(id, operator, product, label, longName, lineStyle(operator, product, label, style));
+    }
+
+    protected QueryDeparturesResult.Status jsonLocationLines(final Location location, final List<LineDestination> lineInfos) throws IOException {
+        final String request = wrapJsonApiRequest("LocDetails",
+                "{\"getAttributes\":true" //
+                        + ",\"getIcons\":true" //
+                        + ",\"getProducts\":true" //
+                        + ",\"locL\":[" + jsonLocation(location) + "]" //
+                        + "}", false);
+
+        final HttpUrl url = requestUrl(request);
+        final CharSequence page = httpClient.get(url, request, "application/json");
+
+        try {
+            final JSONObject head = new JSONObject(page.toString());
+            final String headErr = head.optString("err", null);
+            if (headErr != null && !"OK".equals(headErr)) {
+                if ("HAMM".equals(headErr) // ??? (sporadically found on OEBB)
+                        || "HAMM_LOAD".equals(headErr) // ??? (sporadically found on DSB)
+                ) {
+                    return QueryDeparturesResult.Status.SERVICE_DOWN;
+                }
+                final String headErrTxt = head.optString("errTxt");
+                throw new RuntimeException(headErr + " " + headErrTxt);
+            }
+
+            final JSONArray svcResList = head.getJSONArray("svcResL");
+            checkState(svcResList.length() == 2);
+            final ResultHeader header = parseServerInfo(svcResList.getJSONObject(0), head.getString("ver"));
+
+            final JSONObject svcRes = svcResList.optJSONObject(1);
+            checkState("LocDetails".equals(svcRes.getString("meth")));
+            final String err = svcRes.getString("err");
+            if (!"OK".equals(err)) {
+                final String errTxt = svcRes.optString("errTxt");
+                final String msg = "err=" + err + ", errTxt=\"" + errTxt + "\"";
+                log.debug("Hafas error: {}", msg);
+                final String plainErr = getPlainErr(err);
+                if ("LOCATION".equals(plainErr) && "HCI Service: location missing or invalid".equals(errTxt))
+                    return QueryDeparturesResult.Status.INVALID_STATION;
+                if ("FAIL".equals(plainErr))
+                    return QueryDeparturesResult.Status.SERVICE_DOWN;
+                if ("PROBLEMS".equals(plainErr) && "HCI Service: problems during service execution".equals(errTxt))
+                    return QueryDeparturesResult.Status.SERVICE_DOWN;
+                if ("CGI_READ_FAILED".equals(plainErr))
+                    return QueryDeparturesResult.Status.SERVICE_DOWN;
+                if ("CGI_NO_SERVER".equals(plainErr))
+                    return QueryDeparturesResult.Status.SERVICE_DOWN;
+                if ("H_UNKNOWN".equals(plainErr))
+                    return QueryDeparturesResult.Status.SERVICE_DOWN;
+                throw new RuntimeException(msg);
+            }
+            final JSONObject res = svcRes.getJSONObject("res");
+
+            final JSONObject common = res.getJSONObject("common");
+            final List<Style> styles = parseIcoList(common.getJSONArray("icoL"));
+            final List<Line> lines = parseProdList(common.optJSONArray("prodL"), null, styles);
+//            final JSONArray commonLocList = common.getJSONArray("locL");
+
+            final Set<Integer> prodRefs = new HashSet<>();
+            final JSONArray locList = res.optJSONArray("locL");
+            if (locList != null) {
+                for (int iLoc = 0; iLoc < locList.length(); iLoc++) {
+                    final JSONObject loc = locList.getJSONObject(iLoc);
+                    final JSONArray pRefList = loc.optJSONArray("pRefL");
+                    if (pRefList != null) {
+                        for (int iPRef = 0; iPRef < pRefList.length(); iPRef++) {
+                            final int pRef = pRefList.getInt(iPRef);
+                            prodRefs.add(pRef);
+                        }
+                    }
+                }
+            }
+            final Integer[] pRefs = prodRefs.toArray(new Integer[0]);
+            Arrays.sort(pRefs);
+            for (final Integer pRef : pRefs) {
+                final Line line = lines.get(pRef);
+                lineInfos.add(new LineDestination(line, null));
+            }
+
+            return QueryDeparturesResult.Status.OK;
+        } catch (final JSONException x) {
+            throw new ParserException("cannot parse json: '" + page + "' on " + url, x);
+        }
     }
 
     private static String getPlainErr(final String err) {
