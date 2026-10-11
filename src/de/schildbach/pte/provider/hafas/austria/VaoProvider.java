@@ -17,7 +17,6 @@
 
 package de.schildbach.pte.provider.hafas.austria;
 
-import java.io.Serial;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -97,17 +96,7 @@ public class VaoProvider extends AbstractHafasClientInterfaceProvider {
 // the following contain spaces and must be listed here
     };
 
-    private static final Set<String> OPERATORS_WITH_ARBITRARY_DIRECTIONS = new HashSet<>() {
-        @Serial
-        private static final long serialVersionUID = -8190812617668364575L;
-
-        {
-            add("Rheintal Busverkehr GmbH");
-            add("Postbus Wolfurt");
-            add("Wiener Linien GmbH & Co KG");
-            add("Graz Linien");
-        }
-    };
+    private static final Set<String> OPERATORS_WITH_ARBITRARY_DIRECTIONS = new HashSet<>();
 
     @Override
     protected boolean isStationBoardDestinationCommonlyDirection() {
@@ -164,5 +153,10 @@ public class VaoProvider extends AbstractHafasClientInterfaceProvider {
         STYLES.put("Salzburg AG|B10", new Style(Style.parseColor("#f8baa2"), Style.BLACK));
         STYLES.put("Salzburg AG|B12", new Style(Style.parseColor("#b9dfde"), Style.WHITE));
         STYLES.put("Salzburg AG|B14", new Style(Style.parseColor("#cfe09a"), Style.WHITE));
+
+        OPERATORS_WITH_ARBITRARY_DIRECTIONS.add("Rheintal Busverkehr GmbH");
+        OPERATORS_WITH_ARBITRARY_DIRECTIONS.add("Postbus Wolfurt");
+        OPERATORS_WITH_ARBITRARY_DIRECTIONS.add("Wiener Linien GmbH & Co KG");
+        OPERATORS_WITH_ARBITRARY_DIRECTIONS.add("Graz Linien");
     }
 }

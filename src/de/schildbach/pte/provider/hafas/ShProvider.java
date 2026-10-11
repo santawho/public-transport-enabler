@@ -17,7 +17,6 @@
 
 package de.schildbach.pte.provider.hafas;
 
-import java.io.Serial;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -70,14 +69,7 @@ public class ShProvider extends AbstractHafasClientInterfaceProvider {
 // the following contain spaces and must be listed here
     };
 
-    private static final Set<String> OPERATORS_WITH_ARBITRARY_DIRECTIONS = new HashSet<>() {
-        @Serial
-        private static final long serialVersionUID = -8190812617668364575L;
-
-        {
-//            add("...");
-        }
-    };
+    private static final Set<String> OPERATORS_WITH_ARBITRARY_DIRECTIONS = new HashSet<>();
 
     @Override
     protected boolean isStationBoardDestinationCommonlyDirection() {

@@ -17,7 +17,6 @@
 
 package de.schildbach.pte.provider.hafas;
 
-import java.io.Serial;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -112,14 +111,7 @@ public class RmvProvider extends AbstractHafasClientInterfaceProvider {
 //            "Fulda"
     };
 
-    private static final Set<String> OPERATORS_WITH_ARBITRARY_DIRECTIONS = new HashSet<>() {
-        @Serial
-        private static final long serialVersionUID = -8190812617668364575L;
-
-        {
-            add("RhönEnergie Bus GmbH");
-        }
-    };
+    private static final Set<String> OPERATORS_WITH_ARBITRARY_DIRECTIONS = new HashSet<>();
 
     @Override
     protected boolean isStationBoardDestinationCommonlyDirection() {
@@ -922,5 +914,7 @@ public class RmvProvider extends AbstractHafasClientInterfaceProvider {
         STYLES.put("RhönEnergie Bus GmbH|B15", new Style(RMV_SHAPE, Style.rgb(0, 128, 62), Style.WHITE));
         STYLES.put("RhönEnergie Bus GmbH|B16", new Style(RMV_SHAPE, Style.rgb(236, 97, 159), Style.WHITE));
         STYLES.put("RhönEnergie Bus GmbH|AST12", new Style(RMV_SHAPE, Style.rgb(0, 150, 65), Style.WHITE));
+
+        OPERATORS_WITH_ARBITRARY_DIRECTIONS.add("RhönEnergie Bus GmbH");
     }
 }

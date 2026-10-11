@@ -197,8 +197,37 @@ public abstract class AbstractOpenJourneyPlannerProvider extends AbstractNetwork
 
     private static final DateFormat ISO_DATE_TIME_UTC_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
 
+    private static final Map<String, Product> PTMODE_MAP = new LinkedHashMap<>();
+
+    private static final Map<String, String> SUBMODE_MAP = new LinkedHashMap<>();
+
     static {
         ISO_DATE_TIME_UTC_FORMAT.setTimeZone(TimeZone.getTimeZone("UTC"));
+
+        PTMODE_MAP.put("rail", Product.HIGH_SPEED_TRAIN);
+        PTMODE_MAP.put("rail/highSpeedRail", Product.HIGH_SPEED_TRAIN);
+        PTMODE_MAP.put("rail/local", Product.REGIONAL_TRAIN);
+        PTMODE_MAP.put("rail/regionalRail", Product.REGIONAL_TRAIN);
+        PTMODE_MAP.put("rail/suburbanRailway", Product.SUBURBAN_TRAIN);
+        PTMODE_MAP.put("urbanRail", Product.SUBURBAN_TRAIN);
+        PTMODE_MAP.put("metro", Product.SUBWAY);
+        PTMODE_MAP.put("subway", Product.SUBWAY);
+        PTMODE_MAP.put("tram", Product.TRAM);
+        PTMODE_MAP.put("coach", Product.COACH);
+        PTMODE_MAP.put("bus", Product.BUS);
+        PTMODE_MAP.put("bus/demandAndResponseBus", Product.ON_DEMAND);
+        PTMODE_MAP.put("water", Product.FERRY);
+        PTMODE_MAP.put("ferry", Product.FERRY);
+        PTMODE_MAP.put("telecabin", Product.CABLECAR);
+        PTMODE_MAP.put("gondola", Product.CABLECAR);
+        PTMODE_MAP.put("cableCar", Product.CABLECAR);
+        PTMODE_MAP.put("funicular", Product.CABLECAR);
+        PTMODE_MAP.put("replacementRailService", Product.REPLACEMENT_SERVICE);
+        PTMODE_MAP.put("unknown", Product.UNKNOWN);
+
+        SUBMODE_MAP.put("rail", "RailSubmode");
+        SUBMODE_MAP.put("bus", "BusSubmode");
+        SUBMODE_MAP.put("coach", "CoachSubmode"); // value may be "internationalCoach"
     }
 
     public static String isoTimestamp(final Date date) {
@@ -534,44 +563,6 @@ public abstract class AbstractOpenJourneyPlannerProvider extends AbstractNetwork
             LocationType.ADDRESS,
             LocationType.POI);
 
-    private static final Map<String, Product> PTMODE_MAP = new LinkedHashMap<>() {
-        @Serial
-        private static final long serialVersionUID = 6581845892244269924L;
-
-        {
-            put("rail", Product.HIGH_SPEED_TRAIN);
-            put("rail/highSpeedRail", Product.HIGH_SPEED_TRAIN);
-            put("rail/local", Product.REGIONAL_TRAIN);
-            put("rail/regionalRail", Product.REGIONAL_TRAIN);
-            put("rail/suburbanRailway", Product.SUBURBAN_TRAIN);
-            put("urbanRail", Product.SUBURBAN_TRAIN);
-            put("metro", Product.SUBWAY);
-            put("subway", Product.SUBWAY);
-            put("tram", Product.TRAM);
-            put("coach", Product.COACH);
-            put("bus", Product.BUS);
-            put("bus/demandAndResponseBus", Product.ON_DEMAND);
-            put("water", Product.FERRY);
-            put("ferry", Product.FERRY);
-            put("telecabin", Product.CABLECAR);
-            put("gondola", Product.CABLECAR);
-            put("cableCar", Product.CABLECAR);
-            put("funicular", Product.CABLECAR);
-            put("replacementRailService", Product.REPLACEMENT_SERVICE);
-            put("unknown", Product.UNKNOWN);
-        }
-    };
-
-    private static final Map<String, String> SUBMODE_MAP = new LinkedHashMap<>() {
-        @Serial
-        private static final long serialVersionUID = 6581845892244269924L;
-
-        {
-            put("rail", "RailSubmode");
-            put("bus", "BusSubmode");
-            put("coach", "CoachSubmode"); // value may be "internationalCoach"
-        }
-    };
 
     private static Product productForPtMode(final OJPResponse response, final Element mode) {
         final String ptMode = response.getTextElement(mode, "PtMode");
