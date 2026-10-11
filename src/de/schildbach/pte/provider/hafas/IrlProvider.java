@@ -60,6 +60,7 @@ public class IrlProvider extends AbstractHafasClientInterfaceProvider {
         setApiVersion("1.22");
         setApiClient(apiClient);
         setApiAuthorization(apiAuthorization);
+        setTimeZone("Europe/Dublin");
     }
 
     @Override
