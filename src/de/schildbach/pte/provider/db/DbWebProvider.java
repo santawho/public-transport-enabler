@@ -85,6 +85,7 @@ import de.schildbach.pte.exception.ParserException;
 import de.schildbach.pte.util.GeoUtils;
 import de.schildbach.pte.util.HttpClient;
 import de.schildbach.pte.util.ParserUtils;
+import de.schildbach.pte.util.UicUtils;
 import okhttp3.HttpUrl;
 
 /**
@@ -1517,6 +1518,7 @@ public abstract class DbWebProvider extends DbProvider {
                         vehicleData.wagonLabel = wagonIdentificationNumber <= 0 ? null : Integer.toString(wagonIdentificationNumber);
 
                         vehicleData.vehicleIdentification = vehicle.optString("vehicleID", null);
+                        vehicleData.vehicleTypeName = UicUtils.uicToTypeName(vehicleData.vehicleIdentification);
 
                         final JSONObject platformPosition = vehicle.optJSONObject("platformPosition");
                         if (platformPosition != null) {

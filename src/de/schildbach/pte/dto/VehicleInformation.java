@@ -63,6 +63,7 @@ public final class VehicleInformation implements Serializable {
         public int indexInGroup;
         public String wagonLabel;
         public String vehicleIdentification;
+        public String vehicleTypeName;
 
         public PlatformSegment platformSegment;
         public String platformSectorName;
