@@ -677,6 +677,28 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                 xProdX = "dProdX";
             }
 
+            final JSONArray locRefL = res.optJSONArray("locRefL");
+            if (locRefL != null) {
+                for (int locRefIndex = 0; locRefIndex < locRefL.length(); ++locRefIndex) {
+                    final int locX = locRefL.getInt(locRefIndex);
+                    final JSONArray locPrefL = ((JSONObject) locList.get(locX)).optJSONArray("pRefL");
+                    if (locPrefL != null) {
+                        final HashMap<Integer, MetaLocation> metaLocsByIndex = equivsMode == EquivalentStationsMode.KEEP_DISTINCT ? null : new HashMap<>();
+                        final boolean alwaysUseMeta = equivsMode == EquivalentStationsMode.USE_META;
+                        final LocationAndName locationAndName = parseLoc(locList, locX, metaLocsByIndex, alwaysUseMeta, crdSysList, locList);
+                        final Location location = loc(locationAndName);
+                        checkState(location != null && location.type == LocationType.STATION);
+                        final List<LineDestination> stationLines = new LinkedList<>();
+                        for (int pRefIndex = 0; pRefIndex < locPrefL.length(); ++pRefIndex) {
+                            final int pRef = locPrefL.getInt(pRefIndex);
+                            stationLines.add(new LineDestination(lines.get(pRef), null));
+                        }
+                        final StationDepartures stationDepartures = new StationDepartures(location, new ArrayList<Departure>(8), stationLines);
+                        result.stationDepartures.add(stationDepartures);
+                    }
+                }
+            }
+
             final JSONArray jnyList = res.optJSONArray("jnyL");
             if (jnyList != null) {
                 for (int iJny = 0; iJny < jnyList.length(); iJny++) {
@@ -702,11 +724,26 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
 
                     final HashMap<Integer, MetaLocation> metaLocsByIndex = equivsMode == EquivalentStationsMode.KEEP_DISTINCT ? null : new HashMap<>();
                     final boolean alwaysUseMeta = equivsMode == EquivalentStationsMode.USE_META;
-                    final LocationAndName locationAndName = parseLoc(locList, stbStop.getInt("locX"), metaLocsByIndex, alwaysUseMeta, crdSysList, locList);
+                    final int locX = stbStop.getInt("locX");
+                    final LocationAndName locationAndName = parseLoc(locList, locX, metaLocsByIndex, alwaysUseMeta, crdSysList, locList);
                     final Location location = loc(locationAndName);
                     checkState(location != null && location.type == LocationType.STATION);
                     if (equivsMode == EquivalentStationsMode.KEEP_DISTINCT && !location.id.equals(stationId))
                         continue;
+
+                    StationDepartures stationDepartures = findStationDepartures(result.stationDepartures, location);
+                    if (stationDepartures == null) {
+                        final JSONArray locPrefL = ((JSONObject) locList.get(locX)).optJSONArray("pRefL");
+                        if (locPrefL != null) {
+                            final List<LineDestination> stationLines = new LinkedList<>();
+                            for (int pRefIndex = 0; pRefIndex < locPrefL.length(); ++pRefIndex) {
+                                final int pRef = locPrefL.getInt(pRefIndex);
+                                stationLines.add(new LineDestination(lines.get(pRef), null));
+                            }
+                            stationDepartures = new StationDepartures(location, new ArrayList<Departure>(8), stationLines);
+                            result.stationDepartures.add(stationDepartures);
+                        }
+                    }
 
                     final String jnyDirTxt = jny.optString("dirTxt", null);
                     final Location splitDirectionLocation;
@@ -818,7 +855,6 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                                 message,
                                 journeyId == null ? null : new HafasJourneyRef(journeyId));
 
-                        StationDepartures stationDepartures = findStationDepartures(result.stationDepartures, location);
                         if (stationDepartures == null) {
                             final List<LineDestination> stationLines = new LinkedList<>();
                             final QueryDeparturesResult.Status status = jsonLocationLines(location, stationLines);
