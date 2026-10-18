@@ -113,7 +113,8 @@ public abstract class AbstractNetworkProvider extends AbstractLocationSearchProv
             final boolean arrivals,
             final int maxEvents,
             final EquivalentStationsMode equivsMode,
-            final Set<Product> products) throws IOException {
+            final Set<Product> products,
+            final boolean includeLinesAtStation) throws IOException {
         assertStationBoardMode(arrivals);
         return queryDepartures(stationId, time, maxEvents, equivsMode, products);
     }
@@ -130,7 +131,7 @@ public abstract class AbstractNetworkProvider extends AbstractLocationSearchProv
             final int maxDepartures,
             final EquivalentStationsMode equivsMode,
             final Set<Product> products) throws IOException {
-        return queryStationBoard(stationId, time, false, maxDepartures, equivsMode, products);
+        return queryStationBoard(stationId, time, false, maxDepartures, equivsMode, products, false);
     }
 
     @Deprecated

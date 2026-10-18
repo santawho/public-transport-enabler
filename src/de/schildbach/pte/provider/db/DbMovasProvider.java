@@ -1025,7 +1025,8 @@ public abstract class DbMovasProvider extends DbProvider {
             final boolean arrivals,
             int maxDepartures,
             final EquivalentStationsMode equivsMode,
-            final Set<Product> products) throws IOException {
+            final Set<Product> products,
+            final boolean includeLinesAtStation) throws IOException {
         assertStationBoardMode(arrivals);
         // TODO only 1 hour of results returned, find secret parameter?
         if (maxDepartures == 0)

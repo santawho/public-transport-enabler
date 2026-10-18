@@ -1525,7 +1525,8 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
             final boolean arrivals,
             final int maxEvents,
             final EquivalentStationsMode equivsMode,
-            final Set<Product> products) throws IOException {
+            final Set<Product> products,
+            final boolean includeLinesAtStation) throws IOException {
         assertStationBoardMode(arrivals);
         requireNonNull(stationId);
 

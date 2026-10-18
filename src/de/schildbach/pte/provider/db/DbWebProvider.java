@@ -1023,7 +1023,8 @@ public abstract class DbWebProvider extends DbProvider {
             final boolean arrivals,
             int maxDepartures,
             final EquivalentStationsMode equivsMode,
-            final Set<Product> products)
+            final Set<Product> products,
+            final boolean includeLinesAtStation)
             throws IOException {
         assertStationBoardMode(arrivals);
         // TODO only 1 hour of results returned, find secret parameter?

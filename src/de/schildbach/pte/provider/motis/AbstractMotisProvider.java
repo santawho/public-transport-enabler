@@ -571,7 +571,8 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
             final boolean arrivals,
             final int maxDepartures,
             final EquivalentStationsMode equivsMode,
-            @Nullable final Set<Product> products) throws IOException {
+            @Nullable final Set<Product> products,
+            final boolean includeLinesAtStation) throws IOException {
         assertStationBoardMode(arrivals);
         final HttpUrl.Builder endpointBuilder = apiBase.newBuilder()
                 .addPathSegment("api")
@@ -662,6 +663,7 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
                             null,
                             null,
                             new MotisJourneyRef(tripId)));
+                    // TODO: this adds lines encountered within the station board itself. Not what this is meant for.
                     if (!encounteredLines.contains(line.id)) {
                         assert sd.lines != null;
                         sd.lines.add(new LineDestination(line, destination));

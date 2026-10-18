@@ -329,9 +329,12 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
             final boolean arrivals,
             final int maxEvents,
             final EquivalentStationsMode equivsMode,
-            final Set<Product> products) throws IOException {
+            final Set<Product> products,
+            final boolean includeLinesAtStation) throws IOException {
         assertStationBoardMode(arrivals);
-        return jsonStationBoard(stationId, time, arrivals, maxEvents, equivsMode, products);
+        return jsonStationBoard(stationId, time, arrivals, maxEvents, equivsMode, products,
+                false // includeLinesAtStation -- force off, because it would cause too many requests
+        );
     }
 
     @Override
@@ -562,7 +565,8 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
             final boolean arrivals,
             int maxEvents,
             final EquivalentStationsMode equivsMode,
-            final Set<Product> products) throws IOException {
+            final Set<Product> products,
+            final boolean includeLinesAtStation) throws IOException {
         final boolean canStbFltrEquiv = apiLevel <= 18;
         if (maxEvents == 0)
             maxEvents = DEFAULT_MAX_BOARD_EVENTS;
@@ -857,7 +861,8 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
 
                         if (stationDepartures == null) {
                             final List<LineDestination> stationLines = new LinkedList<>();
-                            final QueryDeparturesResult.Status status = jsonLocationLines(location, stationLines);
+                            if (includeLinesAtStation)
+                                jsonLocationLines(location, stationLines);
                             stationDepartures = new StationDepartures(location, new ArrayList<Departure>(8), stationLines);
                             result.stationDepartures.add(stationDepartures);
                         }

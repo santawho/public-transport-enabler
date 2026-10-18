@@ -846,7 +846,8 @@ public abstract class AbstractOpenJourneyPlannerProvider extends AbstractNetwork
             final boolean arrivals,
             final int maxDepartures,
             final EquivalentStationsMode equivsMode,
-            final Set<Product> products) throws IOException {
+            final Set<Product> products,
+            final boolean includeLinesAtStation) throws IOException {
         assertStationBoardMode(arrivals);
         try {
             final OJPRequest document = new OJPRequest();

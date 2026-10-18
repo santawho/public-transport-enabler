@@ -165,7 +165,8 @@ public interface NetworkProvider extends Provider, LocationSearchProvider {
             boolean arrivals,
             int maxEvents,
             EquivalentStationsMode equivsMode,
-            Set<Product> products) throws IOException;
+            Set<Product> products,
+            boolean includeLinesAtStation) throws IOException;
 
     /**
      * Get departures at a given station, probably live
