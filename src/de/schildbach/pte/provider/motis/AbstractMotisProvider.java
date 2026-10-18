@@ -95,6 +95,7 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
     protected static final Set<Capability> CAPABILITIES = new HashSet<>();
 
     private static final Pattern STOP_CLEANUP_PATTERN = Pattern.compile("(^\\s*[\\-_,]?\\s*)|(\\s*[\\-_,]?\\s*$)");
+    private static final String SERVER_PRODUCT = "MOTIS";
 
     static {
         SUPPORTED_NEARBY_LOCATIONS = new HashMap<>();
@@ -545,7 +546,7 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
         }
 
         final List<Location> locations = new ArrayList<>();
-        final ResultHeader header = new ResultHeader(network, "MOTIS");
+        final ResultHeader header = new ResultHeader(network, SERVER_PRODUCT);
         for (final HttpUrl endpoint : endpoints) {
             final CharSequence apiResult = httpClient.get(endpoint);
             try {
@@ -597,7 +598,7 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
 
         final HttpUrl endpoint = endpointBuilder.build();
 
-        final QueryDeparturesResult result = new QueryDeparturesResult(new ResultHeader(network, "MOTIS"));
+        final QueryDeparturesResult result = new QueryDeparturesResult(new ResultHeader(network, SERVER_PRODUCT));
         final Map<String, StationDepartures> stationMap = new HashMap<>();
         final Set<String> encounteredLines = new HashSet<>();
 
@@ -607,7 +608,7 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
                 final JSONObject data = new JSONObject(apiResult.toString());
 
                 if (data.has("error")) {
-                    return new QueryDeparturesResult(new ResultHeader(network, "MOTIS"), QueryDeparturesResult.Status.INVALID_STATION);
+                    return new QueryDeparturesResult(new ResultHeader(network, SERVER_PRODUCT), QueryDeparturesResult.Status.INVALID_STATION);
                 }
 
                 final String tripX;
@@ -671,7 +672,7 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
                 throw new ParserException("cannot parse json: '" + apiResult + "' on " + endpoint, x);
             }
         } catch (final NotFoundException x) {
-            return new QueryDeparturesResult(new ResultHeader(network, "MOTIS"), QueryDeparturesResult.Status.INVALID_STATION);
+            return new QueryDeparturesResult(new ResultHeader(network, SERVER_PRODUCT), QueryDeparturesResult.Status.INVALID_STATION);
         }
 
         return result;
@@ -705,7 +706,7 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
         try {
             final Stream<Location> locations = parseMotisLocations(apiResult.toString());
             return new SuggestLocationsResult(
-                    new ResultHeader(network, "MOTIS"),
+                    new ResultHeader(network, SERVER_PRODUCT),
                     locations
                             .filter(l -> types == null || types.contains(l.type))
                             .map(SuggestedLocation::new)
@@ -747,12 +748,12 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
         } else if (from.coord != null) {
             endpointBuilder.addQueryParameter("fromPlace", String.format(Locale.US, "%f,%f", from.coord.getLatAsDouble(), from.coord.getLonAsDouble()));
         } else {
-            throw new IllegalArgumentException("from needs to be stop or have coordinates: " + to);
+            return new QueryTripsResult(new ResultHeader(network, SERVER_PRODUCT), QueryTripsResult.Status.UNKNOWN_FROM);
         }
 
         if (via != null) {
             if (via.type != LocationType.STATION) {
-                throw new IllegalArgumentException("via only a stop: " + via);
+                return new QueryTripsResult(new ResultHeader(network, SERVER_PRODUCT), QueryTripsResult.Status.UNKNOWN_VIA);
             }
             endpointBuilder.addQueryParameter("via", via.id);
         }
@@ -762,7 +763,7 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
         } else if (to.coord != null) {
             endpointBuilder.addQueryParameter("toPlace", String.format(Locale.US, "%f,%f", to.coord.getLatAsDouble(), to.coord.getLonAsDouble()));
         } else {
-            throw new IllegalArgumentException("to needs to be stop or have coordinates: " + to);
+            return new QueryTripsResult(new ResultHeader(network, SERVER_PRODUCT), QueryTripsResult.Status.UNKNOWN_TO);
         }
 
         endpointBuilder.addQueryParameter("time", DateTimeFormatter.ISO_DATE_TIME.format(date.toInstant().atZone(ZoneId.of("UTC"))));
@@ -810,7 +811,7 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
         }
         final String pageCursor = later ? ((MotisTripRef) context).nextPageCursor : ((MotisTripRef) context).previousPageCursor;
         if (pageCursor == null) {
-            return new QueryTripsResult(new ResultHeader(network, "MOTIS"), QueryTripsResult.Status.NO_TRIPS);
+            return new QueryTripsResult(new ResultHeader(network, SERVER_PRODUCT), QueryTripsResult.Status.NO_TRIPS);
         }
 
         final HttpUrl.Builder b = ((MotisTripRef) context).getEndpoint().newBuilder();
@@ -855,12 +856,12 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
 
             if (trips.isEmpty()) {
                 return new QueryTripsResult(
-                        new ResultHeader(network, "MOTIS"),
+                        new ResultHeader(network, SERVER_PRODUCT),
                         QueryTripsResult.Status.NO_TRIPS);
             }
 
             return new QueryTripsResult(
-                    new ResultHeader(network, "MOTIS"),
+                    new ResultHeader(network, SERVER_PRODUCT),
                     endpoint.toString(),
                     from,
                     via,
@@ -895,7 +896,7 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
             final Trip trip = parseMotisItinerary(data, null);
 
             return new QueryJourneyResult(
-                    new ResultHeader(network, "MOTIS"),
+                    new ResultHeader(network, SERVER_PRODUCT),
                     endpoint.toString(),
                     journeyRef,
                     (Trip.Public) trip.legs.get(0)
