@@ -20,6 +20,12 @@ package de.schildbach.pte.util;
 import java.util.HashMap;
 import java.util.Map;
 
+/*
+ * inspired by
+ * - https://codeberg.org/autinerd/baureihen-mapping/src/branch/main/baureihen.csv
+ * - https://de.wikipedia.org/wiki/Liste_der_Baureihen_im_deutschen_Fahrzeugeinstellungsregister
+ */
+
 public class UicUtils {
     public interface UicMapper {
         String uicToTypeName(final String uic, final String country, final String typeClass, final String vehicleNbr);
@@ -144,21 +150,25 @@ public class UicUtils {
 
         static {
             types.put("91", new VehiclePrefixMapper("E-Lok") {{
+                add("0445", "Dosto");
                 add("0446", "Dosto");
             }});
             types.put("92", new FixedVehicleType("D-Lok"));
             types.put("93", new VehiclePrefixMapper() {{
                 add("5401", "ICE 1");
                 add("5402", "ICE 2");
+                add("5808", "ICE 2");
                 add("5403", "ICE 3");
                 add("5406", "ICE 3M");
                 add("5407", "ICE 3");
                 add("5408", "ICE 3neo");
                 add("5411", "ICE T-7");
-                add("5412", "ICE 4");
                 add("5415", "ICE T-5");
-                add("681", "ICE 4-7");
-                add("781", "ICE 4-7");
+                // add("5412", "ICE 4");
+                add("0812", "ICE 4");
+                add("5812", "ICE 4");
+                add("6812", "ICE 4");
+                add("7812", "ICE 4");
             }});
             types.put("94", new VehiclePrefixMapper() {{
                 add("0420", "BR 420");
@@ -242,6 +252,7 @@ public class UicUtils {
                 add("0670", "BR 670");
             }});
             types.put("50", new VehiclePrefixMapper() {{
+                add("16", "Dosto");
                 add("26", "Dosto");
                 add("36", "Dosto");
                 add("86", "Dosto");
