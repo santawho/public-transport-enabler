@@ -37,6 +37,7 @@ import de.schildbach.pte.Standard;
 import de.schildbach.pte.dto.JourneyRef;
 import de.schildbach.pte.dto.Line;
 import de.schildbach.pte.dto.Location;
+import de.schildbach.pte.dto.LocationType;
 import de.schildbach.pte.dto.Position;
 import de.schildbach.pte.dto.Product;
 import de.schildbach.pte.dto.QueryDeparturesResult;
@@ -108,7 +109,7 @@ public abstract class AbstractNetworkProvider extends AbstractLocationSearchProv
 
     @Override
     public QueryDeparturesResult queryStationBoard(
-            final String stationId,
+            final Location station,
             @Nullable final Date time,
             final boolean arrivals,
             final int maxEvents,
@@ -116,7 +117,7 @@ public abstract class AbstractNetworkProvider extends AbstractLocationSearchProv
             final Set<Product> products,
             final boolean includeLinesAtStation) throws IOException {
         assertStationBoardMode(arrivals);
-        return queryDepartures(stationId, time, maxEvents, equivsMode, products);
+        return queryDepartures(station.id, time, maxEvents, equivsMode, products);
     }
 
     protected void assertStationBoardMode(final boolean arrivals) {
@@ -131,7 +132,9 @@ public abstract class AbstractNetworkProvider extends AbstractLocationSearchProv
             final int maxDepartures,
             final EquivalentStationsMode equivsMode,
             final Set<Product> products) throws IOException {
-        return queryStationBoard(stationId, time, false, maxDepartures, equivsMode, products, false);
+        return queryStationBoard(
+                new Location(LocationType.STATION, stationId),
+                time, false, maxDepartures, equivsMode, products, false);
     }
 
     @Deprecated

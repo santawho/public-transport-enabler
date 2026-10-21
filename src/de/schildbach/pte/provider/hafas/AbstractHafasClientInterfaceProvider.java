@@ -324,7 +324,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
 
     @Override
     public QueryDeparturesResult queryStationBoard(
-            final String stationId,
+            final Location station,
             final @Nullable Date time,
             final boolean arrivals,
             final int maxEvents,
@@ -332,7 +332,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
             final Set<Product> products,
             final boolean includeLinesAtStation) throws IOException {
         assertStationBoardMode(arrivals);
-        return jsonStationBoard(stationId, time, arrivals, maxEvents, equivsMode, products,
+        return jsonStationBoard(station.id, time, arrivals, maxEvents, equivsMode, products,
                 false // includeLinesAtStation -- force off, because it would cause too many requests
         );
     }

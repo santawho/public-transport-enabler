@@ -74,7 +74,7 @@ public class VvmProvider extends AbstractEfaProvider {
 
     @Override
     public QueryDeparturesResult queryStationBoard(
-            final String stationId,
+            final Location station,
             final @Nullable Date time,
             final boolean arrivals,
             final int maxEvents,
@@ -82,9 +82,9 @@ public class VvmProvider extends AbstractEfaProvider {
             final Set<Product> products,
             final boolean includeLinesAtStation) throws IOException {
         assertStationBoardMode(arrivals);
-        requireNonNull(stationId);
+        requireNonNull(station.id);
 
-        return queryDeparturesMobile(stationId, time, maxEvents, equivsMode);
+        return queryDeparturesMobile(station.id, time, maxEvents, equivsMode);
     }
 
     @Override

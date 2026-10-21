@@ -1520,7 +1520,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
 
     @Override
     public QueryDeparturesResult queryStationBoard(
-            final String stationId,
+            final Location station,
             final @Nullable Date time,
             final boolean arrivals,
             final int maxEvents,
@@ -1528,9 +1528,9 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
             final Set<Product> products,
             final boolean includeLinesAtStation) throws IOException {
         assertStationBoardMode(arrivals);
-        requireNonNull(stationId);
+        requireNonNull(station.id);
 
-        return xsltDepartureMonitorRequest(stationId, time, maxEvents, equivsMode != EquivalentStationsMode.KEEP_DISTINCT);
+        return xsltDepartureMonitorRequest(station.id, time, maxEvents, equivsMode != EquivalentStationsMode.KEEP_DISTINCT);
     }
 
     protected void appendDepartureMonitorRequestParameters(final HttpUrl.Builder url, final String stationId,

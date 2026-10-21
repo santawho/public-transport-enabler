@@ -160,7 +160,7 @@ public interface NetworkProvider extends Provider, LocationSearchProvider {
      * @throws IOException
      */
     QueryDeparturesResult queryStationBoard(
-            String stationId,
+            Location station,
             @Nullable Date time,
             boolean arrivals,
             int maxEvents,

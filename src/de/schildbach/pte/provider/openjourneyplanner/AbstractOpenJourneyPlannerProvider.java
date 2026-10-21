@@ -841,7 +841,7 @@ public abstract class AbstractOpenJourneyPlannerProvider extends AbstractNetwork
 
     @Override
     public QueryDeparturesResult queryStationBoard(
-            final String stationId,
+            final Location station,
             @Nullable final Date time,
             final boolean arrivals,
             final int maxDepartures,
@@ -849,6 +849,7 @@ public abstract class AbstractOpenJourneyPlannerProvider extends AbstractNetwork
             final Set<Product> products,
             final boolean includeLinesAtStation) throws IOException {
         assertStationBoardMode(arrivals);
+        final String stationId = station.id;
         try {
             final OJPRequest document = new OJPRequest();
             final Element request = document.createRequest("OJPStopEventRequest");

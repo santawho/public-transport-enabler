@@ -566,7 +566,7 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
 
     @Override
     public QueryDeparturesResult queryStationBoard(
-            final String stationId,
+            final Location station,
             @Nullable final Date time,
             final boolean arrivals,
             final int maxDepartures,
@@ -574,6 +574,7 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
             @Nullable final Set<Product> products,
             final boolean includeLinesAtStation) throws IOException {
         assertStationBoardMode(arrivals);
+        final String stationId = station.id;
         final HttpUrl.Builder endpointBuilder = apiBase.newBuilder()
                 .addPathSegment("api")
                 .addPathSegment("v5")

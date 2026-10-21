@@ -1020,7 +1020,7 @@ public abstract class DbMovasProvider extends DbProvider {
 
     @Override
     public QueryDeparturesResult queryStationBoard(
-            final String stationId,
+            final Location station,
             final @Nullable Date time,
             final boolean arrivals,
             int maxDepartures,
@@ -1034,6 +1034,7 @@ public abstract class DbMovasProvider extends DbProvider {
         final Calendar c = new GregorianCalendar(timeZone);
         c.setTime(time);
 
+        final String stationId = station.id;
         final String request = "{\"anfragezeit\": \"" + formatTime(c) + "\"," //
                 + "\"datum\": \"" + formatDate(c) + "\"," //
                 + "\"ursprungsBahnhofId\": \"" + formatLid(stationId) + "\"," //

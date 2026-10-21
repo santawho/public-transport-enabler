@@ -1018,7 +1018,7 @@ public abstract class DbWebProvider extends DbProvider {
 
     @Override
     public QueryDeparturesResult queryStationBoard(
-            final String stationId,
+            final Location station,
             @Nullable final Date time,
             final boolean arrivals,
             int maxDepartures,
@@ -1033,6 +1033,7 @@ public abstract class DbWebProvider extends DbProvider {
         final Calendar c = new GregorianCalendar(timeZone);
         c.setTime(time);
 
+        final String stationId = station.id;
         final HttpUrl.Builder builder =
                 (arrivals ? this.arrivalEndpoint : this.departureEndpoint).newBuilder()
                 .addQueryParameter("datum", formatDate(c).toString())
