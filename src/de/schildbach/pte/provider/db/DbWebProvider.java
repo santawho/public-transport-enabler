@@ -1067,7 +1067,7 @@ public abstract class DbWebProvider extends DbProvider {
                     continue;
                 }
                 final Location location = createLocation(LocationType.STATION, bahnhofsId, null, bahnhofsName, null, null);
-                StationDepartures stationDepartures = result.findStationDepartures(bahnhofsId);
+                StationDepartures stationDepartures = result.findStationDepartures(location);
                 if (stationDepartures == null) {
                     stationDepartures = new StationDepartures(location, new ArrayList<Departure>(8), null);
                     result.stationDepartures.add(stationDepartures);

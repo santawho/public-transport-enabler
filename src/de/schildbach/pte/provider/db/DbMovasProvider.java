@@ -1059,7 +1059,7 @@ public abstract class DbMovasProvider extends DbProvider {
                 if (equivsMode == EquivalentStationsMode.USE_META && !stationId.equals(location.id)) {
                     continue;
                 }
-                StationDepartures stationDepartures = result.findStationDepartures(location.id);
+                StationDepartures stationDepartures = result.findStationDepartures(location);
                 if (stationDepartures == null) {
                     stationDepartures = new StationDepartures(location, new ArrayList<Departure>(8), null);
                     result.stationDepartures.add(stationDepartures);

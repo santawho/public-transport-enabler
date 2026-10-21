@@ -49,13 +49,15 @@ public final class QueryDeparturesResult implements Serializable {
         this.status = requireNonNull(status);
     }
 
-    public StationDepartures findStationDepartures(final String stationId) {
-        for (final StationDepartures departures : stationDepartures) {
-            final Location location = departures.location;
-            if (location != null && stationId.equals(location.id))
-                return departures;
+    public StationDepartures findStationDepartures(final Location station) {
+        final String stationId = station.id;
+        if (stationId != null) {
+            for (final StationDepartures departures : stationDepartures) {
+                final Location location = departures.location;
+                if (location != null && stationId.equals(location.id))
+                    return departures;
+            }
         }
-
         return null;
     }
 

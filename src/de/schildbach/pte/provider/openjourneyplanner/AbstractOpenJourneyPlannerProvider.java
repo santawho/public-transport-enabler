@@ -884,7 +884,7 @@ public abstract class AbstractOpenJourneyPlannerProvider extends AbstractNetwork
 
                 final String stopPlaceRef = stopPlaceMap.getStopPlaceRefForStopPoint(stopPointRef);
                 final Location location = stopPlaceMap.getStopPlaceLocation(stopPlaceRef);
-                StationDepartures stationDepartures = departuresResult.findStationDepartures(stopPlaceRef);
+                StationDepartures stationDepartures = departuresResult.findStationDepartures(location);
                 if (stationDepartures == null) {
                     stationDepartures = new StationDepartures(location, new ArrayList<Departure>(8), null);
                     departuresResult.stationDepartures.add(stationDepartures);
