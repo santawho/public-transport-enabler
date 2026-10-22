@@ -51,6 +51,7 @@ import org.slf4j.LoggerFactory;
 import de.schildbach.pte.exception.BlockedException;
 import de.schildbach.pte.exception.InternalErrorException;
 import de.schildbach.pte.exception.NotFoundException;
+import de.schildbach.pte.exception.RateLimitException;
 import de.schildbach.pte.exception.SessionExpiredException;
 import de.schildbach.pte.exception.UnexpectedRedirectException;
 
@@ -87,10 +88,13 @@ public final class HttpClient {
     public interface UserAgentFactory {
         String getUserAgent(ApiProvider.UserAgentType forType);
     }
+
     private static UserAgentFactory userAgentFactory;
+
     public static void setUserAgentFactory(final UserAgentFactory userAgentFactory) {
         HttpClient.userAgentFactory = userAgentFactory;
     }
+
     public static String getUserAgent(final ApiProvider.UserAgentType forType) {
         if (forType == ApiProvider.UserAgentType.NONE)
             return null;
@@ -98,6 +102,12 @@ public final class HttpClient {
             return null;
         return userAgentFactory.getUserAgent(forType);
     }
+
+    public final static RateLimiter DEFAULT_RATE_LIMITER = RateLimiter.multi(
+            RateLimiter.delaying(1000, 5), // burst max 5 per seconds
+            RateLimiter.failing(60000, 50), // single rush of 50 per one minute
+            RateLimiter.failing(900000, 100) // continuos stream of 100 per 15 minutes
+    );
 
     @Nullable
     private String userAgent = null;
@@ -110,6 +120,8 @@ public final class HttpClient {
     @Nullable
     private Proxy proxy = null;
     @Nullable
+    private RateLimiter rateLimiter = DEFAULT_RATE_LIMITER;
+    @Nullable
     private ConnectionSpec connectionSpec = null;
     private boolean trustAllCertificates = false;
     private boolean useClientCertificate = false;
@@ -121,10 +133,13 @@ public final class HttpClient {
     private String defaultReferer = null;
     private String defaultOrigin = null;
 
+    private static final Set<Integer> RESPONSE_CODES_RATE_LIMIT =
+            Stream.of(429)
+                    .collect(Collectors.toSet());
     private static final Set<Integer> RESPONSE_CODES_BLOCKED =
             Stream.of(HttpURLConnection.HTTP_BAD_REQUEST, HttpURLConnection.HTTP_UNAUTHORIZED,
                             HttpURLConnection.HTTP_FORBIDDEN, HttpURLConnection.HTTP_NOT_ACCEPTABLE,
-                            HttpURLConnection.HTTP_UNAVAILABLE, 429)
+                            HttpURLConnection.HTTP_UNAVAILABLE)
                     .collect(Collectors.toSet());
     private static final Set<Integer> RESPONSE_CODES_NOT_FOUND =
             Stream.of(HttpURLConnection.HTTP_NOT_FOUND)
@@ -165,6 +180,10 @@ public final class HttpClient {
 
     public void setProxy(@Nullable final Proxy proxy) {
         this.proxy = proxy;
+    }
+
+    public void setRateLimiter(@Nullable final RateLimiter rateLimiter) {
+        this.rateLimiter = rateLimiter;
     }
 
     public void setConnectionSpec(final ConnectionSpec connectionSpec) {
@@ -441,6 +460,8 @@ public final class HttpClient {
         requireNonNull(callback);
         requireNonNull(url);
 
+        checkInternalRateLimit(url);
+
         final Request.Builder request = new Request.Builder();
         request.url(url);
         request.headers(Headers.of(headers));
@@ -494,6 +515,8 @@ public final class HttpClient {
 
                 callback.onSuccessful(bodyPeek, response.body());
                 return;
+            } else if (RESPONSE_CODES_RATE_LIMIT.contains(responseCode)) {
+                throw new RateLimitException(false, url, bodyPeek);
             } else if (RESPONSE_CODES_BLOCKED.contains(responseCode)) {
                 throw new BlockedException(url, bodyPeek);
             } else if (RESPONSE_CODES_NOT_FOUND.contains(responseCode)) {
@@ -507,6 +530,11 @@ public final class HttpClient {
                 throw new IOException(message + ": " + url);
             }
         }
+    }
+
+    private void checkInternalRateLimit(final HttpUrl url) throws RateLimitException {
+        if (rateLimiter != null)
+            rateLimiter.check(url);
     }
 
     private static final Pattern P_REDIRECT_HTTP_EQUIV = Pattern.compile(

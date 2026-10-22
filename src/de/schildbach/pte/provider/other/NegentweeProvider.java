@@ -752,8 +752,6 @@ public class NegentweeProvider extends AbstractNetworkProvider {
                 }
             } catch (InternalErrorException | NotFoundException | RuntimeException e) {
                 return new NearbyLocationsResult(this.resultHeader, NearbyLocationsResult.Status.INVALID_ID);
-            } catch (IOException e) {
-                return new NearbyLocationsResult(this.resultHeader, NearbyLocationsResult.Status.SERVICE_DOWN);
             }
 
             if (location == null || !location.hasCoord()) {
@@ -811,8 +809,6 @@ public class NegentweeProvider extends AbstractNetworkProvider {
             page = httpClient.get(url);
         } catch (InternalErrorException | NotFoundException e) {
             return new QueryDeparturesResult(this.resultHeader, QueryDeparturesResult.Status.INVALID_STATION);
-        } catch (Exception e) {
-            return new QueryDeparturesResult(this.resultHeader, QueryDeparturesResult.Status.SERVICE_DOWN);
         }
 
         QueryDeparturesResult queryDeparturesResult = new QueryDeparturesResult(this.resultHeader);

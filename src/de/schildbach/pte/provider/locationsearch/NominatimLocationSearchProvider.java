@@ -108,9 +108,6 @@ public class NominatimLocationSearchProvider extends AbstractLocationSearchProvi
             return new SuggestLocationsResult(null, locations);
         } catch (final JSONException x) {
             throw new ParserException("cannot parse json: '" + page + "' on " + builder, x);
-        } catch (final IOException | RuntimeException e) {
-            log.error("error getting locations", e);
-            return new SuggestLocationsResult(null, SuggestLocationsResult.Status.SERVICE_DOWN);
         }
     }
 

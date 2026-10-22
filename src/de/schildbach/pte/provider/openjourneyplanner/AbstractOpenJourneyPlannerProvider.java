@@ -745,16 +745,11 @@ public abstract class AbstractOpenJourneyPlannerProvider extends AbstractNetwork
             final CharSequence constraint,
             @Nullable final Set<LocationType> types,
             final int maxLocations) throws IOException {
-        try {
-            final List<Location> locations = findLocations(constraint, null, 0, null, types, maxLocations, false);
-            final List<SuggestedLocation> suggestedLocations = new ArrayList<>(locations.size());
-            for (final Location location : locations)
-                suggestedLocations.add(new SuggestedLocation(location));
-            return new SuggestLocationsResult(this.resultHeader, suggestedLocations);
-        } catch (final IOException | RuntimeException e) {
-            log.error("error getting locations", e);
-                return new SuggestLocationsResult(this.resultHeader, SuggestLocationsResult.Status.SERVICE_DOWN);
-        }
+        final List<Location> locations = findLocations(constraint, null, 0, null, types, maxLocations, false);
+        final List<SuggestedLocation> suggestedLocations = new ArrayList<>(locations.size());
+        for (final Location location : locations)
+            suggestedLocations.add(new SuggestedLocation(location));
+        return new SuggestLocationsResult(this.resultHeader, suggestedLocations);
     }
 
     @Override
@@ -769,13 +764,8 @@ public abstract class AbstractOpenJourneyPlannerProvider extends AbstractNetwork
             maxDistance = DEFAULT_MAX_DISTANCE;
         if (maxLocations == 0)
             maxLocations = DEFAULT_MAX_LOCATIONS;
-        try {
-            final List<Location> locations = findLocations(null, location, maxDistance, equivsMode, types, maxLocations, true);
-            return new NearbyLocationsResult(this.resultHeader, locations);
-        } catch (final IOException | RuntimeException e) {
-            log.error("error getting locations", e);
-            return new NearbyLocationsResult(this.resultHeader, NearbyLocationsResult.Status.SERVICE_DOWN);
-        }
+        final List<Location> locations = findLocations(null, location, maxDistance, equivsMode, types, maxLocations, true);
+        return new NearbyLocationsResult(this.resultHeader, locations);
     }
 
     private class StopPlaceMap {
@@ -850,78 +840,72 @@ public abstract class AbstractOpenJourneyPlannerProvider extends AbstractNetwork
             final boolean includeLinesAtStation) throws IOException {
         assertStationBoardMode(arrivals);
         final String stationId = station.id;
-        try {
-            final OJPRequest document = new OJPRequest();
-            final Element request = document.createRequest("OJPStopEventRequest");
-            final Element locationElement = createPlaceElement(document, request, "Location", null, stationId);
-            document.createTextElement(locationElement, "DepArrTime", time);
-            final Element params = document.createElement(request, "Params");
-            // document.createTextElement(params, "IncludeAllRestrictedLines", false);
-            document.createTextElement(params, "StopEventType", arrivals ? "arrival" : "departure");
-            document.createTextElement(params, "NumberOfResults", maxDepartures);
+        final OJPRequest document = new OJPRequest();
+        final Element request = document.createRequest("OJPStopEventRequest");
+        final Element locationElement = createPlaceElement(document, request, "Location", null, stationId);
+        document.createTextElement(locationElement, "DepArrTime", time);
+        final Element params = document.createElement(request, "Params");
+        // document.createTextElement(params, "IncludeAllRestrictedLines", false);
+        document.createTextElement(params, "StopEventType", arrivals ? "arrival" : "departure");
+        document.createTextElement(params, "NumberOfResults", maxDepartures);
 //            document.createTextElement(params, "IncludePreviousCalls", false);
 //            document.createTextElement(params, "IncludeOnwardCalls", false);
-            document.createTextElement(params, "UseRealtimeData", "explanatory");
-            createModeElements(document, params, "ModeFilter", products);
+        document.createTextElement(params, "UseRealtimeData", "explanatory");
+        createModeElements(document, params, "ModeFilter", products);
 
-            final OJPResponse response = doRequest(document);
-            final Element stopEventDelivery = response.getResponse("OJPStopEventDelivery");
+        final OJPResponse response = doRequest(document);
+        final Element stopEventDelivery = response.getResponse("OJPStopEventDelivery");
 
-            final Element stopEventResponseContext = response.getElement(stopEventDelivery, "StopEventResponseContext");
-            final StopPlaceMap stopPlaceMap = stopEventResponseContext == null ? null :
-                    new StopPlaceMap(response, response.getElement(stopEventResponseContext, "Places"));
+        final Element stopEventResponseContext = response.getElement(stopEventDelivery, "StopEventResponseContext");
+        final StopPlaceMap stopPlaceMap = stopEventResponseContext == null ? null :
+                new StopPlaceMap(response, response.getElement(stopEventResponseContext, "Places"));
 
-            final QueryDeparturesResult departuresResult = new QueryDeparturesResult(this.resultHeader);
+        final QueryDeparturesResult departuresResult = new QueryDeparturesResult(this.resultHeader);
 
-            final NodeList stopEventResults = response.getElements(stopEventDelivery, "StopEventResult");
-            for (int eventIndex = 0; eventIndex < stopEventResults.getLength(); ++eventIndex) {
-                final Element stopEvent = (Element) stopEventResults.item(eventIndex);
-                final Element call = response.getElement(stopEvent, "ThisCall");
-                final Element callAtStop = response.getElement(call, "CallAtStop");
-                final String stopPointRef = response.getTextElement(callAtStop, NS_SIRI, "StopPointRef");
-                if (equivsMode == EquivalentStationsMode.USE_META && !stationId.equals(stopPointRef)) {
-                    continue;
-                }
-
-                final String stopPlaceRef = stopPlaceMap.getStopPlaceRefForStopPoint(stopPointRef);
-                final Location location = stopPlaceMap.getStopPlaceLocation(stopPlaceRef);
-                StationDepartures stationDepartures = departuresResult.findStationDepartures(location);
-                if (stationDepartures == null) {
-                    stationDepartures = new StationDepartures(location, new ArrayList<Departure>(8), null);
-                    departuresResult.stationDepartures.add(stationDepartures);
-                }
-
-                final Element serviceDeparture = response.getElement(callAtStop, "ServiceDeparture");
-                final PTDate plannedTime = response.getTimestampElement(serviceDeparture, "TimetabledTime");
-                final PTDate predictedTime = response.getTimestampElement(serviceDeparture, "EstimatedTime");
-
-                final Position plannedPosition = parsePosition(response.getTranslatedText(callAtStop, "PlannedQuay"));
-                final Position predictedPosition = parsePosition(response.getTranslatedText(callAtStop, "EstimatedQuay"));
-
-                final boolean cancelled = response.getBooleanElement(callAtStop, "NotServicedStop", false);
-
-                final Element serviceElement = response.getElement(stopEvent, "Service");
-                final Service service = new Service(response, serviceElement);
-
-                final Departure departure = new Departure(
-                        arrivals,
-                        plannedTime, predictedTime,
-                        service.line,
-                        plannedPosition, predictedPosition,
-                        service.destination,
-                        cancelled,
-                        null,
-                        service.message,
-                        service.journeyRef);
-
-                stationDepartures.departures.add(departure);
+        final NodeList stopEventResults = response.getElements(stopEventDelivery, "StopEventResult");
+        for (int eventIndex = 0; eventIndex < stopEventResults.getLength(); ++eventIndex) {
+            final Element stopEvent = (Element) stopEventResults.item(eventIndex);
+            final Element call = response.getElement(stopEvent, "ThisCall");
+            final Element callAtStop = response.getElement(call, "CallAtStop");
+            final String stopPointRef = response.getTextElement(callAtStop, NS_SIRI, "StopPointRef");
+            if (equivsMode == EquivalentStationsMode.USE_META && !stationId.equals(stopPointRef)) {
+                continue;
             }
 
-            return departuresResult;
-        } catch (final IOException | RuntimeException e) {
-            log.error("error getting locations", e);
-            return new QueryDeparturesResult(this.resultHeader, QueryDeparturesResult.Status.SERVICE_DOWN);
+            final String stopPlaceRef = stopPlaceMap.getStopPlaceRefForStopPoint(stopPointRef);
+            final Location location = stopPlaceMap.getStopPlaceLocation(stopPlaceRef);
+            StationDepartures stationDepartures = departuresResult.findStationDepartures(location);
+            if (stationDepartures == null) {
+                stationDepartures = new StationDepartures(location, new ArrayList<Departure>(8), null);
+                departuresResult.stationDepartures.add(stationDepartures);
+            }
+
+            final Element serviceDeparture = response.getElement(callAtStop, "ServiceDeparture");
+            final PTDate plannedTime = response.getTimestampElement(serviceDeparture, "TimetabledTime");
+            final PTDate predictedTime = response.getTimestampElement(serviceDeparture, "EstimatedTime");
+
+            final Position plannedPosition = parsePosition(response.getTranslatedText(callAtStop, "PlannedQuay"));
+            final Position predictedPosition = parsePosition(response.getTranslatedText(callAtStop, "EstimatedQuay"));
+
+            final boolean cancelled = response.getBooleanElement(callAtStop, "NotServicedStop", false);
+
+            final Element serviceElement = response.getElement(stopEvent, "Service");
+            final Service service = new Service(response, serviceElement);
+
+            final Departure departure = new Departure(
+                    arrivals,
+                    plannedTime, predictedTime,
+                    service.line,
+                    plannedPosition, predictedPosition,
+                    service.destination,
+                    cancelled,
+                    null,
+                    service.message,
+                    service.journeyRef);
+
+            stationDepartures.departures.add(departure);
         }
+        return departuresResult;
     }
 
     public static class OJPTripsContext implements QueryTripsContext {
@@ -1061,74 +1045,69 @@ public abstract class AbstractOpenJourneyPlannerProvider extends AbstractNetwork
             final boolean loadPath,
             final int numResults,
             final int numResultsBefore) throws IOException {
-        try {
-            final OJPRequest document = new OJPRequest();
-            final Element request = document.createRequest("OJPTripRequest");
+        final OJPRequest document = new OJPRequest();
+        final Element request = document.createRequest("OJPTripRequest");
 
-            final Element origin = createPlaceElement(document, request, "Origin", null, from);
-            final Element destination = createPlaceElement(document, request, "Destination", null, to);
-            if (via != null)
-                createPlaceElement(document, request, "Via", "ViaPoint", via);
-            document.createTextElement(dep ? origin : destination, "DepArrTime", date);
-            final Element params = document.createElement(request, "Params");
-            document.createTextElement(params, "NumberOfResults", numResults);
-            if (numResultsBefore > 0)
-                document.createTextElement(params, "NumberOfResultsBefore", numResultsBefore);
-            document.createTextElement(params, "UseRealtimeData", "explanatory");
-            document.createTextElement(params, "IncludeIntermediateStops", true);
-            if (loadPath) {
-                document.createTextElement(params, "IncludeTrackSections", true);
-                document.createTextElement(params, "IncludeLegProjection", true);
-            }
-            if (options != null) {
-                createModeElements(document, params, "ModeAndModeOfOperationFilter", options.products);
-                if (options.maxWalkDistanceMeters != null) {
-                    createMaxDistanceElement(document, origin, options.maxWalkDistanceMeters);
-                    createMaxDistanceElement(document, destination, options.maxWalkDistanceMeters);
-                }
-                if (options.walkSpeed != null) {
-                    final String speed;
-                    switch (options.walkSpeed) {
-                        case SLOW: speed = "66"; break;
-                        case FAST: speed = "150"; break;
-                        case NORMAL:
-                        default:
-                            speed = "100"; break;
-                    }
-                    document.createTextElement(params, "WalkSpeed", speed);
-                }
-                if (options.flags != null) {
-                    if (options.flags.contains(TripFlag.DIRECT))
-                        document.createTextElement(params, "TransferLimit", 0);
-                    if (options.flags.contains(TripFlag.BIKE))
-                        document.createTextElement(params, "BikeTransport", true);
-                }
-                if (Optimize.LEAST_CHANGES.equals(options.optimize))
-                    document.createTextElement(params, "OptimisationMethod", "minChanges");
-                // options.minTransferTimeMinutes; --> there is no option for this in OJP
-                // options.accessibility; --> none of the OJP options are supported yet
-            }
-
-            final OJPResponse response = doRequest(document);
-            final Element tripDelivery = response.getResponse("OJPTripDelivery");
-            final Date now = new Date();
-
-            final List<Trip> trips = parseTripResult(response, tripDelivery, from, via, to, now);
-            if (trips.isEmpty())
-                return new QueryTripsResult(resultHeader, QueryTripsResult.Status.NO_TRIPS);
-
-            final Trip lastTrip = trips.get(trips.size() - 1);
-            final OJPTripsContext tripsContext = new OJPTripsContext(from, via, to, dep, options,
-                    date, dep ? lastTrip.getMinTime() : lastTrip.getMaxTime() );
-            return new QueryTripsResult(
-                    resultHeader, null,
-                    from, via, to,
-                    tripsContext,
-                    trips);
-        } catch (final IOException | RuntimeException e) {
-            log.error("error getting trips", e);
-            return new QueryTripsResult(resultHeader, QueryTripsResult.Status.SERVICE_DOWN);
+        final Element origin = createPlaceElement(document, request, "Origin", null, from);
+        final Element destination = createPlaceElement(document, request, "Destination", null, to);
+        if (via != null)
+            createPlaceElement(document, request, "Via", "ViaPoint", via);
+        document.createTextElement(dep ? origin : destination, "DepArrTime", date);
+        final Element params = document.createElement(request, "Params");
+        document.createTextElement(params, "NumberOfResults", numResults);
+        if (numResultsBefore > 0)
+            document.createTextElement(params, "NumberOfResultsBefore", numResultsBefore);
+        document.createTextElement(params, "UseRealtimeData", "explanatory");
+        document.createTextElement(params, "IncludeIntermediateStops", true);
+        if (loadPath) {
+            document.createTextElement(params, "IncludeTrackSections", true);
+            document.createTextElement(params, "IncludeLegProjection", true);
         }
+        if (options != null) {
+            createModeElements(document, params, "ModeAndModeOfOperationFilter", options.products);
+            if (options.maxWalkDistanceMeters != null) {
+                createMaxDistanceElement(document, origin, options.maxWalkDistanceMeters);
+                createMaxDistanceElement(document, destination, options.maxWalkDistanceMeters);
+            }
+            if (options.walkSpeed != null) {
+                final String speed;
+                switch (options.walkSpeed) {
+                    case SLOW: speed = "66"; break;
+                    case FAST: speed = "150"; break;
+                    case NORMAL:
+                    default:
+                        speed = "100"; break;
+                }
+                document.createTextElement(params, "WalkSpeed", speed);
+            }
+            if (options.flags != null) {
+                if (options.flags.contains(TripFlag.DIRECT))
+                    document.createTextElement(params, "TransferLimit", 0);
+                if (options.flags.contains(TripFlag.BIKE))
+                    document.createTextElement(params, "BikeTransport", true);
+            }
+            if (Optimize.LEAST_CHANGES.equals(options.optimize))
+                document.createTextElement(params, "OptimisationMethod", "minChanges");
+            // options.minTransferTimeMinutes; --> there is no option for this in OJP
+            // options.accessibility; --> none of the OJP options are supported yet
+        }
+
+        final OJPResponse response = doRequest(document);
+        final Element tripDelivery = response.getResponse("OJPTripDelivery");
+        final Date now = new Date();
+
+        final List<Trip> trips = parseTripResult(response, tripDelivery, from, via, to, now);
+        if (trips.isEmpty())
+            return new QueryTripsResult(resultHeader, QueryTripsResult.Status.NO_TRIPS);
+
+        final Trip lastTrip = trips.get(trips.size() - 1);
+        final OJPTripsContext tripsContext = new OJPTripsContext(from, via, to, dep, options,
+                date, dep ? lastTrip.getMinTime() : lastTrip.getMaxTime() );
+        return new QueryTripsResult(
+                resultHeader, null,
+                from, via, to,
+                tripsContext,
+                trips);
     }
 
     private List<Trip> parseTripResult(
@@ -1464,59 +1443,54 @@ public abstract class AbstractOpenJourneyPlannerProvider extends AbstractNetwork
             final boolean splitSubJourneys,
             final boolean loadPath) throws IOException {
         final OJPJourneyRef journeyRef = (OJPJourneyRef) aJourneyRef;
-        try {
-            final OJPRequest document = new OJPRequest();
-            final Element request = document.createRequest("OJPTripInfoRequest");
+        final OJPRequest document = new OJPRequest();
+        final Element request = document.createRequest("OJPTripInfoRequest");
 
-            document.createTextElement(request, "JourneyRef", journeyRef.journeyId);
-            document.createTextElement(request, "OperatingDayRef", journeyRef.opDay);
-            final Element params = document.createElement(request, "Params");
-            document.createTextElement(params, "UseRealtimeData", "explanatory");
-            document.createTextElement(params, "IncludePlacesContext", true);
-            document.createTextElement(params, "IncludeCalls", true);
-            document.createTextElement(params, "IncludeService", true);
-            document.createTextElement(params, "IncludeSituationsContext", true);
-            document.createTextElement(params, "IncludeTrackProjection", loadPath);
+        document.createTextElement(request, "JourneyRef", journeyRef.journeyId);
+        document.createTextElement(request, "OperatingDayRef", journeyRef.opDay);
+        final Element params = document.createElement(request, "Params");
+        document.createTextElement(params, "UseRealtimeData", "explanatory");
+        document.createTextElement(params, "IncludePlacesContext", true);
+        document.createTextElement(params, "IncludeCalls", true);
+        document.createTextElement(params, "IncludeService", true);
+        document.createTextElement(params, "IncludeSituationsContext", true);
+        document.createTextElement(params, "IncludeTrackProjection", loadPath);
 
-            final OJPResponse response = doRequest(document);
-            final Element stopEventDelivery = response.getResponse("OJPTripInfoDelivery");
-            final Date now = new Date();
+        final OJPResponse response = doRequest(document);
+        final Element stopEventDelivery = response.getResponse("OJPTripInfoDelivery");
+        final Date now = new Date();
 
-            final Element tripResponseContext = response.getElement(stopEventDelivery, "TripInfoResponseContext");
-            final StopPlaceMap stopPlaceMap = tripResponseContext == null ? null :
-                    new StopPlaceMap(response, response.getElement(tripResponseContext, "Places"));
+        final Element tripResponseContext = response.getElement(stopEventDelivery, "TripInfoResponseContext");
+        final StopPlaceMap stopPlaceMap = tripResponseContext == null ? null :
+                new StopPlaceMap(response, response.getElement(tripResponseContext, "Places"));
 
-            final Element tripInfoResult = response.getElement(stopEventDelivery, "TripInfoResult");
-            final Element serviceElement = response.getElement(tripInfoResult, "Service");
-            if (serviceElement == null)
-                return new QueryJourneyResult(resultHeader, QueryJourneyResult.Status.NO_JOURNEY);
-            final Service service = new Service(response, serviceElement);
+        final Element tripInfoResult = response.getElement(stopEventDelivery, "TripInfoResult");
+        final Element serviceElement = response.getElement(tripInfoResult, "Service");
+        if (serviceElement == null)
+            return new QueryJourneyResult(resultHeader, QueryJourneyResult.Status.NO_JOURNEY);
+        final Service service = new Service(response, serviceElement);
 
-            final List<Stop> stops = new ArrayList<>();
-            parseStopList(stops, response, tripInfoResult, "PreviousCall", stopPlaceMap);
-            parseStopList(stops, response, tripInfoResult, "OnwardCall", stopPlaceMap);
-            final int numStops = stops.size();
+        final List<Stop> stops = new ArrayList<>();
+        parseStopList(stops, response, tripInfoResult, "PreviousCall", stopPlaceMap);
+        parseStopList(stops, response, tripInfoResult, "OnwardCall", stopPlaceMap);
+        final int numStops = stops.size();
 
-            final Stop arrivalStop = stops.remove(numStops - 1);
-            final Stop departureStop = stops.remove(0);
+        final Stop arrivalStop = stops.remove(numStops - 1);
+        final Stop departureStop = stops.remove(0);
 
-            final Trip.Public journey = new Trip.Public(
-                    service.line,
-                    service.destination,
-                    departureStop,
-                    arrivalStop,
-                    stops.isEmpty() ? null : stops,
-                    service.message,
-                    service.journeyRef,
-                    now);
+        final Trip.Public journey = new Trip.Public(
+                service.line,
+                service.destination,
+                departureStop,
+                arrivalStop,
+                stops.isEmpty() ? null : stops,
+                service.message,
+                service.journeyRef,
+                now);
 
-            return new QueryJourneyResult(
-                    resultHeader, null,
-                    journeyRef, journey);
-        } catch (final IOException | RuntimeException e) {
-            log.error("error getting journey", e);
-            return new QueryJourneyResult(resultHeader, QueryJourneyResult.Status.SERVICE_DOWN);
-        }
+        return new QueryJourneyResult(
+                resultHeader, null,
+                journeyRef, journey);
     }
 
     @Override
@@ -1524,67 +1498,61 @@ public abstract class AbstractOpenJourneyPlannerProvider extends AbstractNetwork
             final TripRef aTripRef,
             final boolean loadPath) throws IOException {
         final OJPTripRef tripRef = (OJPTripRef) aTripRef;
+        final OJPRequest document = new OJPRequest();
+        final Element request = document.createRequest("OJPTripRefineRequest");
 
-        try {
-            final OJPRequest document = new OJPRequest();
-            final Element request = document.createRequest("OJPTripRefineRequest");
-
-            final Element params = document.createElement(request, "RefineParams");
-            document.createElement(params, "RefineLegRef"); // empty element -> refine all
-            document.createTextElement(params, "UseRealtimeData", "explanatory");
-            document.createTextElement(params, "IncludeIntermediateStops", true);
-            if (loadPath) {
-                document.createTextElement(params, "IncludeTrackSections", true);
-                document.createTextElement(params, "IncludeLegProjection", true);
-            }
-            final Element tripResult = document.createElement(request, "TripResult");
-            // document.createTextElement(tripResult, "Id", tripRef.tripId);
-            final Element trip = document.createElement(tripResult, "Trip");
-            document.createTextElement(trip, "Id", tripRef.tripId);
-            final String[] legs = tripRef.tripRequestData.split("~");
-            for (int iLeg = 0; iLeg < legs.length; iLeg++) {
-                final String[] legData = legs[iLeg].split("@");
-                final Element eLeg = document.createElement(trip, "Leg");
-                document.createTextElement(eLeg, "Id", iLeg + 1);
-                final Element timedLeg = document.createElement(eLeg, "TimedLeg");
-
-                final Element legBoard = document.createElement(timedLeg, "LegBoard");
-                document.createTextElement(legBoard, NS_SIRI, "siri:StopPointRef", legData[0]);
-                final Element serviceDeparture = document.createElement(legBoard, "ServiceDeparture");
-                document.createTextElement(serviceDeparture, "TimetabledTime", legData[1]);
-
-                final Element legAlight = document.createElement(timedLeg, "LegAlight");
-                document.createTextElement(legAlight, NS_SIRI, "siri:StopPointRef", legData[2]);
-                final Element serviceArrival = document.createElement(legAlight, "ServiceArrival");
-                document.createTextElement(serviceArrival, "TimetabledTime", legData[3]);
-
-                final Element service = document.createElement(timedLeg, "Service");
-                document.createTextElement(service, "JourneyRef", legData[4]);
-                document.createTextElement(service, "OperatingDayRef", legData[5]);
-                document.createTextElement(service, NS_SIRI, "siri:LineRef", legData[6]);
-                document.createTextElement(service, NS_SIRI, "siri:DirectionRef", legData[7]);
-                document.createElement(service, "Mode");
-                document.createTextElement(
-                        document.createElement(service, "ProductCategory"),
-                        "ProductCategoryRef", legData[8]);
-            }
-
-            final OJPResponse response = doRequest(document);
-            final Element tripRefineDelivery = response.getResponse("OJPTripRefineDelivery");
-            final Date now = new Date();
-
-            final List<Trip> trips = parseTripResult(response, tripRefineDelivery, tripRef.from, tripRef.via, tripRef.to, now);
-            if (trips.isEmpty())
-                return new QueryTripsResult(resultHeader, QueryTripsResult.Status.NO_TRIPS);
-
-            return new QueryTripsResult(
-                    resultHeader, null,
-                    tripRef.from, tripRef.via, tripRef.to,
-                    null,
-                    trips);
-        } catch (final IOException | RuntimeException e) {
-            log.error("error getting trip", e);
-            return new QueryTripsResult(resultHeader, QueryTripsResult.Status.SERVICE_DOWN);
+        final Element params = document.createElement(request, "RefineParams");
+        document.createElement(params, "RefineLegRef"); // empty element -> refine all
+        document.createTextElement(params, "UseRealtimeData", "explanatory");
+        document.createTextElement(params, "IncludeIntermediateStops", true);
+        if (loadPath) {
+            document.createTextElement(params, "IncludeTrackSections", true);
+            document.createTextElement(params, "IncludeLegProjection", true);
         }
+        final Element tripResult = document.createElement(request, "TripResult");
+        // document.createTextElement(tripResult, "Id", tripRef.tripId);
+        final Element trip = document.createElement(tripResult, "Trip");
+        document.createTextElement(trip, "Id", tripRef.tripId);
+        final String[] legs = tripRef.tripRequestData.split("~");
+        for (int iLeg = 0; iLeg < legs.length; iLeg++) {
+            final String[] legData = legs[iLeg].split("@");
+            final Element eLeg = document.createElement(trip, "Leg");
+            document.createTextElement(eLeg, "Id", iLeg + 1);
+            final Element timedLeg = document.createElement(eLeg, "TimedLeg");
+
+            final Element legBoard = document.createElement(timedLeg, "LegBoard");
+            document.createTextElement(legBoard, NS_SIRI, "siri:StopPointRef", legData[0]);
+            final Element serviceDeparture = document.createElement(legBoard, "ServiceDeparture");
+            document.createTextElement(serviceDeparture, "TimetabledTime", legData[1]);
+
+            final Element legAlight = document.createElement(timedLeg, "LegAlight");
+            document.createTextElement(legAlight, NS_SIRI, "siri:StopPointRef", legData[2]);
+            final Element serviceArrival = document.createElement(legAlight, "ServiceArrival");
+            document.createTextElement(serviceArrival, "TimetabledTime", legData[3]);
+
+            final Element service = document.createElement(timedLeg, "Service");
+            document.createTextElement(service, "JourneyRef", legData[4]);
+            document.createTextElement(service, "OperatingDayRef", legData[5]);
+            document.createTextElement(service, NS_SIRI, "siri:LineRef", legData[6]);
+            document.createTextElement(service, NS_SIRI, "siri:DirectionRef", legData[7]);
+            document.createElement(service, "Mode");
+            document.createTextElement(
+                    document.createElement(service, "ProductCategory"),
+                    "ProductCategoryRef", legData[8]);
+        }
+
+        final OJPResponse response = doRequest(document);
+        final Element tripRefineDelivery = response.getResponse("OJPTripRefineDelivery");
+        final Date now = new Date();
+
+        final List<Trip> trips = parseTripResult(response, tripRefineDelivery, tripRef.from, tripRef.via, tripRef.to, now);
+        if (trips.isEmpty())
+            return new QueryTripsResult(resultHeader, QueryTripsResult.Status.NO_TRIPS);
+
+        return new QueryTripsResult(
+                resultHeader, null,
+                tripRef.from, tripRef.via, tripRef.to,
+                null,
+                trips);
     }
 }
