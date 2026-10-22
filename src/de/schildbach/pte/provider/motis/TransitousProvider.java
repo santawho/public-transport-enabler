@@ -65,6 +65,10 @@ public class TransitousProvider extends AbstractMotisProvider {
 
     @Override
     protected String[] splitStationName(final String motisPlaceName) {
-        return parseSpaceDelimitedPlaceAndStation(motisPlaceName, SPECIAL_PLACES);
+        // parsing like in Germany worked for Germany but failed in England or France
+        // over there, they do not show the place names, so stay with just the stop name
+        return new String[] { null, motisPlaceName };
+
+        // return parseSpaceDelimitedPlaceAndStation(motisPlaceName, SPECIAL_PLACES);
     }
 }
