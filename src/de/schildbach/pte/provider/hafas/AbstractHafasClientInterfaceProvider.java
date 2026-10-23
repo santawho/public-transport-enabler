@@ -570,17 +570,28 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
         final boolean canStbFltrEquiv = apiLevel <= 18;
         if (maxEvents == 0)
             maxEvents = DEFAULT_MAX_BOARD_EVENTS;
+        //  DEP: Departure board as configured in HAFAS (i.e. uncontrollably never the same)
+        //  DEP_EQUIVS: Departure board with all journeys at any masts and equivalent stops
+        //  DEP_MAST: Departure board at mast
+        //  DEP_STATION: Departure board with all journeys at any masts of the requested station
+        final String requestType;
         final boolean stbFltrEquiv;
-        if (equivsMode != EquivalentStationsMode.USE_META) {
-            stbFltrEquiv = false;
-        } else if (canStbFltrEquiv) {
-            stbFltrEquiv = true;
+        if (canStbFltrEquiv) {
+            requestType = "";
+            stbFltrEquiv = equivsMode != EquivalentStationsMode.KEEP_DISTINCT;
         } else {
             stbFltrEquiv = false;
-            final int raisedMaxEvents = maxEvents * 4;
-            log.info("stbFltrEquiv workaround in effect: querying for {} departures rather than {}",
-                    raisedMaxEvents, maxEvents);
-            maxEvents = raisedMaxEvents;
+            if (equivsMode == EquivalentStationsMode.KEEP_DISTINCT) {
+                // requestType = "_MAST";
+                requestType = "_STATION";
+            } else {
+                // requestType = "_STATION";
+                requestType = "_EQUIVS";
+                final int raisedMaxEvents = maxEvents * 4;
+                log.info("stbFltrEquiv workaround in effect: querying for {} departures rather than {}",
+                        raisedMaxEvents, maxEvents);
+                maxEvents = raisedMaxEvents;
+            }
         }
 
         final Calendar c = new GregorianCalendar(timeZone);
@@ -590,7 +601,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
         final String normalizedStationId = normalizeStationId(stationId);
         final String maxJny = Integer.toString(maxEvents);
         final String request = wrapJsonApiRequest("StationBoard",
-                "{\"type\":\"" + (arrivals ? "ARR" : "DEP") + "\"," //
+                "{\"type\":\"" + (arrivals ? "ARR" : "DEP") + requestType + "\"," //
                 + "\"date\":\"" + jsonDate + "\"," //
                 + "\"time\":\"" + jsonTime + "\"," //
                 + "\"stbLoc\":{\"type\":\"S\"," + "\"state\":\"F\"," // F/M
