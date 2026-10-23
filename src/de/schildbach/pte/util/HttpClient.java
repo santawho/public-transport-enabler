@@ -103,12 +103,6 @@ public final class HttpClient {
         return userAgentFactory.getUserAgent(forType);
     }
 
-    public final static RateLimiter DEFAULT_RATE_LIMITER = RateLimiter.multi(
-            RateLimiter.delaying(1000, 5), // burst max 5 per seconds
-            RateLimiter.failing(60000, 50), // single rush of 50 per one minute
-            RateLimiter.failing(900000, 100) // continuos stream of 100 per 15 minutes
-    );
-
     @Nullable
     private String userAgent = null;
     private final Map<String, String> headers = new HashMap<>();
@@ -120,7 +114,7 @@ public final class HttpClient {
     @Nullable
     private Proxy proxy = null;
     @Nullable
-    private RateLimiter rateLimiter = DEFAULT_RATE_LIMITER;
+    private RateLimiter rateLimiter;
     @Nullable
     private ConnectionSpec connectionSpec = null;
     private boolean trustAllCertificates = false;

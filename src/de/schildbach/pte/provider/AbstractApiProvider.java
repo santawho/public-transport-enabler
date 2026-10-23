@@ -23,17 +23,20 @@ import org.slf4j.LoggerFactory;
 import java.net.Proxy;
 
 import de.schildbach.pte.util.HttpClient;
+import de.schildbach.pte.util.RateLimiter;
 
 public abstract class AbstractApiProvider implements ApiProvider {
     protected final Logger log;
 
-    protected final HttpClient httpClient = new HttpClient();
+    protected final HttpClient httpClient;
     protected String userInterfaceLanguage;
     protected boolean messagesAsSimpleHtml;
 
     protected AbstractApiProvider() {
-         this.log = LoggerFactory.getLogger(this.getClass());
-         setUserAgent(HttpClient.getUserAgent(getUserAgentType()));
+        this.log = LoggerFactory.getLogger(this.getClass());
+        httpClient = new HttpClient();
+        httpClient.setRateLimiter(createRateLimiter());
+        setUserAgent(HttpClient.getUserAgent(getUserAgentType()));
     }
 
     public Logger getLog() {
@@ -42,6 +45,13 @@ public abstract class AbstractApiProvider implements ApiProvider {
 
     public HttpClient getHttpClient() {
         return httpClient;
+    }
+
+    protected RateLimiter createRateLimiter() {
+        return RateLimiter.multi(
+            RateLimiter.delaying(1000, 5, 100), // burst max 5 per seconds
+            RateLimiter.failing(60000, 50, 1000) // single rush of 50 per one minute
+        );
     }
 
     public String setUserInterfaceLanguage(@javax.annotation.Nullable final String userInterfaceLanguage) {
