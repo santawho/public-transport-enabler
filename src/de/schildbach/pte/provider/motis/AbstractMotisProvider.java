@@ -303,12 +303,20 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
     }
     
     protected static Line parseMotisLine(final JSONObject data) throws JSONException {
+        final String routeShortName = data.getString("routeShortName");
+        final String tripShortName = data.getString("tripShortName");
+        final String displayName = data.getString("displayName");
+        final String label =
+                displayName.startsWith(routeShortName) ? routeShortName
+                : displayName.startsWith(tripShortName) ? tripShortName
+                : displayName;
+        final String name = displayName;
         return new Line(
                 data.getString("routeId"),
                 data.getString("agencyName"),
                 MOTIS_MODE_MAP.get(data.getString("mode")),
-                data.getString("routeShortName"),
-                data.getString("displayName"),
+                label,
+                name,
                 data.has("routeColor") && data.has("routeTextColor") ?
                         new Style(
                                 Style.parseColor("#" + data.getString("routeColor")),
