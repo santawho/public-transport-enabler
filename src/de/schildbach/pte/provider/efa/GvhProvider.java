@@ -28,6 +28,7 @@ import de.schildbach.pte.dto.Line;
 import de.schildbach.pte.dto.Product;
 import de.schildbach.pte.dto.Style;
 
+import de.schildbach.pte.exception.ParserException;
 import okhttp3.HttpUrl;
 
 /**
@@ -49,9 +50,11 @@ public class GvhProvider extends AbstractEfaProvider {
     }
 
     @Override
-    protected Line parseLine(final @Nullable String id, final @Nullable String network, final @Nullable String mot,
+    protected Line parseLine(
+            final @Nullable String id, final @Nullable String network, final @Nullable String mot,
             final @Nullable String symbol, final @Nullable String name, final @Nullable String longName,
-            final @Nullable String trainType, final @Nullable String trainNum, final @Nullable String trainName) {
+            final @Nullable String trainType, final @Nullable String trainNum, final @Nullable String trainName
+    ) throws ParserException {
         if ("0".equals(mot)) {
             if ("RX".equals(trainType) && trainNum != null) // Express, Czech Republic
                 return new Line(id, network, Product.REGIONAL_TRAIN, "RX" + trainNum);

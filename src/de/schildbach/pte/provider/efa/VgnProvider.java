@@ -27,6 +27,7 @@ import de.schildbach.pte.dto.Location;
 import de.schildbach.pte.dto.Product;
 import de.schildbach.pte.dto.TripOptions;
 
+import de.schildbach.pte.exception.ParserException;
 import okhttp3.HttpUrl;
 
 /**
@@ -46,9 +47,11 @@ public class VgnProvider extends AbstractEfaProvider {
     }
 
     @Override
-    protected Line parseLine(final @Nullable String id, final @Nullable String network, final @Nullable String mot,
+    protected Line parseLine(
+            final @Nullable String id, final @Nullable String network, final @Nullable String mot,
             final @Nullable String symbol, final @Nullable String name, final @Nullable String longName,
-            final @Nullable String trainType, final @Nullable String trainNum, final @Nullable String trainName) {
+            final @Nullable String trainType, final @Nullable String trainNum, final @Nullable String trainName
+    ) throws ParserException {
         if ("0".equals(mot)) {
             if ("R5(z)".equals(trainNum))
                 return new Line(id, network, Product.REGIONAL_TRAIN, "R5(z)");
@@ -67,7 +70,8 @@ public class VgnProvider extends AbstractEfaProvider {
     protected void appendTripRequestParameters(
             final HttpUrl.Builder url, final Location from,
             final @Nullable Location via, final Location to, final Date date, final boolean dep,
-            final @Nullable TripOptions options, final boolean loadPath) {
+            final @Nullable TripOptions options, final boolean loadPath
+    ) throws ParserException {
         super.appendTripRequestParameters(url, from, via, to, date, dep, options, loadPath);
         url.addEncodedQueryParameter("itdLPxx_showTariffLevel", "1");
     }

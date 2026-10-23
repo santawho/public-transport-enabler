@@ -23,6 +23,7 @@ import de.schildbach.pte.NetworkId;
 import de.schildbach.pte.dto.Line;
 import de.schildbach.pte.dto.Product;
 
+import de.schildbach.pte.exception.ParserException;
 import okhttp3.HttpUrl;
 
 import java.nio.charset.StandardCharsets;
@@ -40,9 +41,11 @@ public class VblProvider extends AbstractEfaProvider {
     }
 
     @Override
-    protected Line parseLine(final @Nullable String id, final @Nullable String network, final @Nullable String mot,
+    protected Line parseLine(
+            final @Nullable String id, final @Nullable String network, final @Nullable String mot,
             final @Nullable String symbol, final @Nullable String name, final @Nullable String longName,
-            final @Nullable String trainType, final @Nullable String trainNum, final @Nullable String trainName) {
+            final @Nullable String trainType, final @Nullable String trainNum, final @Nullable String trainName
+    ) throws ParserException {
         if ("0".equals(mot)) {
             if ("BLS".equals(trainType) && trainNum != null)
                 return new Line(id, network, Product.REGIONAL_TRAIN, "BLS" + trainNum);

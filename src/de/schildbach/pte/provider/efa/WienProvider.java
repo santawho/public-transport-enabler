@@ -30,6 +30,7 @@ import de.schildbach.pte.dto.Product;
 import de.schildbach.pte.dto.Style;
 import de.schildbach.pte.dto.TripOptions;
 
+import de.schildbach.pte.exception.ParserException;
 import okhttp3.HttpUrl;
 
 /**
@@ -50,7 +51,8 @@ public class WienProvider extends AbstractEfaProvider {
     protected void appendTripRequestParameters(
             final HttpUrl.Builder url, final Location from,
             final @Nullable Location via, final Location to, final Date time, final boolean dep,
-            final @Nullable TripOptions options, final boolean loadPath) {
+            final @Nullable TripOptions options, final boolean loadPath
+    ) throws ParserException {
         super.appendTripRequestParameters(url, from, via, to, time, dep, options, loadPath);
         if (options != null && options.products != null) {
             for (final Product p : options.products) {
