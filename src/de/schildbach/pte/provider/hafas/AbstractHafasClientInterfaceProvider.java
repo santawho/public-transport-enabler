@@ -685,20 +685,26 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
             if (locRefL != null) {
                 for (int locRefIndex = 0; locRefIndex < locRefL.length(); ++locRefIndex) {
                     final int locX = locRefL.getInt(locRefIndex);
-                    final JSONArray locPrefL = ((JSONObject) locList.get(locX)).optJSONArray("pRefL");
+                    final JSONObject loc = (JSONObject) locList.get(locX);
+                    final JSONArray locPrefL = loc.optJSONArray("pRefL");
                     if (locPrefL != null) {
                         final HashMap<Integer, MetaLocation> metaLocsByIndex = equivsMode == EquivalentStationsMode.KEEP_DISTINCT ? null : new HashMap<>();
                         final boolean alwaysUseMeta = equivsMode == EquivalentStationsMode.USE_META;
                         final LocationAndName locationAndName = parseLoc(locList, locX, metaLocsByIndex, alwaysUseMeta, crdSysList, locList);
                         final Location location = loc(locationAndName);
                         checkState(location != null && location.type == LocationType.STATION);
-                        final List<LineDestination> stationLines = new LinkedList<>();
-                        for (int pRefIndex = 0; pRefIndex < locPrefL.length(); ++pRefIndex) {
-                            final int pRef = locPrefL.getInt(pRefIndex);
-                            stationLines.add(new LineDestination(lines.get(pRef), null));
+                        final StationDepartures stationDepartures = findStationDepartures(result.stationDepartures, location);
+                        if (stationDepartures == null) {
+                            final List<LineDestination> stationLines = new LinkedList<>();
+                            for (int pRefIndex = 0; pRefIndex < locPrefL.length(); ++pRefIndex) {
+                                final int pRef = locPrefL.getInt(pRefIndex);
+                                stationLines.add(new LineDestination(lines.get(pRef), null));
+                            }
+                            result.stationDepartures.add(new StationDepartures(
+                                    location,
+                                    new ArrayList<Departure>(8),
+                                    stationLines));
                         }
-                        final StationDepartures stationDepartures = new StationDepartures(location, new ArrayList<Departure>(8), stationLines);
-                        result.stationDepartures.add(stationDepartures);
                     }
                 }
             }
