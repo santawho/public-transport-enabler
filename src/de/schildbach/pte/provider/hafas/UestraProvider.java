@@ -60,6 +60,9 @@ public class UestraProvider extends AbstractHafasClientInterfaceProvider {
         setApiAuthorization(apiAuthorization);
     }
 
+    protected boolean supportsStationBoardEquivs() {
+        return false;
+    }
 
     // list all places, which contain at least one space
     // except: places with "Bad "-prefix and no further spaces

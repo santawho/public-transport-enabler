@@ -563,6 +563,10 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
         return false;
     }
 
+    protected boolean supportsStationBoardEquivs() {
+        return true;
+    }
+
     protected final QueryDeparturesResult jsonStationBoard(
             final String stationId,
             final @Nullable Date time,
@@ -592,7 +596,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                 requestType = "_STATION";
             } else {
                 // requestType = "_STATION";
-                requestType = "_EQUIVS";
+                requestType = supportsStationBoardEquivs() ? "_EQUIVS" : ""; // use EQUIVS mode or fall back to as configured in HAFAS
                 final int raisedMaxEvents = maxEvents * 4;
                 log.info("stbFltrEquiv workaround in effect: querying for {} departures rather than {}",
                         raisedMaxEvents, maxEvents);
