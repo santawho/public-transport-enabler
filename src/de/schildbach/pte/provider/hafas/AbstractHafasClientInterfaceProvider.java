@@ -559,12 +559,16 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
         }
     }
 
+    protected boolean supportsStationBoardKeepDistinct() {
+        return false;
+    }
+
     protected final QueryDeparturesResult jsonStationBoard(
             final String stationId,
             final @Nullable Date time,
             final boolean arrivals,
             int maxEvents,
-            final EquivalentStationsMode equivsMode,
+            EquivalentStationsMode equivsMode,
             final Set<Product> products,
             final boolean includeLinesAtStation) throws IOException {
         final boolean canStbFltrEquiv = apiLevel <= 18;
@@ -581,6 +585,8 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
             stbFltrEquiv = equivsMode != EquivalentStationsMode.KEEP_DISTINCT;
         } else {
             stbFltrEquiv = false;
+            if (equivsMode == EquivalentStationsMode.KEEP_DISTINCT && !supportsStationBoardKeepDistinct())
+                equivsMode = EquivalentStationsMode.META_IF_SAME_NAME;
             if (equivsMode == EquivalentStationsMode.KEEP_DISTINCT) {
                 // requestType = "_MAST";
                 requestType = "_STATION";
