@@ -33,12 +33,12 @@ public class IrlProvider extends AbstractHafasClientInterfaceProvider {
     private static final HttpUrl API_BASE = HttpUrl.parse("https://journeyplanner.irishrail.ie/bin/");
     private static final Product[] PRODUCTS_MAP = {
             Product.HIGH_SPEED_TRAIN,
+            Product.HIGH_SPEED_TRAIN, // 2: InterCity
             Product.HIGH_SPEED_TRAIN,
-            Product.HIGH_SPEED_TRAIN,
-            Product.REGIONAL_TRAIN,
-            Product.SUBURBAN_TRAIN,
-            Product.SUBURBAN_TRAIN,
-            Product.TRAM,
+            Product.REGIONAL_TRAIN, // 8: Commuter
+            Product.SUBURBAN_TRAIN, // 16: DART
+            Product.BUS, // 32: Bus
+            Product.TRAM, // 64: LUAS
             Product.BUS,
             Product.BUS,
             Product.BUS
