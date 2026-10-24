@@ -86,7 +86,7 @@ public abstract class RateLimiter {
         }
 
         @Override
-        public void check(final long nowMillis, final HttpUrl url) throws RateLimitException {
+        public synchronized void check(final long nowMillis, final HttpUrl url) throws RateLimitException {
             long leftMillis = currentSemiIntervalEndMillis - nowMillis;
             if (leftMillis <= 0) {
                 int numBucketsFinished = (int) (-leftMillis / bucketIntervalMillis + 1);
