@@ -1058,7 +1058,10 @@ public abstract class DbWebProvider extends DbProvider {
                 if (equivsMode == EquivalentStationsMode.USE_META && !stationId.equals(bahnhofsId)) {
                     continue;
                 }
-                final Location location = createLocation(LocationType.STATION, bahnhofsId, null, bahnhofsName, null, null);
+                // they do not deliver the coordinates
+                // for the same station use the coordinates from the requested station
+                final Point coord = bahnhofsId.equals(stationId) ? station.coord : null;
+                final Location location = createLocation(LocationType.STATION, bahnhofsId, coord, bahnhofsName, null, null);
                 StationDepartures stationDepartures = result.findStationDepartures(location);
                 if (stationDepartures == null) {
                     stationDepartures = new StationDepartures(location, new ArrayList<Departure>(8), null);
