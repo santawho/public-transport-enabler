@@ -301,14 +301,35 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
             return new PTDate(millis, timeZone);
         }
     }
+
+    private static boolean isPrefixOf(final String prefix, final String other) {
+        if (prefix == null)
+            return false;
+
+        final int prefixLength = prefix.length();
+        if (prefixLength == 0)
+            return false;
+
+        final int otherLength = other.length();
+        if (prefixLength > otherLength)
+            return false;
+
+        if (prefixLength == otherLength)
+            return prefix.equals(other);
+
+        if (!other.startsWith(prefix))
+            return false;
+
+        return other.charAt(prefixLength) == ' ';
+    }
     
     protected static Line parseMotisLine(final JSONObject data) throws JSONException {
         final String routeShortName = data.getString("routeShortName");
         final String tripShortName = data.getString("tripShortName");
         final String displayName = data.getString("displayName");
         final String label =
-                displayName.startsWith(routeShortName) ? routeShortName
-                : displayName.startsWith(tripShortName) ? tripShortName
+                isPrefixOf(routeShortName, displayName) ? routeShortName
+                : isPrefixOf(tripShortName, displayName) ? tripShortName
                 : displayName;
         final String name = displayName;
         return new Line(
