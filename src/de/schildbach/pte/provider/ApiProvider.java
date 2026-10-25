@@ -21,6 +21,8 @@ import java.net.Proxy;
 
 import javax.annotation.Nullable;
 
+import de.schildbach.pte.util.HttpClient;
+
 public interface ApiProvider {
     String setUserInterfaceLanguage(@Nullable String userInterfaceLanguage);
     enum UserAgentType { NONE, ANY, APP, BROWSER, PROVIDER_SPECIFIC }
@@ -29,6 +31,8 @@ public interface ApiProvider {
     ApiProvider setProxy(final Proxy proxy);
     ApiProvider setTrustAllCertificates(final boolean trustAllCertificates);
     void setMessagesAsSimpleHtml(boolean messagesAsSimpleHtml);
+    HttpClient getHttpClient();
+    HttpClient.UsageStatistics getUsageStatistics(final long nowMs);
 
     String LESS_IMPORTANT_HTML_SPLIT_MARKER = "<lessimportant/>";
 }

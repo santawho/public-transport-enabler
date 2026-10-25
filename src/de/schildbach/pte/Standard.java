@@ -26,6 +26,7 @@ import javax.annotation.Nullable;
 import de.schildbach.pte.dto.Product;
 import de.schildbach.pte.dto.Style;
 import de.schildbach.pte.dto.Style.Shape;
+import de.schildbach.pte.util.EventCounter;
 
 /**
  * @author Andreas Schildbach
@@ -146,5 +147,15 @@ public class Standard {
                 return style;
         }
         return styles.get(key);
+    }
+
+    private static EventCounter.Factory networkEventCounterFactory;
+
+    public static void setNetworkEventCounterFactory(final EventCounter.Factory eventCounterFactory) {
+        networkEventCounterFactory = eventCounterFactory;
+    }
+
+    public static EventCounter.Factory getNetworkEventCounterFactory() {
+        return networkEventCounterFactory;
     }
 }

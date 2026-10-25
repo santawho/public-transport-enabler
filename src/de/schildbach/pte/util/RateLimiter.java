@@ -20,26 +20,41 @@ package de.schildbach.pte.util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
+
 import de.schildbach.pte.exception.RateLimitException;
 import okhttp3.HttpUrl;
 
 public abstract class RateLimiter {
     private static final Logger log = LoggerFactory.getLogger(RateLimiter.class);
 
+    public static class Statistics {
+        public long intervalMillis;
+        public int allowedRequests;
+        public int requests;
+        public int fails;
+    }
+
+    public abstract void getStatistics(final long nowMs, final List<Statistics> out);
+
     public static RateLimiter multi(final RateLimiter... limiters) {
         return new MultiIntervalLimiter(limiters);
     }
 
-    public static RateLimiter delaying(final long intervalMillis, final int maxRequestsPerInterval, long bucketMillis) {
-        return new SingleIntervalLimiter(intervalMillis, maxRequestsPerInterval, bucketMillis, false);
+    public static RateLimiter delaying(
+            final long intervalMillis, final int maxRequestsPerInterval, final long bucketMillis,
+            final EventCounter.Factory eventCounterFactory) {
+        return new SingleIntervalLimiter(
+                intervalMillis, maxRequestsPerInterval, bucketMillis, false,
+                eventCounterFactory);
     }
 
-    public static RateLimiter failing(final long intervalMillis, final int maxRequestsPerInterval, int bucketMillis) {
-        return new SingleIntervalLimiter(intervalMillis, maxRequestsPerInterval, bucketMillis, true);
-    }
-
-    public void check(final HttpUrl url) throws RateLimitException {
-        check(System.currentTimeMillis(), url);
+    public static RateLimiter failing(
+            final long intervalMillis, final int maxRequestsPerInterval, final long bucketMillis,
+            final EventCounter.Factory eventCounterFactory) {
+        return new SingleIntervalLimiter(
+                intervalMillis, maxRequestsPerInterval, bucketMillis, true,
+                eventCounterFactory);
     }
 
     public abstract void check(final long nowMillis, final HttpUrl url) throws RateLimitException;
@@ -57,51 +72,46 @@ public abstract class RateLimiter {
                 limiter.check(nowMillis, url);
             }
         }
+
+        @Override
+        public void getStatistics(final long nowMs, final List<Statistics> out) {
+            if (limiters == null)
+                return;
+            for (final RateLimiter limiter : limiters)
+                limiter.getStatistics(nowMs, out);
+        }
     }
 
     public static class SingleIntervalLimiter extends RateLimiter {
         private final long bucketIntervalMillis;
         private final int maxRequestsPerInterval;
-        private final long bucketMillis;
         private final int numBuckets;
         private final boolean isFailing;
+        private final EventCounter failsCounter;
 
         private final int[] bucketNumRequests;
         private int currentBucketIndex;
         private int numRequestTotal;
-        private long currentSemiIntervalEndMillis;
+        private long currentIntervalEndMillis;
 
         private SingleIntervalLimiter(
                 final long intervalMillis,
                 final int maxRequestsPerInterval,
                 final long bucketMillis,
-                final boolean isFailing) {
-            numBuckets = (int) (intervalMillis / bucketMillis);
+                final boolean isFailing,
+                final EventCounter.Factory eventCounterFactory) {
+            this.numBuckets = (int) (intervalMillis / bucketMillis);
             this.bucketIntervalMillis = intervalMillis / numBuckets;
             this.maxRequestsPerInterval = maxRequestsPerInterval;
-            this.bucketMillis = bucketMillis;
             this.isFailing = isFailing;
+            this.failsCounter = eventCounterFactory == null ? null : eventCounterFactory.newCounter();
 
             bucketNumRequests = new int[numBuckets];
         }
 
         @Override
         public synchronized void check(final long nowMillis, final HttpUrl url) throws RateLimitException {
-            long leftMillis = currentSemiIntervalEndMillis - nowMillis;
-            if (leftMillis <= 0) {
-                int numBucketsFinished = (int) (-leftMillis / bucketIntervalMillis + 1);
-                if (numBucketsFinished > numBuckets)
-                    numBucketsFinished = numBuckets;
-                while (--numBucketsFinished >= 0) {
-                    if (++currentBucketIndex >= numBuckets)
-                        currentBucketIndex = 0;
-                    numRequestTotal -= bucketNumRequests[currentBucketIndex];
-                    bucketNumRequests[currentBucketIndex] = 0;
-                }
-                currentSemiIntervalEndMillis = nowMillis + bucketIntervalMillis;
-                leftMillis = bucketIntervalMillis;
-            }
-
+            final long leftMillis = update(nowMillis);
             bucketNumRequests[currentBucketIndex] += 1;
             numRequestTotal += 1;
             if (numRequestTotal <= maxRequestsPerInterval) {
@@ -111,6 +121,9 @@ public abstract class RateLimiter {
                         maxRequestsPerInterval);
                 return;
             }
+
+            if (failsCounter != null)
+                failsCounter.addEvent(nowMillis);
 
             if (isFailing) {
                 log.warn("failing due to request rate limit, more than {} requests per {} millis",
@@ -127,6 +140,35 @@ public abstract class RateLimiter {
             } catch (final InterruptedException ie) {
                 throw new RateLimitException(false, url, null);
             }
+        }
+
+        private long update(final long nowMillis) {
+            long leftMillis = currentIntervalEndMillis - nowMillis;
+            if (leftMillis <= 0) {
+                int numBucketsFinished = (int) (-leftMillis / bucketIntervalMillis + 1);
+                if (numBucketsFinished > numBuckets)
+                    numBucketsFinished = numBuckets;
+                while (--numBucketsFinished >= 0) {
+                    if (++currentBucketIndex >= numBuckets)
+                        currentBucketIndex = 0;
+                    numRequestTotal -= bucketNumRequests[currentBucketIndex];
+                    bucketNumRequests[currentBucketIndex] = 0;
+                }
+                currentIntervalEndMillis = nowMillis + bucketIntervalMillis;
+                leftMillis = bucketIntervalMillis;
+            }
+            return leftMillis;
+        }
+
+        @Override
+        public void getStatistics(final long nowMs, final List<Statistics> out) {
+            update(nowMs);
+            final Statistics stats = new Statistics();
+            stats.intervalMillis = bucketIntervalMillis * numBuckets;
+            stats.allowedRequests = maxRequestsPerInterval;
+            stats.requests = numRequestTotal;
+            stats.fails = failsCounter == null ? 0 : failsCounter.getCurrentTotalCount();
+            out.add(stats);
         }
     }
 }

@@ -22,6 +22,8 @@ import org.slf4j.LoggerFactory;
 
 import java.net.Proxy;
 
+import de.schildbach.pte.Standard;
+import de.schildbach.pte.util.EventCounter;
 import de.schildbach.pte.util.HttpClient;
 import de.schildbach.pte.util.RateLimiter;
 
@@ -34,8 +36,9 @@ public abstract class AbstractApiProvider implements ApiProvider {
 
     protected AbstractApiProvider() {
         this.log = LoggerFactory.getLogger(this.getClass());
-        httpClient = new HttpClient();
-        httpClient.setRateLimiter(createRateLimiter());
+        final EventCounter.Factory eventCounterFactory = Standard.getNetworkEventCounterFactory();
+        httpClient = new HttpClient(eventCounterFactory);
+        httpClient.setRateLimiter(createRateLimiter(eventCounterFactory));
         setUserAgent(HttpClient.getUserAgent(getUserAgentType()));
     }
 
@@ -43,14 +46,20 @@ public abstract class AbstractApiProvider implements ApiProvider {
         return log;
     }
 
+    @Override
     public HttpClient getHttpClient() {
         return httpClient;
     }
 
-    protected RateLimiter createRateLimiter() {
+    @Override
+    public HttpClient.UsageStatistics getUsageStatistics(final long nowMs) {
+        return httpClient.getUsageStatistics(nowMs);
+    }
+
+    protected RateLimiter createRateLimiter(final EventCounter.Factory eventCounterFactory) {
         return RateLimiter.multi(
-            RateLimiter.delaying(1000, 5, 100), // burst max 5 per seconds
-            RateLimiter.failing(60000, 50, 1000) // single rush of 50 per one minute
+            RateLimiter.delaying(1000, 5, 100, eventCounterFactory), // burst max 5 per seconds
+            RateLimiter.failing(60000, 50, 1000, eventCounterFactory) // single rush of 50 per one minute
         );
     }
 

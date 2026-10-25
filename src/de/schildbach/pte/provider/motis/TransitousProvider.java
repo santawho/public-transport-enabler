@@ -21,6 +21,7 @@ import java.util.Set;
 
 import de.schildbach.pte.NetworkId;
 import de.schildbach.pte.dto.Product;
+import de.schildbach.pte.util.EventCounter;
 import de.schildbach.pte.util.RateLimiter;
 import okhttp3.HttpUrl;
 
@@ -54,11 +55,11 @@ public class TransitousProvider extends AbstractMotisProvider {
     }
 
     @Override
-    protected RateLimiter createRateLimiter() {
+    protected RateLimiter createRateLimiter(final EventCounter.Factory eventCounterFactory) {
         return RateLimiter.multi(
-                RateLimiter.delaying(1000, 5, 100), // burst max 5 per seconds
-                RateLimiter.failing(60000, 50, 1000), // single rush of 50 per one minute
-                RateLimiter.failing(900000, 200, 10000) // continuos stream of 100 per 15 minutes
+                RateLimiter.delaying(1000, 5, 100, eventCounterFactory), // burst max 5 per seconds
+                RateLimiter.failing(60000, 50, 1000, eventCounterFactory), // single rush of 50 per one minute
+                RateLimiter.failing(900000, 200, 10000, eventCounterFactory) // continuos stream of 100 per 15 minutes
         );
     }
 

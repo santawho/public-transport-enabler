@@ -151,8 +151,11 @@ public final class HttpClient {
     private static final Logger log = LoggerFactory.getLogger(HttpClient.class);
 
     private OkHttpClient okHttpClient;
+    private final EventCounter eventCounter;
 
-    public HttpClient() {
+
+    public HttpClient(final EventCounter.Factory eventCounterFactory) {
+        this.eventCounter = eventCounterFactory == null ? null : eventCounterFactory.newCounter();
         setHeader("Accept", SCRAPE_ACCEPT);
     }
 
@@ -454,7 +457,11 @@ public final class HttpClient {
         requireNonNull(callback);
         requireNonNull(url);
 
-        checkInternalRateLimit(url);
+        final long now = System.currentTimeMillis();
+        if (eventCounter != null)
+            eventCounter.addEvent(now);
+
+        checkInternalRateLimit(now, url);
 
         final Request.Builder request = new Request.Builder();
         request.url(url);
@@ -526,9 +533,9 @@ public final class HttpClient {
         }
     }
 
-    private void checkInternalRateLimit(final HttpUrl url) throws RateLimitException {
+    private void checkInternalRateLimit(final long nowMs, final HttpUrl url) throws RateLimitException {
         if (rateLimiter != null)
-            rateLimiter.check(url);
+            rateLimiter.check(nowMs, url);
     }
 
     private static final Pattern P_REDIRECT_HTTP_EQUIV = Pattern.compile(
@@ -603,4 +610,25 @@ public final class HttpClient {
             return new X509Certificate[0];
         }
     };
+
+    public static class UsageStatistics {
+        public long timeSpanMillis;
+        public int requests;
+
+        public List<RateLimiter.Statistics> rateLimits;
+    }
+
+    public UsageStatistics getUsageStatistics(final long nowMs) {
+        final UsageStatistics stats = new UsageStatistics();
+        if (eventCounter != null) {
+            eventCounter.update(nowMs);
+            stats.timeSpanMillis = eventCounter.getTimeSpanMillis();
+            stats.requests = eventCounter.getCurrentTotalCount();
+        }
+        if (rateLimiter != null) {
+            stats.rateLimits = new ArrayList<>();
+            rateLimiter.getStatistics(nowMs, stats.rateLimits);
+        }
+        return stats;
+    }
 }
