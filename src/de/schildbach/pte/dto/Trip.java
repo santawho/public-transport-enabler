@@ -544,8 +544,11 @@ public final class Trip implements Serializable {
             if (stopId.equals(arrival.id))
                 return true;
 
-            boolean otherFound = false;
+            if (otherId.equals(arrival.id))
+                return false;
+
             boolean stopFound = false;
+            boolean otherFound = departure.id.equals(otherId);
             for (final Stop iStop: intermediateStops) {
                 String locId = iStop.location.id;
                 if (locId.equals(otherId)) {
