@@ -2060,7 +2060,8 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
         final Set<Product> products;
         final String name = loc.getString("name");
         if ("S".equals(type)) {
-            placeAndName = splitStationName(name);
+            final int pCls = loc.optInt("pCls", -1);
+            placeAndName = splitStationName(name, pCls);
             final int mMastLocX = loc.optInt("mMastLocX", -1);
             if (previousMetaLocsByIndex != null && mMastLocX != -1) {
                 // check if meta parent should be used instead
@@ -2087,7 +2088,6 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
             } else {
                 id = extId;
             }
-            final int pCls = loc.optInt("pCls", -1);
             products = pCls != -1 ? intToProducts(pCls) : null;
         } else if ("P".equals(type)) {
             locationType = LocationType.POI;

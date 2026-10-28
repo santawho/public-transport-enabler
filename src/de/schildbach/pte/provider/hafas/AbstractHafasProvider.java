@@ -150,6 +150,10 @@ public abstract class AbstractHafasProvider extends AbstractNetworkProvider {
             return splitStationName(name);
     }
 
+    protected String[] splitStationName(final String name, final int productBits) {
+        return splitStationName(name);
+    }
+
     protected String[] splitStationName(final String name) {
         return noPlaceStationName(name);
     }

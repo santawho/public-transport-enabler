@@ -36,9 +36,12 @@ public class InvgProvider extends AbstractHafasClientInterfaceProvider {
     private static final HttpUrl API_BASE = HttpUrl.parse("https://invg.hafas.de/");
     private static final Product[] PRODUCTS_MAP = {
             Product.BUS,
-            null, null,
+            Product.HIGH_SPEED_TRAIN,
+            null,
             Product.REGIONAL_TRAIN,
-            null, null, null, null, null,
+            null,
+            Product.BUS,
+            null, null, null,
             Product.ON_DEMAND,
     };
     private static final String AND_API_CLIENT = "{\"id\":\"INVG\",\"type\":\"AND\"}";
@@ -65,10 +68,14 @@ public class InvgProvider extends AbstractHafasClientInterfaceProvider {
     private static final String[] PLACES = { "Ingolstadt", "München" };
 
     @Override
-    protected String[] splitStationName(final String name) {
+    protected String[] splitStationName(final String name, final int productBits) {
         final Matcher m = P_SPLIT_NAME_FIRST_COMMA.matcher(name);
-        if (m.matches())
-            return new String[] { m.group(1), m.group(2) };
+        if (m.matches()) {
+            if (productBits == 1) // bus only
+                return new String[]{m.group(1), m.group(2)}; // bus stops: place, name
+            else
+                return new String[]{m.group(2), m.group(1)}; // railway stations: name, place
+        }
 
         for (final String place : PLACES)
             if (name.startsWith(place + " ") || name.startsWith(place + "-"))
