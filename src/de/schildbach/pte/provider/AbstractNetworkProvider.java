@@ -34,10 +34,13 @@ import org.msgpack.core.MessageUnpacker;
 
 import de.schildbach.pte.NetworkId;
 import de.schildbach.pte.Standard;
+import de.schildbach.pte.dto.Departure;
+import de.schildbach.pte.dto.Destination;
 import de.schildbach.pte.dto.JourneyRef;
 import de.schildbach.pte.dto.Line;
 import de.schildbach.pte.dto.Location;
 import de.schildbach.pte.dto.LocationType;
+import de.schildbach.pte.dto.PTDate;
 import de.schildbach.pte.dto.Position;
 import de.schildbach.pte.dto.Product;
 import de.schildbach.pte.dto.QueryDeparturesResult;
@@ -488,5 +491,99 @@ public abstract class AbstractNetworkProvider extends AbstractLocationSearchProv
             return new String[] { null, placeAndName };
 
         return new String[] { placeName, stationName };
+    }
+
+    public boolean isPredictionExpectedForPlannedTime(
+            final PTDate plannedTime,
+            final Date loadedAt) {
+        return Standard.isPredictionExpectedForPlannedTime(plannedTime, loadedAt);
+    }
+
+    public Departure createDeparture (
+            final Date loadedAt,
+            final boolean isArrival,
+            final PTDate plannedTime,
+            final PTDate predictedTime,
+            final Position plannedPosition,
+            final Position predictedPosition,
+            final Line line,
+            final Destination destination,
+            final boolean cancelled,
+            final int[] capacity,
+            final String message,
+            final JourneyRef journeyRef) {
+        return new Departure(loadedAt,
+                isArrival,
+                plannedTime, predictedTime,
+                predictedTime == null && isPredictionExpectedForPlannedTime(plannedTime, loadedAt),
+                plannedPosition, predictedPosition,
+                line, destination,
+                cancelled,
+                capacity,
+                message,
+                journeyRef);
+    }
+
+    public Stop createStop(
+            final Date loadedAt,
+            final Location location,
+            final PTDate plannedArrivalTime, final PTDate predictedArrivalTime,
+            final Position plannedArrivalPosition, final Position predictedArrivalPosition,
+            final boolean arrivalCancelled,
+            final PTDate plannedDepartureTime, final PTDate predictedDepartureTime,
+            final Position plannedDeparturePosition, final Position predictedDeparturePosition,
+            final boolean departureCancelled) {
+        return new Stop(
+                location,
+                plannedArrivalTime, predictedArrivalTime,
+                predictedArrivalTime == null && isPredictionExpectedForPlannedTime(plannedArrivalTime, loadedAt),
+                plannedArrivalPosition, predictedArrivalPosition,
+                arrivalCancelled,
+                plannedDepartureTime, predictedDepartureTime,
+                predictedDepartureTime == null && isPredictionExpectedForPlannedTime(plannedDepartureTime, loadedAt),
+                plannedDeparturePosition, predictedDeparturePosition,
+                departureCancelled);
+    }
+
+    public Stop createStop(
+            final Date loadedAt,
+            final Location location, final boolean departure,
+            final PTDate plannedTime, final PTDate predictedTime,
+            final Position plannedPosition, final Position predictedPosition,
+            final boolean cancelled) {
+        return new Stop(
+                location,
+                !departure ? plannedTime : null,
+                !departure ? predictedTime : null,
+                !departure ? predictedTime == null && isPredictionExpectedForPlannedTime(plannedTime, loadedAt) : false,
+                !departure ? plannedPosition : null,
+                !departure ? predictedPosition : null,
+                !departure ? cancelled : false,
+                departure ? plannedTime : null,
+                departure ? predictedTime : null,
+                departure ? predictedTime == null && isPredictionExpectedForPlannedTime(plannedTime, loadedAt) : false,
+                departure ? plannedPosition : null,
+                departure ? predictedPosition : null,
+                departure ? cancelled : false);
+    }
+
+    public Stop createStop(
+            final Location location,
+            final PTDate plannedArrivalTime, final Position plannedArrivalPosition,
+            final PTDate plannedDepartureTime, final Position plannedDeparturePosition) {
+        return new Stop(
+                location,
+                plannedArrivalTime,
+                null,
+                false,
+                plannedArrivalPosition,
+                null,
+                false,
+                plannedDepartureTime,
+                null,
+                false,
+                plannedDeparturePosition,
+                null,
+                false);
     }
 }

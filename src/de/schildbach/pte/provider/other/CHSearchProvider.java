@@ -193,7 +193,8 @@ public class CHSearchProvider extends AbstractNetworkProvider {
     @Override
     public QueryDeparturesResult queryDepartures(final String stationId, @Nullable final Date aTime, final int maxDepartures, final EquivalentStationsMode equivsMode, final Set<Product> products) throws IOException {
         // Set time to now if not set
-        final Date time = aTime == null ? new Date() : aTime;
+        final Date now = new Date();
+        final Date time = aTime == null ? now : aTime;
 
         final HttpUrl queryUrl = API_BASE.newBuilder()
                 .addPathSegment(STATIONBOARD_ENDPOINT)
@@ -222,7 +223,14 @@ public class CHSearchProvider extends AbstractNetworkProvider {
                 final Line line = new Line(sbEntry.Z, sbEntry.operator, type2Product(sbEntry.G), getTrainName(sbEntry.G, sbEntry.Z, sbEntry.L), new Style(Style.Shape.RECT, sbEntry.bgColor, sbEntry.fgColor));
                 final Destination destination = new Destination(null, new Location(LocationType.STATION, sbEntry.terminal.stationID, Point.fromDouble(sbEntry.terminal.lat, sbEntry.terminal.lon), null, sbEntry.terminal.name));
                 final TrackEntry track = sbEntry.track;
-                departures.add(new Departure(false, sbEntry.time, predictedTime, line, track.planned, track.predicted, destination, false, null, null, null));
+                departures.add(createDeparture(
+                        now,
+                        false,
+                        sbEntry.time, predictedTime,
+                        track.planned, track.predicted,
+                        line,
+                        destination,
+                        false, null, null, null));
             }
             final StationDepartures sd = new StationDepartures(boardLocation, departures, null);
             final QueryDeparturesResult QDres = new QueryDeparturesResult(resultHeader);
@@ -324,14 +332,22 @@ public class CHSearchProvider extends AbstractNetworkProvider {
                         final PTDate expectedDeparture = addMinutesToDate(leg.departure, leg.dep_delay);
                         final Location departureLocation = new Location(leg.isAddress ? LocationType.ADDRESS : LocationType.STATION, leg.stopID, legLocation, null, leg.name);
                         final TrackEntry entryTrack = leg.track;
-                        final Stop departureStop = new Stop(departureLocation, true, plannedDeparture, expectedDeparture, entryTrack.planned, entryTrack.predicted, leg.cancelled);
+                        final Stop departureStop = createStop(now,
+                                departureLocation, true,
+                                plannedDeparture, expectedDeparture,
+                                entryTrack.planned, entryTrack.predicted,
+                                leg.cancelled);
 
                         // Arrival
                         final PTDate plannedArrival = leg.exit.arrival;
                         final PTDate expectedArrival = addMinutesToDate(leg.exit.arrival, leg.exit.arr_delay);
                         final Location arrivalLocation = new Location(leg.exit.isAddress ? LocationType.ADDRESS : LocationType.STATION, leg.exit.stopID, legExitLocation, null, leg.exit.name);
                         final TrackEntry exitTrack = leg.exit.track;
-                        final Stop arrivalStop = new Stop(arrivalLocation, false, plannedArrival, expectedArrival, exitTrack.planned, exitTrack.predicted, leg.cancelled);
+                        final Stop arrivalStop = createStop(now,
+                                arrivalLocation, false,
+                                plannedArrival, expectedArrival,
+                                exitTrack.planned, exitTrack.predicted,
+                                leg.cancelled);
 
                         // Collect possible info texts (e.g number for on-demand services)
                         final String infoText = String.join(",", leg.infotexts);
@@ -351,15 +367,18 @@ public class CHSearchProvider extends AbstractNetworkProvider {
                                 final PTDate expectedArrivalTime = addMinutesToDate(stop.arrival, stop.arr_delay);
                                 final PTDate plannedDepartureTime = stop.departure;
                                 final PTDate expectedDepartureTime = addMinutesToDate(stop.departure, stop.dep_delay);
-                                intermediateStops.add(new Stop(stopLocation,
+                                intermediateStops.add(createStop(now,
+                                        stopLocation,
                                         plannedArrivalTime,
                                         expectedArrivalTime,
                                         null,
                                         null,
+                                        false,
                                         plannedDepartureTime,
                                         expectedDepartureTime,
                                         null,
-                                        null));
+                                        null,
+                                        false));
                             }
                         }
 

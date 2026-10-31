@@ -60,6 +60,7 @@ import org.msgpack.core.MessagePacker;
 import org.msgpack.core.MessageUnpacker;
 
 import de.schildbach.pte.NetworkId;
+import de.schildbach.pte.Standard;
 import de.schildbach.pte.dto.Departure;
 import de.schildbach.pte.dto.Destination;
 import de.schildbach.pte.dto.Fare;
@@ -575,6 +576,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
             EquivalentStationsMode equivsMode,
             final Set<Product> products,
             final boolean includeLinesAtStation) throws IOException {
+        final Date now = new Date();
         final boolean canStbFltrEquiv = apiLevel <= 18;
         if (maxEvents == 0)
             maxEvents = DEFAULT_MAX_BOARD_EVENTS;
@@ -874,12 +876,12 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
 
                     if (line != null) {
                         final String journeyId = jny.optString("jid", null);
-                        final Departure departure = new Departure(
+                        final Departure departure = createDeparture(
+                                now,
                                 arrivals,
-                                plannedTime,
-                                predictedTime,
-                                line,
+                                plannedTime, predictedTime,
                                 plannedPosition, predictedPosition,
+                                line,
                                 destination,
                                 cancelled,
                                 null,
@@ -1014,6 +1016,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
     }
 
     protected final List<Trip.Public> jsonPublicLeg(
+            final Date now,
             final JSONObject jny,
             final boolean splitSubJourneys,
             final Stop aDepartureStop, final Stop aArrivalStop,
@@ -1071,8 +1074,8 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                 final int dirTIdx = dirEntry.getInt("tIdx");
                 final int arrivalStopIndex = stopLIndexMap.get(dirTIdx);
 
-                final Stop departureStop = parseJsonStop(stopList.getJSONObject(departureStopIndex), locList, crdSysList, cal, baseDate, true);
-                final Stop arrivalStop = parseJsonStop(stopList.getJSONObject(arrivalStopIndex), locList, crdSysList, cal, baseDate, true);
+                final Stop departureStop = parseJsonStop(now, stopList.getJSONObject(departureStopIndex), locList, crdSysList, cal, baseDate, true);
+                final Stop arrivalStop = parseJsonStop(now, stopList.getJSONObject(arrivalStopIndex), locList, crdSysList, cal, baseDate, true);
 
                 final List<Stop> intermediateStops;
                 final int numIntermediates = arrivalStopIndex - departureStopIndex - 1;
@@ -1080,7 +1083,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                     intermediateStops = new ArrayList<>(numIntermediates);
                     for (int iStop = departureStopIndex + 1; iStop < arrivalStopIndex; iStop++) {
                         final JSONObject stop = stopList.getJSONObject(iStop);
-                        final Stop intermediateStop = parseJsonStop(stop, locList, crdSysList, cal, baseDate, false);
+                        final Stop intermediateStop = parseJsonStop(now, stop, locList, crdSysList, cal, baseDate, false);
                         intermediateStops.add(intermediateStop);
                     }
                 } else {
@@ -1134,13 +1137,13 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                 // at least we don't understand the meaning yet
                 // checkState(stopList.length() >= 2);
                 if (departureStop == null)
-                    departureStop = parseJsonStop(stopList.getJSONObject(0), locList, crdSysList, cal, baseDate, false);
+                    departureStop = parseJsonStop(now, stopList.getJSONObject(0), locList, crdSysList, cal, baseDate, false);
                 if (arrivalStop == null)
-                    arrivalStop = parseJsonStop(stopList.getJSONObject(stopList.length() - 1), locList, crdSysList, cal, baseDate, false);
+                    arrivalStop = parseJsonStop(now, stopList.getJSONObject(stopList.length() - 1), locList, crdSysList, cal, baseDate, false);
                 intermediateStops = new ArrayList<>(stopList.length());
                 for (int iStop = 1; iStop < stopList.length() - 1; iStop++) {
                     final JSONObject stop = stopList.getJSONObject(iStop);
-                    final Stop intermediateStop = parseJsonStop(stop, locList, crdSysList, cal, baseDate, false);
+                    final Stop intermediateStop = parseJsonStop(now, stop, locList, crdSysList, cal, baseDate, false);
                     intermediateStops.add(intermediateStop);
                 }
             } else {
@@ -1167,6 +1170,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
             final Set<Product> products, final WalkSpeed walkSpeed,
             final Integer maxWalkDistanceMeters,
             final Integer minTransferTimeMinutes) throws IOException {
+        final Date now = new Date();
         final Calendar c = new GregorianCalendar(timeZone);
         c.setTime(time);
 
@@ -1273,15 +1277,15 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                     final String secType = sec.getString("type");
 
                     final JSONObject secDep = sec.getJSONObject("dep");
-                    final Stop departureStop = parseJsonStop(secDep, locList, crdSysList, c, baseDate, false);
+                    final Stop departureStop = parseJsonStop(now, secDep, locList, crdSysList, c, baseDate, false);
 
                     final JSONObject secArr = sec.getJSONObject("arr");
-                    final Stop arrivalStop = parseJsonStop(secArr, locList, crdSysList, c, baseDate, false);
+                    final Stop arrivalStop = parseJsonStop(now, secArr, locList, crdSysList, c, baseDate, false);
 
                     final Trip.Leg leg;
                     if (SECTION_TYPE_JOURNEY.equals(secType) || SECTION_TYPE_TELE_TAXI.equals(secType)) {
                         final JSONObject jny = sec.getJSONObject("jny");
-                        final List<Trip.Public> onlyOnePublic = jsonPublicLeg(
+                        final List<Trip.Public> onlyOnePublic = jsonPublicLeg(now,
                                 jny, false, departureStop, arrivalStop,
                                 common, lines, locList, crdSysList,
                                 encodedPolylines, remarks, hims, c, baseDate);
@@ -1451,7 +1455,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                     ctxRecon = recon.getString("ctx");
                 }
                 final Trip trip = new Trip(
-                        new Date(),
+                        now,
                         ctxRecon.split("#")[0],
                         new HafasTripRef(network, from, via, to, ctxRecon),
                         tripFrom, tripTo, legs,
@@ -1561,6 +1565,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
             final HafasJourneyRef journeyRef,
             final boolean splitSubJourneys,
             final boolean loadPath) throws IOException {
+        final Date now = new Date();
         final String request = wrapJsonApiRequest("JourneyDetails", "{" //
                         + "\"jid\":\"" + journeyRef.jid + "\"," //
                         + "\"getPasslist\":true,\"getPolyline\":" + (loadPath ? "true" : "false") + "}", //
@@ -1631,7 +1636,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
             ParserUtils.parseIsoDate(c, journey.getString("date"));
             final Date baseDate = c.getTime();
 
-            final List<Trip.Public> journeyLegs = jsonPublicLeg(
+            final List<Trip.Public> journeyLegs = jsonPublicLeg(now,
                     journey, splitSubJourneys, null, null,
                     common, lines, locList, crdSysList,
                     encodedPolylines, remarks, hims, c, baseDate);
@@ -1787,6 +1792,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
     }
 
     private Stop parseJsonStop(
+            final Date now,
             final JSONObject json, final JSONArray locList, final JSONArray crdSysList,
             final Calendar c, final Date baseDate,
             final boolean fixMissingTimes) throws JSONException {
@@ -1817,9 +1823,14 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
             }
         }
 
-        return new Stop(location, plannedArrivalTime, predictedArrivalTime, plannedArrivalPosition,
-                predictedArrivalPosition, arrivalCancelled, plannedDepartureTime, predictedDepartureTime,
-                plannedDeparturePosition, predictedDeparturePosition, departureCancelled);
+        return createStop(now,
+                location,
+                plannedArrivalTime, predictedArrivalTime,
+                plannedArrivalPosition, predictedArrivalPosition,
+                arrivalCancelled,
+                plannedDepartureTime, predictedDepartureTime,
+                plannedDeparturePosition, predictedDeparturePosition,
+                departureCancelled);
     }
 
     private List<Remark> parseRemList(final JSONArray remList) throws JSONException {

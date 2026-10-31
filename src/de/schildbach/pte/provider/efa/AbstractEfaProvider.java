@@ -1591,6 +1591,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                 pp.setInput(body.charStream());
                 final ResultHeader header = enterItdRequest(pp);
 
+                final Date now = new Date();
                 final QueryDeparturesResult r = new QueryDeparturesResult(header);
 
                 XmlPullUtil.enter(pp, "itdDepartureMonitorRequest");
@@ -1699,13 +1700,14 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                         XmlPullUtil.skipExit(pp, "itdDeparture");
 
 //                        if (!lineDestinationAndCancelled.cancelled) {
-                            final Departure departure = new Departure(
+                            final Departure departure = createDeparture(
+                                    now,
                                     false,
                                     PTDate.fromCalendar(plannedDepartureTime),
                                     predictedDepartureTime.isSet(Calendar.HOUR_OF_DAY)
                                             ? PTDate.fromCalendar(predictedDepartureTime) : null,
-                                    lineDestinationAndCancelled.line,
                                     position, null,
+                                    lineDestinationAndCancelled.line,
                                     lineDestinationAndCancelled.destination,
                                     lineDestinationAndCancelled.cancelled,
                                     null,
@@ -1741,6 +1743,8 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
             try {
                 final XmlPullParser pp = parserFactory.newPullParser();
                 pp.setInput(body.charStream());
+
+                final Date now = new Date();
                 final ResultHeader header = enterEfa(pp);
                 final QueryDeparturesResult r = new QueryDeparturesResult(header);
 
@@ -1798,13 +1802,14 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                             r.stationDepartures.add(stationDepartures);
                         }
 
-                        stationDepartures.departures.add(new Departure(
+                        stationDepartures.departures.add(createDeparture(
+                                now,
                                 false,
                                 PTDate.fromCalendar(plannedDepartureTime),
                                 predictedDepartureTime.isSet(Calendar.HOUR_OF_DAY)
                                         ? PTDate.fromCalendar(predictedDepartureTime) : null,
-                                parseMobileMResult.line,
                                 position, null,
+                                parseMobileMResult.line,
                                 parseMobileMResult.destination,
                                 false,
                                 null,
@@ -2333,6 +2338,8 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
         final XmlPullParser pp = parserFactory.newPullParser();
 // pp.setInput(bufferedReader);
         pp.setInput(reader);
+
+        final Date now = new Date();
         final ResultHeader header = enterItdRequest(pp);
 
         XmlPullUtil.require(pp, "itdTripStopTimesRequest");
@@ -2385,7 +2392,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
         final Line styledLine = new Line(line.id, line.network, line.product, line.label,
                 lineStyle(line.network, line.product, line.label), lineAttrs);
 
-        final List<Stop> intermediateStops = processItdPoints(pp, calendar, null, null);
+        final List<Stop> intermediateStops = processItdPoints(now, pp, calendar, null, null);
 
         final int size = intermediateStops.size();
         if (size == 0) {
@@ -2469,6 +2476,8 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
         final XmlPullParser pp = parserFactory.newPullParser();
 // pp.setInput(bufferedReader);
         pp.setInput(reader);
+
+        final Date now = new Date();
         final ResultHeader header = enterEfa(pp);
         XmlPullUtil.optSkip(pp, "msgs");
 
@@ -2527,7 +2536,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
 
             if (plannedArrival != null || plannedDeparture != null) {
                 // only add if there is at least one time, else skip passing station
-                final Stop stop = new Stop(location,
+                final Stop stop = createStop(now, location,
                         plannedArrival, predictedArrival, position, null, arrivalCancelled,
                         plannedDeparture, predictedDeparture, position, null, departureCancelled);
                 intermediateStops.add(stop);
@@ -2674,6 +2683,8 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
         final XmlPullParser pp = parserFactory.newPullParser();
 // pp.setInput(bufferedReader);
         pp.setInput(reader);
+
+        final Date now = new Date();
         final ResultHeader header = enterItdRequest(pp);
         final Object context = header.context;
 
@@ -2839,7 +2850,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                         final int itdMeansOfTransportType = XmlPullUtil.intAttr(pp, "type");
 
                         if (itdMeansOfTransportType <= 16) {
-                            cancelled |= processPublicLeg(pp, legs, calendar, departureTime, departureTargetTime,
+                            cancelled |= processPublicLeg(now, pp, legs, calendar, departureTime, departureTargetTime,
                                     departureLocation, departurePosition, arrivalTime, arrivalTargetTime,
                                     arrivalLocation, arrivalPosition);
                         } else if (itdMeansOfTransportType == 97
@@ -2920,7 +2931,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                     XmlPullUtil.skipExit(pp, "itdRoute");
 
                     final Trip trip = new Trip(
-                            new Date(),
+                            now,
                             tripId, null, firstDepartureLocation, lastArrivalLocation, legs,
                             fares.isEmpty() ? null : fares, null, numChanges);
 
@@ -2978,6 +2989,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
     }
 
     private List<Stop> processItdPoints(
+            final Date now,
             final XmlPullParser pp, final Calendar calendar,
             final Integer defDepartureDelay, final Integer defArrivalDelay
     ) throws XmlPullParserException, IOException {
@@ -3038,7 +3050,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
 
             if (plannedStopArrivalTime != null || plannedStopDepartureTime != null) {
                 // only add if there is at least one time, else skip passing station
-                final Stop stop = new Stop(stopLocation,
+                final Stop stop = createStop(now, stopLocation,
                         plannedStopArrivalTime, predictedStopArrivalTime, stopPosition, null, arrivalDelay == -9999,
                         plannedStopDepartureTime, predictedStopDepartureTime, stopPosition, null, departureDelay == -9999);
                 intermediateStops.add(stop);
@@ -3051,6 +3063,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
     }
 
     private boolean processPublicLeg(
+            final Date now,
             final XmlPullParser pp, final List<Leg> legs, final Calendar calendar,
             final PTDate departureTime, final PTDate departureTargetTime, final Location departureLocation,
             final Position departurePosition, final PTDate arrivalTime, final PTDate arrivalTargetTime,
@@ -3149,7 +3162,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
 
         List<Stop> intermediateStops = null;
         if (XmlPullUtil.optEnter(pp, "itdStopSeq")) {
-            intermediateStops = processItdPoints(pp, calendar, departureDelay, arrivalDelay);
+            intermediateStops = processItdPoints(now, pp, calendar, departureDelay, arrivalDelay);
             XmlPullUtil.skipExit(pp, "itdStopSeq");
 
             // remove first and last, because they are not intermediate
@@ -3205,12 +3218,12 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
         final Line styledLine = new Line(line.id, line.network, line.product, line.label,
                 lineStyle(line.network, line.product, line.label), lineAttrs);
 
-        final Stop departure = new Stop(departureLocation, true,
+        final Stop departure = createStop(now, departureLocation, true,
                 departureTargetTime != null ? departureTargetTime : departureTime,
-                departureTime != null ? departureTime : null, departurePosition, null);
-        final Stop arrival = new Stop(arrivalLocation, false,
+                departureTime != null ? departureTime : null, departurePosition, null, false);
+        final Stop arrival = createStop(now, arrivalLocation, false,
                 arrivalTargetTime != null ? arrivalTargetTime : arrivalTime, arrivalTime != null ? arrivalTime : null,
-                arrivalPosition, null);
+                arrivalPosition, null, false);
 
         final Trip.Public leg = new Trip.Public(styledLine, destination, departure, arrival, intermediateStops, message, journeyRef);
         if (path != null && path.size() > (intermediateStops == null ? 0 : intermediateStops.size()) + 2)
@@ -3234,6 +3247,8 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
         final XmlPullParser pp = parserFactory.newPullParser();
 // pp.setInput(bufferedReader);
         pp.setInput(reader);
+
+        final Date now = new Date();
         final ResultHeader header = enterEfa(pp);
         XmlPullUtil.optSkip(pp, "msgs");
 
@@ -3303,11 +3318,11 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                                 ? PTDate.fromCalendar(predictedTimeCal) : null;
 
                         if ("departure".equals(usage)) {
-                            departure = new Stop(location, true, plannedTime, predictedTime, position, null);
+                            departure = createStop(now, location, true, plannedTime, predictedTime, position, null, false);
                             if (firstDepartureLocation == null)
                                 firstDepartureLocation = location;
                         } else if ("arrival".equals(usage)) {
-                            arrival = new Stop(location, false, plannedTime, predictedTime, position, null);
+                            arrival = createStop(now, location, false, plannedTime, predictedTime, position, null, false);
                             lastArrivalLocation = location;
                         } else {
                             throw new InvalidDataException("unknown usage: " + usage);
@@ -3384,7 +3399,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                                         ? PTDate.fromCalendar(predictedTimeCal) : null;
                                 if (plannedTime != null || predictedTime != null) {
                                     // only add if there is at least one time, else skip passing station
-                                    final Stop stop = new Stop(location, false, plannedTime, predictedTime, null, null);
+                                    final Stop stop = createStop(now, location, false, plannedTime, predictedTime, null, null, false);
                                     intermediateStops.add(stop);
                                 }
                             }
@@ -3455,7 +3470,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
                 }
 
                 final Trip trip = new Trip(
-                        new Date(),
+                        now,
                         tripId, null, firstDepartureLocation, lastArrivalLocation, legs, fares, null,
                         numChanges);
                 trips.add(trip);

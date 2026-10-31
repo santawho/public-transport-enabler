@@ -17,12 +17,14 @@
 
 package de.schildbach.pte;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
 import javax.annotation.Nullable;
 
+import de.schildbach.pte.dto.PTDate;
 import de.schildbach.pte.dto.Product;
 import de.schildbach.pte.dto.Style;
 import de.schildbach.pte.dto.Style.Shape;
@@ -157,5 +159,26 @@ public class Standard {
 
     public static EventCounter.Factory getNetworkEventCounterFactory() {
         return networkEventCounterFactory;
+    }
+
+    private static long predictionExpectedBeforePlannedTimeAtLeastMillis = Long.MIN_VALUE;
+
+    public static void unsetPredictionExpectedBeforePlannedTimeAtLeastMillis() {
+        Standard.predictionExpectedBeforePlannedTimeAtLeastMillis = Long.MIN_VALUE;
+    }
+
+    public static void setPredictionExpectedBeforePlannedTimeAtLeastMillis(
+            final long predictionExpectedBeforePlannedTimeAtLeastMillis) {
+        Standard.predictionExpectedBeforePlannedTimeAtLeastMillis =
+                predictionExpectedBeforePlannedTimeAtLeastMillis;
+    }
+
+    public static boolean isPredictionExpectedForPlannedTime(
+            final PTDate plannedTime,
+            final Date refTime) {
+        if (plannedTime == null || refTime == null)
+            return false;
+        final long diff = plannedTime.getTime() - refTime.getTime();
+        return diff < predictionExpectedBeforePlannedTimeAtLeastMillis;
     }
 }

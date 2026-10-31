@@ -22,10 +22,13 @@ import static java.util.Objects.requireNonNull;
 
 import java.io.Serializable;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.Locale;
 import java.util.Objects;
 
 import javax.annotation.Nullable;
+
+import de.schildbach.pte.Standard;
 
 /**
  * a departure OR ARRIVAL event
@@ -33,12 +36,14 @@ import javax.annotation.Nullable;
  * @author Andreas Schildbach
  */
 public final class Departure implements Serializable {
-    private static final long serialVersionUID = -9104517779537062795L;
+    private static final long serialVersionUID = -9104517779537062796L;
 
+    public final Date loadedAt;
     public final boolean isArrival;
 
     public final @Nullable PTDate plannedTime;
     public final @Nullable PTDate predictedTime;
+    public final boolean isPredictedTimeMissing;
     public final Line line;
     public final @Nullable Position plannedPosition;
     public final @Nullable Position predictedPosition;
@@ -49,21 +54,25 @@ public final class Departure implements Serializable {
     public final @Nullable JourneyRef journeyRef;
 
     public Departure(
+            final Date loadedAt,
             final boolean isArrival,
             final PTDate plannedTime,
             final PTDate predictedTime,
-            final Line line,
+            final boolean isPredictedTimeMissing,
             final Position plannedPosition,
             final Position predictedPosition,
+            final Line line,
             final Destination destination,
             final boolean cancelled,
             final int[] capacity,
             final String message,
             final JourneyRef journeyRef) {
+        this.loadedAt = loadedAt;
         this.isArrival = isArrival;
+        checkArgument(plannedTime != null || predictedTime != null);
         this.plannedTime = plannedTime;
         this.predictedTime = predictedTime;
-        checkArgument(plannedTime != null || predictedTime != null);
+        this.isPredictedTimeMissing = isPredictedTimeMissing;
         this.line = requireNonNull(line);
         this.plannedPosition = plannedPosition;
         this.predictedPosition = predictedPosition;

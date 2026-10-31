@@ -854,6 +854,7 @@ public abstract class AbstractOpenJourneyPlannerProvider extends AbstractNetwork
         createModeElements(document, params, "ModeFilter", products);
 
         final OJPResponse response = doRequest(document);
+        final Date now = new Date();
         final Element stopEventDelivery = response.getResponse("OJPStopEventDelivery");
 
         final Element stopEventResponseContext = response.getElement(stopEventDelivery, "StopEventResponseContext");
@@ -892,11 +893,12 @@ public abstract class AbstractOpenJourneyPlannerProvider extends AbstractNetwork
             final Element serviceElement = response.getElement(stopEvent, "Service");
             final Service service = new Service(response, serviceElement);
 
-            final Departure departure = new Departure(
+            final Departure departure = createDeparture(
+                    now,
                     arrivals,
                     plannedTime, predictedTime,
-                    service.line,
                     plannedPosition, predictedPosition,
+                    service.line,
                     service.destination,
                     cancelled,
                     null,
@@ -1096,7 +1098,7 @@ public abstract class AbstractOpenJourneyPlannerProvider extends AbstractNetwork
         final Element tripDelivery = response.getResponse("OJPTripDelivery");
         final Date now = new Date();
 
-        final List<Trip> trips = parseTripResult(response, tripDelivery, from, via, to, now);
+        final List<Trip> trips = parseTripResult(now, response, tripDelivery, from, via, to);
         if (trips.isEmpty())
             return new QueryTripsResult(resultHeader, QueryTripsResult.Status.NO_TRIPS);
 
@@ -1111,9 +1113,9 @@ public abstract class AbstractOpenJourneyPlannerProvider extends AbstractNetwork
     }
 
     private List<Trip> parseTripResult(
+            final Date now,
             final OJPResponse response, final Element delivery,
-            final Location from, final Location via, final Location to,
-            final Date now) {
+            final Location from, final Location via, final Location to) {
         final Element tripResponseContext = response.getElement(delivery, "TripResponseContext");
         final StopPlaceMap stopPlaceMap = tripResponseContext == null ? null :
                 new StopPlaceMap(response, response.getElement(tripResponseContext, "Places"));
@@ -1138,9 +1140,9 @@ public abstract class AbstractOpenJourneyPlannerProvider extends AbstractNetwork
 
                 final Element timedLeg = response.getElement(legData, "TimedLeg");
                 if (timedLeg != null) {
-                    final Trip.Public publicLeg = parseTimedLeg(
+                    final Trip.Public publicLeg = parseTimedLeg(now,
                             response, timedLeg,
-                            stopPlaceMap, now);
+                            stopPlaceMap);
                     if (!delayedTransferLegs.isEmpty()) {
                         final Trip.Individual individualLeg = parseTransferLegs(
                                 response, delayedTransferLegs,
@@ -1202,7 +1204,7 @@ public abstract class AbstractOpenJourneyPlannerProvider extends AbstractNetwork
         return trips;
     }
 
-    private static Location parseLocationElement(
+    private Location parseLocationElement(
             final OJPResponse response, final Element parent, final String elementName,
             final StopPlaceMap stopPlaceMap) {
         final Element element = response.getElement(parent, elementName);
@@ -1211,7 +1213,8 @@ public abstract class AbstractOpenJourneyPlannerProvider extends AbstractNetwork
         return stopPlaceMap.getStopPlaceLocation(stopPlaceRef);
     }
 
-    private static Stop parseStopElement(
+    private Stop parseStopElement(
+            final Date now,
             final OJPResponse response, final Element element,
             final StopPlaceMap stopPlaceMap) {
         final String stopPointRef = response.getTextElement(element, NS_SIRI, "StopPointRef");
@@ -1260,7 +1263,8 @@ public abstract class AbstractOpenJourneyPlannerProvider extends AbstractNetwork
             departureCancelled = false;
         }
 
-        return new Stop(
+        return createStop(
+                now,
                 location,
                 plannedArrivalTime, predictedArrivalTime,
                 plannedArrivalPosition, predictedArrivalPosition,
@@ -1271,15 +1275,17 @@ public abstract class AbstractOpenJourneyPlannerProvider extends AbstractNetwork
     }
 
     private List<Stop> parseStopList(
+            final Date now,
             final OJPResponse response, final Element parent,
             final String elementName,
             final StopPlaceMap stopPlaceMap) {
         final List<Stop> stops = new ArrayList<>();
-        final int numStops = parseStopList(stops, response, parent, elementName, stopPlaceMap);
+        final int numStops = parseStopList(now, stops, response, parent, elementName, stopPlaceMap);
         return numStops == 0 ? null : stops;
     }
 
     private int parseStopList(
+            final Date now,
             final List<Stop> stops,
             final OJPResponse response, final Element parent,
             final String elementName,
@@ -1288,7 +1294,7 @@ public abstract class AbstractOpenJourneyPlannerProvider extends AbstractNetwork
         final int numStops = stopList.getLength();
         for (int eventIndex = 0; eventIndex < numStops; ++eventIndex) {
             final Element call = (Element) stopList.item(eventIndex);
-            final Stop stop = parseStopElement(response, call, stopPlaceMap);
+            final Stop stop = parseStopElement(now, response, call, stopPlaceMap);
             stops.add(stop);
         }
         return numStops;
@@ -1356,18 +1362,19 @@ public abstract class AbstractOpenJourneyPlannerProvider extends AbstractNetwork
     }
 
     private Trip.Public parseTimedLeg(
+            final Date now,
             final OJPResponse response, final Element timedLeg,
-            final StopPlaceMap stopPlaceMap, final Date now) {
-        final Stop departureStop = parseStopElement(response,
+            final StopPlaceMap stopPlaceMap) {
+        final Stop departureStop = parseStopElement(now, response,
                 response.getElement(timedLeg, "LegBoard"),
                 stopPlaceMap);
-        final Stop arrivalStop = parseStopElement(response,
+        final Stop arrivalStop = parseStopElement(now, response,
                 response.getElement(timedLeg, "LegAlight"),
                 stopPlaceMap);
 
         final Element serviceElement = response.getElement(timedLeg, "Service");
         final Service service = new Service(response, serviceElement);
-        final List<Stop> intermediateStops = parseStopList(response, timedLeg, "LegIntermediate", stopPlaceMap);
+        final List<Stop> intermediateStops = parseStopList(now, response, timedLeg, "LegIntermediate", stopPlaceMap);
 
         return new Trip.Public(
                 service.line,
@@ -1471,8 +1478,8 @@ public abstract class AbstractOpenJourneyPlannerProvider extends AbstractNetwork
         final Service service = new Service(response, serviceElement);
 
         final List<Stop> stops = new ArrayList<>();
-        parseStopList(stops, response, tripInfoResult, "PreviousCall", stopPlaceMap);
-        parseStopList(stops, response, tripInfoResult, "OnwardCall", stopPlaceMap);
+        parseStopList(now, stops, response, tripInfoResult, "PreviousCall", stopPlaceMap);
+        parseStopList(now, stops, response, tripInfoResult, "OnwardCall", stopPlaceMap);
         final int numStops = stops.size();
 
         final Stop arrivalStop = stops.remove(numStops - 1);
@@ -1545,7 +1552,7 @@ public abstract class AbstractOpenJourneyPlannerProvider extends AbstractNetwork
         final Element tripRefineDelivery = response.getResponse("OJPTripRefineDelivery");
         final Date now = new Date();
 
-        final List<Trip> trips = parseTripResult(response, tripRefineDelivery, tripRef.from, tripRef.via, tripRef.to, now);
+        final List<Trip> trips = parseTripResult(now, response, tripRefineDelivery, tripRef.from, tripRef.via, tripRef.to);
         if (trips.isEmpty())
             return new QueryTripsResult(resultHeader, QueryTripsResult.Status.NO_TRIPS);
 

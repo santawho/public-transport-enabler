@@ -560,11 +560,12 @@ public abstract class DbMovasProvider extends DbProvider {
         return 0;
     }
 
-    private Stop parseStop(final JSONObject stop, final Location fallbackLocation) throws JSONException {
+    private Stop parseStop(final Date now, final JSONObject stop, final Location fallbackLocation) throws JSONException {
         final Position gleis = parsePosition(stop.optString("gleis", null));
         final Position ezGleis = parsePosition(stop.optString("ezGleis", null));
         final int cancelled = parseCancelled(stop);
-        return new Stop(
+        return createStop(
+                now,
                 Optional.ofNullable(parseLocation(stop.optJSONObject("ort"))).orElse(fallbackLocation),
                 parseIso8601WOffset(stop.optString("ankunftsDatum", null)),
                 parseIso8601WOffset(stop.optString("ezAnkunftsDatum", null)),
@@ -574,12 +575,12 @@ public abstract class DbMovasProvider extends DbProvider {
                 gleis, ezGleis, (cancelled & 2) != 0);
     }
 
-    private List<Stop> parseStops(final JSONArray stops) throws JSONException {
+    private List<Stop> parseStops(final Date now, final JSONArray stops) throws JSONException {
         if (stops == null)
             return null;
         final List<Stop> out = new LinkedList<>();
         for (int i = 0; i < stops.length(); i++) {
-            out.add(parseStop(stops.getJSONObject(i), null));
+            out.add(parseStop(now, stops.getJSONObject(i), null));
         }
         return out;
     }
@@ -639,9 +640,10 @@ public abstract class DbMovasProvider extends DbProvider {
     }
 
     private Trip.Public parseJourney(final JSONObject journey, final DbJourneyRef journeyRef) throws JSONException {
+        final Date now = new Date();
         Stop departureStop = null;
         Stop arrivalStop = null;
-        final List<Stop> intermediateStops = parseStops(journey.optJSONArray("halte"));
+        final List<Stop> intermediateStops = parseStops(now, journey.optJSONArray("halte"));
         if (intermediateStops != null && intermediateStops.size() >= 2) {
             final int size = intermediateStops.size();
             departureStop = intermediateStops.get(0);
@@ -682,11 +684,12 @@ public abstract class DbMovasProvider extends DbProvider {
     }
 
     private Trip.Leg parseLeg(final JSONObject abschnitt, final Supplier<String> journeyRequestIdSupplier) throws JSONException {
-        Stop departureStop = null;
-        Stop arrivalStop = null;
+        final Date now = new Date();
+        final Stop departureStop;
+        final Stop arrivalStop;
         final String typ = abschnitt.optString("typ", null);
         final boolean isPublicTransportLeg = "FAHRZEUG".equals(typ);
-        final List<Stop> intermediateStops = parseStops(abschnitt.optJSONArray("halte"));
+        final List<Stop> intermediateStops = parseStops(now, abschnitt.optJSONArray("halte"));
         if (intermediateStops != null && intermediateStops.size() >= 2 && isPublicTransportLeg) {
             final int size = intermediateStops.size();
             departureStop = intermediateStops.get(0);
@@ -694,8 +697,8 @@ public abstract class DbMovasProvider extends DbProvider {
             intermediateStops.remove(size - 1);
             intermediateStops.remove(0);
         } else {
-            departureStop = parseStop(abschnitt, parseLocation(abschnitt.optJSONObject("abgangsOrt")));
-            arrivalStop = parseStop(abschnitt, parseLocation(abschnitt.optJSONObject("ankunftsOrt")));
+            departureStop = parseStop(now, abschnitt, parseLocation(abschnitt.optJSONObject("abgangsOrt")));
+            arrivalStop = parseStop(now, abschnitt, parseLocation(abschnitt.optJSONObject("ankunftsOrt")));
         }
         if (isPublicTransportLeg) {
             String produktGattung = abschnitt.optString("produktGattung", null);
@@ -1037,6 +1040,7 @@ public abstract class DbMovasProvider extends DbProvider {
         String page = null;
         try {
             page = doRequest(url, request, contentType);
+            final Date now = new Date();
             final QueryDeparturesResult result = new QueryDeparturesResult(this.resultHeader);
             final JSONObject head = new JSONObject(page);
             final JSONArray deps = head.getJSONArray(arrivals ? "bahnhofstafelAnkunftPositionen" : "bahnhofstafelAbfahrtPositionen");
@@ -1062,16 +1066,17 @@ public abstract class DbMovasProvider extends DbProvider {
                 if (produktGattung == null)
                     produktGattung = dep.optString("produktGattungen", null);
                 final Line line = parseLine(dep, produktGattung);
-                final Stop stop = parseStop(dep, location);
+                final Stop stop = parseStop(now, dep, location);
                 final String administrationId = dep.optString("administrationId", null);
                 final String verkehrsmittelNummer = dep.optString("verkehrsmittelNummer", null);
                 final String zugNummer = dep.optString("zugNummer", null);
-                final Departure departure = new Departure(
+                final Departure departure = createDeparture(
+                        now,
                         arrivals,
                         arrivals ? stop.plannedArrivalTime : stop.plannedDepartureTime,
                         arrivals ? stop.predictedArrivalTime : stop.predictedDepartureTime,
-                        line,
                         stop.plannedDeparturePosition, stop.predictedDeparturePosition,
+                        line,
                         parseDirection(dep, arrivals, LocationType.STATION),
                         cancelled,
                         null,

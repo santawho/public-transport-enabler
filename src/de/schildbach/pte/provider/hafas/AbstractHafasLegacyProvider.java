@@ -483,6 +483,7 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
             addCustomReplaces(reader);
 
             try {
+                final Date now = new Date();
                 final XmlPullParserFactory factory = XmlPullParserFactory
                         .newInstance(System.getProperty(XmlPullParserFactory.PROPERTY_NAME), null);
                 final XmlPullParser pp = factory.newPullParser();
@@ -651,12 +652,12 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
                             message = null;
                         }
 
-                        final Departure departure = new Departure(
+                    final Departure departure = createDeparture(now,
                                 false,
                                 PTDate.fromCalendar(plannedTime),
                                 predictedTime != null ? PTDate.fromCalendar(predictedTime) : null,
-                                line,
                                 position, null,
+                                line,
                                 destination,
                                 cancelled,
                                 capacity,
@@ -835,6 +836,7 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
         final AtomicReference<QueryTripsResult> result = new AtomicReference<>();
         httpClient.getInputStream((bodyPeek, body) -> {
             try {
+                final Date now = new Date();
                 final XmlPullParserFactory factory = XmlPullParserFactory
                         .newInstance(System.getProperty(XmlPullParserFactory.PROPERTY_NAME), null);
                 final XmlPullParser pp = factory.newPullParser();
@@ -1119,7 +1121,7 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
                                             XmlPullUtil.skipExit(pp, "Dep");
                                         }
 
-                                        intermediateStops.add(new Stop(location, stopArrivalTime,
+                                        intermediateStops.add(createStop(location, stopArrivalTime,
                                                 stopArrivalPosition, stopDepartureTime, stopDeparturePosition));
                                     }
                                     XmlPullUtil.skipExit(pp, "BasicStop");
@@ -1187,10 +1189,10 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
                         XmlPullUtil.skipExit(pp, "ConSection");
 
                         if (line != null) {
-                            final Stop departure = new Stop(sectionDepartureLocation, true, departureTime, null,
-                                    departurePos, null);
-                            final Stop arrival = new Stop(sectionArrivalLocation, false, arrivalTime, null,
-                                    arrivalPos, null);
+                            final Stop departure = createStop(now, sectionDepartureLocation, true, departureTime, null,
+                                    departurePos, null, false);
+                            final Stop arrival = createStop(now, sectionArrivalLocation, false, arrivalTime, null,
+                                    arrivalPos, null, false);
 
                             final Trip.Public leg = new Trip.Public(line, destination, departure, arrival, intermediateStops, null);
                             if (path != null && path.size() > (intermediateStops == null ? 0 : intermediateStops.size()) + 2)
@@ -1215,7 +1217,7 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
                     XmlPullUtil.skipExit(pp, "Connection");
 
                     trips.add(new Trip(
-                            new Date(),
+                            now,
                             id, null, departureLocation, arrivalLocation, legs, null, capacity, numTransfers));
                 }
 
@@ -1477,6 +1479,7 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
         final AtomicReference<QueryTripsResult> result = new AtomicReference<>();
 
         httpClient.getInputStream((HttpClient.Callback) (bodyPeek, body) -> {
+            final Date now = new Date();
             final CustomBufferedInputStream bis = new CustomBufferedInputStream(
                     new GZIPInputStream(body.byteStream()));
 
@@ -1864,7 +1867,7 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
                                 final boolean validPredictedDate = !dominantPlanStopTime
                                         || (plannedStopArrivalDate != null && plannedStopDepartureDate != null);
 
-                                final Stop stop = new Stop(stopLocation, plannedStopArrivalDate,
+                                final Stop stop = createStop(now, stopLocation, plannedStopArrivalDate,
                                         validPredictedDate ? predictedStopArrivalDate : null,
                                         plannedStopArrivalPosition, predictedStopArrivalPosition,
                                         stopArrivalCancelled, plannedStopDepartureDate,
@@ -1928,11 +1931,11 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
                                 destination = null;
                             }
 
-                            final Stop departure = new Stop(departureLocation, true,
+                            final Stop departure = createStop(now, departureLocation, true,
                                     timestampFromMillis(plannedDepartureTime),
                                     timestampFromMillis(predictedDepartureTime),
                                     plannedDeparturePosition, predictedDeparturePosition, departureCancelled);
-                            final Stop arrival = new Stop(arrivalLocation, false,
+                            final Stop arrival = createStop(now, arrivalLocation, false,
                                     timestampFromMillis(plannedArrivalTime),
                                     timestampFromMillis(predictedArrivalTime),
                                     plannedArrivalPosition, predictedArrivalPosition, arrivalCancelled);
@@ -1946,7 +1949,7 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
                     }
 
                     final Trip trip = new Trip(
-                            new Date(),
+                            now,
                             connectionId, null, resDeparture, resArrival, legs, null, null,
                             (int) numChanges);
 

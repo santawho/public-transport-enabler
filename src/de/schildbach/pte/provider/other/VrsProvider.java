@@ -487,6 +487,7 @@ public class VrsProvider extends AbstractNetworkProvider {
         final CharSequence page = httpGet(url);
 
         try {
+            final Date now = new Date();
             final JSONObject head = new JSONObject(page.toString());
             final String error = head.optString("error", null);
             if (error != null) {
@@ -553,12 +554,12 @@ public class VrsProvider extends AbstractNetworkProvider {
                     if (!lines.contains(lineDestination)) {
                         lines.add(lineDestination);
                     }
-                    final Departure d = new Departure(
+                    final Departure d = createDeparture(now,
                             false,
                             plannedTime,
                             predictedTime,
-                            line,
                             position, null,
+                            line,
                             destination,
                             false,
                             null,
@@ -709,6 +710,7 @@ public class VrsProvider extends AbstractNetworkProvider {
         final CharSequence page = httpGet(url, 30);
 
         try {
+            final Date now = new Date();
             final List<Trip> trips = new ArrayList<>();
             final JSONObject head = new JSONObject(page.toString());
             final String error = head.optString("error", null);
@@ -818,7 +820,7 @@ public class VrsProvider extends AbstractNetworkProvider {
                             } else if (viaJsonObject.has("departure")) {
                                 departurePlanned = parseDateTime(viaJsonObject.getString("departure"));
                             }
-                            final Stop intermediateStop = new Stop(viaLocation,
+                            final Stop intermediateStop = createStop(now, viaLocation,
                                     arrivalPlanned, arrivalPredicted, viaPosition, viaPosition, false,
                                     departurePlanned, departurePredicted, viaPosition, viaPosition, false);
                             intermediateStops.add(intermediateStop);
@@ -914,10 +916,10 @@ public class VrsProvider extends AbstractNetworkProvider {
                     } else if (type.equals("publicTransport")) {
                         final Trip.Public newLeg = new Trip.Public(line, direction != null
                                 ? new Destination(direction, new Location(LocationType.DIRECTION, null /* id */, null /* place */, direction)) : null,
-                                new Stop(segmentOrigin, true /* departure */, departurePlanned, departurePredicted,
-                                        segmentOriginPosition, segmentOriginPosition),
-                                new Stop(segmentDestination, false /* departure */, arrivalPlanned, arrivalPredicted,
-                                        segmentDestinationPosition, segmentDestinationPosition),
+                                createStop(now, segmentOrigin, true /* departure */, departurePlanned, departurePredicted,
+                                        segmentOriginPosition, segmentOriginPosition, false),
+                                createStop(now, segmentDestination, false /* departure */, arrivalPlanned, arrivalPredicted,
+                                        segmentDestinationPosition, segmentDestinationPosition, false),
                                 intermediateStops, message.length() > 0 ? message.toString() : null);
                         newLeg.setPath(points);
                         legs.add(newLeg);
@@ -929,7 +931,7 @@ public class VrsProvider extends AbstractNetworkProvider {
                 final List<Fare> fares = parseFare(route.optJSONObject("costs"));
 
                 trips.add(new Trip(
-                        new Date(),
+                        now,
                         null /* id */, null, tripOrigin, tripDestination, legs, fares, null /* capacity */,
                         changes));
             }

@@ -18,12 +18,15 @@
 package de.schildbach.pte.dto;
 
 import java.io.Serializable;
+import java.util.Date;
 import java.util.Locale;
 import java.util.Objects;
 
 import javax.annotation.Nullable;
 
 import static java.util.Objects.requireNonNull;
+
+import de.schildbach.pte.Standard;
 
 /**
  * @author Andreas Schildbach
@@ -34,76 +37,39 @@ public final class Stop implements Serializable {
     public final Location location;
     public final @Nullable PTDate plannedArrivalTime;
     public final @Nullable PTDate predictedArrivalTime;
+    public final boolean isPredictedArrivalTimeMissing;
     public final @Nullable Position plannedArrivalPosition;
     public final @Nullable Position predictedArrivalPosition;
     public final boolean arrivalCancelled;
     public final @Nullable PTDate plannedDepartureTime;
     public final @Nullable PTDate predictedDepartureTime;
+    public final boolean isPredictedDepartureTimeMissing;
     public final @Nullable Position plannedDeparturePosition;
     public final @Nullable Position predictedDeparturePosition;
     public final boolean departureCancelled;
     public VehicleInformation vehicleInformation;
 
-    public Stop(final Location location, final PTDate plannedArrivalTime, final PTDate predictedArrivalTime,
-                final Position plannedArrivalPosition, final Position predictedArrivalPosition,
-                final PTDate plannedDepartureTime, final PTDate predictedDepartureTime, final Position plannedDeparturePosition,
-                final Position predictedDeparturePosition) {
-        this(location, plannedArrivalTime, predictedArrivalTime, plannedArrivalPosition, predictedArrivalPosition,
-                false, plannedDepartureTime, predictedDepartureTime, plannedDeparturePosition,
-                predictedDeparturePosition, false);
-    }
-
-    public Stop(final Location location, final PTDate plannedArrivalTime, final PTDate predictedArrivalTime,
-                final Position plannedArrivalPosition, final Position predictedArrivalPosition,
-                final boolean arrivalCancelled, final PTDate plannedDepartureTime, final PTDate predictedDepartureTime,
-                final Position plannedDeparturePosition, final Position predictedDeparturePosition,
-                final boolean departureCancelled) {
+    public Stop(
+            final Location location,
+            final PTDate plannedArrivalTime, final PTDate predictedArrivalTime, final boolean isPredictedArrivalTimeMissing,
+            final Position plannedArrivalPosition, final Position predictedArrivalPosition,
+            final boolean arrivalCancelled,
+            final PTDate plannedDepartureTime, final PTDate predictedDepartureTime, final boolean isPredictedDepartureTimeMissing,
+            final Position plannedDeparturePosition, final Position predictedDeparturePosition,
+            final boolean departureCancelled) {
         this.location = requireNonNull(location);
         this.plannedArrivalTime = plannedArrivalTime;
         this.predictedArrivalTime = predictedArrivalTime;
+        this.isPredictedArrivalTimeMissing = isPredictedArrivalTimeMissing;
         this.plannedArrivalPosition = plannedArrivalPosition;
         this.predictedArrivalPosition = predictedArrivalPosition;
         this.arrivalCancelled = arrivalCancelled;
         this.plannedDepartureTime = plannedDepartureTime;
         this.predictedDepartureTime = predictedDepartureTime;
+        this.isPredictedDepartureTimeMissing = isPredictedDepartureTimeMissing;
         this.plannedDeparturePosition = plannedDeparturePosition;
         this.predictedDeparturePosition = predictedDeparturePosition;
         this.departureCancelled = departureCancelled;
-    }
-
-    public Stop(final Location location, final boolean departure, final PTDate plannedTime, final PTDate predictedTime,
-                final Position plannedPosition, final Position predictedPosition) {
-        this(location, departure, plannedTime, predictedTime, plannedPosition, predictedPosition, false);
-    }
-
-    public Stop(final Location location, final boolean departure, final PTDate plannedTime, final PTDate predictedTime,
-                final Position plannedPosition, final Position predictedPosition, final boolean cancelled) {
-        this.location = requireNonNull(location);
-        this.plannedArrivalTime = !departure ? plannedTime : null;
-        this.predictedArrivalTime = !departure ? predictedTime : null;
-        this.plannedArrivalPosition = !departure ? plannedPosition : null;
-        this.predictedArrivalPosition = !departure ? predictedPosition : null;
-        this.arrivalCancelled = !departure ? cancelled : false;
-        this.plannedDepartureTime = departure ? plannedTime : null;
-        this.predictedDepartureTime = departure ? predictedTime : null;
-        this.plannedDeparturePosition = departure ? plannedPosition : null;
-        this.predictedDeparturePosition = departure ? predictedPosition : null;
-        this.departureCancelled = departure ? cancelled : false;
-    }
-
-    public Stop(final Location location, final PTDate plannedArrivalTime, final Position plannedArrivalPosition,
-                final PTDate plannedDepartureTime, final Position plannedDeparturePosition) {
-        this.location = requireNonNull(location);
-        this.plannedArrivalTime = plannedArrivalTime;
-        this.predictedArrivalTime = null;
-        this.plannedArrivalPosition = plannedArrivalPosition;
-        this.predictedArrivalPosition = null;
-        this.arrivalCancelled = false;
-        this.plannedDepartureTime = plannedDepartureTime;
-        this.predictedDepartureTime = null;
-        this.plannedDeparturePosition = plannedDeparturePosition;
-        this.predictedDeparturePosition = null;
-        this.departureCancelled = false;
     }
 
     public void setVehicleInformation(final VehicleInformation vehicleInformation) {

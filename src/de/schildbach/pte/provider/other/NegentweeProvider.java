@@ -399,7 +399,7 @@ public class NegentweeProvider extends AbstractNetworkProvider {
         return dateFromJSONObject(obj, (!obj.isNull(realtimeKey)) ? realtimeKey : key);
     }
 
-    private Trip tripFromJSONObject(JSONObject trip, @Nullable Location from, @Nullable Location to,
+    private Trip tripFromJSONObject(final Date now, JSONObject trip, @Nullable Location from, @Nullable Location to,
             @Nullable Map<String, JSONObject> disturbances) throws JSONException {
         JSONArray legs = trip.getJSONArray("legs");
 
@@ -418,18 +418,18 @@ public class NegentweeProvider extends AbstractNetworkProvider {
             LinkedList<Point> foundPoints = new LinkedList<>();
 
             // First stop
-            Stop firstStop = stopFromJSONObject(stops.getJSONObject(0));
+            Stop firstStop = stopFromJSONObject(now, stops.getJSONObject(0));
             foundPoints.add(firstStop.location.coord);
 
             // Intermediate stops
             LinkedList<Stop> foundStops = new LinkedList<>();
             for (int j = 1; j < stops.length() - 1; j++) {
-                foundStops.add(stopFromJSONObject(stops.getJSONObject(j)));
+                foundStops.add(stopFromJSONObject(now, stops.getJSONObject(j)));
                 foundPoints.add(foundStops.getLast().location.coord);
             }
 
             // Last stop
-            Stop lastStop = stopFromJSONObject(stops.getJSONObject(stops.length() - 1));
+            Stop lastStop = stopFromJSONObject(now, stops.getJSONObject(stops.length() - 1));
             foundPoints.add(lastStop.location.coord);
 
             switch (leg.getString("type").toLowerCase()) {
@@ -524,13 +524,17 @@ public class NegentweeProvider extends AbstractNetworkProvider {
                 id, null, from, to, foundLegs, tripFares, null, numberOfChanges);
     }
 
-    private Stop stopFromJSONObject(JSONObject stop) throws JSONException {
+    private Stop stopFromJSONObject(final Date now, JSONObject stop) throws JSONException {
         Position plannedPlatform = positionFromJSONObject(stop, "platform");
         Position changedPlatform = positionFromJSONObject(stop, "platformChange");
 
-        return new Stop(locationFromJSONObject(stop.getJSONObject("location")), dateFromJSONObject(stop, "arrival"),
-                dateFromJSONObject(stop, "realtimeArrival"), plannedPlatform, changedPlatform, false,
-                dateFromJSONObject(stop, "departure"), dateFromJSONObject(stop, "realtimeDeparture"), plannedPlatform,
+        return createStop(now,
+                locationFromJSONObject(stop.getJSONObject("location")),
+                dateFromJSONObject(stop, "arrival"),
+                dateFromJSONObject(stop, "realtimeArrival"),
+                plannedPlatform, changedPlatform, false,
+                dateFromJSONObject(stop, "departure"),
+                dateFromJSONObject(stop, "realtimeDeparture"), plannedPlatform,
                 changedPlatform, false);
     }
 
@@ -553,20 +557,21 @@ public class NegentweeProvider extends AbstractNetworkProvider {
                 null, null);
     }
 
-    private Departure departureFromJSONObject(JSONObject departure) throws JSONException {
+    private Departure departureFromJSONObject(final Date now, JSONObject departure) throws JSONException {
         JSONObject mode = departure.getJSONObject("mode");
 
         /* String lineName = */ departure.optString("service");
         Product lineProduct = productFromMode(mode.getString("type"), mode.getString("name"));
         final String destinationName = departure.getString("destinationName");
-        return new Departure(
+        return createDeparture(
+                now,
                 false,
                 timeFromJSONObject(departure, "time"),
                 timeFromJSONObject(departure, "time"),
+                !departure.isNull("platform") ? new Position(departure.getString("platform")) : null, null,
                 new Line(null, departure.getString("operatorName"), lineProduct,
                         !departure.isNull("service") ? departure.getString("service") : mode.getString("name"), null,
                         Standard.STYLES.get(lineProduct), null, null),
-                !departure.isNull("platform") ? new Position(departure.getString("platform")) : null, null,
                 new Destination(destinationName, new Location(LocationType.DIRECTION, null, null, destinationName)),
                 false,
                 null,
@@ -657,6 +662,7 @@ public class NegentweeProvider extends AbstractNetworkProvider {
         List<Trip> foundTrips = new ArrayList<>();
         String tripsEarlier, tripsLater;
         try {
+            final Date now = new Date();
             final JSONObject head = new JSONObject(page.toString());
 
             if (head.has("error")) {
@@ -713,7 +719,7 @@ public class NegentweeProvider extends AbstractNetworkProvider {
                         || "cancellations".equals(realtimeInfo.optString("cancellations"))))
                     continue;
 
-                foundTrips.add(tripFromJSONObject(trip, from, to, disturbancesMap));
+                foundTrips.add(tripFromJSONObject(now, trip, from, to, disturbancesMap));
             }
         } catch (final JSONException x) {
             throw new RuntimeException("cannot parse: '" + page + "' on " + url, x);
@@ -813,6 +819,7 @@ public class NegentweeProvider extends AbstractNetworkProvider {
 
         QueryDeparturesResult queryDeparturesResult = new QueryDeparturesResult(this.resultHeader);
         try {
+            final Date now = new Date();
             JSONObject head = new JSONObject(page.toString());
             JSONArray tabs = head.getJSONArray("tabs");
             for (int t = 0; t < tabs.length(); t++) {
@@ -836,7 +843,7 @@ public class NegentweeProvider extends AbstractNetworkProvider {
                         JSONObject departure = departures.getJSONObject(i);
                         JSONObject mode = departure.getJSONObject("mode");
 
-                        departuresResult.add(departureFromJSONObject(departure));
+                        departuresResult.add(departureFromJSONObject(now, departure));
 
                         Product lineProduct = productFromMode(mode.getString("type"), mode.getString("name"));
                         final String destinationName = departure.getString("destinationName");

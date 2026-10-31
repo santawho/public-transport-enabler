@@ -345,12 +345,12 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
                         ) : null);
     }
 
-    protected Stop parseMotisStop(final JSONObject data, final boolean realtime) throws JSONException {
+    protected Stop parseMotisStop(final Date now, final JSONObject data, final boolean realtime) throws JSONException {
         final Location location = parseMotisPlace(data);
         final TimeZone timeZone = getMotisTimeZone(data);
         final Function<String, PTDate> getDate = s -> parseMotisDateTime(s, timeZone);
 
-        return new Stop(
+        return createStop(now,
                 location,
                 data.has("scheduledArrival") ? getDate.apply(data.getString("scheduledArrival")) : null,
                 realtime && data.has("arrival") ? getDate.apply(data.getString("arrival")) : null,
@@ -466,6 +466,7 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
     }
 
     protected Trip parseMotisItinerary(
+            final Date now,
             final JSONObject data,
             final TripRef ref) throws JSONException, InvalidDataException {
         // TODO: Add support for fares
@@ -476,8 +477,8 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
         for (int i = 0; i < motisLegs.length(); i++) {
             final JSONObject motisLeg = motisLegs.getJSONObject(i);
 
-            final Stop depStop = parseMotisStop(motisLeg.getJSONObject("from"), motisLeg.getBoolean("realTime"));
-            final Stop arrStop = parseMotisStop(motisLeg.getJSONObject("to"), motisLeg.getBoolean("realTime"));
+            final Stop depStop = parseMotisStop(now, motisLeg.getJSONObject("from"), motisLeg.getBoolean("realTime"));
+            final Stop arrStop = parseMotisStop(now, motisLeg.getJSONObject("to"), motisLeg.getBoolean("realTime"));
             final JSONObject legGeometry = motisLeg.getJSONObject("legGeometry");
             final List<Point> polyline = PolylineFormat.decode(
                     legGeometry.getString("points"),
@@ -502,14 +503,14 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
                 final JSONArray motisIntermediateStopsJson = motisLeg.getJSONArray("intermediateStops");
                 final List<Stop> intermediateStops = new ArrayList<>(motisIntermediateStopsJson.length());
                 for (int isi = 0; isi < motisIntermediateStopsJson.length(); isi++) {
-                    intermediateStops.add(parseMotisStop(motisIntermediateStopsJson.getJSONObject(isi), realtime));
+                    intermediateStops.add(parseMotisStop(now, motisIntermediateStopsJson.getJSONObject(isi), realtime));
                 }
 
                 legs.add(new Trip.Public(
                         line,
                         new Destination(null, parseMotisPlace(motisLeg.getJSONObject("tripTo"))),
-                        parseMotisStop(motisLeg.getJSONObject("from"), realtime),
-                        parseMotisStop(motisLeg.getJSONObject("to"), realtime),
+                        parseMotisStop(now, motisLeg.getJSONObject("from"), realtime),
+                        parseMotisStop(now, motisLeg.getJSONObject("to"), realtime),
                         intermediateStops,
                         null,
                         new MotisJourneyRef(tripId)));
@@ -532,10 +533,10 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
                 data.getInt("transfers"));
     }
 
-    protected Stream<Trip> parseMotisItineraries(final JSONArray data, final TripRef ref) {
+    protected Stream<Trip> parseMotisItineraries(final Date now, final JSONArray data, final TripRef ref) {
         return IntStream.range(0, data.length()).mapToObj(i -> {
             try {
-                return parseMotisItinerary(data.getJSONObject(i), ref);
+                return parseMotisItinerary(now, data.getJSONObject(i), ref);
             } catch (final JSONException | InvalidDataException e) {
                 throw new RuntimeException(e);
             }
@@ -636,6 +637,7 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
         try {
             final CharSequence apiResult = httpClient.get(endpoint);
             try {
+                final Date now = new Date();
                 final JSONObject data = new JSONObject(apiResult.toString());
 
                 if (data.has("error")) {
@@ -681,13 +683,14 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
                     final Destination destination = new Destination(null, parseMotisPlace(stopTime.getJSONObject(tripX)));
 
                     final TimeZone timeZone = getMotisTimeZone(place);
-                    sd.departures.add(new Departure(
+                    sd.departures.add(createDeparture(
+                            now,
                             arrivals,
                             parseMotisDateTime(place.getString(scheduledX), timeZone),
                             parseMotisDateTime(place.getString(estimatedX), timeZone),
-                            line,
                             place.has("scheduledTrack") ? new Position(place.getString("scheduledTrack")) : null,
                             place.has("track") ? new Position(place.getString("track")) : null,
+                            line,
                             destination,
                             stopTime.has("cancelled") && stopTime.getBoolean("cancelled"),
                             null,
@@ -871,14 +874,19 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
         final CharSequence apiResult = httpClient.get(b.build(), 30);
 
         try {
+            final Date now = new Date();
             final JSONObject data = new JSONObject(apiResult.toString());
             final JSONArray itineraries = data.getJSONArray("itineraries");
             final JSONArray direct = data.getJSONArray("direct");
             final List<Trip> trips = new ArrayList<>(itineraries.length() + direct.length());
 
             try {
-                parseMotisItineraries(itineraries, new MotisTripRef(network, endpoint, from, via, to, null, null)).forEach(trips::add);
-                parseMotisItineraries(direct, new MotisTripRef(network, endpoint, from, via, to, null, null)).forEach(trips::add);
+                parseMotisItineraries(now, itineraries,
+                        new MotisTripRef(network, endpoint, from, via, to, null, null))
+                        .forEach(trips::add);
+                parseMotisItineraries(now, direct,
+                        new MotisTripRef(network, endpoint, from, via, to, null, null))
+                        .forEach(trips::add);
             } catch (final RuntimeException e) {
                 if (e.getCause() instanceof JSONException) {
                     throw (JSONException) e.getCause();
@@ -923,9 +931,10 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
         final CharSequence apiResult = httpClient.get(endpoint);
 
         try {
+            final Date now = new Date();
             final JSONObject data = new JSONObject(apiResult.toString());
             
-            final Trip trip = parseMotisItinerary(data, null);
+            final Trip trip = parseMotisItinerary(now, data, null);
 
             return new QueryJourneyResult(
                     new ResultHeader(network, SERVER_PRODUCT),

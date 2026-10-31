@@ -52,8 +52,32 @@ public class TripTest {
         Location from = new Location(LocationType.ANY, null);
         Location to = new Location(LocationType.ANY, null);
         List<Trip.Leg> legs = new LinkedList<>();
-        Stop departureStop = new Stop(from, null, null, PTDate.withNetworkOffset(42), null);
-        Stop arrivalStop = new Stop(to, PTDate.withNetworkOffset(43), null, null, null);
+        Stop departureStop = new Stop(from,
+                null,
+                null,
+                false,
+                null,
+                null,
+                false,
+                PTDate.withNetworkOffset(42),
+                null,
+                false,
+                null,
+                null,
+                false);
+        Stop arrivalStop = new Stop(to,
+                PTDate.withNetworkOffset(43),
+                null,
+                false,
+                null,
+                null,
+                false,
+                null,
+                null,
+                false,
+                null,
+                null,
+                false);
         Line dummyLine = new Line(null, null, null, null);
 
         switch (mode) {
