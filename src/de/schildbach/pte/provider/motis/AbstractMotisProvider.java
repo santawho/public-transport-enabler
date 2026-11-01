@@ -18,7 +18,7 @@
 package de.schildbach.pte.provider.motis;
 
 import de.schildbach.pte.NetworkId;
-import de.schildbach.pte.dto.Departure;
+import de.schildbach.pte.Standard;
 import de.schildbach.pte.dto.Destination;
 import de.schildbach.pte.dto.JourneyRef;
 import de.schildbach.pte.dto.Line;
@@ -365,6 +365,12 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
         );
     }
 
+    protected String[] splitStationNameIntern(final String motisPlaceName) {
+        if (Standard.doNotSplitStationNames)
+            return new String[] { null, motisPlaceName };
+        return splitStationName(motisPlaceName);
+    }
+
     protected String[] splitStationName(final String motisPlaceName) {
         return new String[] { null, motisPlaceName };
     }
@@ -372,7 +378,7 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
     protected Location parseMotisPlace(final JSONObject place) throws JSONException {
         final String motisStopId = place.optString("stopId", null);
         final String stopId = motisStopId == null || motisStopId.isEmpty() ? null : motisStopId;
-        final String[] placeAndName = splitStationName(place.getString("name"));
+        final String[] placeAndName = splitStationNameIntern(place.getString("name"));
         return new Location(
                 LocationType.STATION,
                 stopId,

@@ -584,7 +584,24 @@ public abstract class DbProvider extends AbstractNetworkProvider {
     }
 
     private static final Pattern P_SPLIT_NAME_ONE_COMMA = Pattern.compile("([^,(]*(\\([^)]*\\))?), ([^,]*)");
+
+    protected String[] splitStationNameIntern(final String name) {
+        if (Standard.doNotSplitStationNames)
+            return new String[] { null, name };
+        return splitStationName(name);
+    }
+
     protected String[] splitStationName(final String name) {
+        return splitPlaceAndName(name, P_SPLIT_NAME_ONE_COMMA, 3, 1);
+    }
+
+    protected String[] splitDirectionNameIntern(final String name) {
+        if (Standard.doNotSplitDirectionNames)
+            return new String[] { null, name };
+        return splitDirectionName(name);
+    }
+
+    protected String[] splitDirectionName(final String name) {
         return splitPlaceAndName(name, P_SPLIT_NAME_ONE_COMMA, 3, 1);
     }
 
@@ -614,8 +631,8 @@ public abstract class DbProvider extends AbstractNetworkProvider {
             final LocationType type, final String id, final Point coord, final String name,
             final Set<Product> products, final String bahnhofsInfoId) {
         final String[] placeAndName =
-                type == LocationType.STATION ? splitStationName(name)
-                : type == LocationType.DIRECTION ? splitStationName(name)
+                type == LocationType.STATION ? splitStationNameIntern(name)
+                : type == LocationType.DIRECTION ? splitDirectionNameIntern(name)
                 : splitAddress(name);
         return new Location(type, id, coord, placeAndName[0], placeAndName[1], products,
                 bahnhofsInfoId == null ? null : new LocationAdditionalData(bahnhofsInfoId));

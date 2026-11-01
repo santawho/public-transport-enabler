@@ -61,6 +61,7 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
 import de.schildbach.pte.NetworkId;
+import de.schildbach.pte.Standard;
 import de.schildbach.pte.dto.Departure;
 import de.schildbach.pte.dto.Destination;
 import de.schildbach.pte.dto.JourneyRef;
@@ -508,7 +509,24 @@ public abstract class AbstractOpenJourneyPlannerProvider extends AbstractNetwork
     }
 
     private static final Pattern P_SPLIT_NAME_ONE_COMMA = Pattern.compile("([^,(]*(\\([^)]*\\))?), ([^,]*)");
+
+    protected String[] splitStationNameIntern(final String name) {
+        if (Standard.doNotSplitStationNames)
+            return new String[] { null, name };
+        return splitStationName(name);
+    }
+
     protected String[] splitStationName(final String name) {
+        return splitPlaceAndName(name, P_SPLIT_NAME_ONE_COMMA, 1, 3);
+    }
+
+    protected String[] splitDirectionNameIntern(final String name) {
+        if (Standard.doNotSplitDirectionNames)
+            return new String[] { null, name };
+        return splitDirectionName(name);
+    }
+
+    protected String[] splitDirectionName(final String name) {
         return splitPlaceAndName(name, P_SPLIT_NAME_ONE_COMMA, 1, 3);
     }
 
@@ -523,8 +541,8 @@ public abstract class AbstractOpenJourneyPlannerProvider extends AbstractNetwork
             final Point coord,
             final String name) {
         final String[] placeAndName =
-                type == LocationType.STATION ? splitStationName(name)
-                        : type == LocationType.DIRECTION ? splitStationName(name)
+                type == LocationType.STATION ? splitStationNameIntern(name)
+                        : type == LocationType.DIRECTION ? splitDirectionNameIntern(name)
                           : splitAddress(name);
         return new Location(type, id, coord, placeAndName[0], placeAndName[1], null);
     }
@@ -716,7 +734,7 @@ public abstract class AbstractOpenJourneyPlannerProvider extends AbstractNetwork
                 }
                 final String stopPlaceName = response.getTranslatedText(stopPlace, "StopPlaceName");
                 final String stopPlaceRef = response.getTextElement(stopPlace, "StopPlaceRef");
-                final String[] placeAndName = splitStationName(stopPlaceName != null ? stopPlaceName : name);
+                final String[] placeAndName = splitStationNameIntern(stopPlaceName != null ? stopPlaceName : name);
                 location = new Location(LocationType.STATION, stopPlaceRef, geoPosition, placeAndName[0], placeAndName[1], products);
             } else {
                 final Element address = response.getElement(place, "Address");

@@ -60,7 +60,6 @@ import org.msgpack.core.MessagePacker;
 import org.msgpack.core.MessageUnpacker;
 
 import de.schildbach.pte.NetworkId;
-import de.schildbach.pte.Standard;
 import de.schildbach.pte.dto.Departure;
 import de.schildbach.pte.dto.Destination;
 import de.schildbach.pte.dto.Fare;
@@ -783,7 +782,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                     final Location plainDirectionLocation;
                     if (jnyDirTxt != null) {
                         String[] splitJnyDirTxt;
-                        splitJnyDirTxt = splitDirectionName(jnyDirTxt, line);
+                        splitJnyDirTxt = splitDirectionNameIntern(jnyDirTxt, line);
                         splitDirectionLocation = new Location(LocationType.DIRECTION, null, splitJnyDirTxt[0], splitJnyDirTxt[1]);
                         splitJnyDirTxt = noPlaceStationName(jnyDirTxt);
                         plainDirectionLocation = new Location(LocationType.DIRECTION, null, splitJnyDirTxt[0], splitJnyDirTxt[1]);
@@ -1103,7 +1102,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                 }
                 if (line == null)
                     line = lines.get(prodL.getJSONObject(0).getInt("prodX"));
-                final String[] splitDirTxt = splitDirectionName(dirTxt, line);
+                final String[] splitDirTxt = splitDirectionNameIntern(dirTxt, line);
                 final Destination destination = new Destination(dirTxt, new Location(LocationType.DIRECTION, null, splitDirTxt[0], splitDirTxt[1]));
 
                 final Trip.Public newLeg = new Trip.Public(
@@ -1124,7 +1123,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
 
             final Destination destination;
             if (dirTxt != null) {
-                final String[] splitDirTxt = splitDirectionName(dirTxt, line);
+                final String[] splitDirTxt = splitDirectionNameIntern(dirTxt, line);
                 destination = new Destination(dirTxt, new Location(LocationType.DIRECTION, null, splitDirTxt[0], splitDirTxt[1]));
             } else {
                 destination = null;
@@ -2072,7 +2071,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
         final String name = loc.getString("name");
         if ("S".equals(type)) {
             final int pCls = loc.optInt("pCls", -1);
-            placeAndName = splitStationName(name, pCls);
+            placeAndName = splitStationNameIntern(name, pCls);
             final int mMastLocX = loc.optInt("mMastLocX", -1);
             if (previousMetaLocsByIndex != null && mMastLocX != -1) {
                 // check if meta parent should be used instead

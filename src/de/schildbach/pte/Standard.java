@@ -181,4 +181,7 @@ public class Standard {
         final long diff = plannedTime.getTime() - refTime.getTime();
         return diff < predictionExpectedBeforePlannedTimeAtLeastMillis;
     }
+
+    public static boolean doNotSplitStationNames = false;
+    public static boolean doNotSplitDirectionNames = false;
 }

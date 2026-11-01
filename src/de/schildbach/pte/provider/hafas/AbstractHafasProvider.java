@@ -24,6 +24,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import de.schildbach.pte.NetworkId;
+import de.schildbach.pte.Standard;
 import de.schildbach.pte.dto.Line;
 import de.schildbach.pte.dto.Location;
 import de.schildbach.pte.dto.Position;
@@ -143,11 +144,23 @@ public abstract class AbstractHafasProvider extends AbstractNetworkProvider {
         return true;
     }
 
+    protected String[] splitDirectionNameIntern(final String name, @Nullable final Line line) {
+        if (Standard.doNotSplitDirectionNames)
+            return new String[] { null, name };
+        return splitDirectionName(name, line);
+    }
+
     protected String[] splitDirectionName(final String name, @Nullable final Line line) {
         if (isStationBoardDestinationCommonlyDirection())
             return noPlaceStationName(name);
         else
             return splitStationName(name);
+    }
+
+    protected String[] splitStationNameIntern(final String name, final int productBits) {
+        if (Standard.doNotSplitStationNames)
+            return new String[] { null, name };
+        return splitStationName(name, productBits);
     }
 
     protected String[] splitStationName(final String name, final int productBits) {
