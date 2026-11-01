@@ -515,7 +515,8 @@ public abstract class AbstractNetworkProvider extends AbstractLocationSearchProv
         return new Departure(loadedAt,
                 isArrival,
                 plannedTime, predictedTime,
-                predictedTime == null && isPredictionExpectedForPlannedTime(plannedTime, loadedAt),
+                predictedTime == null && !cancelled
+                        && isPredictionExpectedForPlannedTime(plannedTime, loadedAt),
                 plannedPosition, predictedPosition,
                 line, destination,
                 cancelled,
@@ -536,11 +537,13 @@ public abstract class AbstractNetworkProvider extends AbstractLocationSearchProv
         return new Stop(
                 location,
                 plannedArrivalTime, predictedArrivalTime,
-                predictedArrivalTime == null && isPredictionExpectedForPlannedTime(plannedArrivalTime, loadedAt),
+                predictedArrivalTime == null && !arrivalCancelled
+                        && isPredictionExpectedForPlannedTime(plannedArrivalTime, loadedAt),
                 plannedArrivalPosition, predictedArrivalPosition,
                 arrivalCancelled,
                 plannedDepartureTime, predictedDepartureTime,
-                predictedDepartureTime == null && isPredictionExpectedForPlannedTime(plannedDepartureTime, loadedAt),
+                predictedDepartureTime == null && !departureCancelled
+                        && isPredictionExpectedForPlannedTime(plannedDepartureTime, loadedAt),
                 plannedDeparturePosition, predictedDeparturePosition,
                 departureCancelled);
     }
@@ -555,13 +558,15 @@ public abstract class AbstractNetworkProvider extends AbstractLocationSearchProv
                 location,
                 !departure ? plannedTime : null,
                 !departure ? predictedTime : null,
-                !departure ? predictedTime == null && isPredictionExpectedForPlannedTime(plannedTime, loadedAt) : false,
+                !departure ? predictedTime == null && !cancelled
+                        && isPredictionExpectedForPlannedTime(plannedTime, loadedAt) : false,
                 !departure ? plannedPosition : null,
                 !departure ? predictedPosition : null,
                 !departure ? cancelled : false,
                 departure ? plannedTime : null,
                 departure ? predictedTime : null,
-                departure ? predictedTime == null && isPredictionExpectedForPlannedTime(plannedTime, loadedAt) : false,
+                departure ? predictedTime == null && !cancelled
+                        && isPredictionExpectedForPlannedTime(plannedTime, loadedAt) : false,
                 departure ? plannedPosition : null,
                 departure ? predictedPosition : null,
                 departure ? cancelled : false);
