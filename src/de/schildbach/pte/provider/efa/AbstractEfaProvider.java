@@ -2357,9 +2357,9 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
         final String destinationId = XmlPullUtil.optAttr(pp, "destID", null);
         final Location destination;
         if (destinationId != null)
-            destination = new Location(LocationType.STATION, destinationId, null, destinationName);
+            destination = new Location(LocationType.DIRECTION, destinationId, null, destinationName);
         else if (destinationId == null && destinationName != null)
-            destination = new Location(LocationType.ANY, null, null, destinationName);
+            destination = new Location(LocationType.DIRECTION, null, null, destinationName);
         else
             destination = null;
 
@@ -2407,7 +2407,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
 
         final String message = null;
         final Trip.Public journeyLeg = new Trip.Public(styledLine,
-                new Destination(null, arrivalStop.location),
+                new Destination(destinationName, destination != null ? destination : arrivalStop.location),
                 departureStop, arrivalStop, intermediateStops, message, journeyRef);
         return new QueryJourneyResult(header, url.toString(), journeyRef, journeyLeg);
     }
