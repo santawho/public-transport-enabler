@@ -60,6 +60,7 @@ import org.msgpack.core.MessagePacker;
 import org.msgpack.core.MessageUnpacker;
 
 import de.schildbach.pte.NetworkId;
+import de.schildbach.pte.Standard;
 import de.schildbach.pte.dto.Departure;
 import de.schildbach.pte.dto.Destination;
 import de.schildbach.pte.dto.Fare;
@@ -794,7 +795,9 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                     Destination altDestination = null;
                     final boolean destinationIsCommonlyDirection = isStationBoardDestinationCommonlyDirection();
                     final JSONArray prodL = jny.optJSONArray("prodL");
-                    if (prodL != null && prodL.length() > 0) {
+                    if (plainDirectionLocation != null && Standard.doNotSplitDirectionNames) {
+                        destination = new Destination(jnyDirTxt, plainDirectionLocation, false);
+                    } else if (prodL != null && prodL.length() > 0) {
                         // use terminal of first product
                         // for arrivals use the "fLocX" (from-location index)
                         // however, this points to the station just before the current station, not the first of that line
