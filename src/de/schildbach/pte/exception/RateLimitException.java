@@ -17,7 +17,7 @@
 
 package de.schildbach.pte.exception;
 
-import androidx.annotation.Nullable;
+import javax.annotation.Nullable;
 
 import okhttp3.HttpUrl;
 
