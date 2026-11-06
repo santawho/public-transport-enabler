@@ -24,6 +24,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
@@ -40,6 +41,7 @@ import javax.annotation.Nullable;
  * @author Andreas Schildbach
  */
 public final class Trip implements Serializable {
+    @Serial
     private static final long serialVersionUID = 2508466068307110312L;
 
     public final Date loadedAt;
@@ -57,8 +59,8 @@ public final class Trip implements Serializable {
 
     public Trip(
             final Date loadedAt,
-            final String id, final TripRef tripRef,
-            final Location from, final Location to, final List<? extends Leg> legs,
+            final String id, final @Nullable TripRef tripRef,
+            final Location from, final Location to, final List<Leg> legs,
             final List<Fare> fares, final int[] capacity, final Integer numChanges) {
         this.loadedAt = loadedAt;
         this.updatedAt = loadedAt;
@@ -66,7 +68,7 @@ public final class Trip implements Serializable {
         this.tripRef = tripRef;
         this.from = requireNonNull(from);
         this.to = requireNonNull(to);
-        this.legs = (List<Leg>) requireNonNull(legs);
+        this.legs = requireNonNull(legs);
         this.fares = fares;
         this.capacity = capacity;
         this.numChanges = numChanges;
@@ -243,8 +245,8 @@ public final class Trip implements Serializable {
 
                 if (leg.getDepartureTime().before(previous.getArrivalTime())) {
                     final Individual movedIndividual = individualLeg.movedClone(previous.getArrivalTime());
-                    legs.set(i, (Leg) movedIndividual);
-                    }
+                    legs.set(i, movedIndividual);
+                }
             }
         }
     }
@@ -332,7 +334,7 @@ public final class Trip implements Serializable {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(final Object o) {
         if (o == this)
             return true;
         if (!(o instanceof Trip))
@@ -361,6 +363,7 @@ public final class Trip implements Serializable {
     }
 
     public abstract static class Leg implements Serializable {
+        @Serial
         private static final long serialVersionUID = 8498461220084523265L;
 
         public final Location departure;
@@ -403,6 +406,7 @@ public final class Trip implements Serializable {
          */
         public abstract PTDate getMaxTime();
 
+        @Serial
         private void writeObject(final ObjectOutputStream os) throws IOException {
             os.defaultWriteObject();
             if (path != null && !path.isEmpty()) {
@@ -416,6 +420,7 @@ public final class Trip implements Serializable {
             }
         }
 
+        @Serial
         private void readObject(final ObjectInputStream is) throws ClassNotFoundException, IOException {
             is.defaultReadObject();
             try {
@@ -434,6 +439,7 @@ public final class Trip implements Serializable {
     }
 
     public final static class Public extends Leg {
+        @Serial
         private static final long serialVersionUID = 1312066446239817422L;
 
         public final Date loadedAt;
@@ -451,10 +457,10 @@ public final class Trip implements Serializable {
         public @Nullable Date exitTime;
 
         public Public(
-                final Line line, final Destination destination,
+                final Line line, final @Nullable Destination destination,
                 final Stop departureStop, final Stop arrivalStop,
-                final List<Stop> intermediateStops, final String message,
-                final JourneyRef journeyRef, final Date loadedAt) {
+                final @Nullable List<Stop> intermediateStops, final @Nullable String message,
+                final @Nullable JourneyRef journeyRef, final Date loadedAt) {
             super(departureStop.location, arrivalStop.location);
 
             this.loadedAt = loadedAt;
@@ -533,8 +539,8 @@ public final class Trip implements Serializable {
         }
 
         public boolean isStopAfterOther(final Stop stop, final Location other) {
-            String stopId = stop.location.id;
-            String otherId = other.id;
+            final String stopId = stop.location.id;
+            final String otherId = other.id;
             if (stopId.equals(otherId))
                 return false;
 
@@ -678,6 +684,7 @@ public final class Trip implements Serializable {
             WALK, BIKE, CAR, TRANSFER, CHECK_IN, CHECK_OUT
         }
 
+        @Serial
         private static final long serialVersionUID = -6651381862837233925L;
 
         public final Type type;
