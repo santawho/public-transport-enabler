@@ -27,8 +27,8 @@ import okhttp3.HttpUrl;
  */
 public class VorProvider extends VaoProvider {
     private static final HttpUrl API_BASE = HttpUrl.parse("https://anachb.vor.at/hamm/");
-    private static final String DEFAULT_API_CLIENT = "{\"id\":\"VAO\",\"type\":\"WEB\",\"name\":\"webapp\",\"l\":\"vs_anachb\"}";
-    private static final String WEBAPP_CONFIG_URL = "https://anachb.vor.at/webapp/config/webapp.config.json";
+    private static final String DEFAULT_API_CLIENT = "{\"id\":\"HAFAS\",\"type\":\"WEB\",\"name\":\"Routenplaner VOR AnachB\",\"l\":\"vs_anachb\"}";
+    private static final String WEBAPP_CONFIG_URL = "https://anachb.vor.at/webcomponent/config/webapp.config.json\n";
 
     public VorProvider() {
         this(DEFAULT_API_CLIENT, WEBAPP_CONFIG_URL);
