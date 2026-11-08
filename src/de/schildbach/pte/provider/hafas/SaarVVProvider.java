@@ -56,6 +56,11 @@ public class SaarVVProvider extends AbstractHafasClientInterfaceProvider {
         setApiAuthorization(apiAuthorization);
     }
 
+    @Override
+    protected boolean supportsStationBoardKeepDistinct() {
+        return true;
+    }
+
     private Set<Product> PRODUCTS_HAVING_DESTINATION_AS_DIRECTION = Set.of(
             Product.HIGH_SPEED_TRAIN,
             Product.REGIONAL_TRAIN,
