@@ -41,7 +41,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.StringJoiner;
 import java.util.TimeZone;
 import java.util.UUID;
 import java.util.function.Supplier;
@@ -452,25 +451,7 @@ public abstract class DbWebProvider extends DbProvider {
             messages.add("&#8226; " + operatorName);
         if (zugattribute != null)
             parseMessages(zugattribute, messages, this.messagesAsSimpleHtml ? "&#8226; " : null, defaultTeilstreckenHinweis);
-        if (messages.isEmpty())
-            return null;
-        if (this.messagesAsSimpleHtml)
-            messages.add(0, LESS_IMPORTANT_HTML_SPLIT_MARKER);
-        final String s = join(this.messagesAsSimpleHtml ? "<br>" : " - ", messages);
-        if (numImportant == 0)
-            return s.replace(LESS_IMPORTANT_HTML_SPLIT_MARKER + "<br>", LESS_IMPORTANT_HTML_SPLIT_MARKER);
-        return s.replace("<br>" + LESS_IMPORTANT_HTML_SPLIT_MARKER, LESS_IMPORTANT_HTML_SPLIT_MARKER);
-    }
-
-    // replace with String.join() at some point
-    private static String join(final CharSequence delimiter, final Iterable<? extends CharSequence> elements) {
-        final StringJoiner joiner = new StringJoiner(delimiter);
-        elements.forEach(joiner::add);
-        return joiner.toString();
-    }
-
-    static class x {
-        x(final int i) {}
+        return createJourneyMessagesString(messages, numImportant);
     }
 
     private static final Set<String> bicycleAttributes = new HashSet<String>() {

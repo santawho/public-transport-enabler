@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -728,5 +729,26 @@ public abstract class DbProvider extends AbstractNetworkProvider {
             final DbJourneyRef journeyRef,
             final Location location, final Date time) throws IOException {
         return null;
+    }
+
+    protected String createJourneyMessagesString(final List<String> messages, final int numImportant) {
+        if (messages.isEmpty())
+            return null;
+        if (this.messagesAsSimpleHtml) {
+            messages.add(numImportant, LESS_IMPORTANT_HTML_SPLIT_MARKER);
+            final String s = join("<br>", messages);
+            if (numImportant == 0)
+                return s.replace(LESS_IMPORTANT_HTML_SPLIT_MARKER + "<br>", LESS_IMPORTANT_HTML_SPLIT_MARKER);
+            return s.replace("<br>" + LESS_IMPORTANT_HTML_SPLIT_MARKER, LESS_IMPORTANT_HTML_SPLIT_MARKER);
+        } else {
+            return join(" - ", messages);
+        }
+    }
+
+    // replace with String.join() at some point
+    private static String join(final CharSequence delimiter, final Iterable<? extends CharSequence> elements) {
+        final StringJoiner joiner = new StringJoiner(delimiter);
+        elements.forEach(joiner::add);
+        return joiner.toString();
     }
 }
