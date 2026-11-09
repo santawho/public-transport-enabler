@@ -21,6 +21,7 @@ import org.msgpack.core.MessagePacker;
 import org.msgpack.core.MessageUnpacker;
 
 import java.io.IOException;
+import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.Set;
 
@@ -30,18 +31,18 @@ import de.schildbach.pte.util.MessagePackUtils;
  * @author Andreas Schildbach
  */
 public enum Product {
-    UNKNOWN('?'),
-    HIGH_SPEED_TRAIN('I'),
-    REGIONAL_TRAIN('R'),
-    SUBURBAN_TRAIN('S'),
-    SUBWAY('U'),
-    TRAM('T'),
-    BUS('B'),
-    FERRY('F'),
-    CABLECAR('C'),
-    ON_DEMAND('P'),
-    COACH('H'),
-    REPLACEMENT_SERVICE('E');
+    UNKNOWN('?', 100),
+    HIGH_SPEED_TRAIN('I', 1),
+    REGIONAL_TRAIN('R', 2),
+    SUBURBAN_TRAIN('S', 3),
+    SUBWAY('U', 10),
+    TRAM('T', 11),
+    BUS('B', 20),
+    REPLACEMENT_SERVICE('E', 21),
+    ON_DEMAND('P', 22),
+    COACH('H', 23),
+    FERRY('F', 30),
+    CABLECAR('C', 31);
 
     private static EnumSet<Product> Join(final EnumSet<Product> a, final EnumSet<Product> b) {
         final EnumSet<Product> s = EnumSet.copyOf(a);
@@ -75,10 +76,14 @@ public enum Product {
             ON_DEMAND);
 
     public final char code;
+    private final int order;
 
-    Product(final char code) {
+    Product(final char code, final int order) {
         this.code = code;
+        this.order = order;
     }
+
+    public static final Comparator<Product> comparator = (p1, p2) -> p1.order - p2.order;
 
     public boolean isTrain() {
         return TRAIN_PRODUCTS.contains(this);
