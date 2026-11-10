@@ -78,7 +78,7 @@ public class TripTest {
                 null,
                 null,
                 false);
-        Line dummyLine = new Line(null, null, null, null);
+        Line dummyLine = new Line(null, null, null, null, null, null, null, null, null);
 
         switch (mode) {
         case 0:

@@ -76,25 +76,30 @@ public class Standard {
     }
 
     public static Style resolveLineStyle(
+            final @Nullable Product product) {
+        return resolveLineStyle(null, null, product, null, null);
+    }
+
+    public static Style resolveLineStyle(
             final @Nullable Map<String, Style> styles,
-            final @Nullable String network,
+            final @Nullable String operator,
             final @Nullable Product product,
             final @Nullable String label,
             final @Nullable Style styleFromNetwork) {
         if (!doNotUseSpecialLineStyles) {
             if (styleFromNetwork != null && !doPreferPredefinedLineStyles)
                 return styleFromNetwork;
-            final Style specialStyle = specialLineStyle(styles, network, product, label);
+            final Style specialStyle = specialLineStyle(styles, operator, product, label);
             if (specialStyle != null)
                 return specialStyle;
             if (styleFromNetwork != null)
                 return styleFromNetwork;
         }
-        return defaultLineStyle(network, product, label);
+        return defaultLineStyle(operator, product, label);
     }
 
     public static Style defaultLineStyle(
-            final @Nullable String network,
+            final @Nullable String operator,
             final @Nullable Product product,
             final @Nullable String label) {
         return STYLES.get(product);
@@ -102,7 +107,7 @@ public class Standard {
 
     public static Style specialLineStyle(
             final @Nullable Map<String, Style> styles,
-            final @Nullable String network,
+            final @Nullable String operator,
             final @Nullable Product product,
             final @Nullable String label) {
         if (doNotUseSpecialLineStyles || styles == null || product == null)
@@ -112,7 +117,7 @@ public class Standard {
 
         if (label != null) {
             // check for line match
-            style = specialLineStyle(styles, network, product.code + Objects.toString(label, ""));
+            style = specialLineStyle(styles, operator, product.code + Objects.toString(label, ""));
             if (style != null)
                 return style;
 
@@ -122,29 +127,29 @@ public class Standard {
                     if (!Character.isLetter(label.charAt(n))) {
                         // first attempt: try all prefix letters
                         if (n > 1) { // a single letter prefix is already handled below
-                            style = specialLineStyle(styles, network, "B:" + label.substring(0, n));
+                            style = specialLineStyle(styles, operator, "B:" + label.substring(0, n));
                             if (style != null)
                                 return style;
                         }
                     }
                 }
                 // second attempt: try first letter only
-                style = specialLineStyle(styles, network, "B:" + label.charAt(0));
+                style = specialLineStyle(styles, operator, "B:" + label.charAt(0));
                 if (style != null)
                     return style;
             }
         }
 
         // check for product match
-        return specialLineStyle(styles, network, Character.toString(product.code));
+        return specialLineStyle(styles, operator, Character.toString(product.code));
     }
 
     private static Style specialLineStyle(
             final Map<String, Style> styles,
-            final @Nullable String network,
+            final @Nullable String operator,
             final String key) {
-        if (network != null) {
-            final Style style = styles.get(network + STYLES_SEP + key);
+        if (operator != null) {
+            final Style style = styles.get(operator + STYLES_SEP + key);
             if (style != null)
                 return style;
         }

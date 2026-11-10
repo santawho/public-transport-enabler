@@ -58,38 +58,38 @@ public class NvbwProvider extends AbstractEfaProvider {
     ) throws ParserException {
         if ("0".equals(mot)) {
             if (("ICE".equals(trainName) || "InterCityExpress".equals(trainName)) && trainNum == null)
-                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "ICE");
+                return newLine(id, network, Product.HIGH_SPEED_TRAIN, "ICE");
             if ("InterCity".equals(trainName) && trainNum == null)
-                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "IC");
+                return newLine(id, network, Product.HIGH_SPEED_TRAIN, "IC");
             if (trainType == null && trainNum != null && P_INTERCITY.matcher(trainNum).matches())
-                return new Line(id, network, Product.HIGH_SPEED_TRAIN, trainNum);
+                return newLine(id, network, Product.HIGH_SPEED_TRAIN, trainNum);
             if ("Fernreisezug externer EU".equals(trainName) && trainNum == null)
-                return new Line(id, network, Product.HIGH_SPEED_TRAIN, null);
+                return newLine(id, network, Product.HIGH_SPEED_TRAIN, null);
             if ("SuperCity".equals(trainName) && trainNum == null)
-                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "SC");
+                return newLine(id, network, Product.HIGH_SPEED_TRAIN, "SC");
             if ("InterRegio".equals(longName) && symbol == null)
-                return new Line(id, network, Product.REGIONAL_TRAIN, "IR");
+                return newLine(id, network, Product.REGIONAL_TRAIN, "IR");
             if (trainType == null && trainNum != null && P_INTERREGIO.matcher(trainNum).matches())
-                return new Line(id, network, Product.REGIONAL_TRAIN, trainNum);
+                return newLine(id, network, Product.REGIONAL_TRAIN, trainNum);
             if ("REGIOBAHN".equals(trainName) && trainNum == null)
-                return new Line(id, network, Product.REGIONAL_TRAIN, null);
+                return newLine(id, network, Product.REGIONAL_TRAIN, null);
             if ("Meridian".equals(trainName) && symbol != null)
-                return new Line(id, network, Product.REGIONAL_TRAIN, symbol);
+                return newLine(id, network, Product.REGIONAL_TRAIN, symbol);
             if ("CityBahn".equals(trainName) && trainNum == null)
-                return new Line(id, network, Product.REGIONAL_TRAIN, "CB");
+                return newLine(id, network, Product.REGIONAL_TRAIN, "CB");
             if ("Trilex".equals(trainName) && trainNum == null)
-                return new Line(id, network, Product.REGIONAL_TRAIN, "TLX");
+                return newLine(id, network, Product.REGIONAL_TRAIN, "TLX");
             if ("Bay. Seenschifffahrt".equals(trainName) && symbol != null)
-                return new Line(id, network, Product.FERRY, symbol);
+                return newLine(id, network, Product.FERRY, symbol);
             if ("Nahverkehrszug von Dritten".equals(trainName) && trainNum == null)
-                return new Line(id, network, null, "Zug");
+                return newLine(id, network, null, "Zug");
             if ("DB".equals(trainName) && trainNum == null)
-                return new Line(id, network, null, "DB");
+                return newLine(id, network, null, "DB");
         } else if ("1".equals(mot)) {
             if (symbol != null && symbol.equals(name)) {
                 final Matcher m = P_LINE_S_AVG_VBK.matcher(symbol);
                 if (m.matches())
-                    return new Line(id, network, Product.SUBURBAN_TRAIN, m.group(1));
+                    return newLine(id, network, Product.SUBURBAN_TRAIN, m.group(1));
             }
         }
 

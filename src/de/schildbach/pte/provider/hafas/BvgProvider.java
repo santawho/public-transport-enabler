@@ -210,26 +210,26 @@ public abstract class BvgProvider extends AbstractHafasClientInterfaceProvider {
 
         if (line.product == Product.SUBURBAN_TRAIN) {
             if ("S41".equals(line.label))
-                return new Line(id, line.network, line.product, line.label, line.name, line.style,
+                return new Line(network, id, line.operator, line.product, line.label, line.name, line.style,
                         ATTRS_CIRCLE_CLOCKWISE, line.message);
             if ("S42".equals(line.label))
-                return new Line(id, line.network, line.product, line.label, line.name, line.style,
+                return new Line(network, id, line.operator, line.product, line.label, line.name, line.style,
                         ATTRS_CIRCLE_ANTICLOCKWISE, line.message);
             if ("S9".equals(line.label))
-                return new Line(id, line.network, line.product, line.label, line.name, line.style,
+                return new Line(network, id, line.operator, line.product, line.label, line.name, line.style,
                         ATTRS_LINE_AIRPORT, line.message);
             if ("S45".equals(line.label))
-                return new Line(id, line.network, line.product, line.label, line.name, line.style,
+                return new Line(network, id, line.operator, line.product, line.label, line.name, line.style,
                         ATTRS_LINE_AIRPORT, line.message);
         } else if (line.product == Product.BUS) {
             if ("S41".equals(line.label))
-                return new Line(id, line.network, line.product, line.label, line.name, line.style,
+                return new Line(network, id, line.operator, line.product, line.label, line.name, line.style,
                         ATTRS_SERVICE_REPLACEMENT_CIRCLE_CLOCKWISE, line.message);
             if ("S42".equals(line.label))
-                return new Line(id, line.network, line.product, line.label, line.name, line.style,
+                return new Line(network, id, line.operator, line.product, line.label, line.name, line.style,
                         ATTRS_SERVICE_REPLACEMENT_CIRCLE_ANTICLOCKWISE, line.message);
             if ("TXL".equals(line.label))
-                return new Line(id, line.network, line.product, line.label, line.name, line.style,
+                return new Line(network, id, line.operator, line.product, line.label, line.name, line.style,
                         ATTRS_LINE_AIRPORT, line.message);
         }
 

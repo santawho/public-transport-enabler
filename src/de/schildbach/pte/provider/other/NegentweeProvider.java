@@ -479,7 +479,8 @@ public class NegentweeProvider extends AbstractNetworkProvider {
 
                     final String destination = leg.getString("destination");
                     final Trip.Public newLeg = new Trip.Public(
-                            new Line(leg.getString("service"), (operator != null) ? operator.getString("name") : null,
+                            new Line(network,
+                                    leg.getString("service"), (operator != null) ? operator.getString("name") : null,
                                     lineProduct, lineName.toString(), leg.optString("service"),
                                     Standard.STYLES.get(lineProduct), null, null),
                             new Destination(destination, new Location(LocationType.STATION, null, null, destination)),
@@ -569,7 +570,8 @@ public class NegentweeProvider extends AbstractNetworkProvider {
                 timeFromJSONObject(departure, "time"),
                 timeFromJSONObject(departure, "time"),
                 !departure.isNull("platform") ? new Position(departure.getString("platform")) : null, null,
-                new Line(null, departure.getString("operatorName"), lineProduct,
+                new Line(network,
+                        null, departure.getString("operatorName"), lineProduct,
                         !departure.isNull("service") ? departure.getString("service") : mode.getString("name"), null,
                         Standard.STYLES.get(lineProduct), null, null),
                 new Destination(destinationName, new Location(LocationType.DIRECTION, null, null, destinationName)),
@@ -848,7 +850,8 @@ public class NegentweeProvider extends AbstractNetworkProvider {
                         Product lineProduct = productFromMode(mode.getString("type"), mode.getString("name"));
                         final String destinationName = departure.getString("destinationName");
                         lineDestinationResult.add(new LineDestination(
-                                new Line(null, departure.getString("operatorName"), lineProduct, mode.getString("name"),
+                                new Line(network,
+                                        null, departure.getString("operatorName"), lineProduct, mode.getString("name"),
                                         null, Standard.STYLES.get(lineProduct), null, null),
                                 new Destination(destinationName, new Location(LocationType.STATION, null, null, null,
                                         destinationName, EnumSet.of(lineProduct)))));

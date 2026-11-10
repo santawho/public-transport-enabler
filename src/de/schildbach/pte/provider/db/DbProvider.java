@@ -270,18 +270,20 @@ public abstract class DbProvider extends AbstractNetworkProvider {
         PRODUCT_STYLES.put(Product.FERRY, new Style(DB_DEFAULT_STYLE_SHAPE, Style.rgb(48,159,209), Style.BLACK));
     }
 
-    public static Style deutscheBahnLineStyle(
-            @Nullable final String network,
+    @Override
+    public Style lineStyle(
+            @Nullable final String operator,
             @Nullable final Product product,
-            @Nullable final String label) {
-        Style styleFromNetwork = null;
-        if (product != null) {
+            @Nullable final String label,
+            @Nullable final Style aStyleFromNetwork) {
+        Style styleFromNetwork = aStyleFromNetwork;
+        if (styleFromNetwork == null && product != null) {
             if (product.equals(Product.HIGH_SPEED_TRAIN)) {
-                if (network != null) {
-                    if (!OPERATOR_DB_FERNVERKEHR.equals(network))
+                if (operator != null) {
+                    if (!OPERATOR_DB_FERNVERKEHR.equals(operator))
                         styleFromNetwork = STYLE_NON_DB_HIGH_SPEED_TRAIN;
                 } else {
-                    if (label == null || !(label.startsWith("ICE ") || label.startsWith("IC ")))
+                    if (label != null && !(label.startsWith("ICE ") || label.startsWith("IC ")))
                         styleFromNetwork = STYLE_NON_DB_HIGH_SPEED_TRAIN;
                 }
             }
@@ -289,7 +291,7 @@ public abstract class DbProvider extends AbstractNetworkProvider {
                 styleFromNetwork = PRODUCT_STYLES.get(product);
             }
         }
-        return Standard.resolveLineStyle(null, network, product, label, styleFromNetwork);
+        return super.lineStyle(operator, product, label, styleFromNetwork);
     }
 
     public static Description getDbDescription() {

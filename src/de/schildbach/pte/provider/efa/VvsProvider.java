@@ -54,7 +54,7 @@ public class VvsProvider extends AbstractEfaProvider {
     ) throws ParserException {
         if ("0".equals(mot)) {
             if ("IC".equals(trainNum))
-                return new Line(id, network, Product.HIGH_SPEED_TRAIN, trainNum);
+                return newLine(id, network, Product.HIGH_SPEED_TRAIN, trainNum);
         }
 
         return super.parseLine(id, network, mot, symbol, name, longName, trainType, trainNum, trainName);

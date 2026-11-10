@@ -61,20 +61,20 @@ public class MvvProvider extends AbstractEfaProvider {
     ) throws ParserException {
         if ("0".equals(mot)) {
             if ("Mittelrheinbahn (trans regio)".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "MiRhBa");
+                return newLine(id, network, Product.REGIONAL_TRAIN, "MiRhBa");
             if ("Süd-Thüringen-Bahn".equals(longName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "STB");
+                return newLine(id, network, Product.REGIONAL_TRAIN, "STB");
             if ("agilis".equals(longName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "agilis");
+                return newLine(id, network, Product.REGIONAL_TRAIN, "agilis");
             if ("SBB".equals(trainName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "SBB");
+                return newLine(id, network, Product.REGIONAL_TRAIN, "SBB");
             if ("A".equals(trainNum))
-                return new Line(id, network, Product.SUBURBAN_TRAIN, "A");
+                return newLine(id, network, Product.SUBURBAN_TRAIN, "A");
             if ("DB AG".equals(trainName))
-                return new Line(id, network, null, symbol);
+                return newLine(id, network, null, symbol);
         } else if ("1".equals(mot)) {
             if ("S".equals(symbol) && "Pendelverkehr".equals(name))
-                return new Line(id, network, Product.SUBURBAN_TRAIN, "S⇆");
+                return newLine(id, network, Product.SUBURBAN_TRAIN, "S⇆");
         }
 
         return super.parseLine(id, network, mot, symbol, name, longName, trainType, trainNum, trainName);

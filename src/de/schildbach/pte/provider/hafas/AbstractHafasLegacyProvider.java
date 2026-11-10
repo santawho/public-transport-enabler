@@ -3040,15 +3040,21 @@ public abstract class AbstractHafasLegacyProvider extends AbstractHafasProvider 
         return newLine(null, product, normalizedName, comment, attrs);
     }
 
-    protected Line newLine(final String network, final Product product, final String normalizedName,
+    protected Line newLine(final String operator, final Product product, final String normalizedName,
             final String comment, final Line.Attr... attrs) {
         if (attrs.length == 0) {
-            return new Line(null, network, product, normalizedName, lineStyle(network, product, normalizedName),
-                    comment);
+            return new Line(
+                    network, null,
+                    operator, product, normalizedName, null,
+                    lineStyle(operator, product, normalizedName, null),
+                    null, comment);
         } else {
             final Set<Line.Attr> attrSet = new HashSet<>();
             attrSet.addAll(Arrays.asList(attrs));
-            return new Line(null, network, product, normalizedName, lineStyle(network, product, normalizedName),
+            return new Line(
+                    network, null,
+                    operator, product, normalizedName, null,
+                    lineStyle(operator, product, normalizedName, null),
                     attrSet, comment);
         }
     }

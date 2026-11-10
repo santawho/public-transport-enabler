@@ -1338,12 +1338,14 @@ public abstract class AbstractOpenJourneyPlannerProvider extends AbstractNetwork
             final String trainNumber = response.getTextElement(service, "TrainNumber");
 
             line = new Line(
+                    network,
                     null,
                     null,
                     product,
                     publishedServiceName,
                     trainNumber == null ? publishedServiceName : publishedServiceName + "-" + trainNumber,
-                    lineStyle(null, product, publishedServiceName));
+                    lineStyle(null, product, publishedServiceName, null),
+                    null, null);
 
             final String destinationText = response.getTranslatedText(service, "DestinationText");
             destination = new Destination(destinationText, createLocation(LocationType.DIRECTION, null, null, destinationText));

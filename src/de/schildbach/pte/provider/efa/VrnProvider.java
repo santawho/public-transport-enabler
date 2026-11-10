@@ -55,7 +55,7 @@ public class VrnProvider extends AbstractEfaProvider {
     ) throws ParserException {
         if ("0".equals(mot)) {
             if ("InterRegio".equals(longName) && symbol == null)
-                return new Line(id, network, Product.REGIONAL_TRAIN, "IR");
+                return newLine(id, network, Product.REGIONAL_TRAIN, "IR");
         }
 
         if (name != null && name.startsWith("RNV Moonliner "))

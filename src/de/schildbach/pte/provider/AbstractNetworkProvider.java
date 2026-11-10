@@ -201,20 +201,13 @@ public abstract class AbstractNetworkProvider extends AbstractLocationSearchProv
         return this;
     }
 
-    public Style lineStyle(
-            final @Nullable String network,
-            final @Nullable Product product,
-            final @Nullable String label) {
-        return lineStyle(network, product, label, null);
-    }
-
     @Override
     public Style lineStyle(
-            final @Nullable String network,
+            final @Nullable String operator,
             final @Nullable Product product,
             final @Nullable String label,
             final @Nullable Style styleFromNetwork) {
-        return Standard.resolveLineStyle(styles, network, product, label, styleFromNetwork);
+        return Standard.resolveLineStyle(styles, operator, product, label, styleFromNetwork);
     }
 
     protected static String normalizeStationId(final String stationId) {
@@ -366,7 +359,7 @@ public abstract class AbstractNetworkProvider extends AbstractLocationSearchProv
             final String[] specialPlaces,
             final Line line,
             final Set<String> networksWithArbitraryDirections) {
-        if (line != null && line.network != null && networksWithArbitraryDirections.contains(line.network))
+        if (line != null && line.operator != null && networksWithArbitraryDirections.contains(line.operator))
             return noPlaceStationName(placeAndName);
         return parseSpaceDelimitedPlaceAndStation(placeAndName, specialPlaces);
     }

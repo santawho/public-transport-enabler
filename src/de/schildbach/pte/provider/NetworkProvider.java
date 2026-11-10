@@ -28,6 +28,7 @@ import java.util.TimeZone;
 import javax.annotation.Nullable;
 
 import de.schildbach.pte.NetworkId;
+import de.schildbach.pte.Standard;
 import de.schildbach.pte.dto.JourneyRef;
 import de.schildbach.pte.dto.Line;
 import de.schildbach.pte.dto.Location;
@@ -144,8 +145,8 @@ public interface NetworkProvider extends Provider, LocationSearchProvider {
     /**
      * Get departures/arrivals at a given station, probably live
      *
-     * @param stationId
-     *            id of the station
+     * @param station
+     *            the station
      * @param time
      *            desired time for departing, or {@code null} for the provider default
      * @param arrivals
@@ -254,8 +255,8 @@ public interface NetworkProvider extends Provider, LocationSearchProvider {
     /**
      * Get style of line
      * 
-     * @param network
-     *            network to disambiguate line, may be {@code null}
+     * @param operator
+     *            operator to disambiguate line, may be {@code null}
      * @param product
      *            line product to get style of, may be {@code null}
      * @param label
@@ -265,10 +266,24 @@ public interface NetworkProvider extends Provider, LocationSearchProvider {
      * @return object containing background, foreground and optional border colors
      */
     Style lineStyle(
-            @Nullable String network,
+            @Nullable String operator,
             @Nullable Product product,
             @Nullable String label,
-            final @Nullable Style styleFromNetwork);
+            @Nullable Style styleFromNetwork);
+
+    static Line productLine(final NetworkProvider networkProvider, final Product product) {
+        final NetworkId networkId;
+        final Style style;
+        if (networkProvider != null) {
+            networkId = networkProvider.id();
+            style = networkProvider.lineStyle(null, product, null, null);
+        } else {
+            networkId = null;
+            style = Standard.resolveLineStyle(product);
+        }
+
+        return new Line(networkId, null, null, product, null, null, style, null, null);
+    }
 
     /**
      * Gets the primary covered area of the network

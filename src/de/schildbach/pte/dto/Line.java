@@ -24,6 +24,8 @@ import java.util.Set;
 
 import javax.annotation.Nullable;
 
+import de.schildbach.pte.NetworkId;
+
 /**
  * @author Andreas Schildbach
  */
@@ -35,7 +37,8 @@ public final class Line implements Serializable, Comparable<Line> {
     private static final long serialVersionUID = -5642533805998375070L;
 
     public final @Nullable String id;
-    public final @Nullable String network;
+    public final @Nullable NetworkId networkId;
+    public final @Nullable String operator;
     public final @Nullable Product product;
     public final @Nullable String label;
     public final @Nullable String name;
@@ -43,43 +46,22 @@ public final class Line implements Serializable, Comparable<Line> {
     public final @Nullable Set<Attr> attrs;
     public final @Nullable String message;
 
-    public static final Line FOOTWAY = new Line(null, null, null, null);
-    public static final Line TRANSFER = new Line(null, null, null, null);
-    public static final Line SECURE_CONNECTION = new Line(null, null, null, null);
-    public static final Line DO_NOT_CHANGE = new Line(null, null, null, null);
+    public static final Line FOOTWAY = new Line();
+    public static final Line TRANSFER = new Line();
+    public static final Line SECURE_CONNECTION = new Line();
+    public static final Line DO_NOT_CHANGE = new Line();
 
-    public Line(final String id, final String network, final Product product, final String label) {
-        this(id, network, product, label, null, null, null, null);
+    private Line() {
+        this(null, null, null, null, null, null, null, null, null);
     }
 
-    public Line(final String id, final String network, final Product product, final String label, final Style style) {
-        this(id, network, product, label, null, style, null, null);
-    }
-
-    public Line(final String id, final String network, final Product product, final String label, final String name,
-            final Style style) {
-        this(id, network, product, label, name, style, null, null);
-    }
-
-    public Line(final String id, final String network, final Product product, final String label, final Style style,
-            final String message) {
-        this(id, network, product, label, null, style, null, message);
-    }
-
-    public Line(final String id, final String network, final Product product, final String label, final Style style,
-            final Set<Attr> attrs) {
-        this(id, network, product, label, null, style, attrs, null);
-    }
-
-    public Line(final String id, final String network, final Product product, final String label, final Style style,
-            final Set<Attr> attrs, final String message) {
-        this(id, network, product, label, null, style, attrs, message);
-    }
-
-    public Line(final String id, final String network, final Product product, final String label, final String name,
+    public Line(
+            final NetworkId networkId, final String id,
+            final String operator, final Product product, final String label, final String name,
             final Style style, final Set<Attr> attrs, final String message) {
+        this.networkId = networkId;
         this.id = id;
-        this.network = network;
+        this.operator = operator;
         this.product = product;
         this.label = label;
         this.name = name;
@@ -88,8 +70,8 @@ public final class Line implements Serializable, Comparable<Line> {
         this.message = message;
     }
 
-    private String network() {
-        return network;
+    private String operator() {
+        return operator;
     }
 
     private Product product() {
@@ -121,7 +103,7 @@ public final class Line implements Serializable, Comparable<Line> {
         if (!(o instanceof Line))
             return false;
         final Line other = (Line) o;
-        if (!Objects.equals(this.network, other.network))
+        if (!Objects.equals(this.operator, other.operator))
             return false;
         if (!Objects.equals(this.product, other.product))
             return false;
@@ -132,13 +114,13 @@ public final class Line implements Serializable, Comparable<Line> {
 
     @Override
     public int hashCode() {
-        return Objects.hash(network, product == null ? null : product.name(), label);
+        return Objects.hash(operator, product == null ? null : product.name(), label);
     }
 
     @Override
     public String toString() {
         return getClass().getSimpleName() + "{" +
-                (network != null ? network + "," : "") +
+                (operator != null ? operator + "," : "") +
                 (product != null ? product + "," : "") +
                 (label != null ? label + "," : "") +
                 "'" + name + "'}";
@@ -146,7 +128,7 @@ public final class Line implements Serializable, Comparable<Line> {
 
     @Override
     public int compareTo(final Line other) {
-        return Comparator.comparing(Line::network, Comparator.nullsLast(String::compareTo))
+        return Comparator.comparing(Line::operator, Comparator.nullsLast(String::compareTo))
                 .thenComparing(Line::product, Comparator.nullsLast(Enum::compareTo))
                 .thenComparing(Line::label, Comparator.nullsLast(String::compareTo))
                 .compare(this, other);

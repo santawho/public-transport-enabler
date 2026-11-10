@@ -57,30 +57,30 @@ public class VvoProvider extends AbstractEfaProvider {
     ) throws ParserException {
         if ("0".equals(mot)) {
             if ("Twoje Linie Kolejowe".equals(trainName) && symbol != null)
-                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "TLK" + symbol);
+                return newLine(id, network, Product.HIGH_SPEED_TRAIN, "TLK" + symbol);
 
             if ("Regionalbahn".equals(trainName) && trainNum == null)
-                return new Line(id, network, Product.REGIONAL_TRAIN, null);
+                return newLine(id, network, Product.REGIONAL_TRAIN, null);
             if ("Ostdeutsche Eisenbahn GmbH".equals(longName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "OE");
+                return newLine(id, network, Product.REGIONAL_TRAIN, "OE");
             if ("Meridian".equals(longName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "M");
+                return newLine(id, network, Product.REGIONAL_TRAIN, "M");
             if ("trilex".equals(longName))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "TLX");
+                return newLine(id, network, Product.REGIONAL_TRAIN, "TLX");
             if ("Trilex".equals(trainName) && trainNum == null)
-                return new Line(id, network, Product.REGIONAL_TRAIN, "TLX");
+                return newLine(id, network, Product.REGIONAL_TRAIN, "TLX");
             if ("U28".equals(symbol) || "U 28".equals(symbol)) // Nationalparkbahn
-                return new Line(id, network, Product.REGIONAL_TRAIN, "U28");
+                return newLine(id, network, Product.REGIONAL_TRAIN, "U28");
             if ("SB 71".equals(symbol)) // Städtebahn Sachsen
-                return new Line(id, network, Product.REGIONAL_TRAIN, "SB71");
+                return newLine(id, network, Product.REGIONAL_TRAIN, "SB71");
             if ("RB 71".equals(symbol))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "RB71");
+                return newLine(id, network, Product.REGIONAL_TRAIN, "RB71");
 
             if (symbol != null && P_C_LINE.matcher(symbol).matches())
-                return new Line(id, network, Product.TRAM, symbol);
+                return newLine(id, network, Product.TRAM, symbol);
 
             if ("Fernbus".equals(trainName) && trainNum == null)
-                return new Line(id, network, Product.BUS, trainName);
+                return newLine(id, network, Product.BUS, trainName);
         }
 
         return super.parseLine(id, network, mot, symbol, name, longName, trainType, trainNum, trainName);

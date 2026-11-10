@@ -167,10 +167,10 @@ public class VbnProvider extends AbstractHafasClientInterfaceProvider {
 
         if (line.product == Product.BUS) {
             if ("57".equals(line.label))
-                return new Line(id, line.network, line.product, line.label, line.name, line.style,
+                return new Line(network, id, line.operator, line.product, line.label, line.name, line.style,
                         ATTRS_SERVICE_REPLACEMENT_CIRCLE_CLOCKWISE, line.message);
             if ("58".equals(line.label))
-                return new Line(id, line.network, line.product, line.label, line.name, line.style,
+                return new Line(network, id, line.operator, line.product, line.label, line.name, line.style,
                         ATTRS_SERVICE_REPLACEMENT_CIRCLE_ANTICLOCKWISE, line.message);
         }
 

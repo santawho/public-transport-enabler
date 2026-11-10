@@ -220,7 +220,15 @@ public class CHSearchProvider extends AbstractNetworkProvider {
             for (final StationBoardResult.StationBoardEntry sbEntry : sb.entries) {
 
                 final PTDate predictedTime = addMinutesToDate(sbEntry.time, sbEntry.dep_delay);
-                final Line line = new Line(sbEntry.Z, sbEntry.operator, type2Product(sbEntry.G), getTrainName(sbEntry.G, sbEntry.Z, sbEntry.L), new Style(Style.Shape.RECT, sbEntry.bgColor, sbEntry.fgColor));
+                final Line line = new Line(
+                        network,
+                        sbEntry.Z,
+                        sbEntry.operator,
+                        type2Product(sbEntry.G),
+                        getTrainName(sbEntry.G, sbEntry.Z, sbEntry.L),
+                        null,
+                        new Style(Style.Shape.RECT, sbEntry.bgColor, sbEntry.fgColor),
+                        null, null);
                 final Destination destination = new Destination(null, new Location(LocationType.STATION, sbEntry.terminal.stationID, Point.fromDouble(sbEntry.terminal.lat, sbEntry.terminal.lon), null, sbEntry.terminal.name));
                 final TrackEntry track = sbEntry.track;
                 departures.add(createDeparture(
@@ -356,7 +364,15 @@ public class CHSearchProvider extends AbstractNetworkProvider {
                         } else {
                             numChanges.getAndIncrement();
                             final Location terminalLocation = new Location(LocationType.STATION, null, null, leg.terminal);
-                            final Line line = new Line(leg.Z, leg.operator, type2Product(leg.G), getTrainName(leg.G, leg.Z, leg.L), new Style(Style.Shape.RECT, leg.bgColor, leg.fgColor));
+                            final Line line = new Line(
+                                    network,
+                                    leg.Z,
+                                    leg.operator,
+                                    type2Product(leg.G),
+                                    getTrainName(leg.G, leg.Z, leg.L),
+                                    null,
+                                    new Style(Style.Shape.RECT, leg.bgColor, leg.fgColor),
+                                    null, null);
                             legsList.add(new Trip.Public(line, new Destination(leg.terminal, terminalLocation), departureStop, arrivalStop, intermediateStops, infoText + disruptions));
                         }
 

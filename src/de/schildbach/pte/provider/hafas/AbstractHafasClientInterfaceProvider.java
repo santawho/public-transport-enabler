@@ -2297,7 +2297,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
             // Otherwise the longer label is fine
             label = addName != null ? addName : shortName != null ? shortName : name;
         }
-        return new Line(id, operator, product, label, longName, lineStyle(operator, product, label, style));
+        return new Line(network, id, operator, product, label, longName, lineStyle(operator, product, label, style), null, null);
     }
 
     protected QueryDeparturesResult.Status jsonLocationLines(final Location location, final List<LineDestination> lineInfos) throws IOException {

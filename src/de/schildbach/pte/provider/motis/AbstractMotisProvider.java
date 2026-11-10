@@ -323,7 +323,7 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
         return other.charAt(prefixLength) == ' ';
     }
     
-    protected static Line parseMotisLine(final JSONObject data) throws JSONException {
+    protected Line parseMotisLine(final JSONObject data) throws JSONException {
         final String routeShortName = data.getString("routeShortName");
         final String tripShortName = data.getString("tripShortName");
         final String displayName = data.getString("displayName");
@@ -333,6 +333,7 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
                 : displayName;
         final String name = displayName;
         return new Line(
+                network,
                 data.getString("routeId"),
                 data.getString("agencyName"),
                 MOTIS_MODE_MAP.get(data.getString("mode")),
@@ -342,7 +343,8 @@ public class AbstractMotisProvider extends AbstractNetworkProvider {
                         new Style(
                                 Style.parseColor("#" + data.getString("routeColor")),
                                 Style.parseColor("#" + data.getString("routeTextColor"))
-                        ) : null);
+                        ) : null,
+                null, null);
     }
 
     protected Stop parseMotisStop(final Date now, final JSONObject data, final boolean realtime) throws JSONException {

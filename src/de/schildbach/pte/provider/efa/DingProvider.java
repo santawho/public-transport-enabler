@@ -46,9 +46,9 @@ public class DingProvider extends AbstractEfaProvider {
     ) throws ParserException {
         if ("0".equals(mot)) {
             if (trainType == null && "RS 7".equals(trainNum))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "RS7");
+                return newLine(id, network, Product.REGIONAL_TRAIN, "RS7");
             if (trainType == null && "RS 71".equals(trainNum))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "RS71");
+                return newLine(id, network, Product.REGIONAL_TRAIN, "RS71");
         }
 
         return super.parseLine(id, network, mot, symbol, name, longName, trainType, trainNum, trainName);

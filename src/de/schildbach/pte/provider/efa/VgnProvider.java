@@ -54,13 +54,13 @@ public class VgnProvider extends AbstractEfaProvider {
     ) throws ParserException {
         if ("0".equals(mot)) {
             if ("R5(z)".equals(trainNum))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "R5(z)");
+                return newLine(id, network, Product.REGIONAL_TRAIN, "R5(z)");
             if ("R7(z)".equals(trainNum))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "R7(z)");
+                return newLine(id, network, Product.REGIONAL_TRAIN, "R7(z)");
             if ("R8(z)".equals(trainNum))
-                return new Line(id, network, Product.REGIONAL_TRAIN, "R8(z)");
+                return newLine(id, network, Product.REGIONAL_TRAIN, "R8(z)");
             if (trainType == null && "IC 61".equals(trainNum))
-                return new Line(id, network, Product.HIGH_SPEED_TRAIN, "IC61");
+                return newLine(id, network, Product.HIGH_SPEED_TRAIN, "IC61");
         }
 
         return super.parseLine(id, network, mot, symbol, name, longName, trainType, trainNum, trainName);

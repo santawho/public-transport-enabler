@@ -83,30 +83,30 @@ public class VrrProvider extends AbstractEfaProvider {
     ) throws ParserException {
         if ("0".equals(mot)) {
             if ("Regionalbahn".equals(trainName) && symbol != null)
-                return new Line(id, network, Product.REGIONAL_TRAIN, symbol);
+                return newLine(id, network, Product.REGIONAL_TRAIN, symbol);
             if ("NordWestBahn".equals(trainName) && symbol != null)
-                return new Line(id, network, Product.REGIONAL_TRAIN, symbol);
+                return newLine(id, network, Product.REGIONAL_TRAIN, symbol);
 
             if (trainType == null && "SEV7".equals(trainNum))
-                return new Line(id, network, Product.BUS, trainNum);
+                return newLine(id, network, Product.BUS, trainNum);
             if (trainType == null && "3SEV".equals(trainNum))
-                return new Line(id, network, Product.BUS, trainNum);
+                return newLine(id, network, Product.BUS, trainNum);
             if (trainType == null && "SEV A".equals(trainNum))
-                return new Line(id, network, Product.BUS, trainNum);
+                return newLine(id, network, Product.BUS, trainNum);
             if (trainType == null && "SEV B".equals(trainNum))
-                return new Line(id, network, Product.BUS, trainNum);
+                return newLine(id, network, Product.BUS, trainNum);
         } else if ("11".equals(mot)) {
             // Wuppertaler Schwebebahn
             if ("Schwebebahn".equals(trainName) || (longName != null && longName.startsWith("Schwebebahn")))
-                return new Line(id, network, Product.CABLECAR, symbol);
+                return newLine(id, network, Product.CABLECAR, symbol);
 
             // SkyTrain D'dorf
             if ("SkyTrain SkyT".equals(trainName) || (longName != null && longName.startsWith("SkyTrain SkyT")))
-                return new Line(id, network, Product.CABLECAR, name);
+                return newLine(id, network, Product.CABLECAR, name);
 
             // H-Bahn TU Dortmund
             if ("H-Bahn".equals(trainName) || (longName != null && longName.startsWith("H-Bahn")))
-                return new Line(id, network, Product.CABLECAR, name);
+                return newLine(id, network, Product.CABLECAR, name);
         }
 
         return super.parseLine(id, network, mot, symbol, name, longName, trainType, trainNum, trainName);
@@ -518,11 +518,12 @@ public class VrrProvider extends AbstractEfaProvider {
     }
 
     @Override
-    public Style lineStyle(final @Nullable String network, final @Nullable Product product,
-            final @Nullable String label) {
+    public Style lineStyle(
+            final @Nullable String network, final @Nullable Product product,
+            final @Nullable String label, final @Nullable Style styleFromNetwork) {
         if (product == Product.BUS && label != null && label.startsWith("SB"))
-            return super.lineStyle(network, product, "SB");
+            return super.lineStyle(network, product, "SB", styleFromNetwork);
 
-        return super.lineStyle(network, product, label);
+        return super.lineStyle(network, product, label, styleFromNetwork);
     }
 }

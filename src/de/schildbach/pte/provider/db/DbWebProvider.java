@@ -495,12 +495,13 @@ public abstract class DbWebProvider extends DbProvider {
             }
         }
         return new Line(
+                network,
                 null,
                 operator,
                 product,
                 getSaneLineShortName(product, shortName),
                 name,
-                deutscheBahnLineStyle(operator, product, name),
+                lineStyle(operator, product, name, null),
                 lineAttrs,
                 null);
     }
@@ -656,7 +657,7 @@ public abstract class DbWebProvider extends DbProvider {
         final String defaultTeilstreckenHinweis = String.format("(%s - %s)",
                 departureStop.location.name, arrivalStop.location.name);
         final String message = parseJourneyMessages(
-                journey, journey.optJSONArray("zugattribute"), journeyRef.line.network,
+                journey, journey.optJSONArray("zugattribute"), journeyRef.line.operator,
                 defaultTeilstreckenHinweis);
         final Trip.Public leg = new Trip.Public(
                 journeyRef.line,

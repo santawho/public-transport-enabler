@@ -108,123 +108,123 @@ public class SydneyProvider extends AbstractEfaProvider {
     ) throws ParserException {
         if ("1".equals(mot)) {
             if ("BMT".equals(symbol) || "Blue Mountains Line".equals(symbol))
-                return new Line(id, network, Product.SUBURBAN_TRAIN, "BMT");
+                return newLine(id, network, Product.SUBURBAN_TRAIN, "BMT");
             if ("CCN".equals(symbol) || "Central Coast & Newcastle Line".equals(symbol))
-                return new Line(id, network, Product.SUBURBAN_TRAIN, "CCN");
+                return newLine(id, network, Product.SUBURBAN_TRAIN, "CCN");
             if ("SHL".equals(symbol) || "Southern Highlands Line".equals(symbol))
-                return new Line(id, network, Product.SUBURBAN_TRAIN, "SHL");
+                return newLine(id, network, Product.SUBURBAN_TRAIN, "SHL");
             if ("SCO".equals(symbol) || "South Coast Line".equals(symbol))
-                return new Line(id, network, Product.SUBURBAN_TRAIN, "SCO");
+                return newLine(id, network, Product.SUBURBAN_TRAIN, "SCO");
             if ("HUN".equals(symbol) || "Hunter Line".equals(symbol))
-                return new Line(id, network, Product.SUBURBAN_TRAIN, "HUN");
+                return newLine(id, network, Product.SUBURBAN_TRAIN, "HUN");
             if ("SWR".equals(symbol)) // South West Rail Link
-                return new Line(id, network, Product.SUBURBAN_TRAIN, "SWR");
+                return newLine(id, network, Product.SUBURBAN_TRAIN, "SWR");
             if ("NRC".equals(symbol) || (symbol != null && symbol.startsWith("North Coast NSW Line")))
-                return new Line(id, network, Product.SUBURBAN_TRAIN, "NRC");
+                return newLine(id, network, Product.SUBURBAN_TRAIN, "NRC");
             if ("WST".equals(symbol) || (symbol != null && symbol.startsWith("Western NSW Line")))
-                return new Line(id, network, Product.SUBURBAN_TRAIN, "WST");
+                return newLine(id, network, Product.SUBURBAN_TRAIN, "WST");
             if ("STH".equals(symbol) || (symbol != null && symbol.startsWith("Southern NSW Line")))
-                return new Line(id, network, Product.SUBURBAN_TRAIN, "STH");
+                return newLine(id, network, Product.SUBURBAN_TRAIN, "STH");
             if ("NRW".equals(symbol) || (symbol != null && symbol.startsWith("North Western NSW Line")))
-                return new Line(id, network, Product.SUBURBAN_TRAIN, "NRW");
+                return newLine(id, network, Product.SUBURBAN_TRAIN, "NRW");
 
             if ("T1".equals(symbol) || "T1 North Shore & Northern Line".equals(symbol)
                     || "T1 North Shore and Northern Line".equals(symbol) || "T1 Northern Line".equals(symbol)
                     || "T1 Western Line".equals(symbol) || "T1 North Shore, Northern & Western Line".equals(symbol))
-                return new Line(id, network, Product.SUBURBAN_TRAIN, "T1");
+                return newLine(id, network, Product.SUBURBAN_TRAIN, "T1");
             if ("T2".equals(symbol) || "T2 Inner West & South Line".equals(symbol) || "T2 Airport Line".equals(symbol)
                     || "T2 Airport, Inner West & South Line".equals(symbol))
-                return new Line(id, network, Product.SUBURBAN_TRAIN, "T2");
+                return newLine(id, network, Product.SUBURBAN_TRAIN, "T2");
             if ("T3".equals(symbol) || "T3 Bankstown Line".equals(symbol))
-                return new Line(id, network, Product.SUBURBAN_TRAIN, "T3");
+                return newLine(id, network, Product.SUBURBAN_TRAIN, "T3");
             if ("T4".equals(symbol) || "T4 Eastern Suburbs & Illawarra Line".equals(symbol))
-                return new Line(id, network, Product.SUBURBAN_TRAIN, "T4");
+                return newLine(id, network, Product.SUBURBAN_TRAIN, "T4");
             if ("T5".equals(symbol) || "T5 Cumberland Line".equals(symbol))
-                return new Line(id, network, Product.SUBURBAN_TRAIN, "T5");
+                return newLine(id, network, Product.SUBURBAN_TRAIN, "T5");
             if ("T6".equals(symbol) || "T6 Carlingford Line".equals(symbol))
-                return new Line(id, network, Product.SUBURBAN_TRAIN, "T6");
+                return newLine(id, network, Product.SUBURBAN_TRAIN, "T6");
             if ("T7".equals(symbol) || "T7 Olympic Park Line".equals(symbol))
-                return new Line(id, network, Product.SUBURBAN_TRAIN, "T7");
+                return newLine(id, network, Product.SUBURBAN_TRAIN, "T7");
             if ("T8".equals(symbol) || "T8 Airport & South Line".equals(symbol))
-                return new Line(id, network, Product.SUBURBAN_TRAIN, "T8");
+                return newLine(id, network, Product.SUBURBAN_TRAIN, "T8");
             if ("T9".equals(symbol) || "T9 Northern Line".equals(symbol))
-                return new Line(id, network, Product.SUBURBAN_TRAIN, "T9");
+                return newLine(id, network, Product.SUBURBAN_TRAIN, "T9");
 
             if (("31".equals(symbol) || "36".equals(symbol) || "621".equals(symbol) || "622".equals(symbol)
                     || "635".equals(symbol) || "636".equals(symbol))
                     && ((trainName != null && trainName.startsWith("Regional Trains"))
                             || (longName != null && longName.startsWith("Regional Trains"))))
-                return new Line(id, network, null, symbol);
+                return newLine(id, network, null, symbol);
 
             throw new IllegalStateException("cannot normalize mot='" + mot + "' symbol='" + symbol + "' name='" + name
                     + "' long='" + longName + "' trainType='" + trainType + "' trainNum='" + trainNum + "' trainName='"
                     + trainName + "'");
         } else if ("2".equals(mot)) {
             if ("M".equals(symbol) || "M Metro North West Line".equals(symbol))
-                return new Line(id, network, Product.SUBWAY, "M");
+                return newLine(id, network, Product.SUBWAY, "M");
 
             throw new IllegalStateException("cannot normalize mot='" + mot + "' symbol='" + symbol + "' name='" + name
                     + "' long='" + longName + "' trainType='" + trainType + "' trainNum='" + trainNum + "' trainName='"
                     + trainName + "'");
         } else if ("4".equals(mot)) {
             if ("L1".equals(symbol) || "L1 Dulwich Hill Line".equals(symbol))
-                return new Line(id, network, Product.TRAM, "L1");
+                return newLine(id, network, Product.TRAM, "L1");
             if ("L2".equals(symbol) || "L2 Randwick Line".equals(symbol))
-                return new Line(id, network, Product.TRAM, "L2");
+                return newLine(id, network, Product.TRAM, "L2");
             if ("L3".equals(symbol) || "L3 Kingsford Line".equals(symbol))
-                return new Line(id, network, Product.TRAM, "L3");
+                return newLine(id, network, Product.TRAM, "L3");
 
             throw new IllegalStateException("cannot normalize mot='" + mot + "' symbol='" + symbol + "' name='" + name
                     + "' long='" + longName + "' trainType='" + trainType + "' trainNum='" + trainNum + "' trainName='"
                     + trainName + "'");
         } else if ("9".equals(mot)) {
             if ("F1".equals(symbol) || "F1 Manly".equals(symbol))
-                return new Line(id, network, Product.FERRY, "F1");
+                return newLine(id, network, Product.FERRY, "F1");
             if ("F2".equals(symbol) || "F2 Taronga Zoo".equals(symbol))
-                return new Line(id, network, Product.FERRY, "F2");
+                return newLine(id, network, Product.FERRY, "F2");
             if ("F3".equals(symbol) || "F3 Parramatta River".equals(symbol))
-                return new Line(id, network, Product.FERRY, "F3");
+                return newLine(id, network, Product.FERRY, "F3");
             if ("F4".equals(symbol) || "F4 Darling Harbour".equals(symbol))
-                return new Line(id, network, Product.FERRY, "F4");
+                return newLine(id, network, Product.FERRY, "F4");
             if ("F5".equals(symbol) || "F5 Neutral Bay".equals(symbol))
-                return new Line(id, network, Product.FERRY, "F5");
+                return newLine(id, network, Product.FERRY, "F5");
             if ("F6".equals(symbol) || "F6 Mosman Bay".equals(symbol))
-                return new Line(id, network, Product.FERRY, "F6");
+                return newLine(id, network, Product.FERRY, "F6");
             if ("F7".equals(symbol) || "F7 Eastern Suburbs".equals(symbol))
-                return new Line(id, network, Product.FERRY, "F7");
+                return newLine(id, network, Product.FERRY, "F7");
             if ("F8".equals(symbol) || "F8 Cockatoo Island".equals(symbol))
-                return new Line(id, network, Product.FERRY, "F8");
+                return newLine(id, network, Product.FERRY, "F8");
             if (("Private ferry servic".equals(trainName) || "Private ferry and fa".equals(trainName))
                     && symbol != null)
-                return new Line(id, network, Product.FERRY, symbol);
+                return newLine(id, network, Product.FERRY, symbol);
             if ("MFF".equals(symbol) || "Manly Fast Ferry".equals(name))
-                return new Line(id, network, Product.FERRY, "MFF");
+                return newLine(id, network, Product.FERRY, "MFF");
             if ("LneCv".equals(symbol) || "Lane Cove Ferry".equals(name))
-                return new Line(id, network, Product.FERRY, "LneCv");
+                return newLine(id, network, Product.FERRY, "LneCv");
             if ("EmpBa".equals(symbol) || "Woy Woy to Empire Bay Ferry".equals(name))
-                return new Line(id, network, Product.FERRY, "EmpBa");
+                return newLine(id, network, Product.FERRY, "EmpBa");
             if ("Stkn".equals(symbol) || "Stockton Ferry".equals(name))
-                return new Line(id, network, Product.FERRY, "Stkn");
+                return newLine(id, network, Product.FERRY, "Stkn");
             if ("CCWB".equals(symbol) || "Circular Quay to Watsons Bay".equals(name))
-                return new Line(id, network, Product.FERRY, "CCWB");
+                return newLine(id, network, Product.FERRY, "CCWB");
             if ("CCZC".equals(symbol) || "City to Taronga Zoo".equals(name))
-                return new Line(id, network, Product.FERRY, "CCZC");
+                return newLine(id, network, Product.FERRY, "CCZC");
             if ("CCGD".equals(symbol) || "City to Garden Island and Manly".equals(name))
-                return new Line(id, network, Product.FERRY, "CCGD");
+                return newLine(id, network, Product.FERRY, "CCGD");
             if ("CCWM".equals(symbol) || "Manly to Watsons Bay".equals(name))
-                return new Line(id, network, Product.FERRY, "CCWM");
+                return newLine(id, network, Product.FERRY, "CCWM");
             if ("MDH".equals(symbol) || "MDH Manly to Darling Harbour Loop Ferry".equals(name))
-                return new Line(id, network, Product.FERRY, "MDH");
+                return newLine(id, network, Product.FERRY, "MDH");
             if ("CCGZ".equals(symbol) || "CCGZ Garden Island & Taronga Zoo Ferry".equals(name))
-                return new Line(id, network, Product.FERRY, "CCGZ");
+                return newLine(id, network, Product.FERRY, "CCGZ");
             if ("CCDH".equals(symbol) || "CCDH Circular Quay Luna Park Darling Harbour Ferry".equals(name))
-                return new Line(id, network, Product.FERRY, "CCDH");
+                return newLine(id, network, Product.FERRY, "CCDH");
             if ("CCDM".equals(symbol) || "CCDM Manly Ferry".equals(name))
-                return new Line(id, network, Product.FERRY, "CCDM");
+                return newLine(id, network, Product.FERRY, "CCDM");
             if ("CCSH".equals(symbol) || "CCSH Shark Island Ferry".equals(name))
-                return new Line(id, network, Product.FERRY, "CCSH");
+                return newLine(id, network, Product.FERRY, "CCSH");
             if ("CCTZ".equals(symbol) || "CCTZ Taronga Zoo Ferry".equals(name))
-                return new Line(id, network, Product.FERRY, "CCTZ");
+                return newLine(id, network, Product.FERRY, "CCTZ");
 
             throw new IllegalStateException("cannot normalize mot='" + mot + "' symbol='" + symbol + "' name='" + name
                     + "' long='" + longName + "' trainType='" + trainType + "' trainNum='" + trainNum + "' trainName='"

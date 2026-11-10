@@ -1002,20 +1002,21 @@ public class VrsProvider extends AbstractNetworkProvider {
     }
 
     @Override
-    public Style lineStyle(final @Nullable String network, final @Nullable Product product,
-            final @Nullable String label) {
+    public Style lineStyle(
+            final @Nullable String network, final @Nullable Product product,
+            final @Nullable String label, final @Nullable Style styleFromNetwork) {
         if (product == Product.BUS && label != null && label.startsWith("SB")) {
-            return super.lineStyle(network, product, "SB");
+            return super.lineStyle(network, product, "SB", styleFromNetwork);
         }
 
-        return super.lineStyle(network, product, label);
+        return super.lineStyle(network, product, label, styleFromNetwork);
     }
 
     private Line parseLine(final JSONObject line) throws JSONException {
         final String number = processLineNumber(line.getString("number"));
         final Product productObj = parseProduct(line.getString("product"), number);
-        final Style style = lineStyle("vrs", productObj, number);
-        return new Line(null /* id */, NetworkId.VRS.toString(), productObj, number, style);
+        final Style style = lineStyle("vrs", productObj, number, null);
+        return new Line(network, null /* id */, NetworkId.VRS.toString(), productObj, number, null, style, null, null);
     }
 
     private static String processLineNumber(final String number) {

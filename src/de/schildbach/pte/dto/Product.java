@@ -83,7 +83,7 @@ public enum Product {
         this.order = order;
     }
 
-    public static final Comparator<Product> comparator = (p1, p2) -> p1.order - p2.order;
+    public static final Comparator<Product> NATURAL_ORDER = Comparator.comparingInt(p -> p.order);
 
     public boolean isTrain() {
         return TRAIN_PRODUCTS.contains(this);

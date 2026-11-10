@@ -57,13 +57,13 @@ public class GvhProvider extends AbstractEfaProvider {
     ) throws ParserException {
         if ("0".equals(mot)) {
             if ("RX".equals(trainType) && trainNum != null) // Express, Czech Republic
-                return new Line(id, network, Product.REGIONAL_TRAIN, "RX" + trainNum);
+                return newLine(id, network, Product.REGIONAL_TRAIN, "RX" + trainNum);
             if ("S4".equals(trainNum))
-                return new Line(id, network, Product.SUBURBAN_TRAIN, "S4");
+                return newLine(id, network, Product.SUBURBAN_TRAIN, "S4");
             if ("RS3".equals(trainNum)) // Regio S-Bahn
-                return new Line(id, network, Product.SUBURBAN_TRAIN, "RS3");
+                return newLine(id, network, Product.SUBURBAN_TRAIN, "RS3");
             if (longName != null && longName.startsWith("Bus ") && name != null)
-                return new Line(id, network, Product.BUS, name);
+                return newLine(id, network, Product.BUS, name);
         }
 
         return super.parseLine(id, network, mot, symbol, name, longName, trainType, trainNum, trainName);

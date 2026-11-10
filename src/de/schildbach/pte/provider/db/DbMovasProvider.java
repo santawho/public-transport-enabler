@@ -498,12 +498,13 @@ public abstract class DbMovasProvider extends DbProvider {
             }
         }
         return new Line(
+                network,
                 jny.optString("zuglaufId", null),
                 operator,
                 product,
                 getSaneLineShortName(product, shortName),
                 name,
-                deutscheBahnLineStyle(operator, product, name),
+                lineStyle(operator, product, name, null),
                 lineAttrs,
                 null);
     }
@@ -636,7 +637,7 @@ public abstract class DbMovasProvider extends DbProvider {
             intermediateStops.remove(size - 1);
             intermediateStops.remove(0);
         }
-        String operator = journeyRef.line != null ? journeyRef.line.network : null;
+        String operator = journeyRef.line != null ? journeyRef.line.operator : null;
         if (operator == null) {
             final JSONArray attributNotizen = journey.optJSONArray("attributNotizen");
             if (attributNotizen != null) {
