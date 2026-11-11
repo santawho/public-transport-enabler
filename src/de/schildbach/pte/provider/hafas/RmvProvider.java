@@ -178,14 +178,13 @@ public class RmvProvider extends AbstractHafasClientInterfaceProvider {
 //        STYLES.put(Product.ON_DEMAND.toString(), new Style(Standard.COLOR_BACKGROUND_ON_DEMAND, Style.WHITE));
 //        STYLES.put(Product.FERRY.toString(), new Style(RMV_SHAPE, Standard.COLOR_BACKGROUND_FERRY, Style.WHITE));
 //        STYLES.put(Product.REPLACEMENT_SERVICE.toString(), new Style(Standard.COLOR_BACKGROUND_REPLACEMENT_SERVICE, Style.WHITE));
-        STYLES.put(Character.toString(Product.HIGH_SPEED_TRAIN.code),
-                new Style(RMV_SHAPE, Standard.COLOR_BACKGROUND_HIGH_SPEED_TRAIN, Style.RED, Style.RED));
+        STYLES.put(Character.toString(Product.HIGH_SPEED_TRAIN.code), new Style(RMV_SHAPE, Style.rgb(60, 20, 20), Style.WHITE));
         STYLES.put(Character.toString(Product.REGIONAL_TRAIN.code), new Style(RMV_SHAPE, Style.rgb(0, 0, 0), Style.WHITE));
         STYLES.put(Character.toString(Product.SUBURBAN_TRAIN.code), new Style(RMV_SHAPE, Style.rgb(0, 151, 87), Style.WHITE));
         STYLES.put(Character.toString(Product.SUBWAY.code), new Style(RMV_SHAPE, Style.rgb(0, 101, 174), Style.WHITE));
         STYLES.put(Character.toString(Product.TRAM.code), new Style(RMV_SHAPE, Style.rgb(216, 127, 63), Style.WHITE));
         STYLES.put(Character.toString(Product.BUS.code), new Style(Style.rgb(167, 22, 128), Style.WHITE));
-        STYLES.put(Character.toString(Product.ON_DEMAND.code), new Style(Style.rgb(213, 166, 1), Style.WHITE));
+        STYLES.put(Character.toString(Product.ON_DEMAND.code), new Style(Style.rgb(189, 135, 0), Style.WHITE));
         STYLES.put(Character.toString(Product.FERRY.code), new Style(RMV_SHAPE, Style.rgb(129, 101, 161), Style.WHITE));
         STYLES.put(Character.toString(Product.REPLACEMENT_SERVICE.code), new Style(Standard.COLOR_BACKGROUND_REPLACEMENT_SERVICE, Style.WHITE));
 
