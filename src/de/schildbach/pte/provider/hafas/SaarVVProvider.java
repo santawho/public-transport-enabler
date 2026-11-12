@@ -35,9 +35,21 @@ import okhttp3.HttpUrl;
  */
 public class SaarVVProvider extends AbstractHafasClientInterfaceProvider {
     private static final HttpUrl API_BASE = HttpUrl.parse("https://saarfahrplan.de/bin/");
-    private static final Product[] PRODUCTS_MAP = { Product.HIGH_SPEED_TRAIN, Product.HIGH_SPEED_TRAIN,
-            Product.HIGH_SPEED_TRAIN, Product.REGIONAL_TRAIN, Product.SUBURBAN_TRAIN, Product.SUBWAY, Product.TRAM,
-            Product.BUS, Product.CABLECAR, Product.ON_DEMAND, Product.BUS };
+    private static final Product[] PRODUCTS_MAP = {
+            Product.HIGH_SPEED_TRAIN,
+            Product.HIGH_SPEED_TRAIN,
+            Product.HIGH_SPEED_TRAIN,
+            Product.REGIONAL_TRAIN,
+
+            Product.SUBURBAN_TRAIN,
+            Product.SUBWAY,
+            Product.TRAM,
+            Product.BUS,
+
+            Product.CABLECAR,
+            Product.ON_DEMAND,
+            Product.BUS
+    };
     private static final String DEFAULT_API_CLIENT = "{\"id\":\"ZPS-SAAR\",\"type\":\"WEB\",\"name\":\"webapp\",\"l\":\"vs_webapp\"}";
     private static final String WEBAPP_CONFIG_URL = "https://saarfahrplan.de/config/webapp.config.json";
 

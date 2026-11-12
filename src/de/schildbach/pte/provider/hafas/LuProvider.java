@@ -32,9 +32,20 @@ import okhttp3.HttpUrl;
  */
 public class LuProvider extends AbstractHafasClientInterfaceProvider {
     private static final HttpUrl API_BASE = HttpUrl.parse("https://cdt.hafas.de/");
-    private static final Product[] PRODUCTS_MAP = { Product.HIGH_SPEED_TRAIN, Product.HIGH_SPEED_TRAIN,
-            Product.HIGH_SPEED_TRAIN, Product.REGIONAL_TRAIN, Product.REGIONAL_TRAIN, Product.BUS, Product.BUS,
-            Product.BUS, Product.BUS, Product.BUS };
+    private static final Product[] PRODUCTS_MAP = {
+            Product.HIGH_SPEED_TRAIN,
+            Product.HIGH_SPEED_TRAIN,
+            Product.REGIONAL_TRAIN,
+            Product.UNKNOWN,
+
+            Product.UNKNOWN,
+            Product.BUS,
+            Product.UNKNOWN,
+            Product.UNKNOWN,
+
+            Product.TRAM,
+            Product.UNKNOWN
+    };
     private static final String AND_API_CLIENT = "{\"id\":\"CDT\",\"type\":\"AND\"}";
     private static final String WEB_API_CLIENT = "{\"id\":\"MMILUX\",\"type\":\"WEB\",\"name\":\"webapp\",\"l\":\"vs_webapp\"}";
     private static final String WEBAPP_CONFIG_URL = "https://cdt.hafas.de/config/webapp.config.json";
