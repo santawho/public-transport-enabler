@@ -18,6 +18,7 @@
 package de.schildbach.pte.provider.hafas;
 
 import de.schildbach.pte.NetworkId;
+import de.schildbach.pte.Standard;
 import de.schildbach.pte.dto.Product;
 import de.schildbach.pte.dto.Style;
 import okhttp3.HttpUrl;
@@ -130,27 +131,42 @@ public class NvvProvider extends AbstractHafasClientInterfaceProvider {
         return Style.Shape.ROUNDED;
     }
 
+    private static final Style.Shape NVV_SHAPE = Style.Shape.ROUNDED;
+    private static final Style.Shape NVV_SHAPE_2 = Style.Shape.RECT;
+
     private static final Map<String, Style> STYLES = new HashMap<>();
 
     static {
-        STYLES.put("DB Regio AG S-Bahn Rhein-Main|SS1", new Style(Style.parseColor("#009edd"), Style.WHITE));
-        STYLES.put("DB Regio AG S-Bahn Rhein-Main|SS2", new Style(Style.parseColor("#ff2e17"), Style.WHITE));
-        STYLES.put("DB Regio AG S-Bahn Rhein-Main|SS3", new Style(Style.parseColor("#00b098"), Style.WHITE));
-        STYLES.put("DB Regio AG S-Bahn Rhein-Main|SS4", new Style(Style.parseColor("#ffc734"), Style.parseColor("#2c2e35"), Style.parseColor("#2c2e35")));
-        STYLES.put("DB Regio AG S-Bahn Rhein-Main|SS5", new Style(Style.parseColor("#95542a"), Style.WHITE));
-        STYLES.put("DB Regio AG S-Bahn Rhein-Main|SS6", new Style(Style.parseColor("#ff7322"), Style.WHITE));
-        STYLES.put("DB Regio AG S-Bahn Rhein-Main|SS7", new Style(Style.parseColor("#214d36"), Style.WHITE));
-        STYLES.put("DB Regio AG S-Bahn Rhein-Main|SS8", new Style(Style.parseColor("#88c946"), Style.WHITE));
-        STYLES.put("DB Regio AG S-Bahn Rhein-Main|SS9", new Style(Style.parseColor("#872996"), Style.WHITE));
+        STYLES.put(Character.toString(Product.HIGH_SPEED_TRAIN.code), new Style(NVV_SHAPE, Style.rgb(156, 158, 159), Style.WHITE));
+        STYLES.put(Character.toString(Product.REGIONAL_TRAIN.code), new Style(NVV_SHAPE_2, Style.rgb(86, 147, 135 ), Style.WHITE));
+        STYLES.put(Character.toString(Product.SUBURBAN_TRAIN.code), new Style(NVV_SHAPE, Style.rgb(86, 148, 140), Style.WHITE));
+        STYLES.put(Character.toString(Product.SUBWAY.code), new Style(NVV_SHAPE, Style.rgb(68, 118, 185), Style.WHITE));
+        STYLES.put(Character.toString(Product.TRAM.code), new Style(NVV_SHAPE_2, Style.rgb(193, 0, 31), Style.WHITE));
+        STYLES.put(Character.toString(Product.BUS.code), new Style(Style.rgb(117, 22, 115), Style.WHITE));
+        STYLES.put(Character.toString(Product.ON_DEMAND.code), new Style(Style.rgb(26, 23, 27), Style.rgb(241, 209, 29)));
+        STYLES.put(Character.toString(Product.FERRY.code), new Style(NVV_SHAPE, Style.rgb(129, 102, 161), Style.WHITE));
+        STYLES.put(Character.toString(Product.REPLACEMENT_SERVICE.code), new Style(Standard.COLOR_BACKGROUND_REPLACEMENT_SERVICE, Style.WHITE));
 
-        STYLES.put("Stadtwerke Verkehrsgesellschaft Frankfurt|UU1", new Style(Style.parseColor("#c52b1e"), Style.WHITE));
-        STYLES.put("Stadtwerke Verkehrsgesellschaft Frankfurt|UU2", new Style(Style.parseColor("#00ab4f"), Style.WHITE));
-        STYLES.put("Stadtwerke Verkehrsgesellschaft Frankfurt|UU3", new Style(Style.parseColor("#345aaf"), Style.WHITE));
-        STYLES.put("Stadtwerke Verkehrsgesellschaft Frankfurt|UU4", new Style(Style.parseColor("#fc5cac"), Style.WHITE));
-        STYLES.put("Stadtwerke Verkehrsgesellschaft Frankfurt|UU5", new Style(Style.parseColor("#0c7d3e"), Style.WHITE));
-        STYLES.put("Stadtwerke Verkehrsgesellschaft Frankfurt|UU6", new Style(Style.parseColor("#0082ca"), Style.WHITE));
-        STYLES.put("Stadtwerke Verkehrsgesellschaft Frankfurt|UU7", new Style(Style.parseColor("#f19e2d"), Style.WHITE));
-        STYLES.put("Stadtwerke Verkehrsgesellschaft Frankfurt|UU8", new Style(Style.parseColor("#ca7fbe"), Style.WHITE));
-        STYLES.put("Stadtwerke Verkehrsgesellschaft Frankfurt|UU9", new Style(Style.parseColor("#f4d039"), Style.parseColor("#2c2e35"), Style.parseColor("#2c2e35")));
+        STYLES.put(null, new Style(Style.DKGRAY, Style.WHITE));
+
+        STYLES.put("DB Regio AG S-Bahn Rhein-Main|SS1", new Style(NVV_SHAPE, Style.parseColor("#009edd"), Style.WHITE));
+        STYLES.put("DB Regio AG S-Bahn Rhein-Main|SS2", new Style(NVV_SHAPE, Style.parseColor("#ff2e17"), Style.WHITE));
+        STYLES.put("DB Regio AG S-Bahn Rhein-Main|SS3", new Style(NVV_SHAPE, Style.parseColor("#00b098"), Style.WHITE));
+        STYLES.put("DB Regio AG S-Bahn Rhein-Main|SS4", new Style(NVV_SHAPE, Style.parseColor("#ffc734"), Style.parseColor("#2c2e35"), Style.parseColor("#2c2e35")));
+        STYLES.put("DB Regio AG S-Bahn Rhein-Main|SS5", new Style(NVV_SHAPE, Style.parseColor("#95542a"), Style.WHITE));
+        STYLES.put("DB Regio AG S-Bahn Rhein-Main|SS6", new Style(NVV_SHAPE, Style.parseColor("#ff7322"), Style.WHITE));
+        STYLES.put("DB Regio AG S-Bahn Rhein-Main|SS7", new Style(NVV_SHAPE, Style.parseColor("#214d36"), Style.WHITE));
+        STYLES.put("DB Regio AG S-Bahn Rhein-Main|SS8", new Style(NVV_SHAPE, Style.parseColor("#88c946"), Style.WHITE));
+        STYLES.put("DB Regio AG S-Bahn Rhein-Main|SS9", new Style(NVV_SHAPE, Style.parseColor("#872996"), Style.WHITE));
+
+        STYLES.put("Stadtwerke Verkehrsgesellschaft Frankfurt|UU1", new Style(NVV_SHAPE, Style.parseColor("#c52b1e"), Style.WHITE));
+        STYLES.put("Stadtwerke Verkehrsgesellschaft Frankfurt|UU2", new Style(NVV_SHAPE, Style.parseColor("#00ab4f"), Style.WHITE));
+        STYLES.put("Stadtwerke Verkehrsgesellschaft Frankfurt|UU3", new Style(NVV_SHAPE, Style.parseColor("#345aaf"), Style.WHITE));
+        STYLES.put("Stadtwerke Verkehrsgesellschaft Frankfurt|UU4", new Style(NVV_SHAPE, Style.parseColor("#fc5cac"), Style.WHITE));
+        STYLES.put("Stadtwerke Verkehrsgesellschaft Frankfurt|UU5", new Style(NVV_SHAPE, Style.parseColor("#0c7d3e"), Style.WHITE));
+        STYLES.put("Stadtwerke Verkehrsgesellschaft Frankfurt|UU6", new Style(NVV_SHAPE, Style.parseColor("#0082ca"), Style.WHITE));
+        STYLES.put("Stadtwerke Verkehrsgesellschaft Frankfurt|UU7", new Style(NVV_SHAPE, Style.parseColor("#f19e2d"), Style.WHITE));
+        STYLES.put("Stadtwerke Verkehrsgesellschaft Frankfurt|UU8", new Style(NVV_SHAPE, Style.parseColor("#ca7fbe"), Style.WHITE));
+        STYLES.put("Stadtwerke Verkehrsgesellschaft Frankfurt|UU9", new Style(NVV_SHAPE, Style.parseColor("#f4d039"), Style.parseColor("#2c2e35"), Style.parseColor("#2c2e35")));
     }
 }

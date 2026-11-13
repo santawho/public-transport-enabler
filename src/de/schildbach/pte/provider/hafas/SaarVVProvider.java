@@ -17,15 +17,19 @@
 
 package de.schildbach.pte.provider.hafas;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 
 import javax.annotation.Nullable;
 
 import de.schildbach.pte.NetworkId;
+import de.schildbach.pte.Standard;
 import de.schildbach.pte.dto.Line;
 import de.schildbach.pte.dto.Product;
 
+import de.schildbach.pte.dto.Style;
 import okhttp3.HttpUrl;
 
 /**
@@ -66,6 +70,7 @@ public class SaarVVProvider extends AbstractHafasClientInterfaceProvider {
         setApiVersion("1.63");
         setApiClient(apiClient);
         setApiAuthorization(apiAuthorization);
+        setStyles(STYLES);
     }
 
     @Override
@@ -73,7 +78,7 @@ public class SaarVVProvider extends AbstractHafasClientInterfaceProvider {
         return true;
     }
 
-    private Set<Product> PRODUCTS_HAVING_DESTINATION_AS_DIRECTION = Set.of(
+    private final Set<Product> PRODUCTS_HAVING_DESTINATION_AS_DIRECTION = Set.of(
             Product.HIGH_SPEED_TRAIN,
             Product.REGIONAL_TRAIN,
             Product.SUBURBAN_TRAIN);
@@ -111,5 +116,23 @@ public class SaarVVProvider extends AbstractHafasClientInterfaceProvider {
             return new String[] { m.group(1), m.group(2) };
 
         return super.splitStationName(address);
+    }
+
+    private static final Style.Shape SAARVV_SHAPE = Style.Shape.ROUNDED;
+
+    protected static final Map<String, Style> STYLES = new HashMap<>();
+
+    static {
+        STYLES.put(Character.toString(Product.HIGH_SPEED_TRAIN.code), new Style(SAARVV_SHAPE, Style.rgb(232, 66, 97), Style.WHITE));
+        STYLES.put(Character.toString(Product.REGIONAL_TRAIN.code), new Style(SAARVV_SHAPE, Style.rgb(152, 194, 28), Style.WHITE));
+        STYLES.put(Character.toString(Product.SUBURBAN_TRAIN.code), new Style(SAARVV_SHAPE, Style.rgb(67, 152, 68), Style.WHITE));
+        STYLES.put(Character.toString(Product.SUBWAY.code), new Style(SAARVV_SHAPE, Style.rgb(0, 101, 174), Style.WHITE));
+        STYLES.put(Character.toString(Product.TRAM.code), new Style(SAARVV_SHAPE, Style.rgb(237, 135, 34), Style.WHITE));
+        STYLES.put(Character.toString(Product.BUS.code), new Style(Style.rgb(170, 85, 153), Style.WHITE));
+        STYLES.put(Character.toString(Product.ON_DEMAND.code), new Style(Style.rgb(255, 203, 20), Style.WHITE));
+        STYLES.put(Character.toString(Product.FERRY.code), new Style(SAARVV_SHAPE, Style.rgb(119, 91, 152), Style.WHITE));
+        STYLES.put(Character.toString(Product.REPLACEMENT_SERVICE.code), new Style(Standard.COLOR_BACKGROUND_REPLACEMENT_SERVICE, Style.WHITE));
+
+        STYLES.put(null, new Style(Style.DKGRAY, Style.WHITE));
     }
 }
