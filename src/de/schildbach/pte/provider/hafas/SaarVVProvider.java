@@ -40,19 +40,19 @@ import okhttp3.HttpUrl;
 public class SaarVVProvider extends AbstractHafasClientInterfaceProvider {
     private static final HttpUrl API_BASE = HttpUrl.parse("https://saarfahrplan.de/bin/");
     private static final Product[] PRODUCTS_MAP = {
-            Product.HIGH_SPEED_TRAIN,
-            Product.HIGH_SPEED_TRAIN,
-            Product.HIGH_SPEED_TRAIN,
+            Product.HIGH_SPEED_TRAIN, // ICE, TGV
+            Product.HIGH_SPEED_TRAIN, // IC
+            Product.COACH, // CFL Saarbrückenexpress L40 requires search option InterRegio (used to be HIGH_SPEED_TRAIN)
             Product.REGIONAL_TRAIN,
 
             Product.SUBURBAN_TRAIN,
-            Product.SUBWAY,
-            Product.TRAM,
+            Product.SUBWAY, // not requestable on web app, not defined in translations
+            Product.TRAM, // Saarbahn
             Product.BUS,
 
-            Product.CABLECAR,
+            Product.FERRY, // added with each other selection. Used to be CABLECAR, why, where?
             Product.ON_DEMAND,
-            Product.BUS
+            Product.COACH, // Schulbus, is this a BUS, a COACH, or something different?
     };
     private static final String DEFAULT_API_CLIENT = "{\"id\":\"ZPS-SAAR\",\"type\":\"WEB\",\"name\":\"webapp\",\"l\":\"vs_webapp\"}";
     private static final String WEBAPP_CONFIG_URL = "https://saarfahrplan.de/config/webapp.config.json";
