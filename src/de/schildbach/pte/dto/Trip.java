@@ -321,7 +321,7 @@ public final class Trip implements Serializable {
                 if (plannedArrivalTime != null)
                     builder.append(plannedArrivalTime.getTime()).append('-');
                 final Line line = publicLeg.line;
-                builder.append(line.productCode());
+                builder.append(line.validProduct().code);
                 builder.append(line.label);
             }
 

@@ -22,6 +22,7 @@ import java.util.Comparator;
 import java.util.Objects;
 import java.util.Set;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import de.schildbach.pte.NetworkId;
@@ -56,9 +57,11 @@ public final class Line implements Serializable, Comparable<Line> {
     }
 
     public Line(
-            final NetworkId networkId, final String id,
-            final String operator, final Product product, final String label, final String name,
-            final Style style, final Set<Attr> attrs, final String message) {
+            final @Nullable NetworkId networkId, final @Nullable String id,
+            final @Nullable String operator, final @Nullable Product product,
+            final @Nullable String label, final @Nullable String name,
+            final @Nullable Style style, final @Nullable Set<Attr> attrs,
+            final @Nullable String message) {
         this.networkId = networkId;
         this.id = id;
         this.operator = operator;
@@ -74,13 +77,15 @@ public final class Line implements Serializable, Comparable<Line> {
         return operator;
     }
 
-    private Product product() {
+    private @Nullable Product product() {
         return product;
     }
 
-    public char productCode() {
+    public @Nonnull Product validProduct() {
         final Product product = this.product;
-        return (product != null ? product : Product.UNKNOWN).code;
+        if (product == null)
+            return Product.UNKNOWN;
+        return product;
     }
 
     private String label() {
