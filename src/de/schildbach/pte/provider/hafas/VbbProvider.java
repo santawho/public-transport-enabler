@@ -17,14 +17,18 @@
 
 package de.schildbach.pte.provider.hafas;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import de.schildbach.pte.NetworkId;
+import de.schildbach.pte.Standard;
 import de.schildbach.pte.dto.Fare;
 import de.schildbach.pte.dto.Product;
 
+import de.schildbach.pte.dto.Style;
 import okhttp3.HttpUrl;
 
 /**
@@ -55,6 +59,7 @@ public class VbbProvider extends AbstractHafasClientInterfaceProvider {
         setApiVersion("1.77");
         setApiClient(apiClient);
         setApiAuthorization(apiAuthorization);
+        setStyles(STYLES);
     }
 
     private static final Pattern P_SPLIT_NAME_SU = Pattern.compile("(.*?)(?:\\s+\\((S|U|S\\+U)\\))?");
@@ -138,5 +143,23 @@ public class VbbProvider extends AbstractHafasClientInterfaceProvider {
     @Override
     public Set<Product> defaultProducts() {
         return Product.ALL_EXCEPT_HIGHSPEED_AND_ONDEMAND;
+    }
+
+    private static final Style.Shape VBB_SHAPE = Style.Shape.ROUNDED;
+
+    protected static final Map<String, Style> STYLES = new HashMap<>();
+
+    static {
+        STYLES.put(Character.toString(Product.HIGH_SPEED_TRAIN.code), new Style(VBB_SHAPE, Style.rgb(125, 129, 133), Style.WHITE));
+        STYLES.put(Character.toString(Product.REGIONAL_TRAIN.code), new Style(VBB_SHAPE, Style.rgb(226, 6, 19), Style.WHITE));
+        STYLES.put(Character.toString(Product.SUBURBAN_TRAIN.code), new Style(VBB_SHAPE, Style.rgb(0, 145, 84), Style.WHITE));
+        STYLES.put(Character.toString(Product.SUBWAY.code), new Style(VBB_SHAPE, Style.rgb(0, 101, 173), Style.WHITE));
+        STYLES.put(Character.toString(Product.TRAM.code), new Style(VBB_SHAPE, Style.rgb(226, 6, 19), Style.WHITE));
+        STYLES.put(Character.toString(Product.BUS.code), new Style(Style.rgb(166, 22, 128), Style.WHITE));
+        STYLES.put(Character.toString(Product.ON_DEMAND.code), new Style(Standard.COLOR_BACKGROUND_ON_DEMAND, Style.WHITE));
+        STYLES.put(Character.toString(Product.FERRY.code), new Style(VBB_SHAPE, Style.rgb(0, 154, 216), Style.WHITE));
+        STYLES.put(Character.toString(Product.REPLACEMENT_SERVICE.code), new Style(Standard.COLOR_BACKGROUND_REPLACEMENT_SERVICE, Style.WHITE));
+
+        STYLES.put(null, new Style(Style.DKGRAY, Style.WHITE));
     }
 }

@@ -21,6 +21,7 @@ import de.schildbach.pte.dto.Point;
 import de.schildbach.pte.provider.efa.BayernLegacyProvider;
 import de.schildbach.pte.provider.hafas.CflProvider;
 import de.schildbach.pte.provider.hafas.IrlProvider;
+import de.schildbach.pte.provider.hafas.VvwProvider;
 import de.schildbach.pte.provider.motis.NwexDirectionsRheinNeckarVerkehrProvider;
 import de.schildbach.pte.provider.motis.TransitousProvider;
 import de.schildbach.pte.provider.hafas.AvvAachenProvider;
@@ -138,7 +139,7 @@ public enum NetworkId {
     UESTRA(Descriptor.from(UestraProvider.class, "de-DE", "Niedersachsen;Hannover;Hamburg")),
     BSVAG(Descriptor.from(BsvagProvider.class, "de-DE", "Braunschweig;Wolfsburg")),
     VBN(Descriptor.from(VbnProvider.class, "de-DE", "Niedersachsen;Hamburg;Bremen;Bremerhaven;Oldenburg (Oldenburg);Osnabrück;Göttingen;Rostock")),
-    VVW(Descriptor.from(VbnProvider.Vvw.class, "de-DE", "Rostock")),
+    VVW(Descriptor.from(VvwProvider.class, "de-DE", "Rostock")),
     NASA(Descriptor.from(InsaProvider.Nasa.class, "de-DE", "Sachsen;Leipzig;Sachsen-Anhalt;Magdeburg;Halle")),
     MDV(Descriptor.from(InsaProvider.Mdv.class, "de-DE", "Sachsen;Leipzig;Sachsen-Anhalt;Halle")),
     VMT(Descriptor.from(VmtProvider.class, "de-DE", "Thüringen;Mittelthüringen;Erfurt;Jena;Gera;Weimar;Gotha")),

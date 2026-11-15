@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 
 import de.schildbach.pte.NetworkId;
+import de.schildbach.pte.Standard;
 import de.schildbach.pte.dto.Product;
 import de.schildbach.pte.dto.Style;
 
@@ -104,7 +105,21 @@ public class InvgProvider extends AbstractHafasClientInterfaceProvider {
 
     private static final Map<String, Style> STYLES = new HashMap<>();
 
+    private static final Style.Shape INVG_SHAPE = Style.Shape.ROUNDED;
+
     static {
+        STYLES.put(Character.toString(Product.HIGH_SPEED_TRAIN.code), new Style(INVG_SHAPE, Style.rgb(230, 53, 86), Style.WHITE));
+        STYLES.put(Character.toString(Product.REGIONAL_TRAIN.code), new Style(INVG_SHAPE, Style.rgb(152, 187, 34), Style.WHITE));
+        STYLES.put(Character.toString(Product.SUBURBAN_TRAIN.code), new Style(INVG_SHAPE, Standard.COLOR_BACKGROUND_SUBURBAN_TRAIN, Style.WHITE));
+        STYLES.put(Character.toString(Product.SUBWAY.code), new Style(INVG_SHAPE, Standard.COLOR_BACKGROUND_SUBWAY, Style.WHITE));
+        STYLES.put(Character.toString(Product.TRAM.code), new Style(INVG_SHAPE, Standard.COLOR_BACKGROUND_TRAM, Style.WHITE));
+        STYLES.put(Character.toString(Product.BUS.code), new Style(Style.rgb(169, 85, 153), Style.WHITE));
+        STYLES.put(Character.toString(Product.ON_DEMAND.code), new Style(Style.rgb(255, 203, 20), Style.WHITE));
+        STYLES.put(Character.toString(Product.FERRY.code), new Style(INVG_SHAPE, Standard.COLOR_BACKGROUND_FERRY, Style.WHITE));
+        STYLES.put(Character.toString(Product.REPLACEMENT_SERVICE.code), new Style(Standard.COLOR_BACKGROUND_REPLACEMENT_SERVICE, Style.WHITE));
+
+        STYLES.put(null, new Style(Style.DKGRAY, Style.WHITE));
+
         STYLES.put("B10", new Style(Style.parseColor("#DA2510"), Style.WHITE));
         STYLES.put("B11", new Style(Style.parseColor("#EE9B78"), Style.BLACK));
         STYLES.put("B15", new Style(Style.parseColor("#84C326"), Style.BLACK));

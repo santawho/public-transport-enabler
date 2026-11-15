@@ -27,6 +27,7 @@ import java.util.regex.Matcher;
 import javax.annotation.Nullable;
 
 import de.schildbach.pte.NetworkId;
+import de.schildbach.pte.Standard;
 import de.schildbach.pte.dto.Line;
 import de.schildbach.pte.dto.Product;
 import de.schildbach.pte.dto.Style;
@@ -112,9 +113,23 @@ public class ShProvider extends AbstractHafasClientInterfaceProvider {
         return super.splitStationName(address);
     }
 
+    private static final Style.Shape NAHSH_SHAPE = Style.Shape.ROUNDED;
+
     protected static final Map<String, Style> STYLES = new HashMap<>();
 
     static {
+        STYLES.put(Character.toString(Product.HIGH_SPEED_TRAIN.code), new Style(NAHSH_SHAPE, Style.rgb(194, 10, 29), Style.WHITE));
+        STYLES.put(Character.toString(Product.REGIONAL_TRAIN.code), new Style(NAHSH_SHAPE, Style.rgb(74, 22, 135), Style.WHITE));
+        STYLES.put(Character.toString(Product.SUBURBAN_TRAIN.code), new Style(NAHSH_SHAPE, Style.rgb(63, 123, 29), Style.WHITE));
+        STYLES.put(Character.toString(Product.SUBWAY.code), new Style(NAHSH_SHAPE, Style.rgb(8, 59, 207), Style.WHITE));
+        STYLES.put(Character.toString(Product.TRAM.code), new Style(NAHSH_SHAPE, Standard.COLOR_BACKGROUND_TRAM, Style.WHITE));
+        STYLES.put(Character.toString(Product.BUS.code), new Style(Style.rgb(0, 30, 73), Style.WHITE));
+        STYLES.put(Character.toString(Product.ON_DEMAND.code), new Style(Standard.COLOR_BACKGROUND_ON_DEMAND, Style.WHITE));
+        STYLES.put(Character.toString(Product.FERRY.code), new Style(NAHSH_SHAPE, Style.rgb(25, 51, 153), Style.WHITE));
+        STYLES.put(Character.toString(Product.REPLACEMENT_SERVICE.code), new Style(Standard.COLOR_BACKGROUND_REPLACEMENT_SERVICE, Style.WHITE));
+
+        STYLES.put(null, new Style(Style.DKGRAY, Style.WHITE));
+
         // Busse Kiel
         putKielBusStyle("1", new Style(Style.parseColor("#7288af"), Style.WHITE));
         putKielBusStyle("2", new Style(Style.parseColor("#50bbb4"), Style.WHITE));
