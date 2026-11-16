@@ -653,11 +653,12 @@ public abstract class DbProvider extends AbstractNetworkProvider {
     protected String getLocationInfoUrl(final String id, final String bahnhofsInfoId) {
         if (bahnhofsInfoId == null)
             return null;
-        final String infoId = bahnhofsInfoId != null ? bahnhofsInfoId : (id != null && id.length() <= 10) ? id : null;
-        return infoId == null ? null : (
-                "https://www.bahnhof.de"
-                + ("de".equals(this.userInterfaceLanguage) ? "" : "/en")
-                + "/bahnhof-de/id/" + infoId);
+        final String infoId = bahnhofsInfoId != null ? bahnhofsInfoId
+                : (id != null && id.length() <= 10) ? id
+                : null;
+        return infoId == null ? null : String.format(
+                "https://db.info/%sid/%s", // legacy: "https://www.bahnhof.de/%sbahnhof-de/id/%s",
+                "de".equals(this.userInterfaceLanguage) ? "" : "en/", infoId);
     }
 
     private String createLidEntry(final String key, final Object value) {
