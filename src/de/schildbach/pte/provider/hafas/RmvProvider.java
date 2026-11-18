@@ -182,7 +182,7 @@ public class RmvProvider extends AbstractHafasClientInterfaceProvider {
         STYLES.put(Character.toString(Product.REGIONAL_TRAIN.code), new Style(RMV_SHAPE, Style.rgb(0, 0, 0), Style.WHITE));
         STYLES.put(Character.toString(Product.SUBURBAN_TRAIN.code), new Style(RMV_SHAPE, Style.rgb(0, 151, 87), Style.WHITE));
         STYLES.put(Character.toString(Product.SUBWAY.code), new Style(RMV_SHAPE, Style.rgb(0, 101, 174), Style.WHITE));
-        STYLES.put(Character.toString(Product.TRAM.code), new Style(RMV_SHAPE, Style.rgb(216, 127, 63), Style.WHITE));
+        STYLES.put(Character.toString(Product.TRAM.code), new Style(RMV_SHAPE, Style.rgb(224, 116, 0), Style.WHITE));
         STYLES.put(Character.toString(Product.BUS.code), new Style(Style.rgb(167, 22, 128), Style.WHITE));
         STYLES.put(Character.toString(Product.ON_DEMAND.code), new Style(Style.rgb(189, 135, 0), Style.WHITE));
         STYLES.put(Character.toString(Product.FERRY.code), new Style(RMV_SHAPE, Style.rgb(119, 91, 152), Style.WHITE));
