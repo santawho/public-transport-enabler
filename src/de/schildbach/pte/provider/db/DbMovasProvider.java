@@ -80,10 +80,9 @@ import de.schildbach.pte.util.GeoUtils;
 import de.schildbach.pte.util.ParserUtils;
 import okhttp3.HttpUrl;
 
-/**
+/*
  * Provider implementation for movas API of Deutsche Bahn (Germany).
- * 
- * @author Andreas Schildbach
+ * see also: https://github.com/public-transport/db-vendo-client
  */
 public abstract class DbMovasProvider extends DbProvider {
     public static class Fernverkehr extends DbMovasProvider {
@@ -930,7 +929,7 @@ public abstract class DbMovasProvider extends DbProvider {
                 + "\"reservierungsKontingenteVorhanden\":false}";
 
         final HttpUrl url = this.tripReconEndpoint;
-        final String contentType = "application/x.db.vendo.mob.verbindungssuche.v8+json";
+        final String contentType = "application/x.db.vendo.mob.verbindungssuche.v9+json";
 
         String page = null;
         try {
