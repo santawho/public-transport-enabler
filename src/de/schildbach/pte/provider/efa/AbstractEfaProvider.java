@@ -152,7 +152,7 @@ public abstract class AbstractEfaProvider extends AbstractNetworkProvider {
 
         @Override
         public boolean canQueryEarlier() {
-            return false; // TODO enable earlier querying
+            return context != null; // original PTE always returns false and comments a to-do. why?
         }
 
         @Override
