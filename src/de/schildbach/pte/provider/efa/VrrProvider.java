@@ -40,6 +40,9 @@ import okhttp3.HttpUrl;
  */
 public class VrrProvider extends AbstractEfaProvider {
     private static final HttpUrl API_BASE = HttpUrl.parse("https://efa.vrr.de/standard/");
+    // https://efa.vrr.de/vrrstd/ --- just attempted, seems they are all the same
+    // https://app.vrr.de/vrrstd/
+    // https://efa.vrr.de/vrr/ --- seems to be the same as https://efa.vrr.de/standard/
     // https://www.vrr.de/vrr-efa/  ---  this server from the web app as of 2026-Jan causes session problems
     // https://efa.vrr.de/standard/
     // http://app.vrr.de/companion-vrr/
