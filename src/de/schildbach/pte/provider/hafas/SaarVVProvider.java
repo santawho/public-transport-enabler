@@ -52,7 +52,7 @@ public class SaarVVProvider extends AbstractHafasClientInterfaceProvider {
 
             Product.FERRY, // added with each other selection. Used to be CABLECAR, why, where?
             Product.ON_DEMAND,
-            Product.COACH, // Schulbus, is this a BUS, a COACH, or something different?
+            Product.BUS, // Schulbus, is this a BUS, a COACH, or something different?
     };
     private static final String DEFAULT_API_CLIENT = "{\"id\":\"ZPS-SAAR\",\"type\":\"WEB\",\"name\":\"webapp\",\"l\":\"vs_webapp\"}";
     private static final String WEBAPP_CONFIG_URL = "https://saarfahrplan.de/config/webapp.config.json";
