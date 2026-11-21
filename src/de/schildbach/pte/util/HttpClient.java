@@ -62,6 +62,7 @@ import okhttp3.CompressionInterceptor;
 import okhttp3.ConnectionSpec;
 import okhttp3.Cookie;
 import okhttp3.Gzip;
+import okhttp3.Handshake;
 import okhttp3.Headers;
 import okhttp3.HttpUrl;
 import okhttp3.Interceptor;
@@ -255,6 +256,17 @@ public final class HttpClient {
                     });
             loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BASIC);
 
+            final Interceptor tlsHandshakeInterceptor = chain -> {
+                final Request request = chain.request();
+                final Response response = chain.proceed(request);
+                if (response != null) {
+                    final Handshake handshake = response.handshake();
+                    if (handshake != null)
+                        log.debug("TLS handshake {}", handshake);
+                }
+                return response;
+            };
+
             final Interceptor xmlEncodingInterceptor = !contentEncodingFromXmlPragma ? null : new Interceptor() {
                 private final Pattern P_XML_PRAGMA = Pattern.compile("<\\?xml.*?encoding=\"(.*?)\".*?\\?>");
                 private final String HEADER_CONTENT_TYPE = "Content-Type";
@@ -332,6 +344,7 @@ public final class HttpClient {
                     .readTimeout(5, TimeUnit.SECONDS)
                     .callTimeout(10, TimeUnit.SECONDS)
                     .addNetworkInterceptor(loggingInterceptor)
+                    .addInterceptor(tlsHandshakeInterceptor)
                     .addInterceptor(retryInterceptor)
                     .addInterceptor(compressionInterceptor);
             if (xmlEncodingInterceptor != null)
@@ -349,6 +362,20 @@ public final class HttpClient {
             }
 
             okHttpClient = builder.build();
+
+            final List<ConnectionSpec> connectionSpecs = okHttpClient.connectionSpecs();
+            if (connectionSpecs == null) {
+                log.info("new okHttpClient: no connectionSpecs");
+            } else {
+                log.info("new okHttpClient: {} connectionSpecs", connectionSpecs.size());
+                for (final ConnectionSpec spec : connectionSpecs) {
+                    log.info("  {}", spec.toString());
+                }
+            }
+
+            final SSLSocketFactory sslSocketFactory = okHttpClient.sslSocketFactory();
+            log.debug("supported CipherSuites {}", String.join(", ", sslSocketFactory.getSupportedCipherSuites()));
+            log.debug("default CipherSuites {}", String.join(", ", sslSocketFactory.getDefaultCipherSuites()));
         }
         return okHttpClient;
     }
