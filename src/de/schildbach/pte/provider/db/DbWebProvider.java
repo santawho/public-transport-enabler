@@ -24,6 +24,7 @@ import org.msgpack.core.MessagePacker;
 import org.msgpack.core.MessageUnpacker;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -362,6 +363,19 @@ public abstract class DbWebProvider extends DbProvider {
         return out;
     }
 
+    private static final int MAX_LOCATION_CACHE_SIZE = 500;
+    private Map<String, Location> locationsByExtIdCache = new LinkedHashMap<>(
+            MAX_LOCATION_CACHE_SIZE + 10, 1,
+            true) { // makes it a least recently used cache
+        @Serial
+        private static final long serialVersionUID = 7747429455696465635L;
+
+        @Override
+        protected boolean removeEldestEntry(final Entry<String, Location> eldest) {
+            return size() > MAX_LOCATION_CACHE_SIZE;
+        }
+    };
+
     private Location parseLocation(final JSONObject loc) {
         if (loc == null)
             return null;
@@ -369,11 +383,13 @@ public abstract class DbWebProvider extends DbProvider {
         final Location lid = parseLid(lidStr);
         final String id;
         final String bahnhofsInfoId;
+        final String extId;
         if (lid.type == LocationType.STATION) {
-            id = Optional.ofNullable(loc.optString("extId", null)).orElse(lid.id);
-            // bahnhofsInfoId = Optional.ofNullable(loc.optString("bahnhofsInfoId", null)).orElse(id);
+            extId = loc.optString("extId", null);
+            id = extId != null ? extId : lid.id;
             bahnhofsInfoId = loc.optString("bahnhofsInfoId", null);
         } else {
+            extId = null;
             id = lidStr;
             bahnhofsInfoId = null;
         }
@@ -383,13 +399,24 @@ public abstract class DbWebProvider extends DbProvider {
             coord = Point.fromDouble(latitude, loc.optDouble("lon"));
         }
 
-        return createLocation(
+        final Location location = createLocation(
                 lid.type,
                 id,
                 coord,
                 loc.optString("name", null),
                 parseProducts(loc.optJSONArray("products")),
                 bahnhofsInfoId);
+
+        if (location.type == LocationType.STATION && extId != null)
+            locationsByExtIdCache.put(extId, location);
+
+        return location;
+    }
+
+    private Location getCachedLocationByExtId(final String extId) {
+        if (extId == null)
+            return null;
+        return locationsByExtIdCache.get(extId);
     }
 
     private Destination parseDirection(final JSONObject verkehrsmittel, final LocationType type) {
@@ -1042,15 +1069,35 @@ public abstract class DbWebProvider extends DbProvider {
                     continue;
                 }
                 final String bahnhofsId = dep.getString("bahnhofsId");
-                final JSONArray vias = dep.optJSONArray("ueber");
-                final String bahnhofsName = Optional.ofNullable(vias).map(via -> via.optString(0)).orElse(null);
                 if (equivsMode == EquivalentStationsMode.USE_META && !stationId.equals(bahnhofsId)) {
                     continue;
                 }
-                // they do not deliver the coordinates
-                // for the same station use the coordinates from the requested station
-                final Point coord = bahnhofsId.equals(stationId) ? station.coord : null;
-                final Location location = createLocation(LocationType.STATION, bahnhofsId, coord, bahnhofsName, null, null);
+                final JSONArray vias = dep.optJSONArray("ueber");
+                // they do not deliver any information about the sub-station except the above bahnhofsId
+                // try to obtain information about the station via (eventually cached) API call using the extId
+                Location location = getLocationByExtId(bahnhofsId);
+                if (location == null) {
+                    // for some stations they do not find it via the extId like Frankfurt Hbf Tief, try using the name of the station
+                    final String firstViaName = Optional.ofNullable(vias).map(via -> via.optString(0)).orElse(null);
+                    if (firstViaName != null)
+                        location = queryStationByName(firstViaName);
+                    if (location == null || !location.id.equals(bahnhofsId)) {
+                        // create a fallback missing many details
+                        // we have a name and the extId
+                        // for the same station use the coordinates from the requested station
+                        Point coord = station.coord;
+                        if (coord != null && !bahnhofsId.equals(stationId)) {
+                            // create a fake coordinate just beside the original
+                            coord = GeoUtils.getRemotePoint(coord,
+                                    bahnhofsId.hashCode() % 360,
+                                    ((firstViaName == null ? 0 : firstViaName.hashCode() % 2) + 1) * 30);
+                        }
+                        location = createLocation(LocationType.STATION, bahnhofsId, coord, firstViaName, null, null);
+                        // we have tried hard, but no chance to get the real data, put into the cache anyway
+                        locationsByExtIdCache.put(bahnhofsId, location);
+                    }
+                }
+
                 StationDepartures stationDepartures = result.findStationDepartures(location);
                 if (stationDepartures == null) {
                     stationDepartures = new StationDepartures(location, new ArrayList<Departure>(8), null);
@@ -1167,6 +1214,70 @@ public abstract class DbWebProvider extends DbProvider {
             return new SuggestLocationsResult(this.resultHeader, locations);
         } catch (final JSONException x) {
             throw new ParserException("cannot parse json: '" + page + "' on " + url, x);
+        }
+    }
+
+    private Location queryStationByExtId(final String extId) throws IOException {
+        final HttpUrl url = this.locationsEndpoint.newBuilder()
+                .addQueryParameter("suchbegriff", extId)
+                .addQueryParameter("typ", "HALTESTELLEN")
+                .addQueryParameter("limit", "10")
+                .build();
+        String page = null;
+        try {
+            page = doRequest(url);
+
+            final JSONArray locs = new JSONArray(page);
+            for (int iLoc = 0; iLoc < locs.length(); iLoc++) {
+                final JSONObject jsonL = locs.getJSONObject(iLoc);
+                final String foundExtId = jsonL.optString("extId", null);
+                if (foundExtId == null || !foundExtId.equals(extId))
+                    continue;
+                final Location loc = parseLocation(jsonL);
+                if (loc != null)
+                    return loc;
+            }
+            return null;
+        } catch (final JSONException x) {
+            throw new ParserException("cannot parse json: '" + page + "' on " + url, x);
+        }
+    }
+
+    private Location queryStationByName(final String name) throws IOException {
+        final HttpUrl url = this.locationsEndpoint.newBuilder()
+                .addQueryParameter("suchbegriff", name)
+                .addQueryParameter("typ", "HALTESTELLEN")
+                .addQueryParameter("limit", "10")
+                .build();
+        String page = null;
+        try {
+            page = doRequest(url);
+
+            final JSONArray locs = new JSONArray(page);
+            for (int iLoc = 0; iLoc < locs.length(); iLoc++) {
+                final JSONObject jsonL = locs.getJSONObject(iLoc);
+                final String foundName = jsonL.optString("name", null);
+                if (foundName == null || !foundName.equals(name))
+                    continue;
+                final Location loc = parseLocation(jsonL);
+                if (loc != null)
+                    return loc;
+            }
+            return null;
+        } catch (final JSONException x) {
+            throw new ParserException("cannot parse json: '" + page + "' on " + url, x);
+        }
+    }
+
+    private Location getLocationByExtId(final String extId) {
+        final Location cachedLocation = getCachedLocationByExtId(extId);
+        if (cachedLocation != null)
+            return cachedLocation;
+        try {
+            return queryStationByExtId(extId);
+        } catch (final IOException ioe) {
+            log.error("getLocationByExtId failed", ioe);
+            return null;
         }
     }
 
