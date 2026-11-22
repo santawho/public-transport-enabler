@@ -17,11 +17,15 @@
 
 package de.schildbach.pte.provider.hafas;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.regex.Matcher;
 
 import de.schildbach.pte.NetworkId;
+import de.schildbach.pte.Standard;
 import de.schildbach.pte.dto.Product;
 
+import de.schildbach.pte.dto.Style;
 import okhttp3.HttpUrl;
 
 /**
@@ -61,6 +65,25 @@ public abstract class InsaProvider extends AbstractHafasClientInterfaceProvider 
 
         public Nasa(final String apiClient, final String apiAuthorization) {
             super(NetworkId.NASA, PRODUCTS_MAP, apiClient, apiAuthorization);
+            setStyles(STYLES);
+        }
+
+        private static final Style.Shape NASA_SHAPE = Style.Shape.ROUNDED;
+
+        protected static final Map<String, Style> STYLES = new HashMap<>();
+
+        static {
+            STYLES.put(Character.toString(Product.HIGH_SPEED_TRAIN.code), new Style(NASA_SHAPE, Style.rgb(0, 94, 168), Style.WHITE));
+            STYLES.put(Character.toString(Product.REGIONAL_TRAIN.code), new Style(NASA_SHAPE, Style.rgb(31, 131, 50), Style.WHITE));
+            STYLES.put(Character.toString(Product.SUBURBAN_TRAIN.code), new Style(NASA_SHAPE, Style.rgb(0, 111, 53), Style.WHITE));
+            STYLES.put(Character.toString(Product.SUBWAY.code), new Style(NASA_SHAPE, Style.rgb(0, 111, 53), Style.WHITE));
+            STYLES.put(Character.toString(Product.TRAM.code), new Style(NASA_SHAPE, Style.rgb(204, 0, 0), Style.WHITE));
+            STYLES.put(Character.toString(Product.BUS.code), new Style(NASA_SHAPE, Style.rgb(153, 51, 153), Style.WHITE));
+            STYLES.put(Character.toString(Product.ON_DEMAND.code), new Style(NASA_SHAPE, Style.rgb(153, 51, 153), Style.WHITE));
+            STYLES.put(Character.toString(Product.FERRY.code), new Style(NASA_SHAPE, Style.rgb(105, 185, 232), Style.WHITE));
+            STYLES.put(Character.toString(Product.REPLACEMENT_SERVICE.code), new Style(NASA_SHAPE, Standard.COLOR_BACKGROUND_REPLACEMENT_SERVICE, Style.WHITE));
+
+            STYLES.put(null, new Style(Style.DKGRAY, Style.WHITE));
         }
     }
 
@@ -89,6 +112,25 @@ public abstract class InsaProvider extends AbstractHafasClientInterfaceProvider 
 
         public Mdv() {
             super(NetworkId.MDV, PRODUCTS_MAP, WEB_API_CLIENT, WEBAPP_CONFIG_URL);
+            setStyles(STYLES);
+        }
+
+        private static final Style.Shape MDV_SHAPE = Style.Shape.ROUNDED;
+
+        protected static final Map<String, Style> STYLES = new HashMap<>();
+
+        static {
+            STYLES.put(Character.toString(Product.HIGH_SPEED_TRAIN.code), new Style(MDV_SHAPE, Style.rgb(230, 53, 86), Style.WHITE));
+            STYLES.put(Character.toString(Product.REGIONAL_TRAIN.code), new Style(MDV_SHAPE, Style.rgb(17, 137, 56), Style.WHITE));
+            STYLES.put(Character.toString(Product.SUBURBAN_TRAIN.code), new Style(MDV_SHAPE, Style.rgb(17, 137, 56), Style.WHITE));
+            STYLES.put(Character.toString(Product.SUBWAY.code), new Style(MDV_SHAPE, Style.rgb(17, 137, 56), Style.WHITE));
+            STYLES.put(Character.toString(Product.TRAM.code), new Style(MDV_SHAPE, Style.rgb(187, 30, 16), Style.WHITE));
+            STYLES.put(Character.toString(Product.BUS.code), new Style(MDV_SHAPE, Style.rgb(122, 32, 106), Style.WHITE));
+            STYLES.put(Character.toString(Product.ON_DEMAND.code), new Style(MDV_SHAPE, Style.rgb(122, 32, 106), Style.WHITE));
+            STYLES.put(Character.toString(Product.FERRY.code), new Style(MDV_SHAPE, Style.rgb(0, 165, 223), Style.WHITE));
+            STYLES.put(Character.toString(Product.REPLACEMENT_SERVICE.code), new Style(MDV_SHAPE, Standard.COLOR_BACKGROUND_REPLACEMENT_SERVICE, Style.WHITE));
+
+            STYLES.put(null, new Style(Style.DKGRAY, Style.WHITE));
         }
     }
 

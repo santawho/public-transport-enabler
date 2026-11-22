@@ -131,6 +131,7 @@ public class SaarVVProvider extends AbstractHafasClientInterfaceProvider {
         STYLES.put(Character.toString(Product.BUS.code), new Style(Style.rgb(170, 85, 153), Style.WHITE));
         STYLES.put(Character.toString(Product.ON_DEMAND.code), new Style(Style.rgb(255, 203, 20), Style.WHITE));
         STYLES.put(Character.toString(Product.FERRY.code), new Style(SAARVV_SHAPE, Style.rgb(119, 91, 152), Style.WHITE));
+        STYLES.put(Character.toString(Product.COACH.code), new Style(SAARVV_SHAPE, Style.rgb(232, 66, 97), Style.WHITE));
         STYLES.put(Character.toString(Product.REPLACEMENT_SERVICE.code), new Style(Standard.COLOR_BACKGROUND_REPLACEMENT_SERVICE, Style.WHITE));
 
         STYLES.put(null, new Style(Style.DKGRAY, Style.WHITE));

@@ -17,11 +17,15 @@
 
 package de.schildbach.pte.provider.hafas;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.regex.Matcher;
 
 import de.schildbach.pte.NetworkId;
+import de.schildbach.pte.Standard;
 import de.schildbach.pte.dto.Product;
 
+import de.schildbach.pte.dto.Style;
 import okhttp3.HttpUrl;
 
 /**
@@ -52,6 +56,7 @@ public class AvvAachenProvider extends AbstractHafasClientInterfaceProvider {
         setApiVersion("1.69");
         setApiClient(apiClient);
         setApiAuthorization(apiAuthorization);
+        setStyles(STYLES);
     }
 
     private static final String[] PLACES = { "AC", "Aachen" };
@@ -91,5 +96,24 @@ public class AvvAachenProvider extends AbstractHafasClientInterfaceProvider {
         if (m.matches())
             return new String[] { m.group(1), m.group(2) };
         return super.splitStationName(address);
+    }
+
+    private static final Style.Shape AVV_SHAPE = Style.Shape.ROUNDED;
+
+    protected static final Map<String, Style> STYLES = new HashMap<>();
+
+    static {
+        STYLES.put(Character.toString(Product.HIGH_SPEED_TRAIN.code), new Style(AVV_SHAPE, Style.rgb(205, 38, 48), Style.WHITE));
+        STYLES.put(Character.toString(Product.REGIONAL_TRAIN.code), new Style(AVV_SHAPE, Style.rgb(139, 186, 2), Style.WHITE));
+        STYLES.put(Character.toString(Product.SUBURBAN_TRAIN.code), new Style(AVV_SHAPE, Style.rgb(66, 165, 66), Style.WHITE));
+        STYLES.put(Character.toString(Product.SUBWAY.code), new Style(AVV_SHAPE, Style.rgb(0, 147, 213), Style.WHITE));
+        STYLES.put(Character.toString(Product.TRAM.code), new Style(AVV_SHAPE, Style.rgb(230, 161, 42), Style.WHITE));
+        STYLES.put(Character.toString(Product.BUS.code), new Style(AVV_SHAPE, Style.rgb(190, 65, 135), Style.WHITE));
+        STYLES.put(Character.toString(Product.ON_DEMAND.code), new Style(AVV_SHAPE, Style.rgb(165, 85, 149), Style.WHITE));
+        STYLES.put(Character.toString(Product.FERRY.code), new Style(AVV_SHAPE, Style.rgb(24, 79, 94), Style.WHITE));
+        STYLES.put(Character.toString(Product.COACH.code), new Style(AVV_SHAPE, Style.rgb(205, 38, 48), Style.WHITE));
+        STYLES.put(Character.toString(Product.REPLACEMENT_SERVICE.code), new Style(AVV_SHAPE, Standard.COLOR_BACKGROUND_REPLACEMENT_SERVICE, Style.WHITE));
+
+        STYLES.put(null, new Style(Style.DKGRAY, Style.WHITE));
     }
 }
