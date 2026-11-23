@@ -237,7 +237,6 @@ public abstract class DbMovasProvider extends DbProvider {
     protected DbMovasProvider(final NetworkId networkId) {
         super(networkId);
 // original PTE does this ... (presently not required)
-//        httpClient.setConnectionSpec(ConnectionSpec.RESTRICTED_TLS);
 //        httpClient.setConnectionSpec(new ConnectionSpec.Builder(true)
 //                .tlsVersions(TlsVersion.TLS_1_3, TlsVersion.TLS_1_2)
 //                .cipherSuites(
