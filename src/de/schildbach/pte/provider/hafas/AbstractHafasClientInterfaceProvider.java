@@ -22,6 +22,7 @@ import static de.schildbach.pte.util.Preconditions.checkState;
 import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
@@ -37,6 +38,7 @@ import java.util.EnumSet;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
@@ -334,7 +336,8 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
             final boolean includeLinesAtStation) throws IOException {
         assertStationBoardMode(arrivals);
         return jsonStationBoard(station.id, time, arrivals, maxEvents, equivsMode, products,
-                false // includeLinesAtStation -- force off, because it would cause too many requests
+                // false // includeLinesAtStation -- force off, because it would cause too many requests
+                true // includeLinesAtStation -- on, because we use a cache now
         );
     }
 
@@ -2300,7 +2303,26 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
         return new Line(network, id, operator, product, label, longName, lineStyle(operator, product, label, style), null, null);
     }
 
+    private static final int MAX_LOCATION_CACHE_SIZE = 500;
+    private Map<String, List<LineDestination>> lineInfosByLocationIdCache = new LinkedHashMap<>(
+            MAX_LOCATION_CACHE_SIZE + 10, 1,
+            true) { // makes it a least recently used cache
+        @Serial
+        private static final long serialVersionUID = 7747429455696465635L;
+
+        @Override
+        protected boolean removeEldestEntry(final Map.Entry<String, List<LineDestination>> eldest) {
+            return size() > MAX_LOCATION_CACHE_SIZE;
+        }
+    };
+
     protected QueryDeparturesResult.Status jsonLocationLines(final Location location, final List<LineDestination> lineInfos) throws IOException {
+        final List<LineDestination> lineInfosFromCache = lineInfosByLocationIdCache.get(location.id);
+        if (lineInfosFromCache != null) {
+            lineInfos.addAll(lineInfosFromCache);
+            return QueryDeparturesResult.Status.OK;
+        }
+
         final String request = wrapJsonApiRequest("LocDetails",
                 "{\"getAttributes\":true" //
                         + ",\"getIcons\":true" //
@@ -2378,6 +2400,7 @@ public abstract class AbstractHafasClientInterfaceProvider extends AbstractHafas
                 lineInfos.add(new LineDestination(line, null));
             }
 
+            lineInfosByLocationIdCache.put(location.id, new ArrayList<>(lineInfos));
             return QueryDeparturesResult.Status.OK;
         } catch (final JSONException x) {
             throw new ParserException("cannot parse json: '" + page + "' on " + url, x);
