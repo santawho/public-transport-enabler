@@ -89,6 +89,17 @@ public final class Departure implements Serializable {
         return plannedTime;
     }
 
+    public PTDate getTime(final boolean preferPlanTime) {
+        if (preferPlanTime && plannedTime != null)
+            return plannedTime;
+        else if (predictedTime != null)
+            return predictedTime;
+        else if (plannedTime != null)
+            return plannedTime;
+        else
+            return null;
+    }
+
     public Position getPosition() {
         if (predictedPosition != null)
             return predictedPosition;
